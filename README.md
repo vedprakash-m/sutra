@@ -1,11 +1,11 @@
-# Sutra AI Operations Platform
+# Sutra - AI Prompt Management & Multi-LLM Optimization
 
 > **Status: MVP Complete** 🚀  
-> Full-stack AI operations platform with multi-LLM integration, prompt management, and workflow automation.
+> Full-stack AI prompt management platform with multi-LLM integration and workflow automation.
 
 **Weaving your AI solutions.**
 
-Sutra is a comprehensive AI Operations Platform that enables systematic prompt engineering, multi-LLM optimization, and AI workflow orchestration. Built with Azure serverless architecture for scalability and cost-effectiveness.
+Sutra is a comprehensive AI Prompt Management & Multi-LLM Optimization platform that enables systematic prompt engineering, model comparison, and AI workflow orchestration. Built with Azure serverless architecture for scalability and cost-effectiveness.
 
 ### Key Features
 

@@ -7,6 +7,7 @@ import Dashboard from '@/components/dashboard/Dashboard'
 import PromptBuilder from '@/components/prompt/PromptBuilder'
 import CollectionsPage from '@/components/collections/CollectionsPage'
 import PlaybookBuilder from '@/components/playbooks/PlaybookBuilder'
+import PlaybookRunner from '@/components/playbooks/PlaybookRunner'
 import IntegrationsPage from '@/components/integrations/IntegrationsPage'
 import AdminPanel from '@/components/admin/AdminPanel'
 
@@ -41,6 +42,7 @@ function AppContent() {
           <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/playbooks/new" element={<PlaybookBuilder />} />
           <Route path="/playbooks/:id" element={<PlaybookBuilder />} />
+          <Route path="/playbooks/:id/run" element={<PlaybookRunner />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>

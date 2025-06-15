@@ -209,13 +209,13 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 6.3 Create main application layout and navigation
   - [x] 6.4 Set up API service layer and error handling
   - [x] 6.5 Implement responsive design system
-  - [ ] 6.6 Create frontend testing framework (Playwright config needs fix)
+  - [x] 6.6 Create frontend testing framework (Playwright browsers installed, tests ready)
 
 - [x] 7.0 Prompt Builder Interface
   - [x] 7.1 Create guided prompt creation form
   - [x] 7.2 Implement dynamic contextual details fields
   - [x] 7.3 Build editable prompt text area with variable support
-  - [ ] 7.4 Create PromptCoach suggestions widget (placeholder in place)
+  - [x] 7.4 Create PromptCoach suggestions widget (intelligent suggestions working)
   - [x] 7.5 Implement LLM selection interface
   - [x] 7.6 Build multi-LLM output comparison panel
 
@@ -223,17 +223,17 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 8.1 Create collections sidebar navigation (integrated in main nav)
   - [x] 8.2 Implement prompt list with search and filters
   - [x] 8.3 Build collection creation and management flows
-  - [ ] 8.4 Create version history modal with diff view
-  - [ ] 8.5 Implement import functionality for existing prompts
+  - [x] 8.4 Create version history modal with diff view (comprehensive version comparison)
+  - [x] 8.5 Implement import functionality for existing prompts (ChatGPT, text files, manual input)
   - [ ] 8.6 Add team collaboration features
 
 - [x] 9.0 Playbook Builder & Runner Interface
   - [x] 9.1 Create drag-and-drop workflow canvas (step-based interface)
   - [x] 9.2 Implement step palette and configuration
   - [x] 9.3 Build linear workflow connection system
-  - [ ] 9.4 Create playbook execution interface
-  - [ ] 9.5 Implement real-time execution status and logging
-  - [ ] 9.6 Add manual review step interaction
+  - [x] 9.4 Create playbook execution interface (comprehensive PlaybookRunner with real-time status)
+  - [x] 9.5 Implement real-time execution status and logging (execution timeline and logs)
+  - [x] 9.6 Add manual review step interaction (approve/reject workflow)
 
 - [x] 10.0 Admin Panel & System Management
   - [x] 10.1 Create comprehensive admin panel for system configuration

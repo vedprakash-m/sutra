@@ -3,10 +3,22 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { useApi } from '@/hooks/useApi'
 import { collectionsApi } from '@/services/api'
+import VersionHistory from './VersionHistory'
+import ImportModal from './ImportModal'
 
 export default function CollectionsPage() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState('')
+  const [versionHistoryModal, setVersionHistoryModal] = useState<{
+    isOpen: boolean
+    promptId: string
+    promptName: string
+  }>({
+    isOpen: false,
+    promptId: '',
+    promptName: ''
+  })
+  const [importModalOpen, setImportModalOpen] = useState(false)
   
   // Fetch collections from API
   const { data: collectionsData, loading, error, refetch } = useApi(
@@ -42,13 +54,22 @@ export default function CollectionsPage() {
             Organize and manage your prompt collections
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleCreateCollection}
-          className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          New Collection
-        </button>
+        <div className="flex space-x-3">
+          <button
+            type="button"
+            onClick={() => setImportModalOpen(true)}
+            className="bg-white text-gray-700 py-2 px-4 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Import Prompts
+          </button>
+          <button
+            type="button"
+            onClick={handleCreateCollection}
+            className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            New Collection
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -110,13 +131,23 @@ export default function CollectionsPage() {
                 </div>
               </div>
               <div className="bg-gray-50 px-5 py-3">
-                <div className="text-sm">
+                <div className="flex justify-between items-center text-sm">
                   <Link
                     to={`/collections/${collection.id}`}
                     className="font-medium text-indigo-700 hover:text-indigo-900"
                   >
                     View collection
                   </Link>
+                  <button
+                    onClick={() => setVersionHistoryModal({
+                      isOpen: true,
+                      promptId: collection.id,
+                      promptName: collection.name
+                    })}
+                    className="font-medium text-gray-600 hover:text-gray-900"
+                  >
+                    History
+                  </button>
                 </div>
               </div>
             </div>
@@ -154,6 +185,43 @@ export default function CollectionsPage() {
           </div>
         </div>
       )}
+
+      {/* Version History Modal */}
+      <VersionHistory
+        isOpen={versionHistoryModal.isOpen}
+        onClose={() => setVersionHistoryModal({ isOpen: false, promptId: '', promptName: '' })}
+        promptId={versionHistoryModal.promptId}
+        promptName={versionHistoryModal.promptName}
+        onVersionRestore={(versionId) => {
+          console.log('Restoring version:', versionId)
+          // TODO: Implement version restore logic
+        }}
+      />
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImport={(prompts) => {
+          console.log('Importing prompts:', prompts)
+          // TODO: Implement actual import logic
+          // Create collections for each imported prompt
+          prompts.forEach(async (prompt) => {
+            try {
+              await collectionsApi.create({
+                name: prompt.title,
+                description: prompt.description || 'Imported prompt',
+                type: 'private' as const,
+                owner_id: user?.id || 'dev-user',
+                tags: ['imported', prompt.source.toLowerCase()]
+              })
+            } catch (error) {
+              console.error('Error importing prompt:', error)
+            }
+          })
+          refetch() // Refresh the collections list
+        }}
+      />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/components/auth/AuthProvider'
 import { llmApi, collectionsApi } from '@/services/api'
+import PromptCoach from './PromptCoach'
 
 interface PromptData {
   title: string
@@ -164,6 +165,16 @@ export default function PromptBuilder() {
               />
             </div>
           </div>
+
+          <PromptCoach 
+            promptContent={promptData.content}
+            intention={promptData.description}
+            contextDetails={{}}
+            onSuggestionApply={(suggestion) => {
+              // Add suggestion to the end of prompt content
+              updatePromptData('content', promptData.content + '\n\n' + suggestion)
+            }}
+          />
 
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">LLM Selection</h2>

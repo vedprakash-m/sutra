@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # Cosmos DB Emulator
+  cosmos-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: sutra-cosmos-emulator
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+      - AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1
+    ports:
+      - "8081:8081"
+      - "10251:10251"
+      - "10252:10252"
+      - "10253:10253"
+      - "10254:10254"
+    volumes:
+      - cosmos-data:/data/db
+    networks:
+      - sutra-network
+
+  # Azure Functions (API)
+  functions-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.dev
+    container_name: sutra-functions-api
+    environment:
+      - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+      - FUNCTIONS_WORKER_RUNTIME=python
+      - COSMOS_DB_ENDPOINT=https://cosmos-emulator:8081
+      - COSMOS_DB_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+    ports:
+      - "7071:7071"
+    volumes:
+      - ./api:/home/site/wwwroot
+    depends_on:
+      - cosmos-emulator
+      - azurite
+    networks:
+      - sutra-network
+
+  # Azurite (Storage Emulator)
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: sutra-azurite
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+    ports:
+      - "10000:10000"  # Blob service
+      - "10001:10001"  # Queue service
+      - "10002:10002"  # Table service
+    volumes:
+      - azurite-data:/data
+    networks:
+      - sutra-network
+
+volumes:
+  cosmos-data:
+  azurite-data:
+
+networks:
+  sutra-network:
+    driver: bridge

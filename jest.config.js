@@ -5,6 +5,8 @@ export default {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^@/services/api$': '<rootDir>/src/services/__mocks__/api.ts',
+    '^../services/api$': '<rootDir>/src/services/__mocks__/api.ts',
   },
   transform: {
     '^.+\\.tsx?$': 'ts-jest',

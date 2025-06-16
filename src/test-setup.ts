@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom'
 
-// Mock environment variables
-process.env.VITE_API_URL = 'http://localhost:7071'
+// Mock environment variables for Jest tests
+process.env.VITE_API_URL = 'http://localhost:7071/api'
 process.env.VITE_AUTH_DOMAIN = 'test-domain'
 process.env.VITE_AUTH_CLIENT_ID = 'test-client-id'
+process.env.NODE_ENV = 'test'
 
 // Mock window.matchMedia for responsive components
 Object.defineProperty(window, 'matchMedia', {

@@ -1,0 +1,45 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - prod
+
+jobs:
+  deploy-persistent:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy Persistent Infrastructure
+      run: |
+        az deployment group create \
+          --resource-group sutra-db-rg \
+          --template-file infrastructure/persistent.bicep \
+          --parameters location=eastus
+
+  deploy-compute:
+    needs: deploy-persistent
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy Compute Infrastructure  
+      run: |
+        az deployment group create \
+          --resource-group sutra-rg \
+          --template-file infrastructure/compute.bicep \
+          --parameters location=eastus

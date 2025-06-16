@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "post", "put", "delete"],
-      "route": "management/{resource}/{action?}/{user_id?}"
+      "route": "admin/{resource}/{action?}/{user_id?}"
     },
     {
       "type": "http",

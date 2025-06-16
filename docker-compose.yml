@@ -19,6 +19,11 @@ services:
       - cosmos-data:/data/db
     networks:
       - sutra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://localhost:8081/_explorer/index.html", "-k"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # Azure Functions (API)
   functions-api:
@@ -31,15 +36,23 @@ services:
       - FUNCTIONS_WORKER_RUNTIME=python
       - COSMOS_DB_ENDPOINT=https://cosmos-emulator:8081
       - COSMOS_DB_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+      - ENVIRONMENT=test
     ports:
       - "7071:7071"
     volumes:
       - ./api:/home/site/wwwroot
     depends_on:
-      - cosmos-emulator
-      - azurite
+      cosmos-emulator:
+        condition: service_healthy
+      azurite:
+        condition: service_started
     networks:
       - sutra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7071/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # Azurite (Storage Emulator)
   azurite:
@@ -52,6 +65,23 @@ services:
       - "10002:10002"  # Table service
     volumes:
       - azurite-data:/data
+    networks:
+      - sutra-network
+
+  # Frontend (for E2E testing)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    container_name: sutra-frontend
+    environment:
+      - VITE_API_URL=http://functions-api:7071/api
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    depends_on:
+      functions-api:
+        condition: service_healthy
     networks:
       - sutra-network
 

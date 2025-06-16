@@ -59,11 +59,13 @@ Sutra is a comprehensive AI Prompt Management & Multi-LLM Optimization platform 
    # Frontend dependencies
    npm install
    
-   # Backend dependencies
+   # Backend dependencies (use CI requirements to avoid compilation issues)
    cd api
-   pip install -r requirements.txt
+   pip install -r requirements-ci.txt
    cd ..
    ```
+   
+   > **Note**: If you encounter `grpcio` compilation errors, use `requirements-ci.txt` which excludes problematic dependencies that are provided by the Azure Functions runtime.
 
 3. **Start development servers**
    ```bash
@@ -181,6 +183,33 @@ npm run dev:local
 # Run tests
 npm run test:e2e
 ```
+
+### End-to-End Testing
+
+The Sutra application includes a comprehensive E2E testing suite for validating critical user flows locally before deployment.
+
+**Quick Start:**
+```bash
+# Run full E2E test suite
+npm run test:e2e
+
+# Run E2E tests with UI for debugging
+npm run test:e2e:ui
+
+# Manual control of services
+npm run e2e:setup    # Start services
+npm run test:e2e:headed  # Run tests with browser visible
+npm run e2e:cleanup  # Stop services
+```
+
+**Test Coverage:**
+- 🔐 Authentication and session management
+- 🎯 Prompt creation, editing, and multi-LLM testing
+- 📁 Collection management and organization
+- ⚡ Playbook workflow creation and execution
+- 🧭 Navigation and responsive design
+
+For detailed setup instructions, troubleshooting, and test development guidelines, see [E2E_TESTING.md](./E2E_TESTING.md).
 
 ## 🏗️ Resource Groups
 

@@ -74,6 +74,11 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         elif resource == 'usage':
             if method == 'GET':
                 return await get_usage_stats(req)
+        elif resource == 'test-data':
+            if method == 'POST' and action == 'reset':
+                return await reset_test_data(user_id, req)
+            elif method == 'POST' and action == 'seed':
+                return await seed_test_data(user_id, req)
         else:
             return func.HttpResponse(
                 json.dumps({'error': 'Resource not found'}),
@@ -640,3 +645,292 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logger.error(f"Error getting usage stats: {str(e)}")
         raise SutraAPIError(f"Failed to get usage stats: {str(e)}", 500)
+
+# Test Data Management Functions (for E2E testing)
+
+async def reset_test_data(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Reset test database to clean state (E2E testing only).
+    Only works in test/development environments.
+    """
+    try:
+        import os
+        environment = os.getenv('ENVIRONMENT', 'production')
+        
+        # Security check: only allow in test/dev environments
+        if environment not in ['test', 'development', 'local']:
+            return func.HttpResponse(
+                json.dumps({
+                    'error': 'Forbidden', 
+                    'message': 'Test data reset only available in test environments'
+                }),
+                status_code=403,
+                mimetype='application/json'
+            )
+        
+        db_manager = get_database_manager()
+        
+        # List of containers to reset
+        containers_to_reset = [
+            'Users', 'Prompts', 'Collections', 'Playbooks', 
+            'Executions', 'LLMExecutions', 'AdminSettings'
+        ]
+        
+        reset_summary = {
+            'environment': environment,
+            'reset_at': datetime.utcnow().isoformat() + 'Z',
+            'reset_by': admin_user_id,
+            'containers_reset': []
+        }
+        
+        for container_name in containers_to_reset:
+            try:
+                # Delete all documents in container
+                query = f"SELECT * FROM c"
+                items = await db_manager.query_items(container_name, query)
+                
+                deleted_count = 0
+                for item in items:
+                    await db_manager.delete_item(container_name, item['id'], item.get('userId', item['id']))
+                    deleted_count += 1
+                
+                reset_summary['containers_reset'].append({
+                    'name': container_name,
+                    'items_deleted': deleted_count,
+                    'status': 'success'
+                })
+                
+                logger.info(f"Reset container {container_name}: deleted {deleted_count} items")
+                
+            except Exception as container_error:
+                reset_summary['containers_reset'].append({
+                    'name': container_name,
+                    'error': str(container_error),
+                    'status': 'error'
+                })
+                logger.error(f"Error resetting container {container_name}: {container_error}")
+        
+        return func.HttpResponse(
+            json.dumps(reset_summary),
+            status_code=200,
+            mimetype='application/json'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in reset_test_data: {e}")
+        return func.HttpResponse(
+            json.dumps({
+                'error': 'Internal Server Error',
+                'message': 'Failed to reset test data',
+                'details': str(e)
+            }),
+            status_code=500,
+            mimetype='application/json'
+        )
+
+
+async def seed_test_data(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+    """
+    Seed test database with initial data for E2E testing.
+    Only works in test/development environments.
+    """
+    try:
+        import os
+        environment = os.getenv('ENVIRONMENT', 'production')
+        
+        # Security check: only allow in test/dev environments
+        if environment not in ['test', 'development', 'local']:
+            return func.HttpResponse(
+                json.dumps({
+                    'error': 'Forbidden', 
+                    'message': 'Test data seeding only available in test environments'
+                }),
+                status_code=403,
+                mimetype='application/json'
+            )
+        
+        # Parse request body for seed options
+        try:
+            body = req.get_json()
+            seed_options = body if body else {}
+        except:
+            seed_options = {}
+        
+        db_manager = get_database_manager()
+        now = datetime.utcnow().isoformat() + 'Z'
+        
+        seed_summary = {
+            'environment': environment,
+            'seeded_at': now,
+            'seeded_by': admin_user_id,
+            'data_created': []
+        }
+        
+        # Create test users
+        test_users = [
+            {
+                'id': 'test-user-1',
+                'email': 'testuser1@example.com',
+                'name': 'Test User One',
+                'role': 'user',
+                'userId': 'test-user-1',
+                'createdAt': now,
+                'updatedAt': now
+            },
+            {
+                'id': 'test-admin-1',
+                'email': 'testadmin@example.com',
+                'name': 'Test Admin',
+                'role': 'admin',
+                'userId': 'test-admin-1',
+                'createdAt': now,
+                'updatedAt': now
+            }
+        ]
+        
+        for user in test_users:
+            try:
+                await db_manager.create_item('Users', user)
+                seed_summary['data_created'].append({
+                    'type': 'user',
+                    'id': user['id'],
+                    'status': 'success'
+                })
+            except Exception as e:
+                seed_summary['data_created'].append({
+                    'type': 'user',
+                    'id': user['id'],
+                    'error': str(e),
+                    'status': 'error'
+                })
+        
+        # Create test collections
+        test_collections = [
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Test Collection 1',
+                'description': 'A test collection for E2E testing',
+                'userId': 'test-user-1',
+                'isPublic': False,
+                'promptIds': [],
+                'createdAt': now,
+                'updatedAt': now
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Public Test Collection',
+                'description': 'A public test collection',
+                'userId': 'test-admin-1',
+                'isPublic': True,
+                'promptIds': [],
+                'createdAt': now,
+                'updatedAt': now
+            }
+        ]
+        
+        for collection in test_collections:
+            try:
+                await db_manager.create_item('Collections', collection)
+                seed_summary['data_created'].append({
+                    'type': 'collection',
+                    'id': collection['id'],
+                    'status': 'success'
+                })
+            except Exception as e:
+                seed_summary['data_created'].append({
+                    'type': 'collection',
+                    'id': collection['id'],
+                    'error': str(e),
+                    'status': 'error'
+                })
+        
+        # Create test prompts
+        test_prompts = [
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Test Prompt 1',
+                'content': 'This is a test prompt for E2E testing. Respond with: "Test successful"',
+                'description': 'A simple test prompt',
+                'userId': 'test-user-1',
+                'version': 1,
+                'isPublic': False,
+                'tags': ['test', 'e2e'],
+                'llmSettings': {
+                    'preferredProvider': 'openai',
+                    'model': 'gpt-3.5-turbo',
+                    'temperature': 0.7
+                },
+                'createdAt': now,
+                'updatedAt': now
+            }
+        ]
+        
+        for prompt in test_prompts:
+            try:
+                await db_manager.create_item('Prompts', prompt)
+                seed_summary['data_created'].append({
+                    'type': 'prompt',
+                    'id': prompt['id'],
+                    'status': 'success'
+                })
+            except Exception as e:
+                seed_summary['data_created'].append({
+                    'type': 'prompt',
+                    'id': prompt['id'],
+                    'error': str(e),
+                    'status': 'error'
+                })
+        
+        # Create admin settings for testing
+        admin_settings = {
+            'id': 'test-settings',
+            'llmProviders': {
+                'openai': {
+                    'enabled': True,
+                    'models': ['gpt-3.5-turbo', 'gpt-4'],
+                    'rateLimit': 100
+                }
+            },
+            'systemLimits': {
+                'maxPromptsPerUser': 1000,
+                'maxCollectionsPerUser': 100
+            },
+            'maintenanceMode': False,
+            'updatedAt': now,
+            'updatedBy': admin_user_id
+        }
+        
+        try:
+            await db_manager.create_item('AdminSettings', admin_settings)
+            seed_summary['data_created'].append({
+                'type': 'admin_settings',
+                'id': admin_settings['id'],
+                'status': 'success'
+            })
+        except Exception as e:
+            seed_summary['data_created'].append({
+                'type': 'admin_settings',
+                'id': admin_settings['id'],
+                'error': str(e),
+                'status': 'error'
+            })
+        
+        logger.info(f"Test data seeded by {admin_user_id} in {environment} environment")
+        
+        return func.HttpResponse(
+            json.dumps(seed_summary),
+            status_code=200,
+            mimetype='application/json'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in seed_test_data: {e}")
+        return func.HttpResponse(
+            json.dumps({
+                'error': 'Internal Server Error',
+                'message': 'Failed to seed test data',
+                'details': str(e)
+            }),
+            status_code=500,
+            mimetype='application/json'
+        )

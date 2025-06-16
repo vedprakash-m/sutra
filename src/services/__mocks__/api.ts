@@ -1,5 +1,6 @@
 // Mock for src/services/api.ts
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// @ts-nocheck
 
 export interface ApiResponse<T = any> {
   data?: T

@@ -30,7 +30,6 @@ export default function PlaybookBuilder() {
     visibility: 'private'
   })
   const [isSaving, setIsSaving] = useState(false)
-  const [activeStep, setActiveStep] = useState<number | null>(null)
 
   const addStep = (type: PlaybookStep['type']) => {
     const newStep: PlaybookStep = {
@@ -220,9 +219,7 @@ export default function PlaybookBuilder() {
                 {playbookData.steps.map((step, index) => (
                   <div
                     key={step.id}
-                    className={`border rounded-lg p-4 ${
-                      activeStep === index ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'
-                    }`}
+                    className="border border-gray-200 rounded-lg p-4"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center">

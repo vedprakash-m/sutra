@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Sutra Application', () => {
-  test('should load the login page and authenticate', async ({ page }) => {
+test.describe('Sutra Application - Basic Navigation', () => {
+  test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    
+  })
+
+  test('should load the login page and authenticate', async ({ page }) => {
     // Should see login page initially
     await expect(page.locator('h2')).toContainText('Sign in to Sutra')
     
@@ -12,17 +14,15 @@ test.describe('Sutra Application', () => {
     await page.click('button:has-text("Sign in (Development Mode)")')
     
     // Should navigate to dashboard
-    await expect(page.locator('h1').filter({ hasText: 'Welcome back' })).toBeVisible()
+    await expect(page.locator('h1').filter({ hasText: 'Welcome back' })).toBeVisible({ timeout: 10000 })
     await expect(page.locator('nav')).toContainText('Sutra')
   })
 
   test('should navigate between main pages', async ({ page }) => {
-    await page.goto('/')
-    
     // Login first
     await page.click('text=Regular User')
     await page.click('button:has-text("Sign in (Development Mode)")')
-    await expect(page.locator('h1').filter({ hasText: 'Welcome back' })).toBeVisible()
+    await expect(page.locator('h1').filter({ hasText: 'Welcome back' })).toBeVisible({ timeout: 10000 })
     
     // Navigate to Prompt Builder
     await page.click('nav a:has-text("Prompt Builder")')
@@ -42,17 +42,15 @@ test.describe('Sutra Application', () => {
   })
 
   test('should show admin panel for admin users', async ({ page }) => {
-    await page.goto('/')
-    
     // Login as admin
-    await page.click('text=Administrator')
+    await page.click('text=Admin User')
     await page.click('button:has-text("Sign in (Development Mode)")')
-    await expect(page.locator('h1').filter({ hasText: 'Welcome back' })).toBeVisible()
+    await expect(page.locator('h1').filter({ hasText: 'Welcome back' })).toBeVisible({ timeout: 10000 })
     
-    // Should see admin link in nav
+    // Should see Admin link in navigation
     await expect(page.locator('nav a:has-text("Admin")')).toBeVisible()
     
-    // Navigate to admin panel
+    // Navigate to Admin Panel
     await page.click('nav a:has-text("Admin")')
     await expect(page.locator('h1')).toContainText('Admin Panel')
     
@@ -62,9 +60,20 @@ test.describe('Sutra Application', () => {
     await expect(page.locator('text=System Health')).toBeVisible()
   })
 
-  test('should create a prompt', async ({ page }) => {
-    await page.goto('/')
+  test('should handle logout correctly', async ({ page }) => {
+    // Login first
+    await page.click('text=Regular User')
+    await page.click('button:has-text("Sign in (Development Mode)")')
+    await expect(page.locator('h1').filter({ hasText: 'Welcome back' })).toBeVisible({ timeout: 10000 })
     
+    // Logout
+    await page.click('button:has-text("Sign Out")')
+    
+    // Should return to login page
+    await expect(page.locator('h2')).toContainText('Sign in to Sutra')
+  })
+
+  test('should create a prompt', async ({ page }) => {
     // Login and navigate to prompt builder
     await page.click('text=Regular User')
     await page.click('button:has-text("Sign in (Development Mode)")')

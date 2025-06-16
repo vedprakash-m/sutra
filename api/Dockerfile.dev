@@ -11,10 +11,10 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /home/site/wwwroot
 
 # Copy requirements and install dependencies
-# Use CI requirements to avoid grpcio compilation issues
-COPY requirements-ci.txt requirements.txt ./
+# Use minimal requirements to avoid grpcio compilation issues
+COPY requirements-minimal.txt requirements-ci.txt requirements.txt ./
 RUN pip install --upgrade pip setuptools wheel
-RUN pip install --no-cache-dir -r requirements-ci.txt
+RUN pip install --no-cache-dir -r requirements-minimal.txt
 
 # Copy function code
 COPY . .

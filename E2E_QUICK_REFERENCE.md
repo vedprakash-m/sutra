@@ -73,7 +73,10 @@ If you see `grpcio` compilation errors:
 ```bash
 cd api
 
-# Quick fix: Use CI requirements
+# Quick fix: Use minimal requirements (most reliable)
+pip install -r requirements-minimal.txt
+
+# Alternative: Use CI requirements  
 pip install -r requirements-ci.txt
 
 # Alternative: Install without deps

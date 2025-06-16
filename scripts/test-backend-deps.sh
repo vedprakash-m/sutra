@@ -26,8 +26,8 @@ if command -v python3 -m venv &> /dev/null; then
     echo "Installing dependencies..."
     pip install --upgrade pip setuptools wheel
     
-    if pip install -r requirements-ci.txt; then
-        echo "✅ CI requirements installed successfully"
+    if pip install -r requirements-minimal.txt; then
+        echo "✅ Minimal requirements installed successfully"
         
         # Test key imports
         echo "🧪 Testing key imports..."
@@ -37,6 +37,7 @@ import azure.cosmos
 import azure.identity
 import pydantic
 import httpx
+import pytest
 print('✅ All key modules imported successfully')
 "; then
             echo "✅ Backend dependencies test passed"
@@ -46,8 +47,8 @@ print('✅ All key modules imported successfully')
             rm -rf test-env
             exit 1
         fi
-    else
-        echo "❌ CI requirements installation failed"
+    elif pip install -r requirements-ci.txt; then
+        echo "✅ CI requirements installed successfully (fallback)"
         echo "Trying alternative approach..."
         
         # Try without azure-functions-worker
@@ -81,8 +82,12 @@ fi
 echo ""
 echo "🎉 Backend dependencies test completed successfully!"
 echo ""
+echo "Recommended installation commands:"
+echo "  cd api && pip install -r requirements-minimal.txt    # Most reliable for CI/CD"
+echo "  cd api && pip install -r requirements-ci.txt         # Comprehensive testing"
+echo "  cd api && pip install -r requirements.txt            # Full local development"
+echo ""
 echo "Next steps:"
-echo "  cd api && pip install -r requirements-ci.txt"
 echo "  cd .. && npm run test:e2e"
 
 cd ..

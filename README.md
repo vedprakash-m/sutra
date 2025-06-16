@@ -59,13 +59,13 @@ Sutra is a comprehensive AI Prompt Management & Multi-LLM Optimization platform 
    # Frontend dependencies
    npm install
    
-   # Backend dependencies (use CI requirements to avoid compilation issues)
+   # Backend dependencies (use minimal requirements to avoid compilation issues)
    cd api
-   pip install -r requirements-ci.txt
+   pip install -r requirements-minimal.txt
    cd ..
    ```
    
-   > **Note**: If you encounter `grpcio` compilation errors, use `requirements-ci.txt` which excludes problematic dependencies that are provided by the Azure Functions runtime.
+   > **Note**: If you encounter `grpcio` compilation errors, use `requirements-minimal.txt` which contains only essential dependencies for testing.
 
 3. **Start development servers**
    ```bash

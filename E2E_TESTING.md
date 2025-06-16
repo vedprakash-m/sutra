@@ -366,28 +366,31 @@ If you encounter grpcio compilation errors when installing backend dependencies,
 ```bash
 cd api
 
-# Option 1: Use CI requirements (recommended)
+# Option 1: Use minimal requirements (most reliable for CI)
+pip install -r requirements-minimal.txt
+
+# Option 2: Use CI requirements (comprehensive)
 pip install -r requirements-ci.txt
 
-# Option 2: Install Azure Functions Worker separately
+# Option 3: Install Azure Functions Worker separately
 pip install azure-functions-worker --no-deps
 pip install -r requirements-ci.txt
 
-# Option 3: Use conda instead of pip (if available)
+# Option 4: Use conda instead of pip (if available)
 conda install grpcio grpcio-tools
 pip install -r requirements.txt
 ```
 
 ### For CI/CD Environments
 
-The `requirements-ci.txt` file excludes problematic dependencies that are provided by the Azure Functions runtime. Use this in GitHub Actions:
+The `requirements-minimal.txt` file contains only the essential dependencies needed for testing, avoiding all compilation issues. Use this in GitHub Actions:
 
 ```yaml
 - name: Install Python dependencies
   run: |
     cd api
     pip install --upgrade pip setuptools wheel
-    pip install -r requirements-ci.txt
+    pip install -r requirements-minimal.txt
 ```
 
 ### Docker Development

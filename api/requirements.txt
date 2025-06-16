@@ -1,5 +1,5 @@
-azure-functions==1.0.0b4
-azure-functions-worker==1.0.0b7
+azure-functions==1.18.0
+azure-functions-worker==1.18.0
 azure-cosmos==4.5.1
 azure-identity==1.15.0
 azure-keyvault-secrets==4.7.0

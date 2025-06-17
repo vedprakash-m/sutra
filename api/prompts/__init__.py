@@ -5,23 +5,11 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from shared import (
-    require_auth,
-    get_current_user,
-    get_database_manager,
-    PromptTemplate,
-    PromptStatus,
-    PromptTemplateValidator,
-    ValidationException,
-    BusinessLogicException,
-    ErrorHandler,
-    handle_api_errors,
-    extract_request_id,
-    validate_pagination_params,
-    validate_search_query,
-    validate_resource_ownership,
-    RateLimitValidator
-)
+from ..shared.auth import require_auth, get_current_user
+from ..shared.database import get_database_manager
+from ..shared.models import PromptTemplate, PromptStatus, PromptTemplateValidator
+from ..shared.error_handling import ValidationException, BusinessLogicException, ErrorHandler, handle_api_errors, extract_request_id
+from ..shared.validation import validate_pagination_params, validate_search_query, validate_resource_ownership, RateLimitValidator
 
 
 @handle_api_errors
@@ -187,74 +175,19 @@ async def handle_create_prompt(req: func.HttpRequest, request_id: Optional[str] 
         
         return func.HttpResponse(
             json.dumps(created_prompt, default=str),
-        return func.HttpResponse(
-            json.dumps(created_prompt, default=str),
             status_code=201,
             headers={"Content-Type": "application/json"}
         )
-
-
-@require_auth(resource="prompts", action="create")
-async def handle_create_prompt(req: func.HttpRequest, request_id: Optional[str] = None) -> func.HttpResponse:
-    """Handle POST requests to create prompts with validation."""
-    user = await get_current_user(req)
-    db_manager = get_database_manager()
-    
-    # Check rate limits
-    # TODO: Get actual usage count from database
-    current_count = 0  # This would be fetched from usage tracking
-    RateLimitValidator.check_rate_limit(user.id, 'prompt_creations', current_count)
-    
-    # Parse and validate request body
-    try:
-        request_data = req.get_json()
-        if not request_data:
-            raise ValidationException("Request body is required")
     except Exception as e:
-        raise ValidationException("Invalid JSON in request body") from e
-    
-    # Validate create request data
-    validated_data = PromptTemplateValidator.validate_create_request(request_data, user.id)
-    
-    # Create prompt template
-    now = datetime.now(timezone.utc)
-    prompt_id = str(uuid.uuid4())
-    
-    prompt_data = {
-        'id': prompt_id,
-        'user_id': validated_data['user_id'],
-        'title': validated_data['title'],
-        'description': validated_data.get('description', ''),
-        'content': validated_data['content'],
-        'variables': validated_data.get('variables', []),
-        'tags': validated_data.get('tags', []),
-        'status': validated_data['status'],
-        'version': 1,
-        'parent_id': None,
-        'created_at': now,
-        'updated_at': now
-    }
-    
-    # Save to database
-    try:
-        created_prompt = await db_manager.create_item(
-            container_name='prompts',
-            item=prompt_data,
-            partition_key=user.id
+        logging.error(f"Error creating prompt: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({
+                "error": "internal_error",
+                "message": "Failed to create prompt"
+            }),
+            status_code=500,
+            headers={"Content-Type": "application/json"}
         )
-    except Exception as e:
-        logging.error(f"Database error creating prompt: {str(e)}")
-        return ErrorHandler.handle_database_error(
-            "create_prompt", str(e), request_id
-        ).to_azure_response()
-    
-    logging.info(f"Created prompt {prompt_id} for user {user.id}")
-    
-    return func.HttpResponse(
-        json.dumps(created_prompt, default=str),
-        status_code=201,
-        headers={"Content-Type": "application/json"}
-    )
 
 
 @require_auth(resource="prompts", action="update")

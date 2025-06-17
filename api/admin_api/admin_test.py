@@ -13,9 +13,9 @@ class TestAdminAPI:
     @pytest.fixture
     def mock_admin_auth(self):
         """Mock successful admin authentication."""
-        with patch('api.shared.auth.verify_jwt_token') as mock_verify, \
-             patch('api.shared.auth.get_user_id_from_token') as mock_user_id, \
-             patch('api.shared.auth.check_admin_role') as mock_admin:
+        with patch('api.admin_api.verify_jwt_token') as mock_verify, \
+             patch('api.admin_api.get_user_id_from_token') as mock_user_id, \
+             patch('api.admin_api.check_admin_role') as mock_admin:
             mock_verify.return_value = {'valid': True}
             mock_user_id.return_value = 'admin-user-123'
             mock_admin.return_value = True
@@ -24,9 +24,9 @@ class TestAdminAPI:
     @pytest.fixture
     def mock_non_admin_auth(self):
         """Mock successful authentication but non-admin user."""
-        with patch('api.shared.auth.verify_jwt_token') as mock_verify, \
-             patch('api.shared.auth.get_user_id_from_token') as mock_user_id, \
-             patch('api.shared.auth.check_admin_role') as mock_admin:
+        with patch('api.admin_api.verify_jwt_token') as mock_verify, \
+             patch('api.admin_api.get_user_id_from_token') as mock_user_id, \
+             patch('api.admin_api.check_admin_role') as mock_admin:
             mock_verify.return_value = {'valid': True}
             mock_user_id.return_value = 'regular-user-123'
             mock_admin.return_value = False
@@ -34,11 +34,11 @@ class TestAdminAPI:
     
     @pytest.fixture
     def mock_cosmos_client(self):
-        """Mock Cosmos DB client."""
-        with patch('api.shared.database.get_cosmos_client') as mock_client:
-            mock_container = Mock()
-            mock_client.return_value.get_container.return_value = mock_container
-            yield mock_container
+        """Mock database manager."""
+        with patch('api.admin_api.get_database_manager') as mock_db_manager:
+            mock_manager = Mock()
+            mock_db_manager.return_value = mock_manager
+            yield mock_manager
     
     @pytest.mark.asyncio
     async def test_list_users_success(self, mock_admin_auth, mock_cosmos_client):
@@ -65,11 +65,12 @@ class TestAdminAPI:
             }
         ]
         
-        # Mock database responses
-        mock_cosmos_client.query_items.side_effect = [
+        # Mock database responses - using AsyncMock for async methods
+        from unittest.mock import AsyncMock
+        mock_cosmos_client.query_items = AsyncMock(side_effect=[
             mock_users,  # Users list
             [2]          # Count
-        ]
+        ])
         
         # Create request
         req = func.HttpRequest(

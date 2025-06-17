@@ -14,19 +14,19 @@ class TestPlaybooksAPI:
     @pytest.fixture
     def mock_auth_success(self):
         """Mock successful authentication."""
-        with patch('api.shared.auth.verify_jwt_token') as mock_verify, \
-             patch('api.shared.auth.get_user_id_from_token') as mock_user_id:
+        with patch('api.playbooks_api.verify_jwt_token') as mock_verify, \
+             patch('api.playbooks_api.get_user_id_from_token') as mock_user_id:
             mock_verify.return_value = {'valid': True}
             mock_user_id.return_value = 'test-user-123'
             yield
     
     @pytest.fixture
     def mock_cosmos_client(self):
-        """Mock Cosmos DB client."""
-        with patch('api.shared.database.get_cosmos_client') as mock_client:
-            mock_container = Mock()
-            mock_client.return_value.get_container.return_value = mock_container
-            yield mock_container
+        """Mock database manager."""
+        with patch('api.playbooks_api.get_database_manager') as mock_db_manager:
+            mock_manager = Mock()
+            mock_db_manager.return_value = mock_manager
+            yield mock_manager
     
     @pytest.mark.asyncio
     async def test_create_playbook_success(self, mock_auth_success, mock_cosmos_client):

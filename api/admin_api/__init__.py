@@ -101,7 +101,6 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
         role_filter = params.get('role')
         
         db_manager = get_database_manager()
-        # container = client.get_container('Users')
         
         # Build query
         query_parts = ["SELECT * FROM c"]
@@ -128,11 +127,11 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
         query = " ".join(query_parts)
         
         # Execute query
-        items = list(container.query_items(
+        items = await db_manager.query_items(
+            container_name='users',
             query=query,
-            parameters=query_params,
-            enable_cross_partition_query=True
-        ))
+            parameters=query_params
+        )
         
         # Mask sensitive data
         for user in items:
@@ -161,11 +160,12 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
             if role_filter:
                 count_params.append({"name": "@role", "value": role_filter})
         
-        total_count = list(container.query_items(
+        total_count_result = await db_manager.query_items(
+            container_name='users',
             query=count_query,
-            parameters=count_params,
-            enable_cross_partition_query=True
-        ))[0]
+            parameters=count_params
+        )
+        total_count = total_count_result[0] if total_count_result else 0
         
         total_pages = (total_count + limit - 1) // limit
         

@@ -190,10 +190,91 @@ else
     exit 1
 fi
 
+# Test with completely isolated minimal environment (exact CI simulation)
+echo "🧪 Testing with isolated minimal environment (exact CI simulation)..."
+cd "$API_DIR"
+if [ -d "test-ci-minimal" ]; then
+    rm -rf test-ci-minimal
+fi
+
+python3 -m venv test-ci-minimal
+source test-ci-minimal/bin/activate
+
+# Install exactly what CI installs
+pip install --upgrade pip setuptools wheel >/dev/null 2>&1
+if pip install -r requirements-minimal.txt >/dev/null 2>&1; then
+    echo "✅ Minimal requirements installed in isolated environment"
+    
+    # Test critical imports in isolation
+    if python -c "
+try:
+    from azure.keyvault.secrets import SecretClient
+    import azure.functions as func
+    from azure.cosmos import CosmosClient
+    from azure.identity import DefaultAzureCredential
+    print('✅ All critical Azure imports work in isolation')
+except ImportError as e:
+    print(f'❌ Import error: {e}')
+    exit(1)
+" 2>&1; then
+        echo "✅ Critical imports work in isolated environment"
+    else
+        echo "❌ Critical imports failed in isolated environment"
+        echo "   This indicates missing dependencies in requirements-minimal.txt"
+        deactivate
+        rm -rf test-ci-minimal
+        exit 1
+    fi
+    
+    # Test pytest collection in isolation (exact CI simulation)
+    cd "$PROJECT_ROOT"
+    if python -m pytest --collect-only >/dev/null 2>&1; then
+        echo "✅ Pytest collection works in isolated environment"
+    else
+        echo "❌ Pytest collection failed in isolated environment"
+        echo "   This would cause CI backend-tests to fail"
+        deactivate
+        cd "$API_DIR"
+        rm -rf test-ci-minimal
+        exit 1
+    fi
+    
+    deactivate
+    cd "$API_DIR"
+    rm -rf test-ci-minimal
+    echo "✅ Isolated environment test passed"
+else
+    echo "❌ Failed to install minimal requirements in isolated environment"
+    deactivate
+    rm -rf test-ci-minimal
+    exit 1
+fi
+
 cd "$PROJECT_ROOT"
 
+# Test actual pytest execution with a sample test
+echo "🧪 Testing actual test execution (sample)..."
+if python -m pytest api/shared/validation_test.py -v --tb=short > /dev/null 2>&1; then
+    echo "✅ Sample test execution works"
+else
+    echo "❌ Sample test execution failed"
+    echo "   This indicates test setup or execution issues"
+    ((ISSUES_FOUND++))
+fi
+
+# Test if authentication mocking works properly in tests
+echo "� Testing authentication mocking in tests..."
+if python -m pytest api/admin_api/admin_test.py::TestAdminAPI::test_list_users_success -v --tb=short > /dev/null 2>&1; then
+    echo "✅ Authentication mocking works in tests"
+else
+    echo "❌ Authentication mocking failed in tests"
+    echo "   This would cause CI tests to fail with 401 errors"
+    echo "   Check that test fixtures properly mock authentication"
+    ((ISSUES_FOUND++))
+fi
+
 echo ""
-echo "📊 Backend Dependencies Test Results"
+echo "�📊 Backend Dependencies Test Results"
 echo "===================================="
 
 if [ $ISSUES_FOUND -eq 0 ]; then
@@ -206,6 +287,7 @@ else
     echo "1. Install missing packages with: pip install -r requirements-minimal.txt"
     echo "2. Remove any conflicting directories that shadow Python built-ins"
     echo "3. Ensure pytest-cov is installed for coverage testing"
+    echo "4. Fix authentication mocking in test fixtures"
 fi
 
 echo ""

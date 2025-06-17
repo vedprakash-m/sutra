@@ -14,8 +14,8 @@ class TestCollectionsAPI:
     @pytest.fixture
     def mock_auth_success(self):
         """Mock successful authentication."""
-        with patch('api.shared.auth.verify_jwt_token') as mock_verify, \
-             patch('api.shared.auth.get_user_id_from_token') as mock_user_id:
+        with patch('api.collections_api.verify_jwt_token') as mock_verify, \
+             patch('api.collections_api.get_user_id_from_token') as mock_user_id:
             mock_verify.return_value = {'valid': True}
             mock_user_id.return_value = 'test-user-123'
             yield
@@ -23,17 +23,17 @@ class TestCollectionsAPI:
     @pytest.fixture
     def mock_auth_failure(self):
         """Mock failed authentication."""
-        with patch('api.shared.auth.verify_jwt_token') as mock_verify:
+        with patch('api.collections_api.verify_jwt_token') as mock_verify:
             mock_verify.return_value = {'valid': False, 'message': 'Invalid token'}
             yield
     
     @pytest.fixture
     def mock_cosmos_client(self):
-        """Mock Cosmos DB client."""
-        with patch('api.shared.database.get_cosmos_client') as mock_client:
-            mock_container = Mock()
-            mock_client.return_value.get_container.return_value = mock_container
-            yield mock_container
+        """Mock database manager."""
+        with patch('api.collections_api.get_database_manager') as mock_db_manager:
+            mock_manager = Mock()
+            mock_db_manager.return_value = mock_manager
+            yield mock_manager
     
     @pytest.mark.asyncio
     async def test_create_collection_success(self, mock_auth_success, mock_cosmos_client):
@@ -45,13 +45,13 @@ class TestCollectionsAPI:
             'type': 'private'
         }
         
-        mock_cosmos_client.create_item.return_value = {
+        mock_cosmos_client.create_item = AsyncMock(return_value={
             'id': 'test-collection-id',
             **collection_data,
             'ownerId': 'test-user-123',
             'createdAt': '2025-06-15T10:00:00Z',
             'updatedAt': '2025-06-15T10:00:00Z'
-        }
+        })
         
         # Mock validation
         with patch('api.shared.validation.validate_collection_data') as mock_validate:

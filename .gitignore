@@ -71,3 +71,9 @@ coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Test environments (for validation scripts)
+api/test-env/
+api/test-ci-env/
+**/test-env/
+**/test-ci-env/

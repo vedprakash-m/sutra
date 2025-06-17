@@ -126,16 +126,14 @@ else
     fi
 fi
 
-echo ""
+# Test for namespace collisions with Python built-ins
 echo "🔍 Testing for namespace collisions..."
-
-# Test for namespace collisions with Python built-in modules
-# This simulates the exact environment that CI runs in
-python3 -c "
+cd "${PROJECT_ROOT}/api"
+python -c "
 import os
 import sys
 
-# Critical Python built-in modules that must not conflict
+# Common Python built-in modules that could conflict
 critical_modules = [
     'collections', 'os', 'sys', 'json', 'time', 'datetime', 'itertools', 
     'functools', 'operator', 'pathlib', 'urllib', 'http', 'email', 'calendar',
@@ -144,17 +142,17 @@ critical_modules = [
     'copy', 'pickle', 'shelve', 'marshal', 'sqlite3', 'csv', 'configparser'
 ]
 
-# Check for conflicting directories
 api_dirs = [d for d in os.listdir('.') if os.path.isdir(d) and not d.startswith('.') and not d.startswith('__')]
 conflicts = [d for d in api_dirs if d in critical_modules]
 
 if conflicts:
-    print(f'❌ CRITICAL: Namespace collision detected: {conflicts}')
-    print('These API directories conflict with Python built-in modules!')
-    print('This will cause import errors when pytest runs from the api directory!')
+    print(f'❌ Namespace collision detected: {conflicts}')
+    print('These directories conflict with Python built-in modules!')
     sys.exit(1)
+else:
+    print('✅ No namespace collisions detected')
 
-# Test critical imports with current directory in path (exact CI simulation)
+# Test critical imports with current directory in path (simulating CI)
 sys.path.insert(0, '.')
 try:
     from collections import deque, defaultdict
@@ -162,17 +160,37 @@ try:
     import os as os_module
     print('✅ Critical imports work with current directory in path')
 except ImportError as e:
-    print(f'❌ CRITICAL: Import error with current directory in path: {e}')
-    print('This will cause CI failures!')
+    print(f'❌ Import error with current directory in path: {e}')
     sys.exit(1)
 "
 
 if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Namespace collision detected - CI will fail!${NC}"
-    ((ISSUES_FOUND++))
-else
-    echo -e "${GREEN}✅ No namespace collisions detected${NC}"
+    echo "❌ Namespace collision tests failed"
+    exit 1
 fi
+
+# Test pytest import/collection issues (exact CI simulation)
+echo "🧪 Testing pytest collection from repository root..."
+cd "${PROJECT_ROOT}"
+if python -m pytest --collect-only >/dev/null 2>&1; then
+    echo "✅ Pytest collection from repository root works"
+else
+    echo "❌ Pytest collection from repository root failed"
+    echo "   This indicates import/package structure issues"
+    exit 1
+fi
+
+# Test exact CI pytest command
+echo "🧪 Testing exact CI pytest command..."
+if python -m pytest --cov=. --cov-report=xml --collect-only >/dev/null 2>&1; then
+    echo "✅ Exact CI pytest command works"
+else
+    echo "❌ Exact CI pytest command failed"
+    echo "   This would cause CI backend-tests to fail"
+    exit 1
+fi
+
+cd "$PROJECT_ROOT"
 
 echo ""
 echo "📊 Backend Dependencies Test Results"

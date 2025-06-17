@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 
 import azure.functions as func
-from api.playbooks import main as playbooks_main
+from api.playbooks_api import main as playbooks_main
 
 
 class TestPlaybooksAPI:

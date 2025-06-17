@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
 
 import azure.functions as func
-from api.admin import main as admin_main
+from api.admin_api import main as admin_main
 
 
 class TestAdminAPI:

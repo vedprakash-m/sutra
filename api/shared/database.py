@@ -15,8 +15,9 @@ class DatabaseManager:
         self._database: Optional[DatabaseProxy] = None
         self._containers: Dict[str, ContainerProxy] = {}
         
-        # Check if we're in development mode
-        self._development_mode = os.getenv('ENVIRONMENT') == 'development'
+        # Check if we're in development mode or testing
+        env = os.getenv('ENVIRONMENT', '').lower()
+        self._development_mode = env in ('development', 'test') or os.getenv('PYTEST_CURRENT_TEST') is not None
         
         # Get connection string from environment
         self._connection_string = os.getenv('COSMOS_DB_CONNECTION_STRING')
@@ -200,15 +201,18 @@ class DatabaseManager:
             raise
 
 
-# Global database manager instance
-db_manager = DatabaseManager()
+# Global database manager instance - initialized lazily
+_db_manager: Optional[DatabaseManager] = None
 
 
 def get_database_manager() -> DatabaseManager:
     """Get the global database manager instance."""
-    return db_manager
+    global _db_manager
+    if _db_manager is None:
+        _db_manager = DatabaseManager()
+    return _db_manager
 
 
 def get_cosmos_client():
     """Get a Cosmos DB client instance."""
-    return db_manager.client
+    return get_database_manager().client

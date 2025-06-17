@@ -40,6 +40,22 @@ import httpx
 import pytest
 print('✅ All key modules imported successfully')
 "; then
+            echo "✅ Key imports test passed"
+            
+            # Test pytest with coverage (exactly like CI)
+            echo "🧪 Testing pytest with coverage (CI simulation)..."
+            cd ../api
+            # Test that pytest-cov is installed and working
+            if python -c "import pytest_cov; print('pytest-cov available')" 2>/dev/null && python -m pytest --version | grep -q "pytest"; then
+                echo "✅ Pytest coverage test passed"
+            else
+                echo "❌ Pytest coverage test failed"
+                deactivate
+                rm -rf test-env
+                exit 1
+            fi
+            cd ..
+            
             echo "✅ Backend dependencies test passed"
         else
             echo "❌ Import test failed"

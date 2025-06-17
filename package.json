@@ -18,6 +18,7 @@
     "e2e:logs": "docker-compose logs",
     "e2e:services": "docker-compose ps",
     "e2e:validate": "./scripts/validate-e2e.sh",
+    "ci:validate": "./scripts/validate-ci-cd.sh",
     "backend:test-deps": "./scripts/test-backend-deps.sh",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",

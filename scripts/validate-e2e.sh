@@ -78,17 +78,28 @@ if python3 -c "import azure.functions" &> /dev/null; then
     echo "✅ Backend dependencies are installed"
 else
     echo "⚠️ Backend dependencies not found. Installing..."
-    # Try CI requirements first to avoid grpcio compilation issues
-    if pip install -r requirements-ci.txt; then
-        echo "✅ Backend dependencies installed successfully (using CI requirements)"
+    # Try minimal requirements first to avoid grpcio compilation issues
+    if pip install -r requirements-minimal.txt; then
+        echo "✅ Backend dependencies installed successfully (using minimal requirements)"
     else
         echo "❌ Failed to install backend dependencies"
-        echo "💡 Try running: cd api && pip install -r requirements-ci.txt"
+        echo "💡 Try running: cd api && pip install -r requirements-minimal.txt"
         cd ..
         exit 1
     fi
 fi
 cd ..
+
+# Run CI/CD simulation validation
+echo ""
+echo "🔬 Running CI/CD simulation validation..."
+if ./scripts/validate-ci-cd.sh; then
+    echo "✅ CI/CD simulation passed"
+else
+    echo "❌ CI/CD simulation found issues"
+    echo "💡 Check the output above for specific problems"
+    exit 1
+fi
 
 # Validate Docker Compose configuration
 echo "🐳 Validating Docker Compose configuration..."

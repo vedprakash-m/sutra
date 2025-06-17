@@ -17,6 +17,11 @@ npm run e2e:setup      # Start all services
 npm run e2e:cleanup    # Stop all services
 npm run e2e:logs       # View service logs
 npm run e2e:services   # Check service status
+
+# 🔬 Validation and testing
+npm run e2e:validate   # Comprehensive E2E validation
+npm run ci:validate    # CI/CD environment simulation
+npm run backend:test-deps  # Test backend dependencies
 ```
 
 ## Test Development

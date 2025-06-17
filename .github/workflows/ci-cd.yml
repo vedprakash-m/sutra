@@ -60,7 +60,8 @@ jobs:
     - name: Install Python dependencies
       run: |
         cd api
-        pip install -r requirements.txt
+        pip install --upgrade pip setuptools wheel
+        pip install -r requirements-minimal.txt
     
     - name: Run Python tests
       run: |
@@ -102,7 +103,8 @@ jobs:
     - name: Install Python dependencies
       run: |
         cd api
-        pip install -r requirements.txt
+        pip install --upgrade pip setuptools wheel
+        pip install -r requirements-minimal.txt
     
     - name: Start backend
       run: |

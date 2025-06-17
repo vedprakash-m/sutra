@@ -52,8 +52,20 @@ Ensure you have the following installed:
 
 #### Option 1: Full Automated Workflow (Recommended)
 ```bash
-# Start services, run tests, and cleanup in one command
+# Validate setup first
+npm run e2e:validate
+
+# Run complete test suite
 npm run test:e2e
+```
+
+#### Option 2: CI/CD Simulation
+```bash
+# Simulate CI environment locally
+npm run ci:validate
+
+# Test backend dependencies
+npm run backend:test-deps
 ```
 
 #### Option 2: Manual Control

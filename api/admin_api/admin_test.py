@@ -1,6 +1,6 @@
 import pytest
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
 
 import azure.functions as func
@@ -37,6 +37,54 @@ class TestAdminAPI:
         """Mock database manager."""
         with patch('api.admin_api.get_database_manager') as mock_db_manager:
             mock_manager = Mock()
+            # Make database methods async
+            mock_manager.query_items = AsyncMock()
+            mock_manager.create_item = AsyncMock()
+            mock_manager.replace_item = AsyncMock()
+            mock_manager.update_item = AsyncMock()
+            mock_manager.delete_item = AsyncMock()
+            mock_manager.read_item = AsyncMock()
+            
+            # Mock separate container instances for each container type
+            users_container = Mock()
+            users_container.query_items = Mock()
+            users_container.read_item = Mock()
+            users_container.replace_item = Mock()
+            
+            prompts_container = Mock()
+            prompts_container.query_items = Mock()
+            prompts_container.read_item = Mock()
+            prompts_container.replace_item = Mock()
+            
+            collections_container = Mock()
+            collections_container.query_items = Mock()
+            collections_container.read_item = Mock()
+            collections_container.replace_item = Mock()
+            
+            playbooks_container = Mock()
+            playbooks_container.query_items = Mock()
+            playbooks_container.read_item = Mock()
+            playbooks_container.replace_item = Mock()
+            
+            config_container = Mock()
+            config_container.query_items = Mock()
+            config_container.read_item = Mock()  # Sync, not async
+            config_container.replace_item = Mock()  # Sync, not async
+            config_container.create_item = Mock()  # Sync, not async
+            
+            executions_container = Mock()
+            executions_container.query_items = Mock()
+            executions_container.read_item = Mock()
+            executions_container.replace_item = Mock()
+            
+            mock_manager.get_users_container = Mock(return_value=users_container)
+            mock_manager.get_prompts_container = Mock(return_value=prompts_container)
+            mock_manager.get_collections_container = Mock(return_value=collections_container) 
+            mock_manager.get_playbooks_container = Mock(return_value=playbooks_container)
+            mock_manager.get_settings_container = Mock(return_value=config_container)
+            mock_manager.get_config_container = Mock(return_value=config_container)
+            mock_manager.get_executions_container = Mock(return_value=executions_container)
+            
             mock_db_manager.return_value = mock_manager
             yield mock_manager
     
@@ -205,14 +253,18 @@ class TestAdminAPI:
         """Test successful system statistics retrieval."""
         # Arrange
         # Mock database responses for different counts
-        mock_cosmos_client.query_items.side_effect = [
-            [10],  # User count
-            [25],  # Prompt count
-            [5],   # Collection count
-            [8],   # Playbook count
-            [3],   # Recent users
-            [7]    # Recent prompts
-        ]
+        # Use return_value for repeatable calls instead of side_effect which can be exhausted
+        users_container_mock = mock_cosmos_client.get_users_container()
+        users_container_mock.query_items.side_effect = [[10], [3]]  # User count, then recent users
+        
+        prompts_container_mock = mock_cosmos_client.get_prompts_container()
+        prompts_container_mock.query_items.side_effect = [[25], [7]]  # Prompt count, then recent prompts
+        
+        collections_container_mock = mock_cosmos_client.get_collections_container()
+        collections_container_mock.query_items.return_value = [5]  # Collection count
+        
+        playbooks_container_mock = mock_cosmos_client.get_playbooks_container()
+        playbooks_container_mock.query_items.return_value = [8]  # Playbook count
         
         # Create request
         req = func.HttpRequest(
@@ -315,7 +367,7 @@ class TestAdminAPI:
         assert response_data['defaultProvider'] == 'openai'
         assert response_data['providers']['openai']['enabled'] is True
         assert response_data['providers']['openai']['priority'] == 1
-    
+
     @pytest.mark.asyncio
     async def test_update_llm_settings_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful LLM settings update."""
@@ -326,7 +378,7 @@ class TestAdminAPI:
                 'openai': {'enabled': True, 'priority': 1}
             }
         }
-        
+
         update_data = {
             'providers': {
                 'openai': {
@@ -341,9 +393,9 @@ class TestAdminAPI:
             },
             'defaultProvider': 'openai'
         }
-        
-        mock_cosmos_client.read_item.return_value = existing_settings
-        mock_cosmos_client.replace_item.return_value = {
+
+        mock_cosmos_client.get_config_container().read_item.return_value = existing_settings
+        mock_cosmos_client.get_config_container().replace_item.return_value = {
             **existing_settings,
             **update_data,
             'updatedAt': '2025-06-15T10:00:00Z',
@@ -368,19 +420,19 @@ class TestAdminAPI:
         assert response_data['providers']['openai']['budgetLimits']['dailyBudget'] == 100.0
         assert response_data['providers']['google_gemini']['enabled'] is False
         assert response_data['updatedBy'] == 'admin-user-123'
-        mock_cosmos_client.replace_item.assert_called_once()
+        mock_cosmos_client.get_config_container().replace_item.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_get_usage_stats_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful usage statistics retrieval."""
         # Arrange
         # Mock database responses for usage stats
-        mock_cosmos_client.query_items.side_effect = [
+        mock_cosmos_client.get_executions_container().query_items.side_effect = [
             [15],  # Total executions
             [12],  # Successful executions
             [3],   # Failed executions
-            [8]    # Active users
         ]
+        mock_cosmos_client.get_users_container().query_items.return_value = [8]  # Active users
         
         # Create request
         req = func.HttpRequest(

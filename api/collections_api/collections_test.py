@@ -32,6 +32,13 @@ class TestCollectionsAPI:
         """Mock database manager."""
         with patch('api.collections_api.get_database_manager') as mock_db_manager:
             mock_manager = Mock()
+            # Make database methods async
+            mock_manager.query_items = AsyncMock()
+            mock_manager.create_item = AsyncMock()
+            mock_manager.replace_item = AsyncMock()
+            mock_manager.update_item = AsyncMock()
+            mock_manager.delete_item = AsyncMock()
+            mock_manager.read_item = AsyncMock()
             mock_db_manager.return_value = mock_manager
             yield mock_manager
     
@@ -45,13 +52,13 @@ class TestCollectionsAPI:
             'type': 'private'
         }
         
-        mock_cosmos_client.create_item = AsyncMock(return_value={
+        mock_cosmos_client.create_item.return_value = {
             'id': 'test-collection-id',
             **collection_data,
             'ownerId': 'test-user-123',
             'createdAt': '2025-06-15T10:00:00Z',
             'updatedAt': '2025-06-15T10:00:00Z'
-        })
+        }
         
         # Mock validation
         with patch('api.shared.validation.validate_collection_data') as mock_validate:
@@ -234,7 +241,7 @@ class TestCollectionsAPI:
         }
         
         mock_cosmos_client.query_items.return_value = [existing_collection]
-        mock_cosmos_client.replace_item.return_value = {
+        mock_cosmos_client.update_item.return_value = {
             **existing_collection,
             **update_data,
             'updatedAt': '2025-06-15T10:00:00Z'
@@ -261,7 +268,7 @@ class TestCollectionsAPI:
             response_data = json.loads(response.get_body())
             assert response_data['name'] == 'Updated Name'
             assert response_data['description'] == 'Updated description'
-            mock_cosmos_client.replace_item.assert_called_once()
+            mock_cosmos_client.update_item.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_delete_collection_success(self, mock_auth_success, mock_cosmos_client):
@@ -292,12 +299,12 @@ class TestCollectionsAPI:
         # Act
         response = await collections_main(req)
         
-        # Assert
-        assert response.status_code == 200
+        # Assert        assert response.status_code == 200
         response_data = json.loads(response.get_body())
         assert 'deleted successfully' in response_data['message']
         mock_cosmos_client.delete_item.assert_called_once_with(
-            item=collection_id, 
+            container_name='Collections',
+            item_id=collection_id,
             partition_key=collection_id
         )
     

@@ -1,7 +1,7 @@
 import azure.functions as func
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 import asyncio
@@ -196,19 +196,46 @@ async def create_playbook(user_id: str, req: func.HttpRequest) -> func.HttpRespo
         
         # Create playbook object
         playbook_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat() + 'Z'
+        now_str = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+        now_dt = datetime.now(timezone.utc)  # For Pydantic model
+        
+        # Transform steps to match Pydantic model
+        steps = body.get('steps', [])
+        transformed_steps = []
+        for i, step in enumerate(steps):
+            # Map LLM model names to provider names
+            llm_model = step.get('config', {}).get('llm', 'gpt-4')
+            if llm_model.startswith('gpt') or llm_model.startswith('openai'):
+                llm_provider = 'openai'
+            elif llm_model.startswith('claude') or llm_model.startswith('anthropic'):
+                llm_provider = 'anthropic'
+            elif llm_model.startswith('gemini') or llm_model.startswith('google'):
+                llm_provider = 'google'
+            else:
+                llm_provider = 'openai'  # Default
+                
+            transformed_step = {
+                'id': step.get('stepId', f'step_{i}'),
+                'step_number': i + 1,
+                'name': step.get('name', f'Step {i + 1}'),
+                'description': step.get('description', step.get('promptText', '')),
+                'prompt_content': step.get('promptText'),
+                'llm_providers': [llm_provider],
+                'requires_manual_review': step.get('requiresManualReview', False),
+                'auto_proceed': step.get('autoProceed', True),
+                'variables_mapping': step.get('variablesMapping', {}),
+                'conditions': step.get('conditions', {})
+            }
+            transformed_steps.append(transformed_step)
         
         playbook_data = {
             'id': playbook_id,
-            'creatorId': user_id,
+            'user_id': user_id,  # Changed from creatorId
             'name': body['name'],
             'description': body.get('description', ''),
-            'visibility': body.get('visibility', 'private'),
-            'teamId': body.get('teamId'),
-            'initialInputVariables': body.get('initialInputVariables', {}),
-            'steps': body.get('steps', []),
-            'createdAt': now,
-            'updatedAt': now
+            'steps': transformed_steps,
+            'created_at': now_dt,  # datetime object for Pydantic
+            'updated_at': now_dt   # datetime object for Pydantic
         }
         
         # Validate playbook object
@@ -223,9 +250,25 @@ async def create_playbook(user_id: str, req: func.HttpRequest) -> func.HttpRespo
         
         # Save to database
         db_manager = get_database_manager()
-        container = client.get_container('Playbooks')
         
-        created_item = container.create_item(playbook_data)
+        # Convert back to database field names for storage
+        db_data = {
+            'id': playbook_data['id'],
+            'creatorId': playbook_data['user_id'],  # Convert back for DB
+            'name': playbook_data['name'],
+            'description': playbook_data['description'],
+            'visibility': body.get('visibility', 'private'),
+            'teamId': body.get('teamId'),
+            'initialInputVariables': body.get('initialInputVariables', {}),
+            'steps': body.get('steps', []),  # Use original steps format for DB
+            'createdAt': now_str,  # String format for DB
+            'updatedAt': now_str
+        }
+        
+        created_item = await db_manager.create_item(
+            container_name='Playbooks',
+            item=db_data
+        )
         
         logger.info(f"Created playbook {playbook_id} for user {user_id}")
         
@@ -244,7 +287,7 @@ async def get_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
     """Get a specific playbook by ID."""
     try:
         db_manager = get_database_manager()
-        container = client.get_container('Playbooks')
+        container = db_manager.get_playbooks_container()
         
         # Query for the playbook
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
@@ -293,7 +336,7 @@ async def update_playbook(user_id: str, playbook_id: str, req: func.HttpRequest)
             )
         
         db_manager = get_database_manager()
-        container = client.get_container('Playbooks')
+        container = db_manager.get_playbooks_container()
         
         # Get existing playbook
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
@@ -323,7 +366,7 @@ async def update_playbook(user_id: str, playbook_id: str, req: func.HttpRequest)
             if field in body:
                 existing_playbook[field] = body[field]
         
-        existing_playbook['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
+        existing_playbook['updatedAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         # Validate updated playbook
         validation_result = validate_playbook_data(existing_playbook)
@@ -357,7 +400,7 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
     """Delete a playbook."""
     try:
         db_manager = get_database_manager()
-        container = client.get_container('Playbooks')
+        container = db_manager.get_playbooks_container()
         
         # Check if playbook exists and belongs to user
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
@@ -380,7 +423,7 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
             )
         
         # Check if playbook has active executions
-        executions_container = client.get_container('PlaybookExecutions')
+        executions_container = db_manager.get_executions_container()
         exec_query = "SELECT VALUE COUNT(1) FROM c WHERE c.playbookId = @playbook_id AND c.status IN ('running', 'paused_for_review')"
         exec_params = [{"name": "@playbook_id", "value": playbook_id}]
         
@@ -432,7 +475,7 @@ async def run_playbook(user_id: str, playbook_id: str, req: func.HttpRequest) ->
         db_manager = get_database_manager()
         
         # Get playbook
-        playbooks_container = client.get_container('Playbooks')
+        playbooks_container = db_manager.get_playbooks_container()
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
         parameters = [
             {"name": "@playbook_id", "value": playbook_id},
@@ -470,7 +513,7 @@ async def run_playbook(user_id: str, playbook_id: str, req: func.HttpRequest) ->
         
         # Create execution record
         execution_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat() + 'Z'
+        now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         execution_data = {
             'id': execution_id,
@@ -490,7 +533,7 @@ async def run_playbook(user_id: str, playbook_id: str, req: func.HttpRequest) ->
         }
         
         # Save execution record
-        executions_container = client.get_container('PlaybookExecutions')
+        executions_container = db_manager.get_executions_container()
         created_execution = executions_container.create_item(execution_data)
         
         # Start async execution (simplified for MVP)
@@ -518,7 +561,7 @@ async def get_execution_status(user_id: str, execution_id: str) -> func.HttpResp
     """Get real-time status and logs of a playbook execution."""
     try:
         db_manager = get_database_manager()
-        container = client.get_container('PlaybookExecutions')
+        container = db_manager.get_executions_container()
         
         # Query for the execution
         query = "SELECT * FROM c WHERE c.id = @execution_id AND c.userId = @user_id"
@@ -567,7 +610,7 @@ async def continue_execution(user_id: str, execution_id: str, req: func.HttpRequ
             )
         
         db_manager = get_database_manager()
-        container = client.get_container('PlaybookExecutions')
+        container = db_manager.get_executions_container()
         
         # Get execution
         query = "SELECT * FROM c WHERE c.id = @execution_id AND c.userId = @user_id"
@@ -602,7 +645,7 @@ async def continue_execution(user_id: str, execution_id: str, req: func.HttpRequ
             )
         
         # Update execution to continue
-        now = datetime.utcnow().isoformat() + 'Z'
+        now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         execution['status'] = 'running'
         execution['auditTrail'].append({
             'action': 'manual_review_approved',
@@ -629,7 +672,7 @@ async def continue_execution(user_id: str, execution_id: str, req: func.HttpRequ
         )
         
         # Resume execution
-        playbooks_container = client.get_container('Playbooks')
+        playbooks_container = db_manager.get_playbooks_container()
         playbook_query = "SELECT * FROM c WHERE c.id = @playbook_id"
         playbook_params = [{"name": "@playbook_id", "value": execution['playbookId']}]
         
@@ -665,7 +708,7 @@ async def execute_playbook_steps(execution_id: str, playbook: Dict[str, Any], in
         # In production, this would use Azure Durable Functions or Service Bus
         
         db_manager = get_database_manager()
-        container = client.get_container('PlaybookExecutions')
+        container = db_manager.get_executions_container()
         
         # Get current execution
         execution = container.read_item(item=execution_id, partition_key=execution_id)
@@ -681,7 +724,7 @@ async def execute_playbook_steps(execution_id: str, playbook: Dict[str, Any], in
                 'stepId': step_id,
                 'stepName': step.get('name', f'Step {i + 1}'),
                 'status': 'running',
-                'timestamp': datetime.utcnow().isoformat() + 'Z'
+                'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             }
             
             try:
@@ -730,7 +773,7 @@ async def execute_playbook_steps(execution_id: str, playbook: Dict[str, Any], in
         # Mark execution as completed
         if execution['status'] != 'failed':
             execution['status'] = 'completed'
-            execution['endTime'] = datetime.utcnow().isoformat() + 'Z'
+            execution['endTime'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         container.replace_item(item=execution_id, body=execution)
         
@@ -742,7 +785,7 @@ async def execute_playbook_steps(execution_id: str, playbook: Dict[str, Any], in
         try:
             execution = container.read_item(item=execution_id, partition_key=execution_id)
             execution['status'] = 'failed'
-            execution['endTime'] = datetime.utcnow().isoformat() + 'Z'
+            execution['endTime'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             execution['error'] = str(e)
             container.replace_item(item=execution_id, body=execution)
         except:

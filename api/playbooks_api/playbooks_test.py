@@ -25,6 +25,30 @@ class TestPlaybooksAPI:
         """Mock database manager."""
         with patch('api.playbooks_api.get_database_manager') as mock_db_manager:
             mock_manager = Mock()
+            # Make database methods async
+            mock_manager.query_items = AsyncMock()
+            mock_manager.create_item = AsyncMock()
+            mock_manager.replace_item = AsyncMock()
+            mock_manager.update_item = AsyncMock()
+            mock_manager.delete_item = AsyncMock()
+            mock_manager.read_item = AsyncMock()
+            
+            # Mock separate container instances for each container type
+            playbooks_container = Mock()
+            playbooks_container.query_items = Mock()
+            playbooks_container.read_item = Mock()
+            playbooks_container.replace_item = Mock()
+            playbooks_container.create_item = Mock()
+            
+            executions_container = Mock()
+            executions_container.query_items = Mock()
+            executions_container.read_item = Mock()
+            executions_container.replace_item = Mock()
+            executions_container.create_item = Mock()
+            
+            mock_manager.get_playbooks_container = Mock(return_value=playbooks_container)
+            mock_manager.get_executions_container = Mock(return_value=executions_container)
+            
             mock_db_manager.return_value = mock_manager
             yield mock_manager
     
@@ -162,8 +186,8 @@ class TestPlaybooksAPI:
         }
         
         # Mock database responses
-        mock_cosmos_client.query_items.return_value = [playbook]
-        mock_cosmos_client.create_item.return_value = {
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = [playbook]
+        mock_cosmos_client.get_executions_container().create_item.return_value = {
             'id': 'execution-123',
             'playbookId': playbook_id,
             'userId': 'test-user-123',
@@ -214,7 +238,7 @@ class TestPlaybooksAPI:
             }
         }
         
-        mock_cosmos_client.query_items.return_value = [playbook]
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = [playbook]
         
         # Create request
         req = func.HttpRequest(
@@ -258,7 +282,7 @@ class TestPlaybooksAPI:
             ]
         }
         
-        mock_cosmos_client.query_items.return_value = [execution]
+        mock_cosmos_client.get_executions_container().query_items.return_value = [execution]
         
         # Create request - simulating executions route
         req = func.HttpRequest(
@@ -268,9 +292,6 @@ class TestPlaybooksAPI:
             headers={},
             route_params={'execution_id': execution_id}
         )
-        
-        # Mock the URL check
-        req.url = f'http://localhost/api/playbooks/executions/{execution_id}'
         
         # Act
         response = await playbooks_main(req)
@@ -312,15 +333,14 @@ class TestPlaybooksAPI:
         }
         
         # Mock database responses
-        mock_cosmos_client.query_items.side_effect = [
+        mock_cosmos_client.get_executions_container().query_items.side_effect = [
             [execution],  # Get execution
-            [playbook]    # Get playbook for resumption
         ]
-        mock_cosmos_client.replace_item.return_value = execution
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = [playbook]  # Get playbook for resumption
+        mock_cosmos_client.get_executions_container().replace_item.return_value = execution
         
         # Mock async resumption
-        with patch('asyncio.create_task') as mock_task:
-            # Create request - simulating continue route
+        with patch('asyncio.create_task') as mock_task:            # Create request - simulating continue route
             req = func.HttpRequest(
                 method='POST',
                 url=f'http://localhost/api/playbooks/executions/{execution_id}/continue',
@@ -328,9 +348,6 @@ class TestPlaybooksAPI:
                 headers={'Content-Type': 'application/json'},
                 route_params={'execution_id': execution_id}
             )
-            
-            # Mock the URL check
-            req.url = f'http://localhost/api/playbooks/executions/{execution_id}/continue'
             
             # Act
             response = await playbooks_main(req)
@@ -356,7 +373,7 @@ class TestPlaybooksAPI:
             'auditTrail': []
         }
         
-        mock_cosmos_client.query_items.return_value = [execution]
+        mock_cosmos_client.get_executions_container().query_items.return_value = [execution]
         
         # Create request
         req = func.HttpRequest(
@@ -366,9 +383,6 @@ class TestPlaybooksAPI:
             headers={'Content-Type': 'application/json'},
             route_params={'execution_id': execution_id}
         )
-        
-        # Mock the URL check
-        req.url = f'http://localhost/api/playbooks/executions/{execution_id}/continue'
         
         # Act
         response = await playbooks_main(req)
@@ -391,10 +405,10 @@ class TestPlaybooksAPI:
         }
         
         # Mock database responses
-        mock_cosmos_client.query_items.side_effect = [
+        mock_cosmos_client.get_playbooks_container().query_items.side_effect = [
             [playbook],  # Playbook exists
-            [2]          # 2 active executions
         ]
+        mock_cosmos_client.get_executions_container().query_items.return_value = [2]  # 2 active executions
         
         # Create request
         req = func.HttpRequest(
@@ -442,8 +456,8 @@ class TestPlaybooksAPI:
             ]
         }
         
-        mock_cosmos_client.query_items.return_value = [existing_playbook]
-        mock_cosmos_client.replace_item.return_value = {
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = [existing_playbook]
+        mock_cosmos_client.get_playbooks_container().replace_item.return_value = {
             **existing_playbook,
             **update_data,
             'updatedAt': '2025-06-15T10:00:00Z'
@@ -471,7 +485,7 @@ class TestPlaybooksAPI:
             assert response_data['name'] == 'Updated Playbook Name'
             assert response_data['description'] == 'Updated description'
             assert len(response_data['steps']) == 1
-            mock_cosmos_client.replace_item.assert_called_once()
+            mock_cosmos_client.get_playbooks_container().replace_item.assert_called_once()
 
 
 if __name__ == '__main__':

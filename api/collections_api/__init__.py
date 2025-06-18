@@ -1,7 +1,7 @@
 import azure.functions as func
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
@@ -80,7 +80,7 @@ async def list_collections(user_id: str, req: func.HttpRequest) -> func.HttpResp
         
         db_manager = get_database_manager()
         
-        # Build query
+        # Build query - note: database uses ownerId but model uses user_id
         query_parts = ["SELECT * FROM c WHERE c.ownerId = @user_id"]
         query_params = [{"name": "@user_id", "value": user_id}]
         
@@ -176,6 +176,8 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
                 mimetype='application/json'
             )
         
+        db_manager = get_database_manager()
+        
         # Validate required fields
         validation_result = validate_collection_data(body)
         if not validation_result['valid']:
@@ -187,18 +189,18 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
         
         # Create collection object
         collection_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat() + 'Z'
+        now = datetime.now(timezone.utc)
         
         collection_data = {
             'id': collection_id,
-            'ownerId': user_id,
+            'user_id': user_id,  # Match model field name
             'name': body['name'],
             'description': body.get('description', ''),
-            'type': body.get('type', 'private'),
-            'teamId': body.get('teamId'),
-            'permissions': body.get('permissions', {}),
-            'createdAt': now,
-            'updatedAt': now
+            'prompt_ids': [],  # Match model field name
+            'tags': body.get('tags', []),  # Match model field name
+            'is_public': body.get('type', 'private') == 'public',  # Match model field name
+            'created_at': now,  # Match model field name
+            'updated_at': now   # Match model field name
         }
         
         # Validate collection object
@@ -211,11 +213,24 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
                 mimetype='application/json'
             )
         
-        # Save to database
-        client = get_cosmos_client()
-        container = client.get_container('Collections')
+        # Convert for database storage (datetime to ISO string and field mapping)
+        db_collection_data = {
+            'id': collection_id,
+            'ownerId': user_id,  # Database uses ownerId
+            'name': body['name'],
+            'description': body.get('description', ''),
+            'promptIds': [],  # Database uses promptIds
+            'tags': body.get('tags', []),
+            'isPublic': body.get('type', 'private') == 'public',  # Database uses isPublic
+            'createdAt': now.isoformat() + 'Z',  # Database uses createdAt
+            'updatedAt': now.isoformat() + 'Z'   # Database uses updatedAt
+        }
         
-        created_item = container.create_item(collection_data)
+        # Save to database
+        created_item = await db_manager.create_item(
+            container_name='Collections',
+            item=db_collection_data
+        )
         
         logger.info(f"Created collection {collection_id} for user {user_id}")
         
@@ -233,8 +248,7 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
 async def get_collection(user_id: str, collection_id: str) -> func.HttpResponse:
     """Get a specific collection by ID."""
     try:
-        client = get_cosmos_client()
-        container = client.get_container('Collections')
+        db_manager = get_database_manager()
         
         # Query for the collection
         query = "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
@@ -243,11 +257,11 @@ async def get_collection(user_id: str, collection_id: str) -> func.HttpResponse:
             {"name": "@user_id", "value": user_id}
         ]
         
-        items = list(container.query_items(
+        items = await db_manager.query_items(
+            container_name='Collections',
             query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ))
+            parameters=parameters
+        )
         
         if not items:
             return func.HttpResponse(
@@ -282,8 +296,7 @@ async def update_collection(user_id: str, collection_id: str, req: func.HttpRequ
                 mimetype='application/json'
             )
         
-        client = get_cosmos_client()
-        container = client.get_container('Collections')
+        db_manager = get_database_manager()
         
         # Get existing collection
         query = "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
@@ -292,11 +305,11 @@ async def update_collection(user_id: str, collection_id: str, req: func.HttpRequ
             {"name": "@user_id", "value": user_id}
         ]
         
-        items = list(container.query_items(
+        items = await db_manager.query_items(
+            container_name='Collections',
             query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ))
+            parameters=parameters
+        )
         
         if not items:
             return func.HttpResponse(
@@ -313,7 +326,7 @@ async def update_collection(user_id: str, collection_id: str, req: func.HttpRequ
             if field in body:
                 existing_collection[field] = body[field]
         
-        existing_collection['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
+        existing_collection['updatedAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         # Validate updated collection
         validation_result = validate_collection_data(existing_collection)
@@ -325,9 +338,9 @@ async def update_collection(user_id: str, collection_id: str, req: func.HttpRequ
             )
         
         # Update in database
-        updated_item = container.replace_item(
-            item=existing_collection['id'],
-            body=existing_collection
+        updated_item = await db_manager.update_item(
+            container_name='Collections',
+            item=existing_collection
         )
         
         logger.info(f"Updated collection {collection_id} for user {user_id}")
@@ -346,8 +359,7 @@ async def update_collection(user_id: str, collection_id: str, req: func.HttpRequ
 async def delete_collection(user_id: str, collection_id: str) -> func.HttpResponse:
     """Delete a collection."""
     try:
-        client = get_cosmos_client()
-        container = client.get_container('Collections')
+        db_manager = get_database_manager()
         
         # Check if collection exists and belongs to user
         query = "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
@@ -356,11 +368,11 @@ async def delete_collection(user_id: str, collection_id: str) -> func.HttpRespon
             {"name": "@user_id", "value": user_id}
         ]
         
-        items = list(container.query_items(
+        items = await db_manager.query_items(
+            container_name='Collections',
             query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ))
+            parameters=parameters
+        )
         
         if not items:
             return func.HttpResponse(
@@ -370,15 +382,15 @@ async def delete_collection(user_id: str, collection_id: str) -> func.HttpRespon
             )
         
         # Check if collection has prompts
-        prompts_container = client.get_container('Prompts')
         prompts_query = "SELECT VALUE COUNT(1) FROM c WHERE c.collectionId = @collection_id"
         prompts_params = [{"name": "@collection_id", "value": collection_id}]
         
-        prompt_count = list(prompts_container.query_items(
+        prompt_count_result = await db_manager.query_items(
+            container_name='Prompts',
             query=prompts_query,
-            parameters=prompts_params,
-            enable_cross_partition_query=True
-        ))[0]
+            parameters=prompts_params
+        )
+        prompt_count = prompt_count_result[0] if prompt_count_result else 0
         
         if prompt_count > 0:
             return func.HttpResponse(
@@ -391,7 +403,11 @@ async def delete_collection(user_id: str, collection_id: str) -> func.HttpRespon
             )
         
         # Delete collection
-        container.delete_item(item=collection_id, partition_key=collection_id)
+        await db_manager.delete_item(
+            container_name='Collections',
+            item_id=collection_id,
+            partition_key=collection_id
+        )
         
         logger.info(f"Deleted collection {collection_id} for user {user_id}")
         
@@ -416,21 +432,20 @@ async def get_collection_prompts(user_id: str, collection_id: str, req: func.Htt
         search = params.get('search', '').strip()
         tags = params.get('tags', '').strip()
         
-        client = get_cosmos_client()
+        db_manager = get_database_manager()
         
         # Verify user has access to collection
-        collections_container = client.get_container('Collections')
         collection_query = "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
         collection_params = [
             {"name": "@collection_id", "value": collection_id},
             {"name": "@user_id", "value": user_id}
         ]
         
-        collections = list(collections_container.query_items(
+        collections = await db_manager.query_items(
+            container_name='Collections',
             query=collection_query,
-            parameters=collection_params,
-            enable_cross_partition_query=True
-        ))
+            parameters=collection_params
+        )
         
         if not collections:
             return func.HttpResponse(
@@ -440,8 +455,6 @@ async def get_collection_prompts(user_id: str, collection_id: str, req: func.Htt
             )
         
         # Get prompts in collection
-        prompts_container = client.get_container('Prompts')
-        
         # Build query
         query_parts = ["SELECT * FROM c WHERE c.collectionId = @collection_id"]
         query_params = [{"name": "@collection_id", "value": collection_id}]
@@ -467,11 +480,11 @@ async def get_collection_prompts(user_id: str, collection_id: str, req: func.Htt
         query = " ".join(query_parts)
         
         # Execute query
-        prompts = list(prompts_container.query_items(
+        prompts = await db_manager.query_items(
+            container_name='Prompts',
             query=query,
-            parameters=query_params,
-            enable_cross_partition_query=True
-        ))
+            parameters=query_params
+        )
         
         # Get total count
         count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.collectionId = @collection_id"
@@ -490,11 +503,12 @@ async def get_collection_prompts(user_id: str, collection_id: str, req: func.Htt
                 count_params.append({"name": param_name, "value": tag})
             count_query += f" AND ({' OR '.join(tag_conditions)})"
         
-        total_count = list(prompts_container.query_items(
+        total_count_result = await db_manager.query_items(
+            container_name='Prompts',
             query=count_query,
-            parameters=count_params,
-            enable_cross_partition_query=True
-        ))[0]
+            parameters=count_params
+        )
+        total_count = total_count_result[0] if total_count_result else 0
         
         total_pages = (total_count + limit - 1) // limit
         

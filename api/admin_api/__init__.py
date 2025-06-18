@@ -1,7 +1,7 @@
 import azure.functions as func
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
@@ -242,7 +242,7 @@ async def update_user_role(admin_user_id: str, target_user_id: str, req: func.Ht
         # Update role
         old_role = user_data.get('role', 'member')
         user_data['role'] = new_role
-        user_data['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
+        user_data['updatedAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         # Save to database
         updated_user = await db_manager.update_item(
@@ -288,7 +288,7 @@ async def get_system_health() -> func.HttpResponse:
         # Check system components
         health_data = {
             'status': 'healthy' if db_status == 'healthy' else 'degraded',
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             'components': {
                 'database': {
                     'status': db_status,
@@ -317,7 +317,7 @@ async def get_system_health() -> func.HttpResponse:
             json.dumps({
                 'status': 'unhealthy',
                 'error': str(e),
-                'timestamp': datetime.utcnow().isoformat() + 'Z'
+                'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             }),
             status_code=503,
             mimetype='application/json'
@@ -330,35 +330,35 @@ async def get_system_stats() -> func.HttpResponse:
         db_manager = get_database_manager()
         
         # Get user count
-        users_# container = client.get_container('Users')
+        users_container = db_manager.get_users_container()
         user_count = list(users_container.query_items(
             query="SELECT VALUE COUNT(1) FROM c",
             enable_cross_partition_query=True
         ))[0]
         
         # Get prompt count
-        prompts_# container = client.get_container('Prompts')
+        prompts_container = db_manager.get_prompts_container()
         prompt_count = list(prompts_container.query_items(
             query="SELECT VALUE COUNT(1) FROM c",
             enable_cross_partition_query=True
         ))[0]
         
         # Get collection count
-        collections_# container = client.get_container('Collections')
+        collections_container = db_manager.get_collections_container()
         collection_count = list(collections_container.query_items(
             query="SELECT VALUE COUNT(1) FROM c",
             enable_cross_partition_query=True
         ))[0]
         
         # Get playbook count
-        playbooks_# container = client.get_container('Playbooks')
+        playbooks_container = db_manager.get_playbooks_container()
         playbook_count = list(playbooks_container.query_items(
             query="SELECT VALUE COUNT(1) FROM c",
             enable_cross_partition_query=True
         ))[0]
         
         # Get recent activity (last 24 hours)
-        yesterday = (datetime.utcnow() - timedelta(days=1)).isoformat() + 'Z'
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat().replace('+00:00', 'Z')
         
         recent_users = list(users_container.query_items(
             query="SELECT VALUE COUNT(1) FROM c WHERE c.createdAt >= @yesterday",
@@ -373,7 +373,7 @@ async def get_system_stats() -> func.HttpResponse:
         ))[0]
         
         stats_data = {
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             'totals': {
                 'users': user_count,
                 'prompts': prompt_count,
@@ -416,22 +416,22 @@ async def set_maintenance_mode(admin_user_id: str, req: func.HttpRequest) -> fun
         
         # Store maintenance mode status (in production, this would be in a dedicated config store)
         db_manager = get_database_manager()
-        # container = client.get_container('SystemConfig')
+        config_container = db_manager.get_config_container()
         
         config_data = {
             'id': 'maintenance_mode',
             'enabled': enabled,
             'message': message,
             'setBy': admin_user_id,
-            'timestamp': datetime.utcnow().isoformat() + 'Z'
+            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         }
         
         try:
             # Try to update existing config
-            container.replace_item(item='maintenance_mode', body=config_data)
+            config_container.replace_item(item='maintenance_mode', body=config_data)
         except:
             # Create new config if it doesn't exist
-            container.create_item(config_data)
+            config_container.create_item(config_data)
         
         action = 'enabled' if enabled else 'disabled'
         logger.info(f"Admin {admin_user_id} {action} maintenance mode")
@@ -505,7 +505,7 @@ async def get_llm_settings() -> func.HttpResponse:
                     }
                 },
                 'defaultProvider': 'openai',
-                'updatedAt': datetime.utcnow().isoformat() + 'Z'
+                'updatedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
             }
         
         return func.HttpResponse(
@@ -533,11 +533,11 @@ async def update_llm_settings(admin_user_id: str, req: func.HttpRequest) -> func
             )
         
         db_manager = get_database_manager()
-        # container = client.get_container('SystemConfig')
+        config_container = db_manager.get_config_container()
         
         # Get existing settings
         try:
-            existing_config = container.read_item(item='llm_settings', partition_key='llm_settings')
+            existing_config = config_container.read_item(item='llm_settings', partition_key='llm_settings')
         except:
             existing_config = {'id': 'llm_settings', 'providers': {}}
         
@@ -548,14 +548,14 @@ async def update_llm_settings(admin_user_id: str, req: func.HttpRequest) -> func
         if 'defaultProvider' in body:
             existing_config['defaultProvider'] = body['defaultProvider']
         
-        existing_config['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
+        existing_config['updatedAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         existing_config['updatedBy'] = admin_user_id
         
         # Save settings
         try:
-            updated_config = container.replace_item(item='llm_settings', body=existing_config)
+            updated_config = config_container.replace_item(item='llm_settings', body=existing_config)
         except:
-            updated_config = container.create_item(existing_config)
+            updated_config = config_container.create_item(existing_config)
         
         logger.info(f"Admin {admin_user_id} updated LLM settings")
         
@@ -580,7 +580,7 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
         db_manager = get_database_manager()
         
         # Calculate date range
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if period == 'day':
             start_date = now - timedelta(days=1)
         elif period == 'week':
@@ -593,7 +593,7 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
         start_iso = start_date.isoformat() + 'Z'
         
         # Get execution stats
-        executions_# container = client.get_container('PlaybookExecutions')
+        executions_container = db_manager.get_executions_container()
         
         total_executions = list(executions_container.query_items(
             query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date",
@@ -614,7 +614,7 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
         ))[0]
         
         # Get active users
-        users_# container = client.get_container('Users')
+        users_container = db_manager.get_users_container()
         active_users = list(users_container.query_items(
             query="SELECT VALUE COUNT(1) FROM c WHERE c.updatedAt >= @start_date",
             parameters=[{"name": "@start_date", "value": start_iso}],
@@ -680,7 +680,7 @@ async def reset_test_data(admin_user_id: str, req: func.HttpRequest) -> func.Htt
         
         reset_summary = {
             'environment': environment,
-            'reset_at': datetime.utcnow().isoformat() + 'Z',
+            'reset_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             'reset_by': admin_user_id,
             'containers_reset': []
         }
@@ -759,7 +759,7 @@ async def seed_test_data(admin_user_id: str, req: func.HttpRequest) -> func.Http
             seed_options = {}
         
         db_manager = get_database_manager()
-        now = datetime.utcnow().isoformat() + 'Z'
+        now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
         
         seed_summary = {
             'environment': environment,

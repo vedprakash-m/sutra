@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import List, Optional, Dict, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 
@@ -46,8 +46,7 @@ class User(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class UserPreferences(BaseModel):
@@ -57,8 +56,7 @@ class UserPreferences(BaseModel):
     prompt_templates: Dict[str, str] = {}
     ui_preferences: Dict[str, Any] = {}
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 # =============================================================================
@@ -89,8 +87,7 @@ class PromptTemplate(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class PromptExecution(BaseModel):
@@ -108,8 +105,7 @@ class PromptExecution(BaseModel):
     execution_time_ms: int = 0
     created_at: datetime
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 # =============================================================================
@@ -157,8 +153,7 @@ class PlaybookStep(BaseModel):
     variables_mapping: Dict[str, str] = {}  # Maps output vars to input vars of next step
     conditions: Dict[str, Any] = {}  # Conditional logic
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class Playbook(BaseModel):
@@ -173,8 +168,7 @@ class Playbook(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class PlaybookExecution(BaseModel):
@@ -192,8 +186,7 @@ class PlaybookExecution(BaseModel):
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 # =============================================================================
@@ -207,11 +200,10 @@ class LLMProviderConfig(BaseModel):
     api_key_secret_name: str
     budget_limit: float = 0.0
     priority: int = 1
-    model_config: Dict[str, Any] = {}
+    provider_config: Dict[str, Any] = {}
     rate_limits: Dict[str, Any] = {}
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class UsageRecord(BaseModel):
@@ -227,8 +219,7 @@ class UsageRecord(BaseModel):
     timestamp: datetime
     metadata: Dict[str, Any] = {}
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class SystemConfig(BaseModel):
@@ -258,7 +249,8 @@ class CreatePromptRequest(BaseModel):
     variables: List[PromptVariable] = []
     tags: List[str] = []
     
-    @validator('tags')
+    @field_validator('tags')
+    @classmethod
     def validate_tags(cls, v):
         return [tag.strip().lower() for tag in v if tag.strip()]
 
@@ -272,7 +264,8 @@ class UpdatePromptRequest(BaseModel):
     tags: Optional[List[str]] = None
     status: Optional[PromptStatus] = None
     
-    @validator('tags')
+    @field_validator('tags')
+    @classmethod
     def validate_tags(cls, v):
         if v is not None:
             return [tag.strip().lower() for tag in v if tag.strip()]
@@ -286,14 +279,14 @@ class ExecutePromptRequest(BaseModel):
     variables: Dict[str, Any] = {}
     providers: List[LLMProvider] = []
     
-    @validator('providers')
+    @field_validator('providers')
+    @classmethod
     def validate_providers(cls, v):
         if not v:
             return [LLMProvider.OPENAI]  # Default to OpenAI
         return v
     
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class PromptExecutionResponse(BaseModel):
@@ -351,7 +344,7 @@ class ErrorResponse(BaseModel):
     error: str
     message: str
     details: Optional[Dict[str, Any]] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ValidationErrorResponse(BaseModel):
@@ -359,4 +352,4 @@ class ValidationErrorResponse(BaseModel):
     error: str = "validation_error"
     message: str
     field_errors: Dict[str, List[str]]
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -1,0 +1,185 @@
+8586e7d702d1a4ee24a04c6ec7956062
+/* istanbul ignore next */
+function cov_ilrtct2nm() {
+  var path = "/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx";
+  var hash = "7f060ca6ac9a6cd93ac75072b9d74d8ebb760d60";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx",
+    statementMap: {
+      "0": {
+        start: {
+          line: 3,
+          column: 24
+        },
+        end: {
+          line: 7,
+          column: 5
+        }
+      },
+      "1": {
+        start: {
+          line: 8,
+          column: 4
+        },
+        end: {
+          line: 8,
+          column: 296
+        }
+      }
+    },
+    fnMap: {
+      "0": {
+        name: "LoadingSpinner",
+        decl: {
+          start: {
+            line: 2,
+            column: 24
+          },
+          end: {
+            line: 2,
+            column: 38
+          }
+        },
+        loc: {
+          start: {
+            line: 2,
+            column: 66
+          },
+          end: {
+            line: 9,
+            column: 1
+          }
+        },
+        line: 2
+      }
+    },
+    branchMap: {
+      "0": {
+        loc: {
+          start: {
+            line: 2,
+            column: 41
+          },
+          end: {
+            line: 2,
+            column: 52
+          }
+        },
+        type: "default-arg",
+        locations: [{
+          start: {
+            line: 2,
+            column: 48
+          },
+          end: {
+            line: 2,
+            column: 52
+          }
+        }],
+        line: 2
+      },
+      "1": {
+        loc: {
+          start: {
+            line: 8,
+            column: 206
+          },
+          end: {
+            line: 8,
+            column: 290
+          }
+        },
+        type: "binary-expr",
+        locations: [{
+          start: {
+            line: 8,
+            column: 206
+          },
+          end: {
+            line: 8,
+            column: 213
+          }
+        }, {
+          start: {
+            line: 8,
+            column: 217
+          },
+          end: {
+            line: 8,
+            column: 290
+          }
+        }],
+        line: 8
+      }
+    },
+    s: {
+      "0": 0,
+      "1": 0
+    },
+    f: {
+      "0": 0
+    },
+    b: {
+      "0": [0],
+      "1": [0, 0]
+    },
+    inputSourceMap: {
+      file: "/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx",
+      mappings: ";AAKA,MAAM,CAAC,OAAO,UAAU,cAAc,CAAC,EACrC,IAAI,GAAG,IAAI,EACX,OAAO,GACa;IACpB,MAAM,WAAW,GAAG;QAClB,EAAE,EAAE,SAAS;QACb,EAAE,EAAE,SAAS;QACb,EAAE,EAAE,WAAW;KAChB,CAAC;IAEF,OAAO,CACL,eAAK,SAAS,EAAC,gDAAgD,aAC7D,cACE,SAAS,EAAE,0DAA0D,WAAW,CAAC,IAAI,CAAC,EAAE,GACnF,EACN,OAAO,IAAI,YAAG,SAAS,EAAC,4BAA4B,YAAE,OAAO,GAAK,IAC/D,CACP,CAAC;AACJ,CAAC",
+      names: [],
+      sources: ["/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx"],
+      sourcesContent: ["interface LoadingSpinnerProps {\n  size?: \"sm\" | \"md\" | \"lg\";\n  message?: string;\n}\n\nexport default function LoadingSpinner({\n  size = \"md\",\n  message,\n}: LoadingSpinnerProps) {\n  const sizeClasses = {\n    sm: \"h-4 w-4\",\n    md: \"h-8 w-8\",\n    lg: \"h-12 w-12\",\n  };\n\n  return (\n    <div className=\"flex flex-col items-center justify-center py-8\">\n      <div\n        className={`animate-spin rounded-full border-b-2 border-indigo-600 ${sizeClasses[size]}`}\n      ></div>\n      {message && <p className=\"mt-2 text-sm text-gray-600\">{message}</p>}\n    </div>\n  );\n}\n"],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "7f060ca6ac9a6cd93ac75072b9d74d8ebb760d60"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_ilrtct2nm = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_ilrtct2nm();
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export default function LoadingSpinner({
+  size =
+  /* istanbul ignore next */
+  (cov_ilrtct2nm().b[0][0]++, "md"),
+  message
+}) {
+  /* istanbul ignore next */
+  cov_ilrtct2nm().f[0]++;
+  const sizeClasses =
+  /* istanbul ignore next */
+  (cov_ilrtct2nm().s[0]++, {
+    sm: "h-4 w-4",
+    md: "h-8 w-8",
+    lg: "h-12 w-12"
+  });
+  /* istanbul ignore next */
+  cov_ilrtct2nm().s[1]++;
+  return _jsxs("div", {
+    className: "flex flex-col items-center justify-center py-8",
+    children: [_jsx("div", {
+      className: `animate-spin rounded-full border-b-2 border-indigo-600 ${sizeClasses[size]}`
+    }),
+    /* istanbul ignore next */
+    (cov_ilrtct2nm().b[1][0]++, message) &&
+    /* istanbul ignore next */
+    (cov_ilrtct2nm().b[1][1]++, _jsx("p", {
+      className: "mt-2 text-sm text-gray-600",
+      children: message
+    }))]
+  });
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJMb2FkaW5nU3Bpbm5lciIsInNpemUiLCJjb3ZfaWxydGN0Mm5tIiwiYiIsIm1lc3NhZ2UiLCJmIiwic2l6ZUNsYXNzZXMiLCJzIiwic20iLCJtZCIsImxnIiwiX2pzeHMiLCJjbGFzc05hbWUiLCJjaGlsZHJlbiIsIl9qc3giXSwic291cmNlcyI6WyIvVXNlcnMvdmVkcHJha2FzaG1pc2hyYS9zdXRyYS9zcmMvY29tcG9uZW50cy9zaGFyZWQvTG9hZGluZ1NwaW5uZXIudHN4Il0sInNvdXJjZXNDb250ZW50IjpbImludGVyZmFjZSBMb2FkaW5nU3Bpbm5lclByb3BzIHtcbiAgc2l6ZT86IFwic21cIiB8IFwibWRcIiB8IFwibGdcIjtcbiAgbWVzc2FnZT86IHN0cmluZztcbn1cblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gTG9hZGluZ1NwaW5uZXIoe1xuICBzaXplID0gXCJtZFwiLFxuICBtZXNzYWdlLFxufTogTG9hZGluZ1NwaW5uZXJQcm9wcykge1xuICBjb25zdCBzaXplQ2xhc3NlcyA9IHtcbiAgICBzbTogXCJoLTQgdy00XCIsXG4gICAgbWQ6IFwiaC04IHctOFwiLFxuICAgIGxnOiBcImgtMTIgdy0xMlwiLFxuICB9O1xuXG4gIHJldHVybiAoXG4gICAgPGRpdiBjbGFzc05hbWU9XCJmbGV4IGZsZXgtY29sIGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlciBweS04XCI+XG4gICAgICA8ZGl2XG4gICAgICAgIGNsYXNzTmFtZT17YGFuaW1hdGUtc3BpbiByb3VuZGVkLWZ1bGwgYm9yZGVyLWItMiBib3JkZXItaW5kaWdvLTYwMCAke3NpemVDbGFzc2VzW3NpemVdfWB9XG4gICAgICA+PC9kaXY+XG4gICAgICB7bWVzc2FnZSAmJiA8cCBjbGFzc05hbWU9XCJtdC0yIHRleHQtc20gdGV4dC1ncmF5LTYwMFwiPnttZXNzYWdlfTwvcD59XG4gICAgPC9kaXY+XG4gICk7XG59XG4iXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBS0EsZUFBYyxTQUFVQSxjQUFjQSxDQUFDO0VBQ3JDQyxJQUFJO0VBQUE7RUFBQSxDQUFBQyxhQUFBLEdBQUFDLENBQUEsVUFBRyxJQUFJO0VBQ1hDO0FBQU8sQ0FDYTtFQUFBO0VBQUFGLGFBQUEsR0FBQUcsQ0FBQTtFQUNwQixNQUFNQyxXQUFXO0VBQUE7RUFBQSxDQUFBSixhQUFBLEdBQUFLLENBQUEsT0FBRztJQUNsQkMsRUFBRSxFQUFFLFNBQVM7SUFDYkMsRUFBRSxFQUFFLFNBQVM7SUFDYkMsRUFBRSxFQUFFO0dBQ0w7RUFBQztFQUFBUixhQUFBLEdBQUFLLENBQUE7RUFFRixPQUNFSSxLQUFBO0lBQUtDLFNBQVMsRUFBQyxnREFBZ0Q7SUFBQUMsUUFBQSxHQUM3REMsSUFBQTtNQUNFRixTQUFTLEVBQUUsMERBQTBETixXQUFXLENBQUNMLElBQUksQ0FBQztJQUFFLEVBQ25GO0lBQ047SUFBQSxDQUFBQyxhQUFBLEdBQUFDLENBQUEsVUFBQUMsT0FBTztJQUFBO0lBQUEsQ0FBQUYsYUFBQSxHQUFBQyxDQUFBLFVBQUlXLElBQUE7TUFBR0YsU0FBUyxFQUFDLDRCQUE0QjtNQUFBQyxRQUFBLEVBQUVUO0lBQU8sRUFBSztFQUFBLEVBQy9EO0FBRVYiLCJpZ25vcmVMaXN0IjpbXX0=

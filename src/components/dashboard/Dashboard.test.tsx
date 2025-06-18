@@ -4,6 +4,22 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import Dashboard from "@/components/dashboard/Dashboard";
 
+// Mock the API services first
+jest.mock("@/services/api", () => ({
+  collectionsApi: {
+    getCollections: jest.fn(),
+    createCollection: jest.fn(),
+    updateCollection: jest.fn(),
+    deleteCollection: jest.fn(),
+  },
+  playbooksApi: {
+    getPlaybooks: jest.fn(),
+    createPlaybook: jest.fn(),
+    updatePlaybook: jest.fn(),
+    deletePlaybook: jest.fn(),
+  },
+}));
+
 // Mock the useAuth hook to return unauthenticated state
 jest.mock("@/components/auth/AuthProvider", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => (
@@ -29,11 +45,9 @@ describe("Dashboard", () => {
       </BrowserRouter>,
     );
 
-    expect(screen.getByText("Welcome to Sutra")).toBeInTheDocument();
+    expect(screen.getByText("Welcome back,")).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "AI Operations Platform for systematic prompt engineering",
-      ),
+      screen.getByText("Here's what you can do with Sutra today"),
     ).toBeInTheDocument();
   });
 });

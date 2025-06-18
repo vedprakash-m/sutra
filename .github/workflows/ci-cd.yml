@@ -106,7 +106,7 @@ jobs:
           cd api
           pip install --upgrade pip setuptools wheel
           pip install -r requirements-minimal.txt
-          pip install pytest-cov pytest-xvs
+          pip install pytest-cov
 
       - name: Run Python linting
         run: |

@@ -33,16 +33,37 @@ log_result $? "ESLint checks"
 
 echo ""
 echo "📋 Step 3: Running unit tests..."
-npm test -- --watchAll=false --coverage
+npm run test:coverage
 log_result $? "Jest unit tests"
 
 echo ""
-echo "📋 Step 4: Building frontend..."
+echo "📋 Step 4: Testing backend dependency installation..."
+cd api
+if [ ! -d "../.venv-test" ]; then
+    echo "Creating test Python environment..."
+    python -m venv ../.venv-test
+fi
+source ../.venv-test/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install -r requirements-minimal.txt
+log_result $? "Backend dependency installation"
+deactivate
+cd ..
+
+echo ""
+echo "📋 Step 5: Running backend tests..."
+cd api
+python -m pytest . -v --tb=short
+log_result $? "Backend unit tests"
+cd ..
+
+echo ""
+echo "📋 Step 6: Building frontend..."
 npm run build
 log_result $? "Frontend build"
 
 echo ""
-echo "📋 Step 5: Checking API structure..."
+echo "📋 Step 7: Checking API structure..."
 if [ -f "api/shared/__init__.py" ] && [ -f "api/requirements.txt" ]; then
     echo -e "${GREEN}✅ API structure is valid${NC}"
 else
@@ -51,17 +72,17 @@ else
 fi
 
 echo ""
-echo "📋 Step 6: Validating Docker setup..."
+echo "📋 Step 8: Validating Docker setup..."
 docker-compose config > /dev/null 2>&1
 log_result $? "Docker Compose configuration"
 
 echo ""
-echo "📋 Step 7: Running security audit..."
+echo "📋 Step 9: Running security audit..."
 npm audit --audit-level moderate
 log_result $? "Security audit"
 
 echo ""
-echo "📋 Step 8: Running end-to-end tests..."
+echo "📋 Step 10: Running end-to-end tests..."
 # Note: This requires local services to be running
 if docker-compose ps | grep -q "Up"; then
     npm run test:e2e

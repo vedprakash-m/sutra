@@ -107,7 +107,7 @@ jobs:
           cd api
           pip install --upgrade pip setuptools wheel
           pip install -r requirements-minimal.txt
-          pip install pytest-cov pytest-xvs pytest-mock
+          pip install pytest-cov pytest-mock
 
       - name: Run Python linting
         run: |

@@ -1,9 +1,19 @@
 // API Configuration - Direct access to Azure Functions (No Gateway)
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.NODE_ENV === "development"
-    ? "http://localhost:7075/api"
-    : "https://sutra-api.azurewebsites.net/api");
+const getApiBaseUrl = () => {
+  // Handle test environment where import.meta might not be available
+  if (typeof window === 'undefined' && typeof global !== 'undefined') {
+    return "http://localhost:7071/api"; // Test environment default
+  }
+  
+  return (
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.NODE_ENV === "development"
+      ? "http://localhost:7075/api"
+      : "https://sutra-api.azurewebsites.net/api")
+  );
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ApiResponse<T = any> {
   data?: T;

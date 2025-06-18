@@ -6,22 +6,6 @@ process.env.VITE_AUTH_DOMAIN = "test-domain";
 process.env.VITE_AUTH_CLIENT_ID = "test-client-id";
 process.env.NODE_ENV = "test";
 
-// Mock Vite's import.meta for Jest tests
-Object.defineProperty(globalThis, "import", {
-  value: {
-    meta: {
-      env: {
-        VITE_API_URL: "http://localhost:7071/api",
-        VITE_AUTH_DOMAIN: "test-domain",
-        VITE_AUTH_CLIENT_ID: "test-client-id",
-        MODE: "test",
-        DEV: false,
-        PROD: false,
-      },
-    },
-  },
-});
-
 // Mock window.matchMedia for responsive components
 Object.defineProperty(window, "matchMedia", {
   writable: true,

@@ -1,5 +1,8 @@
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7075/api'
+// API Configuration - Direct access to Azure Functions (No Gateway)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.NODE_ENV === 'development' 
+    ? 'http://localhost:7075/api' 
+    : 'https://sutra-api.azurewebsites.net/api')
 
 export interface ApiResponse<T = any> {
   data?: T
@@ -24,12 +27,39 @@ class ApiService {
   private baseUrl: string
   private token: string | null = null
 
+  // Initialize with auth token on construction
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl
+    // Try to get auth token on initialization
+    this.getAuthToken().then(token => {
+      if (token) {
+        this.setToken(token)
+      }
+    }).catch(() => {
+      // Ignore auth errors during initialization
+    })
   }
 
   setToken(token: string | null) {
     this.token = token
+  }
+
+  // Static Web App authentication integration
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      // Static Web App provides auth info at /.auth/me
+      const response = await fetch('/.auth/me')
+      if (response.ok) {
+        const authInfo = await response.json()
+        if (authInfo.clientPrincipal) {
+          // User is authenticated, get access token if available
+          return authInfo.clientPrincipal.accessToken || null
+        }
+      }
+    } catch (error) {
+      console.debug('Auth token not available:', error)
+    }
+    return null
   }
 
   private getHeaders(): Record<string, string> {
@@ -41,12 +71,24 @@ class ApiService {
       headers['Authorization'] = `Bearer ${this.token}`
     }
 
+    // Add client info for rate limiting and analytics
+    headers['X-Client-Name'] = 'sutra-web'
+    headers['X-Client-Version'] = '1.0.0'
+
     return headers
   }
 
+  // Enhanced error handling for direct access
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`
+      
+      // Handle authentication redirects
+      if (response.status === 401) {
+        // Redirect to login if not authenticated
+        window.location.href = '/login'
+        throw new Error('Authentication required')
+      }
       
       try {
         const errorData = await response.json()

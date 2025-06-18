@@ -32,6 +32,9 @@
     },
     "keyVaultUri": {
       "value": "https://sutra-kv.vault.azure.net/"
+    },
+    "customDomain": {
+      "value": ""
     }
   }
 }

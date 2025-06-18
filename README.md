@@ -43,7 +43,7 @@ Sutra is a comprehensive AI operations platform designed for teams building AI-p
 
 ## Architecture
 
-Sutra uses a **cost-optimized two-tier Azure architecture** that separates persistent data from compute resources, enabling significant cost savings without data loss.
+Sutra uses a **cost-optimized two-tier Azure architecture** that separates persistent data from compute resources, enabling significant cost savings without data loss. The platform implements a **direct access architecture** optimized for small teams.
 
 ### 🏗️ Infrastructure Design
 
@@ -58,16 +58,24 @@ graph TB
     subgraph "Compute Tier (Can Be Deleted)"
         API[Azure Functions<br/>sutra-api]
         WEB[Static Web App<br/>sutra-web]
-        FD[Front Door<br/>sutra-fd]
         AI[App Insights<br/>sutra-ai]
     end
     
+    Users --> WEB
+    WEB --> API
     API --> DB
     API --> KV
     API --> SA
-    FD --> API
-    FD --> WEB
 ```
+
+### 🚀 Direct Access Architecture
+
+**Key Benefits**:
+- **Cost Optimized**: No gateway or CDN costs (~$30-50/month savings)
+- **Simple Deployment**: Direct endpoint access reduces complexity
+- **Fast Performance**: No additional hops or proxy layers
+- **Easy Debugging**: Direct access simplifies troubleshooting
+- **Built-in Security**: Platform-managed HTTPS, custom rate limiting, authentication middleware
 
 ### 🛡️ Technology Stack
 
@@ -79,7 +87,7 @@ graph TB
 
 **Backend**
 - Azure Functions (Python 3.12)
-- Serverless architecture
+- Direct access architecture with rate limiting
 - REST API with OpenAPI documentation
 - JWT authentication with Azure AD B2C
 
@@ -156,23 +164,29 @@ VITE_API_URL=http://localhost:7071/api
 VITE_ENVIRONMENT=development
 ```
 
-## 🚀 Deployment
+### 🚀 Deployment
 
-### Azure Infrastructure
-
-Sutra uses Infrastructure as Code (Bicep) with a two-phase deployment:
+Sutra uses Infrastructure as Code (Bicep) with a two-phase deployment process optimized for the direct access architecture:
 
 ```bash
 # Deploy persistent infrastructure (data layer)
 az deployment group create \
   --resource-group sutra-db-rg \
-  --template-file infrastructure/persistent.bicep
+  --template-file infrastructure/persistent.bicep \
+  --parameters @infrastructure/parameters.persistent.json
 
-# Deploy compute infrastructure (application layer)
+# Deploy compute infrastructure (application layer - direct access)
 az deployment group create \
   --resource-group sutra-rg \
-  --template-file infrastructure/compute.bicep
+  --template-file infrastructure/compute.bicep \
+  --parameters @infrastructure/parameters.compute.json
 ```
+
+**Direct Access Benefits**:
+- **Simplified Architecture**: No gateway complexity or additional configuration
+- **Cost Savings**: Eliminates CDN/gateway costs while maintaining security
+- **Fast Deployment**: Reduced infrastructure components and dependencies
+- **Easy Maintenance**: Fewer moving parts to monitor and manage
 
 ### Cost Management
 
@@ -244,7 +258,7 @@ sutra/
 ├── src/                    # React frontend application
 │   ├── components/         # Reusable UI components
 │   ├── hooks/             # Custom React hooks
-│   ├── services/          # API service layer
+│   ├── services/          # API service layer (direct access)
 │   └── styles/           # Global styles and Tailwind config
 ├── api/                   # Azure Functions backend
 │   ├── admin_api/         # Admin management endpoints
@@ -252,13 +266,18 @@ sutra/
 │   ├── collections_api/  # Collection management
 │   ├── playbooks_api/    # Playbook orchestration
 │   ├── llm_execute_api/  # LLM execution engine
-│   └── shared/           # Shared utilities and models
-├── infrastructure/        # Azure Bicep templates
+│   ├── health/           # Health check endpoint
+│   └── shared/           # Shared utilities, models, and middleware
+├── infrastructure/        # Azure Bicep templates (direct access)
 │   ├── persistent.bicep  # Data tier resources
-│   └── compute.bicep     # Application tier resources
+│   └── compute.bicep     # Application tier resources (no gateway)
+├── scripts/              # Deployment and validation scripts
+│   ├── deploy-infrastructure.sh    # Main deployment script
+│   └── validate-infrastructure.sh  # Infrastructure validation
+├── public/               # Static Web App configuration
+│   └── staticwebapp.config.json   # Authentication and routing
 ├── tests/e2e/            # Playwright end-to-end tests
 ├── local-dev/            # Local development setup
-├── scripts/              # Validation and utility scripts
 └── docs/                 # Project documentation
 ```
 
@@ -269,7 +288,7 @@ sutra/
 | [Technical Specification](./docs/Tech_Spec_Sutra.md) | Detailed technical architecture and design decisions |
 | [Product Requirements](./docs/PRD-Sutra.md) | Product vision, goals, and feature specifications |
 | [Functional Specification](./docs/Functional_Spec_Sutra.md) | User workflows and system behavior |
-| [Project Metadata](./docs/metadata.md) | Architecture overview and operational procedures |
+| [Project Metadata](./docs/metadata.md) | Architecture overview and direct access implementation |
 | [E2E Testing Guide](./docs/E2E_TESTING.md) | Comprehensive testing setup and procedures |
 | [Validation Summary](./docs/VALIDATION_SUMMARY.md) | System validation and quality assurance |
 

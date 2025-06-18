@@ -1,0 +1,491 @@
+79d3fe37bfa156dbda90fe1d0670a96c
+"use strict";
+
+/* istanbul ignore next */
+function cov_13f3r4hhka() {
+  var path = "/Users/vedprakashmishra/sutra/src/components/auth/LoginPage.tsx";
+  var hash = "496630ae1bf49d25425f996829e4e19cff7f74da";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/Users/vedprakashmishra/sutra/src/components/auth/LoginPage.tsx",
+    statementMap: {
+      "0": {
+        start: {
+          line: 2,
+          column: 0
+        },
+        end: {
+          line: 2,
+          column: 62
+        }
+      },
+      "1": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 28
+        }
+      },
+      "2": {
+        start: {
+          line: 4,
+          column: 22
+        },
+        end: {
+          line: 4,
+          column: 50
+        }
+      },
+      "3": {
+        start: {
+          line: 5,
+          column: 16
+        },
+        end: {
+          line: 5,
+          column: 32
+        }
+      },
+      "4": {
+        start: {
+          line: 6,
+          column: 23
+        },
+        end: {
+          line: 6,
+          column: 48
+        }
+      },
+      "5": {
+        start: {
+          line: 8,
+          column: 33
+        },
+        end: {
+          line: 8,
+          column: 62
+        }
+      },
+      "6": {
+        start: {
+          line: 9,
+          column: 38
+        },
+        end: {
+          line: 9,
+          column: 67
+        }
+      },
+      "7": {
+        start: {
+          line: 10,
+          column: 24
+        },
+        end: {
+          line: 17,
+          column: 5
+        }
+      },
+      "8": {
+        start: {
+          line: 11,
+          column: 8
+        },
+        end: {
+          line: 16,
+          column: 9
+        }
+      },
+      "9": {
+        start: {
+          line: 12,
+          column: 12
+        },
+        end: {
+          line: 12,
+          column: 107
+        }
+      },
+      "10": {
+        start: {
+          line: 15,
+          column: 12
+        },
+        end: {
+          line: 15,
+          column: 50
+        }
+      },
+      "11": {
+        start: {
+          line: 18,
+          column: 4
+        },
+        end: {
+          line: 18,
+          column: 2073
+        }
+      },
+      "12": {
+        start: {
+          line: 18,
+          column: 1121
+        },
+        end: {
+          line: 18,
+          column: 1141
+        }
+      },
+      "13": {
+        start: {
+          line: 18,
+          column: 1360
+        },
+        end: {
+          line: 18,
+          column: 1381
+        }
+      }
+    },
+    fnMap: {
+      "0": {
+        name: "LoginPage",
+        decl: {
+          start: {
+            line: 7,
+            column: 9
+          },
+          end: {
+            line: 7,
+            column: 18
+          }
+        },
+        loc: {
+          start: {
+            line: 7,
+            column: 21
+          },
+          end: {
+            line: 19,
+            column: 1
+          }
+        },
+        line: 7
+      },
+      "1": {
+        name: "(anonymous_1)",
+        decl: {
+          start: {
+            line: 10,
+            column: 24
+          },
+          end: {
+            line: 10,
+            column: 25
+          }
+        },
+        loc: {
+          start: {
+            line: 10,
+            column: 36
+          },
+          end: {
+            line: 17,
+            column: 5
+          }
+        },
+        line: 10
+      },
+      "2": {
+        name: "(anonymous_2)",
+        decl: {
+          start: {
+            line: 18,
+            column: 1115
+          },
+          end: {
+            line: 18,
+            column: 1116
+          }
+        },
+        loc: {
+          start: {
+            line: 18,
+            column: 1121
+          },
+          end: {
+            line: 18,
+            column: 1141
+          }
+        },
+        line: 18
+      },
+      "3": {
+        name: "(anonymous_3)",
+        decl: {
+          start: {
+            line: 18,
+            column: 1354
+          },
+          end: {
+            line: 18,
+            column: 1355
+          }
+        },
+        loc: {
+          start: {
+            line: 18,
+            column: 1360
+          },
+          end: {
+            line: 18,
+            column: 1381
+          }
+        },
+        line: 18
+      }
+    },
+    branchMap: {
+      "0": {
+        loc: {
+          start: {
+            line: 12,
+            column: 24
+          },
+          end: {
+            line: 12,
+            column: 82
+          }
+        },
+        type: "cond-expr",
+        locations: [{
+          start: {
+            line: 12,
+            column: 48
+          },
+          end: {
+            line: 12,
+            column: 64
+          }
+        }, {
+          start: {
+            line: 12,
+            column: 67
+          },
+          end: {
+            line: 12,
+            column: 82
+          }
+        }],
+        line: 12
+      },
+      "1": {
+        loc: {
+          start: {
+            line: 18,
+            column: 1810
+          },
+          end: {
+            line: 18,
+            column: 1868
+          }
+        },
+        type: "cond-expr",
+        locations: [{
+          start: {
+            line: 18,
+            column: 1822
+          },
+          end: {
+            line: 18,
+            column: 1837
+          }
+        }, {
+          start: {
+            line: 18,
+            column: 1840
+          },
+          end: {
+            line: 18,
+            column: 1868
+          }
+        }],
+        line: 18
+      }
+    },
+    s: {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0,
+      "7": 0,
+      "8": 0,
+      "9": 0,
+      "10": 0,
+      "11": 0,
+      "12": 0,
+      "13": 0
+    },
+    f: {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    b: {
+      "0": [0, 0],
+      "1": [0, 0]
+    },
+    inputSourceMap: {
+      file: "/Users/vedprakashmishra/sutra/src/components/auth/LoginPage.tsx",
+      mappings: ";;AAGA,4BAyEC;;AA5ED,iCAAiC;AACjC,iDAAyC;AAEzC,SAAwB,SAAS;IAC/B,MAAM,EAAE,KAAK,EAAE,SAAS,EAAE,GAAG,IAAA,sBAAO,GAAE,CAAC;IACvC,MAAM,CAAC,SAAS,EAAE,YAAY,CAAC,GAAG,IAAA,gBAAQ,EAAmB,MAAM,CAAC,CAAC;IAErE,MAAM,WAAW,GAAG,KAAK,IAAI,EAAE;QAC7B,IAAI,CAAC;YACH,MAAM,KAAK,CACT,SAAS,KAAK,OAAO,CAAC,CAAC,CAAC,gBAAgB,CAAC,CAAC,CAAC,eAAe,EAC1D,SAAS,KAAK,OAAO,CACtB,CAAC;QACJ,CAAC;QAAC,OAAO,KAAK,EAAE,CAAC;YACf,OAAO,CAAC,KAAK,CAAC,eAAe,EAAE,KAAK,CAAC,CAAC;QACxC,CAAC;IACH,CAAC,CAAC;IAEF,OAAO,CACL,gCAAK,SAAS,EAAC,qFAAqF,YAClG,iCAAK,SAAS,EAAC,2BAA2B,aACxC,4CACE,+BAAI,SAAS,EAAC,wDAAwD,iCAEjE,EACL,8BAAG,SAAS,EAAC,wCAAwC,0DAEjD,IACA,EACN,iCAAK,SAAS,EAAC,gBAAgB,aAC7B,gCAAK,SAAS,EAAC,WAAW,YACxB,4CACE,kCAAO,SAAS,EAAC,8CAA8C,0BAEvD,EACR,iCAAK,SAAS,EAAC,WAAW,aACxB,mCAAO,SAAS,EAAC,mBAAmB,aAClC,kCACE,IAAI,EAAC,OAAO,EACZ,SAAS,EAAC,MAAM,EAChB,OAAO,EAAE,SAAS,KAAK,MAAM,EAC7B,QAAQ,EAAE,GAAG,EAAE,CAAC,YAAY,CAAC,MAAM,CAAC,GACpC,oBAEI,EACR,mCAAO,SAAS,EAAC,mBAAmB,aAClC,kCACE,IAAI,EAAC,OAAO,EACZ,SAAS,EAAC,MAAM,EAChB,OAAO,EAAE,SAAS,KAAK,OAAO,EAC9B,QAAQ,EAAE,GAAG,EAAE,CAAC,YAAY,CAAC,OAAO,CAAC,GACrC,qBAEI,IACJ,IACF,GACF,EAEN,0CACE,mCACE,OAAO,EAAE,WAAW,EACpB,QAAQ,EAAE,SAAS,EACnB,SAAS,EAAC,yPAAyP,YAElQ,SAAS,CAAC,CAAC,CAAC,eAAe,CAAC,CAAC,CAAC,4BAA4B,GACpD,GACL,EAEN,gCAAK,SAAS,EAAC,mCAAmC,0GAG5C,IACF,IACF,GACF,CACP,CAAC;AACJ,CAAC",
+      names: [],
+      sources: ["/Users/vedprakashmishra/sutra/src/components/auth/LoginPage.tsx"],
+      sourcesContent: ["import { useState } from \"react\";\nimport { useAuth } from \"./AuthProvider\";\n\nexport default function LoginPage() {\n  const { login, isLoading } = useAuth();\n  const [loginType, setLoginType] = useState<\"user\" | \"admin\">(\"user\");\n\n  const handleLogin = async () => {\n    try {\n      await login(\n        loginType === \"admin\" ? \"admin@sutra.ai\" : \"user@sutra.ai\",\n        loginType === \"admin\",\n      );\n    } catch (error) {\n      console.error(\"Login failed:\", error);\n    }\n  };\n\n  return (\n    <div className=\"min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8\">\n      <div className=\"max-w-md w-full space-y-8\">\n        <div>\n          <h2 className=\"mt-6 text-center text-3xl font-extrabold text-gray-900\">\n            Sign in to Sutra\n          </h2>\n          <p className=\"mt-2 text-center text-sm text-gray-600\">\n            AI Operations Platform - Development Mode\n          </p>\n        </div>\n        <div className=\"mt-8 space-y-6\">\n          <div className=\"space-y-4\">\n            <div>\n              <label className=\"block text-sm font-medium text-gray-700 mb-2\">\n                Login as:\n              </label>\n              <div className=\"space-y-2\">\n                <label className=\"flex items-center\">\n                  <input\n                    type=\"radio\"\n                    className=\"mr-2\"\n                    checked={loginType === \"user\"}\n                    onChange={() => setLoginType(\"user\")}\n                  />\n                  Regular User\n                </label>\n                <label className=\"flex items-center\">\n                  <input\n                    type=\"radio\"\n                    className=\"mr-2\"\n                    checked={loginType === \"admin\"}\n                    onChange={() => setLoginType(\"admin\")}\n                  />\n                  Administrator\n                </label>\n              </div>\n            </div>\n          </div>\n\n          <div>\n            <button\n              onClick={handleLogin}\n              disabled={isLoading}\n              className=\"group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50\"\n            >\n              {isLoading ? \"Signing in...\" : \"Sign in (Development Mode)\"}\n            </button>\n          </div>\n\n          <div className=\"text-xs text-gray-500 text-center\">\n            This is a development environment. In production, this would\n            integrate with Azure AD B2C.\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n}\n"],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "496630ae1bf49d25425f996829e4e19cff7f74da"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_13f3r4hhka = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_13f3r4hhka();
+cov_13f3r4hhka().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/* istanbul ignore next */
+cov_13f3r4hhka().s[1]++;
+exports.default = LoginPage;
+const jsx_runtime_1 =
+/* istanbul ignore next */
+(cov_13f3r4hhka().s[2]++, require("react/jsx-runtime"));
+const react_1 =
+/* istanbul ignore next */
+(cov_13f3r4hhka().s[3]++, require("react"));
+const AuthProvider_1 =
+/* istanbul ignore next */
+(cov_13f3r4hhka().s[4]++, require("./AuthProvider"));
+function LoginPage() {
+  /* istanbul ignore next */
+  cov_13f3r4hhka().f[0]++;
+  const {
+    login,
+    isLoading
+  } =
+  /* istanbul ignore next */
+  (cov_13f3r4hhka().s[5]++, (0, AuthProvider_1.useAuth)());
+  const [loginType, setLoginType] =
+  /* istanbul ignore next */
+  (cov_13f3r4hhka().s[6]++, (0, react_1.useState)("user"));
+  /* istanbul ignore next */
+  cov_13f3r4hhka().s[7]++;
+  const handleLogin = async () => {
+    /* istanbul ignore next */
+    cov_13f3r4hhka().f[1]++;
+    cov_13f3r4hhka().s[8]++;
+    try {
+      /* istanbul ignore next */
+      cov_13f3r4hhka().s[9]++;
+      await login(loginType === "admin" ?
+      /* istanbul ignore next */
+      (cov_13f3r4hhka().b[0][0]++, "admin@sutra.ai") :
+      /* istanbul ignore next */
+      (cov_13f3r4hhka().b[0][1]++, "user@sutra.ai"), loginType === "admin");
+    } catch (error) {
+      /* istanbul ignore next */
+      cov_13f3r4hhka().s[10]++;
+      console.error("Login failed:", error);
+    }
+  };
+  /* istanbul ignore next */
+  cov_13f3r4hhka().s[11]++;
+  return (0, jsx_runtime_1.jsx)("div", {
+    className: "min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8",
+    children: (0, jsx_runtime_1.jsxs)("div", {
+      className: "max-w-md w-full space-y-8",
+      children: [(0, jsx_runtime_1.jsxs)("div", {
+        children: [(0, jsx_runtime_1.jsx)("h2", {
+          className: "mt-6 text-center text-3xl font-extrabold text-gray-900",
+          children: "Sign in to Sutra"
+        }), (0, jsx_runtime_1.jsx)("p", {
+          className: "mt-2 text-center text-sm text-gray-600",
+          children: "AI Operations Platform - Development Mode"
+        })]
+      }), (0, jsx_runtime_1.jsxs)("div", {
+        className: "mt-8 space-y-6",
+        children: [(0, jsx_runtime_1.jsx)("div", {
+          className: "space-y-4",
+          children: (0, jsx_runtime_1.jsxs)("div", {
+            children: [(0, jsx_runtime_1.jsx)("label", {
+              className: "block text-sm font-medium text-gray-700 mb-2",
+              children: "Login as:"
+            }), (0, jsx_runtime_1.jsxs)("div", {
+              className: "space-y-2",
+              children: [(0, jsx_runtime_1.jsxs)("label", {
+                className: "flex items-center",
+                children: [(0, jsx_runtime_1.jsx)("input", {
+                  type: "radio",
+                  className: "mr-2",
+                  checked: loginType === "user",
+                  onChange: () => {
+                    /* istanbul ignore next */
+                    cov_13f3r4hhka().f[2]++;
+                    cov_13f3r4hhka().s[12]++;
+                    return setLoginType("user");
+                  }
+                }), "Regular User"]
+              }), (0, jsx_runtime_1.jsxs)("label", {
+                className: "flex items-center",
+                children: [(0, jsx_runtime_1.jsx)("input", {
+                  type: "radio",
+                  className: "mr-2",
+                  checked: loginType === "admin",
+                  onChange: () => {
+                    /* istanbul ignore next */
+                    cov_13f3r4hhka().f[3]++;
+                    cov_13f3r4hhka().s[13]++;
+                    return setLoginType("admin");
+                  }
+                }), "Administrator"]
+              })]
+            })]
+          })
+        }), (0, jsx_runtime_1.jsx)("div", {
+          children: (0, jsx_runtime_1.jsx)("button", {
+            onClick: handleLogin,
+            disabled: isLoading,
+            className: "group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50",
+            children: isLoading ?
+            /* istanbul ignore next */
+            (cov_13f3r4hhka().b[1][0]++, "Signing in...") :
+            /* istanbul ignore next */
+            (cov_13f3r4hhka().b[1][1]++, "Sign in (Development Mode)")
+          })
+        }), (0, jsx_runtime_1.jsx)("div", {
+          className: "text-xs text-gray-500 text-center",
+          children: "This is a development environment. In production, this would integrate with Azure AD B2C."
+        })]
+      })]
+    })
+  });
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJjb3ZfMTNmM3I0aGhrYSIsImFjdHVhbENvdmVyYWdlIiwicyIsImV4cG9ydHMiLCJkZWZhdWx0IiwiTG9naW5QYWdlIiwicmVhY3RfMSIsInJlcXVpcmUiLCJBdXRoUHJvdmlkZXJfMSIsImYiLCJsb2dpbiIsImlzTG9hZGluZyIsInVzZUF1dGgiLCJsb2dpblR5cGUiLCJzZXRMb2dpblR5cGUiLCJ1c2VTdGF0ZSIsImhhbmRsZUxvZ2luIiwiYiIsImVycm9yIiwiY29uc29sZSIsImpzeF9ydW50aW1lXzEiLCJqc3giLCJjbGFzc05hbWUiLCJjaGlsZHJlbiIsImpzeHMiLCJ0eXBlIiwiY2hlY2tlZCIsIm9uQ2hhbmdlIiwib25DbGljayIsImRpc2FibGVkIl0sInNvdXJjZXMiOlsiL1VzZXJzL3ZlZHByYWthc2htaXNocmEvc3V0cmEvc3JjL2NvbXBvbmVudHMvYXV0aC9Mb2dpblBhZ2UudHN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IHVzZVN0YXRlIH0gZnJvbSBcInJlYWN0XCI7XG5pbXBvcnQgeyB1c2VBdXRoIH0gZnJvbSBcIi4vQXV0aFByb3ZpZGVyXCI7XG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIExvZ2luUGFnZSgpIHtcbiAgY29uc3QgeyBsb2dpbiwgaXNMb2FkaW5nIH0gPSB1c2VBdXRoKCk7XG4gIGNvbnN0IFtsb2dpblR5cGUsIHNldExvZ2luVHlwZV0gPSB1c2VTdGF0ZTxcInVzZXJcIiB8IFwiYWRtaW5cIj4oXCJ1c2VyXCIpO1xuXG4gIGNvbnN0IGhhbmRsZUxvZ2luID0gYXN5bmMgKCkgPT4ge1xuICAgIHRyeSB7XG4gICAgICBhd2FpdCBsb2dpbihcbiAgICAgICAgbG9naW5UeXBlID09PSBcImFkbWluXCIgPyBcImFkbWluQHN1dHJhLmFpXCIgOiBcInVzZXJAc3V0cmEuYWlcIixcbiAgICAgICAgbG9naW5UeXBlID09PSBcImFkbWluXCIsXG4gICAgICApO1xuICAgIH0gY2F0Y2ggKGVycm9yKSB7XG4gICAgICBjb25zb2xlLmVycm9yKFwiTG9naW4gZmFpbGVkOlwiLCBlcnJvcik7XG4gICAgfVxuICB9O1xuXG4gIHJldHVybiAoXG4gICAgPGRpdiBjbGFzc05hbWU9XCJtaW4taC1zY3JlZW4gZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgYmctZ3JheS01MCBweS0xMiBweC00IHNtOnB4LTYgbGc6cHgtOFwiPlxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJtYXgtdy1tZCB3LWZ1bGwgc3BhY2UteS04XCI+XG4gICAgICAgIDxkaXY+XG4gICAgICAgICAgPGgyIGNsYXNzTmFtZT1cIm10LTYgdGV4dC1jZW50ZXIgdGV4dC0zeGwgZm9udC1leHRyYWJvbGQgdGV4dC1ncmF5LTkwMFwiPlxuICAgICAgICAgICAgU2lnbiBpbiB0byBTdXRyYVxuICAgICAgICAgIDwvaDI+XG4gICAgICAgICAgPHAgY2xhc3NOYW1lPVwibXQtMiB0ZXh0LWNlbnRlciB0ZXh0LXNtIHRleHQtZ3JheS02MDBcIj5cbiAgICAgICAgICAgIEFJIE9wZXJhdGlvbnMgUGxhdGZvcm0gLSBEZXZlbG9wbWVudCBNb2RlXG4gICAgICAgICAgPC9wPlxuICAgICAgICA8L2Rpdj5cbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJtdC04IHNwYWNlLXktNlwiPlxuICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwic3BhY2UteS00XCI+XG4gICAgICAgICAgICA8ZGl2PlxuICAgICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiYmxvY2sgdGV4dC1zbSBmb250LW1lZGl1bSB0ZXh0LWdyYXktNzAwIG1iLTJcIj5cbiAgICAgICAgICAgICAgICBMb2dpbiBhczpcbiAgICAgICAgICAgICAgPC9sYWJlbD5cbiAgICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJzcGFjZS15LTJcIj5cbiAgICAgICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmxleCBpdGVtcy1jZW50ZXJcIj5cbiAgICAgICAgICAgICAgICAgIDxpbnB1dFxuICAgICAgICAgICAgICAgICAgICB0eXBlPVwicmFkaW9cIlxuICAgICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJtci0yXCJcbiAgICAgICAgICAgICAgICAgICAgY2hlY2tlZD17bG9naW5UeXBlID09PSBcInVzZXJcIn1cbiAgICAgICAgICAgICAgICAgICAgb25DaGFuZ2U9eygpID0+IHNldExvZ2luVHlwZShcInVzZXJcIil9XG4gICAgICAgICAgICAgICAgICAvPlxuICAgICAgICAgICAgICAgICAgUmVndWxhciBVc2VyXG4gICAgICAgICAgICAgICAgPC9sYWJlbD5cbiAgICAgICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmxleCBpdGVtcy1jZW50ZXJcIj5cbiAgICAgICAgICAgICAgICAgIDxpbnB1dFxuICAgICAgICAgICAgICAgICAgICB0eXBlPVwicmFkaW9cIlxuICAgICAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJtci0yXCJcbiAgICAgICAgICAgICAgICAgICAgY2hlY2tlZD17bG9naW5UeXBlID09PSBcImFkbWluXCJ9XG4gICAgICAgICAgICAgICAgICAgIG9uQ2hhbmdlPXsoKSA9PiBzZXRMb2dpblR5cGUoXCJhZG1pblwiKX1cbiAgICAgICAgICAgICAgICAgIC8+XG4gICAgICAgICAgICAgICAgICBBZG1pbmlzdHJhdG9yXG4gICAgICAgICAgICAgICAgPC9sYWJlbD5cbiAgICAgICAgICAgICAgPC9kaXY+XG4gICAgICAgICAgICA8L2Rpdj5cbiAgICAgICAgICA8L2Rpdj5cblxuICAgICAgICAgIDxkaXY+XG4gICAgICAgICAgICA8YnV0dG9uXG4gICAgICAgICAgICAgIG9uQ2xpY2s9e2hhbmRsZUxvZ2lufVxuICAgICAgICAgICAgICBkaXNhYmxlZD17aXNMb2FkaW5nfVxuICAgICAgICAgICAgICBjbGFzc05hbWU9XCJncm91cCByZWxhdGl2ZSB3LWZ1bGwgZmxleCBqdXN0aWZ5LWNlbnRlciBweS0yIHB4LTQgYm9yZGVyIGJvcmRlci10cmFuc3BhcmVudCB0ZXh0LXNtIGZvbnQtbWVkaXVtIHJvdW5kZWQtbWQgdGV4dC13aGl0ZSBiZy1pbmRpZ28tNjAwIGhvdmVyOmJnLWluZGlnby03MDAgZm9jdXM6b3V0bGluZS1ub25lIGZvY3VzOnJpbmctMiBmb2N1czpyaW5nLW9mZnNldC0yIGZvY3VzOnJpbmctaW5kaWdvLTUwMCBkaXNhYmxlZDpvcGFjaXR5LTUwXCJcbiAgICAgICAgICAgID5cbiAgICAgICAgICAgICAge2lzTG9hZGluZyA/IFwiU2lnbmluZyBpbi4uLlwiIDogXCJTaWduIGluIChEZXZlbG9wbWVudCBNb2RlKVwifVxuICAgICAgICAgICAgPC9idXR0b24+XG4gICAgICAgICAgPC9kaXY+XG5cbiAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cInRleHQteHMgdGV4dC1ncmF5LTUwMCB0ZXh0LWNlbnRlclwiPlxuICAgICAgICAgICAgVGhpcyBpcyBhIGRldmVsb3BtZW50IGVudmlyb25tZW50LiBJbiBwcm9kdWN0aW9uLCB0aGlzIHdvdWxkXG4gICAgICAgICAgICBpbnRlZ3JhdGUgd2l0aCBBenVyZSBBRCBCMkMuXG4gICAgICAgICAgPC9kaXY+XG4gICAgICAgIDwvZGl2PlxuICAgICAgPC9kaXY+XG4gICAgPC9kaXY+XG4gICk7XG59XG4iXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7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

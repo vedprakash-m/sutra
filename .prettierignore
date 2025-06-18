@@ -11,6 +11,10 @@ coverage/
 playwright-report/
 test-results/
 
+# Test cache and temporary files
+.jest-cache/
+.eslintcache
+
 # OS generated files
 .DS_Store
 .DS_Store?

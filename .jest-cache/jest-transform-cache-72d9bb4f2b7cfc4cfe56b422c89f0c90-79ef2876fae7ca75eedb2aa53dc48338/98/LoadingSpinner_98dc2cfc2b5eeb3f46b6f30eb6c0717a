@@ -1,0 +1,229 @@
+c1f2ad726c827a45db272d18426051ad
+"use strict";
+
+/* istanbul ignore next */
+function cov_ilrtct2nm() {
+  var path = "/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx";
+  var hash = "328020d13b045ade01e81974bb438126b81e06df";
+  var global = new Function("return this")();
+  var gcv = "__coverage__";
+  var coverageData = {
+    path: "/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx",
+    statementMap: {
+      "0": {
+        start: {
+          line: 2,
+          column: 0
+        },
+        end: {
+          line: 2,
+          column: 62
+        }
+      },
+      "1": {
+        start: {
+          line: 3,
+          column: 0
+        },
+        end: {
+          line: 3,
+          column: 33
+        }
+      },
+      "2": {
+        start: {
+          line: 4,
+          column: 22
+        },
+        end: {
+          line: 4,
+          column: 50
+        }
+      },
+      "3": {
+        start: {
+          line: 6,
+          column: 24
+        },
+        end: {
+          line: 10,
+          column: 5
+        }
+      },
+      "4": {
+        start: {
+          line: 11,
+          column: 4
+        },
+        end: {
+          line: 11,
+          column: 350
+        }
+      }
+    },
+    fnMap: {
+      "0": {
+        name: "LoadingSpinner",
+        decl: {
+          start: {
+            line: 5,
+            column: 9
+          },
+          end: {
+            line: 5,
+            column: 23
+          }
+        },
+        loc: {
+          start: {
+            line: 5,
+            column: 51
+          },
+          end: {
+            line: 12,
+            column: 1
+          }
+        },
+        line: 5
+      }
+    },
+    branchMap: {
+      "0": {
+        loc: {
+          start: {
+            line: 5,
+            column: 26
+          },
+          end: {
+            line: 5,
+            column: 37
+          }
+        },
+        type: "default-arg",
+        locations: [{
+          start: {
+            line: 5,
+            column: 33
+          },
+          end: {
+            line: 5,
+            column: 37
+          }
+        }],
+        line: 5
+      },
+      "1": {
+        loc: {
+          start: {
+            line: 11,
+            column: 242
+          },
+          end: {
+            line: 11,
+            column: 344
+          }
+        },
+        type: "binary-expr",
+        locations: [{
+          start: {
+            line: 11,
+            column: 242
+          },
+          end: {
+            line: 11,
+            column: 249
+          }
+        }, {
+          start: {
+            line: 11,
+            column: 253
+          },
+          end: {
+            line: 11,
+            column: 344
+          }
+        }],
+        line: 11
+      }
+    },
+    s: {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0
+    },
+    f: {
+      "0": 0
+    },
+    b: {
+      "0": [0],
+      "1": [0, 0]
+    },
+    inputSourceMap: {
+      file: "/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx",
+      mappings: ";;AAKA,iCAkBC;;AAlBD,SAAwB,cAAc,CAAC,EACrC,IAAI,GAAG,IAAI,EACX,OAAO,GACa;IACpB,MAAM,WAAW,GAAG;QAClB,EAAE,EAAE,SAAS;QACb,EAAE,EAAE,SAAS;QACb,EAAE,EAAE,WAAW;KAChB,CAAC;IAEF,OAAO,CACL,iCAAK,SAAS,EAAC,gDAAgD,aAC7D,gCACE,SAAS,EAAE,0DAA0D,WAAW,CAAC,IAAI,CAAC,EAAE,GACnF,EACN,OAAO,IAAI,8BAAG,SAAS,EAAC,4BAA4B,YAAE,OAAO,GAAK,IAC/D,CACP,CAAC;AACJ,CAAC",
+      names: [],
+      sources: ["/Users/vedprakashmishra/sutra/src/components/shared/LoadingSpinner.tsx"],
+      sourcesContent: ["interface LoadingSpinnerProps {\n  size?: \"sm\" | \"md\" | \"lg\";\n  message?: string;\n}\n\nexport default function LoadingSpinner({\n  size = \"md\",\n  message,\n}: LoadingSpinnerProps) {\n  const sizeClasses = {\n    sm: \"h-4 w-4\",\n    md: \"h-8 w-8\",\n    lg: \"h-12 w-12\",\n  };\n\n  return (\n    <div className=\"flex flex-col items-center justify-center py-8\">\n      <div\n        className={`animate-spin rounded-full border-b-2 border-indigo-600 ${sizeClasses[size]}`}\n      ></div>\n      {message && <p className=\"mt-2 text-sm text-gray-600\">{message}</p>}\n    </div>\n  );\n}\n"],
+      version: 3
+    },
+    _coverageSchema: "1a1c01bbd47fc00a2c39e90264f33305004495a9",
+    hash: "328020d13b045ade01e81974bb438126b81e06df"
+  };
+  var coverage = global[gcv] || (global[gcv] = {});
+  if (!coverage[path] || coverage[path].hash !== hash) {
+    coverage[path] = coverageData;
+  }
+  var actualCoverage = coverage[path];
+  {
+    // @ts-ignore
+    cov_ilrtct2nm = function () {
+      return actualCoverage;
+    };
+  }
+  return actualCoverage;
+}
+cov_ilrtct2nm();
+cov_ilrtct2nm().s[0]++;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+/* istanbul ignore next */
+cov_ilrtct2nm().s[1]++;
+exports.default = LoadingSpinner;
+const jsx_runtime_1 =
+/* istanbul ignore next */
+(cov_ilrtct2nm().s[2]++, require("react/jsx-runtime"));
+function LoadingSpinner({
+  size =
+  /* istanbul ignore next */
+  (cov_ilrtct2nm().b[0][0]++, "md"),
+  message
+}) {
+  /* istanbul ignore next */
+  cov_ilrtct2nm().f[0]++;
+  const sizeClasses =
+  /* istanbul ignore next */
+  (cov_ilrtct2nm().s[3]++, {
+    sm: "h-4 w-4",
+    md: "h-8 w-8",
+    lg: "h-12 w-12"
+  });
+  /* istanbul ignore next */
+  cov_ilrtct2nm().s[4]++;
+  return (0, jsx_runtime_1.jsxs)("div", {
+    className: "flex flex-col items-center justify-center py-8",
+    children: [(0, jsx_runtime_1.jsx)("div", {
+      className: `animate-spin rounded-full border-b-2 border-indigo-600 ${sizeClasses[size]}`
+    }),
+    /* istanbul ignore next */
+    (cov_ilrtct2nm().b[1][0]++, message) &&
+    /* istanbul ignore next */
+    (cov_ilrtct2nm().b[1][1]++, (0, jsx_runtime_1.jsx)("p", {
+      className: "mt-2 text-sm text-gray-600",
+      children: message
+    }))]
+  });
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJleHBvcnRzIiwiZGVmYXVsdCIsIkxvYWRpbmdTcGlubmVyIiwic2l6ZSIsImNvdl9pbHJ0Y3Qybm0iLCJiIiwibWVzc2FnZSIsImYiLCJzaXplQ2xhc3NlcyIsInMiLCJzbSIsIm1kIiwibGciLCJqc3hfcnVudGltZV8xIiwianN4cyIsImNsYXNzTmFtZSIsImNoaWxkcmVuIiwianN4Il0sInNvdXJjZXMiOlsiL1VzZXJzL3ZlZHByYWthc2htaXNocmEvc3V0cmEvc3JjL2NvbXBvbmVudHMvc2hhcmVkL0xvYWRpbmdTcGlubmVyLnRzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbnRlcmZhY2UgTG9hZGluZ1NwaW5uZXJQcm9wcyB7XG4gIHNpemU/OiBcInNtXCIgfCBcIm1kXCIgfCBcImxnXCI7XG4gIG1lc3NhZ2U/OiBzdHJpbmc7XG59XG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIExvYWRpbmdTcGlubmVyKHtcbiAgc2l6ZSA9IFwibWRcIixcbiAgbWVzc2FnZSxcbn06IExvYWRpbmdTcGlubmVyUHJvcHMpIHtcbiAgY29uc3Qgc2l6ZUNsYXNzZXMgPSB7XG4gICAgc206IFwiaC00IHctNFwiLFxuICAgIG1kOiBcImgtOCB3LThcIixcbiAgICBsZzogXCJoLTEyIHctMTJcIixcbiAgfTtcblxuICByZXR1cm4gKFxuICAgIDxkaXYgY2xhc3NOYW1lPVwiZmxleCBmbGV4LWNvbCBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgcHktOFwiPlxuICAgICAgPGRpdlxuICAgICAgICBjbGFzc05hbWU9e2BhbmltYXRlLXNwaW4gcm91bmRlZC1mdWxsIGJvcmRlci1iLTIgYm9yZGVyLWluZGlnby02MDAgJHtzaXplQ2xhc3Nlc1tzaXplXX1gfVxuICAgICAgPjwvZGl2PlxuICAgICAge21lc3NhZ2UgJiYgPHAgY2xhc3NOYW1lPVwibXQtMiB0ZXh0LXNtIHRleHQtZ3JheS02MDBcIj57bWVzc2FnZX08L3A+fVxuICAgIDwvZGl2PlxuICApO1xufVxuIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7QUFLQUEsT0FBQSxDQUFBQyxPQUFBLEdBQUFDLGNBQUE7Ozs7QUFBQSxTQUF3QkEsY0FBY0EsQ0FBQztFQUNyQ0MsSUFBSTtFQUFBO0VBQUEsQ0FBQUMsYUFBQSxHQUFBQyxDQUFBLFVBQUcsSUFBSTtFQUNYQztBQUFPLENBQ2E7RUFBQTtFQUFBRixhQUFBLEdBQUFHLENBQUE7RUFDcEIsTUFBTUMsV0FBVztFQUFBO0VBQUEsQ0FBQUosYUFBQSxHQUFBSyxDQUFBLE9BQUc7SUFDbEJDLEVBQUUsRUFBRSxTQUFTO0lBQ2JDLEVBQUUsRUFBRSxTQUFTO0lBQ2JDLEVBQUUsRUFBRTtHQUNMO0VBQUM7RUFBQVIsYUFBQSxHQUFBSyxDQUFBO0VBRUYsT0FDRSxJQUFBSSxhQUFBLENBQUFDLElBQUE7SUFBS0MsU0FBUyxFQUFDLGdEQUFnRDtJQUFBQyxRQUFBLEdBQzdELElBQUFILGFBQUEsQ0FBQUksR0FBQTtNQUNFRixTQUFTLEVBQUUsMERBQTBEUCxXQUFXLENBQUNMLElBQUksQ0FBQztJQUFFLEVBQ25GO0lBQ047SUFBQSxDQUFBQyxhQUFBLEdBQUFDLENBQUEsVUFBQUMsT0FBTztJQUFBO0lBQUEsQ0FBQUYsYUFBQSxHQUFBQyxDQUFBLFVBQUksSUFBQVEsYUFBQSxDQUFBSSxHQUFBO01BQUdGLFNBQVMsRUFBQyw0QkFBNEI7TUFBQUMsUUFBQSxFQUFFVjtJQUFPLEVBQUs7RUFBQSxFQUMvRDtBQUVWIiwiaWdub3JlTGlzdCI6W119

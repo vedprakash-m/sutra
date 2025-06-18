@@ -272,6 +272,39 @@ fi
 
 echo ""
 
+# Stage 9: Final Re-validation (Critical - catch any changes made during validation)
+echo -e "${BLUE}🔄 Stage 9: Final Re-validation${NC}"
+echo "--------------------------------"
+
+echo "Performing final checks to catch any new issues..."
+
+# Re-run critical checks that could have been affected by fixes during validation
+echo "🎨 Final formatting check..."
+if ! npm run format:check > /tmp/final_prettier.log 2>&1; then
+    log_error "CRITICAL: New formatting issues detected during validation process!"
+    echo ""
+    echo "Files with formatting issues:"
+    cat /tmp/final_prettier.log | grep "warn" | head -10
+    echo ""
+    echo "🔧 This usually happens when files are created/modified during validation."
+    echo "   Run 'npm run format' to fix, then re-run validation."
+    echo ""
+    ((ISSUES_FOUND++))
+else
+    log_success "Final formatting check passed"
+fi
+
+# Quick syntax check
+echo "🔍 Final syntax validation..."
+if npm run lint > /tmp/final_lint.log 2>&1 && npm run type-check > /tmp/final_typecheck.log 2>&1; then
+    log_success "Final syntax check passed"
+else
+    log_error "New syntax issues detected during validation process!"
+    ((ISSUES_FOUND++))
+fi
+
+echo ""
+
 # Final Summary
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))

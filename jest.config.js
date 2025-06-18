@@ -2,7 +2,7 @@ export default {
   preset: "ts-jest",
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
-  moduleNameMapping: {
+  moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
     "^@/services/api$": "<rootDir>/src/services/__mocks__/api.ts",
@@ -10,6 +10,12 @@ export default {
   },
   transform: {
     "^.+\\.tsx?$": "ts-jest",
+  },
+  // Handle Vite import.meta.env in tests
+  globals: {
+    "ts-jest": {
+      useESM: true,
+    },
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   collectCoverageFrom: [

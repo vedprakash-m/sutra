@@ -15,7 +15,7 @@ const renderNavBar = (path = "/") => {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <NavBar />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 };
 

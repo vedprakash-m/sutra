@@ -1,6 +1,5 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useApi, useAsyncAction } from "../useApi";
-import { apiService } from "../../services/api";
 
 // Mock the auth provider
 const mockUseAuth = jest.fn();
@@ -8,12 +7,8 @@ jest.mock("../../components/auth/AuthProvider", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-// Mock the API service
-jest.mock("../../services/api", () => ({
-  apiService: {
-    setToken: jest.fn(),
-  },
-}));
+// Import the mocked API service
+import { apiService } from "../../services/api";
 
 describe("useApi", () => {
   beforeEach(() => {
@@ -25,7 +20,7 @@ describe("useApi", () => {
 
   it("should initialize with loading state", () => {
     const mockApiCall = jest.fn().mockResolvedValue("test data");
-    
+
     const { result } = renderHook(() => useApi(mockApiCall));
 
     expect(result.current.data).toBeNull();
@@ -36,7 +31,7 @@ describe("useApi", () => {
   it("should fetch data successfully", async () => {
     const mockData = { id: 1, name: "Test" };
     const mockApiCall = jest.fn().mockResolvedValue(mockData);
-    
+
     const { result } = renderHook(() => useApi(mockApiCall));
 
     await waitFor(() => {
@@ -50,7 +45,7 @@ describe("useApi", () => {
 
   it("should set token on API service when token is available", async () => {
     const mockApiCall = jest.fn().mockResolvedValue("test data");
-    
+
     renderHook(() => useApi(mockApiCall));
 
     await waitFor(() => {
@@ -61,7 +56,7 @@ describe("useApi", () => {
   it("should handle API errors", async () => {
     const mockError = new Error("API Error");
     const mockApiCall = jest.fn().mockRejectedValue(mockError);
-    
+
     const { result } = renderHook(() => useApi(mockApiCall));
 
     await waitFor(() => {
@@ -74,7 +69,7 @@ describe("useApi", () => {
 
   it("should handle non-Error exceptions", async () => {
     const mockApiCall = jest.fn().mockRejectedValue("String error");
-    
+
     const { result } = renderHook(() => useApi(mockApiCall));
 
     await waitFor(() => {
@@ -88,10 +83,11 @@ describe("useApi", () => {
   it("should refetch data when refetch is called", async () => {
     const mockData1 = { id: 1, name: "Test 1" };
     const mockData2 = { id: 2, name: "Test 2" };
-    const mockApiCall = jest.fn()
+    const mockApiCall = jest
+      .fn()
       .mockResolvedValueOnce(mockData1)
       .mockResolvedValueOnce(mockData2);
-    
+
     const { result } = renderHook(() => useApi(mockApiCall));
 
     await waitFor(() => {
@@ -112,7 +108,7 @@ describe("useApi", () => {
     });
 
     const mockApiCall = jest.fn().mockResolvedValue("test data");
-    
+
     renderHook(() => useApi(mockApiCall));
 
     expect(mockApiCall).not.toHaveBeenCalled();
@@ -121,7 +117,7 @@ describe("useApi", () => {
   it("should refetch when dependencies change", async () => {
     const mockApiCall = jest.fn().mockResolvedValue("test data");
     let dependency = "dep1";
-    
+
     const { rerender } = renderHook(() => useApi(mockApiCall, [dependency]));
 
     await waitFor(() => {
@@ -139,7 +135,7 @@ describe("useApi", () => {
   it("should not refetch when dependencies don't change", async () => {
     const mockApiCall = jest.fn().mockResolvedValue("test data");
     const dependency = "dep1";
-    
+
     const { rerender } = renderHook(() => useApi(mockApiCall, [dependency]));
 
     await waitFor(() => {
@@ -153,9 +149,12 @@ describe("useApi", () => {
   });
 
   it("should set loading to true during refetch", async () => {
-    const mockApiCall = jest.fn()
-      .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve("data"), 100)));
-    
+    const mockApiCall = jest
+      .fn()
+      .mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve("data"), 100)),
+      );
+
     const { result } = renderHook(() => useApi(mockApiCall));
 
     await waitFor(() => {
@@ -202,8 +201,12 @@ describe("useAsyncAction", () => {
   });
 
   it("should set loading state during execution", async () => {
-    const mockAction = jest.fn()
-      .mockImplementation(() => new Promise(resolve => setTimeout(() => resolve("success"), 100)));
+    const mockAction = jest
+      .fn()
+      .mockImplementation(
+        () =>
+          new Promise((resolve) => setTimeout(() => resolve("success"), 100)),
+      );
     const { result } = renderHook(() => useAsyncAction());
 
     act(() => {
@@ -277,7 +280,8 @@ describe("useAsyncAction", () => {
   });
 
   it("should clear error on subsequent execution", async () => {
-    const mockAction = jest.fn()
+    const mockAction = jest
+      .fn()
       .mockRejectedValueOnce(new Error("First error"))
       .mockResolvedValueOnce("success");
     const { result } = renderHook(() => useAsyncAction());

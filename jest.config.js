@@ -7,36 +7,22 @@ export default {
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
     "^@/services/api$": "<rootDir>/src/services/__mocks__/api.ts",
     "^../services/api$": "<rootDir>/src/services/__mocks__/api.ts",
+    "^../../services/api$": "<rootDir>/src/services/__mocks__/api.ts",
   },
   transform: {
     "^.+\\.tsx?$": [
       "ts-jest",
       {
-        useESM: true,
         tsconfig: {
           jsx: "react-jsx",
         },
       },
     ],
   },
-  // Handle ES modules and import.meta
-  extensionsToTreatAsEsm: [".ts", ".tsx"],
-  transformIgnorePatterns: [
-    "node_modules/(?!(.*\\.mjs$))"
-  ],
-  globals: {
-    // Mock import.meta for Vite compatibility
-    "import.meta": {
-      env: {
-        VITE_API_URL: "http://localhost:7071/api",
-        VITE_AUTH_DOMAIN: "test-domain",
-        VITE_AUTH_CLIENT_ID: "test-client-id",
-        MODE: "test",
-        DEV: false,
-        PROD: false,
-      },
-    },
-  },
+  // Handle import.meta in Jest environment
+  transformIgnorePatterns: ["node_modules/(?!(.*\\.mjs$))"],
+  // Add environment setup to handle import.meta
+  setupFiles: ["<rootDir>/src/setupTests.js"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",

@@ -5,7 +5,7 @@ import LoginPage from "../LoginPage";
 const mockLogin = jest.fn();
 const mockUseAuth = jest.fn();
 
-jest.mock("./AuthProvider", () => ({
+jest.mock("../AuthProvider", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
@@ -22,7 +22,9 @@ describe("LoginPage", () => {
     render(<LoginPage />);
 
     expect(screen.getByText("Sign in to Sutra")).toBeInTheDocument();
-    expect(screen.getByText("AI Operations Platform - Development Mode")).toBeInTheDocument();
+    expect(
+      screen.getByText("AI Operations Platform - Development Mode"),
+    ).toBeInTheDocument();
   });
 
   it("should render login type options", () => {
@@ -63,7 +65,9 @@ describe("LoginPage", () => {
   it("should render sign in button", () => {
     render(<LoginPage />);
 
-    const signInButton = screen.getByRole("button", { name: "Sign in (Development Mode)" });
+    const signInButton = screen.getByRole("button", {
+      name: "Sign in (Development Mode)",
+    });
     expect(signInButton).toBeInTheDocument();
     expect(signInButton).toBeEnabled();
   });
@@ -71,7 +75,9 @@ describe("LoginPage", () => {
   it("should call login with user email when user login is clicked", async () => {
     render(<LoginPage />);
 
-    const signInButton = screen.getByRole("button", { name: "Sign in (Development Mode)" });
+    const signInButton = screen.getByRole("button", {
+      name: "Sign in (Development Mode)",
+    });
     fireEvent.click(signInButton);
 
     expect(mockLogin).toHaveBeenCalledWith("user@sutra.ai", false);
@@ -83,7 +89,9 @@ describe("LoginPage", () => {
     const adminRadio = screen.getByRole("radio", { name: "Administrator" });
     fireEvent.click(adminRadio);
 
-    const signInButton = screen.getByRole("button", { name: "Sign in (Development Mode)" });
+    const signInButton = screen.getByRole("button", {
+      name: "Sign in (Development Mode)",
+    });
     fireEvent.click(signInButton);
 
     expect(mockLogin).toHaveBeenCalledWith("admin@sutra.ai", true);
@@ -103,16 +111,23 @@ describe("LoginPage", () => {
   });
 
   it("should handle login errors gracefully", async () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     mockLogin.mockRejectedValue(new Error("Login failed"));
 
     render(<LoginPage />);
 
-    const signInButton = screen.getByRole("button", { name: "Sign in (Development Mode)" });
+    const signInButton = screen.getByRole("button", {
+      name: "Sign in (Development Mode)",
+    });
     fireEvent.click(signInButton);
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith("Login failed:", expect.any(Error));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Login failed:",
+        expect.any(Error),
+      );
     });
 
     consoleErrorSpy.mockRestore();
@@ -121,7 +136,9 @@ describe("LoginPage", () => {
   it("should display development mode notice", () => {
     render(<LoginPage />);
 
-    expect(screen.getByText(/This is a development environment/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/This is a development environment/),
+    ).toBeInTheDocument();
     expect(screen.getByText(/integrate with Azure AD B2C/)).toBeInTheDocument();
   });
 

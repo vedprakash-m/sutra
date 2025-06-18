@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import App from "./App";
+import App, { AppWithoutRouter } from "./App";
 
 // Mock the child components
 jest.mock("@/components/auth/LoginPage", () => {
@@ -78,10 +78,11 @@ describe("App", () => {
       logout: jest.fn(),
     });
 
-    render(<App />);
+    render(<AppWithoutRouter />);
 
     expect(screen.getByText("Loading...")).toBeInTheDocument();
-    expect(screen.getByRole("status", { hidden: true })).toBeInTheDocument();
+    // Fix: Use a more specific selector for the loading spinner
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
   });
 
   it("should render login page when not authenticated", () => {
@@ -110,8 +111,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -129,8 +130,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/prompts/new"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -148,8 +149,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/collections"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -167,8 +168,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/playbooks/new"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -186,8 +187,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/playbooks/123/run"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -205,8 +206,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/integrations"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -224,8 +225,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/admin"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -243,8 +244,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/prompts/123"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();
@@ -262,8 +263,8 @@ describe("App", () => {
 
     render(
       <MemoryRouter initialEntries={["/playbooks/123"]}>
-        <App />
-      </MemoryRouter>
+        <AppWithoutRouter />
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("navbar")).toBeInTheDocument();

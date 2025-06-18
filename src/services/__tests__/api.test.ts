@@ -1,13 +1,20 @@
-import { apiService, collectionsApi, playbooksApi, integrationsApi, adminApi, llmApi } from "../api";
+import {
+  apiService,
+  collectionsApi,
+  playbooksApi,
+  integrationsApi,
+  adminApi,
+  llmApi,
+} from "../api";
 
 // Mock fetch globally
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
 // Mock window.location
-Object.defineProperty(window, 'location', {
+Object.defineProperty(window, "location", {
   value: {
-    href: '',
+    href: "",
   },
   writable: true,
 });
@@ -15,7 +22,7 @@ Object.defineProperty(window, 'location', {
 describe("ApiService", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    window.location.href = '';
+    window.location.href = "";
   });
 
   describe("setToken", () => {
@@ -42,18 +49,15 @@ describe("ApiService", () => {
       apiService.setToken("test-token");
       const result = await apiService.get("/test");
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/test"),
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer test-token",
-            "X-Client-Name": "sutra-web",
-            "X-Client-Version": "1.0.0",
-          },
-        }
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/test"), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-token",
+          "X-Client-Name": "sutra-web",
+          "X-Client-Version": "1.0.0",
+        },
+      });
       expect(result).toEqual(mockResponse);
     });
 
@@ -68,7 +72,7 @@ describe("ApiService", () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(/\/test\?.*page=1.*limit=10.*search=query/),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -79,7 +83,11 @@ describe("ApiService", () => {
         json: jest.fn().mockResolvedValue(mockResponse),
       });
 
-      await apiService.get("/test", { page: 1, limit: null, search: undefined });
+      await apiService.get("/test", {
+        page: 1,
+        limit: null,
+        search: undefined,
+      });
 
       const fetchCall = mockFetch.mock.calls[0][0];
       expect(fetchCall).toContain("page=1");
@@ -99,14 +107,11 @@ describe("ApiService", () => {
 
       const result = await apiService.post("/test", requestData);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/test"),
-        {
-          method: "POST",
-          headers: expect.any(Object),
-          body: JSON.stringify(requestData),
-        }
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/test"), {
+        method: "POST",
+        headers: expect.any(Object),
+        body: JSON.stringify(requestData),
+      });
       expect(result).toEqual(mockResponse);
     });
 
@@ -119,14 +124,11 @@ describe("ApiService", () => {
 
       await apiService.post("/test");
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/test"),
-        {
-          method: "POST",
-          headers: expect.any(Object),
-          body: undefined,
-        }
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/test"), {
+        method: "POST",
+        headers: expect.any(Object),
+        body: undefined,
+      });
     });
   });
 
@@ -141,14 +143,11 @@ describe("ApiService", () => {
 
       const result = await apiService.put("/test", requestData);
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/test"),
-        {
-          method: "PUT",
-          headers: expect.any(Object),
-          body: JSON.stringify(requestData),
-        }
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/test"), {
+        method: "PUT",
+        headers: expect.any(Object),
+        body: JSON.stringify(requestData),
+      });
       expect(result).toEqual(mockResponse);
     });
   });
@@ -163,13 +162,10 @@ describe("ApiService", () => {
 
       const result = await apiService.delete("/test");
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/test"),
-        {
-          method: "DELETE",
-          headers: expect.any(Object),
-        }
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/test"), {
+        method: "DELETE",
+        headers: expect.any(Object),
+      });
       expect(result).toEqual(mockResponse);
     });
   });
@@ -182,7 +178,9 @@ describe("ApiService", () => {
         json: jest.fn().mockResolvedValue({ message: "Unauthorized" }),
       });
 
-      await expect(apiService.get("/test")).rejects.toThrow("Authentication required");
+      await expect(apiService.get("/test")).rejects.toThrow(
+        "Authentication required",
+      );
       expect(window.location.href).toBe("/login");
     });
 
@@ -203,7 +201,9 @@ describe("ApiService", () => {
         json: jest.fn().mockRejectedValue(new Error("Invalid JSON")),
       });
 
-      await expect(apiService.get("/test")).rejects.toThrow("HTTP error! status: 500");
+      await expect(apiService.get("/test")).rejects.toThrow(
+        "HTTP error! status: 500",
+      );
     });
 
     it("should handle network errors", async () => {
@@ -227,9 +227,9 @@ describe("ApiService", () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            "Authorization": "Bearer test-token",
+            Authorization: "Bearer test-token",
           }),
-        })
+        }),
       );
     });
 
@@ -262,7 +262,7 @@ describe("ApiService", () => {
             "X-Client-Name": "sutra-web",
             "X-Client-Version": "1.0.0",
           }),
-        })
+        }),
       );
     });
   });
@@ -284,7 +284,7 @@ describe("Collections API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringMatching(/\/collections\?.*page=1.*limit=10/),
-      expect.any(Object)
+      expect.any(Object),
     );
     expect(result).toEqual(mockResponse);
   });
@@ -300,7 +300,7 @@ describe("Collections API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/collections/1"),
-      expect.any(Object)
+      expect.any(Object),
     );
     expect(result).toEqual(mockCollection);
   });
@@ -320,7 +320,7 @@ describe("Collections API", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify(newCollection),
-      })
+      }),
     );
     expect(result).toEqual(mockResponse);
   });
@@ -340,7 +340,7 @@ describe("Collections API", () => {
       expect.objectContaining({
         method: "PUT",
         body: JSON.stringify(updateData),
-      })
+      }),
     );
     expect(result).toEqual(mockResponse);
   });
@@ -357,7 +357,7 @@ describe("Collections API", () => {
       expect.stringContaining("/collections/1"),
       expect.objectContaining({
         method: "DELETE",
-      })
+      }),
     );
   });
 });
@@ -378,7 +378,7 @@ describe("Playbooks API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/playbooks"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -396,7 +396,7 @@ describe("Playbooks API", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ variables }),
-      })
+      }),
     );
   });
 });
@@ -417,7 +417,7 @@ describe("Integrations API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/integrations/llm"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -435,7 +435,7 @@ describe("Integrations API", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify(integration),
-      })
+      }),
     );
   });
 });
@@ -456,7 +456,7 @@ describe("Admin API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/management/system/health"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 
@@ -471,7 +471,7 @@ describe("Admin API", () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/management/usage"),
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 });
@@ -499,7 +499,7 @@ describe("LLM API", () => {
           model: "gpt-3.5-turbo",
           variables: { temp: 0.7 },
         }),
-      })
+      }),
     );
   });
 });

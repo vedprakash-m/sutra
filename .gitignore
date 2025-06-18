@@ -68,6 +68,7 @@ __pycache__/
 coverage/
 .coverage
 .pytest_cache/
+.jest-cache/
 test-results/
 playwright-report/
 playwright/.cache/

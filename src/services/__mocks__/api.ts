@@ -71,6 +71,8 @@ export interface LLMIntegration {
 
 // Mock implementation
 export const apiService = {
+  setToken: jest.fn(),
+
   async get<T>(endpoint: string): Promise<T> {
     return {
       data: [],

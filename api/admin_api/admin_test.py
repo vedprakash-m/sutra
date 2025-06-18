@@ -112,12 +112,14 @@ class TestAdminAPI:
         
         new_role_data = {'role': 'contributor'}
         
-        mock_cosmos_client.query_items.return_value = [existing_user]
-        mock_cosmos_client.replace_item.return_value = {
+        # Mock database responses - using AsyncMock for async methods
+        from unittest.mock import AsyncMock
+        mock_cosmos_client.query_items = AsyncMock(return_value=[existing_user])
+        mock_cosmos_client.update_item = AsyncMock(return_value={
             **existing_user,
             'role': 'contributor',
             'updatedAt': '2025-06-15T10:00:00Z'
-        }
+        })
         
         # Create request
         req = func.HttpRequest(
@@ -141,7 +143,7 @@ class TestAdminAPI:
         assert response_data['newRole'] == 'contributor'
         assert response_data['oldRole'] == 'member'
         assert response_data['userId'] == target_user_id
-        mock_cosmos_client.replace_item.assert_called_once()
+        mock_cosmos_client.update_item.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_update_user_role_invalid_role(self, mock_admin_auth, mock_cosmos_client):

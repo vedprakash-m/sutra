@@ -219,17 +219,16 @@ async def update_user_role(admin_user_id: str, target_user_id: str, req: func.Ht
             )
         
         db_manager = get_database_manager()
-        # container = client.get_container('Users')
         
         # Get target user
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": target_user_id}]
         
-        items = list(container.query_items(
+        items = await db_manager.query_items(
+            container_name='users',
             query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ))
+            parameters=parameters
+        )
         
         if not items:
             return func.HttpResponse(
@@ -246,7 +245,11 @@ async def update_user_role(admin_user_id: str, target_user_id: str, req: func.Ht
         user_data['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
         
         # Save to database
-        updated_user = container.replace_item(item=user_data['id'], body=user_data)
+        updated_user = await db_manager.update_item(
+            container_name='users',
+            item=user_data,
+            partition_key=user_data['id']
+        )
         
         logger.info(f"Admin {admin_user_id} updated user {target_user_id} role from {old_role} to {new_role}")
         
@@ -274,11 +277,10 @@ async def get_system_health() -> func.HttpResponse:
         # Check database connectivity
         try:
             # Simple query to test database
-            # container = client.get_container('Users')
-            list(container.query_items(
-                query="SELECT VALUE COUNT(1) FROM c",
-                enable_cross_partition_query=True
-            ))
+            await db_manager.query_items(
+                container_name='users',
+                query="SELECT VALUE COUNT(1) FROM c"
+            )
             db_status = 'healthy'
         except Exception as e:
             db_status = f'unhealthy: {str(e)}'

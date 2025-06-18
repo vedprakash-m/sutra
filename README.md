@@ -1,89 +1,142 @@
-# Sutra - AI Prompt Management & Multi-LLM Optimization
+# Sutra - AI Operations Platform
 
-> **Status: MVP Complete** 🚀  
-> Full-stack AI prompt management platform with multi-LLM integration and workflow automation.
+> **Enterprise-grade AI workflow management with startup-friendly economics**
 
-**Weaving your AI solutions.**
+<div align="center">
 
-Sutra is a comprehensive AI Prompt Management & Multi-LLM Optimization platform that enables systematic prompt engineering, model comparison, and AI workflow orchestration. Built with Azure serverless architecture for scalability and cost-effectiveness.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/your-username/sutra)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Azure](https://img.shields.io/badge/cloud-azure-0078d4.svg)](https://azure.microsoft.com)
+[![TypeScript](https://img.shields.io/badge/typescript-5.0+-3178c6.svg)](https://www.typescriptlang.org)
+[![Python](https://img.shields.io/badge/python-3.12+-3776ab.svg)](https://www.python.org)
 
-### Key Features
+**Weaving your AI solutions together**
 
-- **🎯 Intelligent Prompt Engineering**: Guided prompt creation with AI-powered suggestions
-- **🔄 Multi-LLM Optimization**: Compare outputs from OpenAI, Anthropic, and Google models
-- **📁 Prompt Management**: Organize prompts in collections with version control
-- **⚡ Linear AI Workflows**: Create step-by-step automation playbooks
-- **👥 Team Collaboration**: Share prompts and workflows across teams
-- **🛡️ Admin Controls**: Budget management, usage monitoring, and system health
-- **💰 Cost Optimization**: Two-tier Azure architecture for efficient resource management
+[Features](#features) • [Quick Start](#quick-start) • [Architecture](#architecture) • [Documentation](#documentation)
 
-## Tech Stack
+</div>
 
-### Frontend
-- **React 18** with TypeScript
-- **Tailwind CSS** for responsive design
-- **React Router** for navigation
-- **React Query** for data fetching
-- **Vite** for fast development
+---
 
-### Backend
-- **Azure Functions** (Python 3.12)
-- **Cosmos DB** for data persistence
-- **Azure Key Vault** for secrets management
-- **Azure Storage** for file management
+## Overview
 
-### DevOps
-- **Docker Compose** for local development
-- **Playwright** for E2E testing
-- **Jest** for unit testing
-- **GitHub Actions** for CI/CD
+Sutra is a comprehensive AI operations platform designed for teams building AI-powered applications. It provides systematic prompt engineering, multi-LLM orchestration, and workflow automation with enterprise-grade reliability and startup-friendly cost optimization.
+
+### 🎯 Built for Teams
+
+- **Developers**: Streamline AI integration with reusable prompt templates and multi-provider testing
+- **Product Teams**: Create and manage AI workflows without deep technical knowledge
+- **Operations**: Monitor usage, control costs, and ensure compliance across all AI initiatives
+- **Enterprises**: Scale AI operations with role-based access, audit trails, and budget controls
+
+### ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| 🎯 **Intelligent Prompt Engineering** | AI-powered prompt suggestions with guided creation workflows |
+| 🔄 **Multi-LLM Optimization** | Compare outputs across OpenAI, Anthropic, and Google models |
+| 📁 **Prompt Management** | Organize prompts in collections with version control and collaboration |
+| ⚡ **Workflow Automation** | Create reusable AI playbooks with step-by-step orchestration |
+| 👥 **Team Collaboration** | Share prompts, workflows, and insights across teams |
+| 🛡️ **Enterprise Controls** | Budget management, usage monitoring, and role-based access |
+| 💰 **Cost Optimization** | Two-tier Azure architecture enabling 70-80% cost savings during downtime |
+
+## Architecture
+
+Sutra uses a **cost-optimized two-tier Azure architecture** that separates persistent data from compute resources, enabling significant cost savings without data loss.
+
+### 🏗️ Infrastructure Design
+
+```mermaid
+graph TB
+    subgraph "Persistent Tier (Always Running)"
+        DB[Cosmos DB<br/>sutra-db]
+        KV[Key Vault<br/>sutra-kv]
+        SA[Storage Account<br/>sutrasa99]
+    end
+    
+    subgraph "Compute Tier (Can Be Deleted)"
+        API[Azure Functions<br/>sutra-api]
+        WEB[Static Web App<br/>sutra-web]
+        FD[Front Door<br/>sutra-fd]
+        AI[App Insights<br/>sutra-ai]
+    end
+    
+    API --> DB
+    API --> KV
+    API --> SA
+    FD --> API
+    FD --> WEB
+```
+
+### 🛡️ Technology Stack
+
+**Frontend**
+- React 18 + TypeScript
+- Tailwind CSS for responsive design
+- Vite for fast development
+- React Query for state management
+
+**Backend**
+- Azure Functions (Python 3.12)
+- Serverless architecture
+- REST API with OpenAPI documentation
+- JWT authentication with Azure AD B2C
+
+**Data & Storage**
+- Azure Cosmos DB (NoSQL, serverless)
+- Azure Blob Storage for files
+- Azure Key Vault for secrets
+- 30-day retention for cost optimization
+
+**DevOps & Monitoring**
+- Docker Compose for local development
+- Playwright E2E testing
+- GitHub Actions CI/CD
+- Application Insights monitoring
 
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - Python 3.12+
-- Azure Functions Core Tools
-- Docker Desktop (optional, for full local setup)
+- Docker & Docker Compose
+- Azure CLI (for deployment)
 
-### Local Development
+### 🚀 Local Development
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/sutra.git
-   cd sutra
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/your-username/sutra.git
+cd sutra
 
-2. **Install dependencies**
-   ```bash
-   # Frontend dependencies
-   npm install
-   
-   # Backend dependencies (use minimal requirements to avoid compilation issues)
-   cd api
-   pip install -r requirements-minimal.txt
-   cd ..
-   ```
-   
-   > **Note**: If you encounter `grpcio` compilation errors, use `requirements-minimal.txt` which contains only essential dependencies for testing.
+# Start the full development environment
+npm run dev:local
 
-3. **Start development servers**
-   ```bash
-   # Terminal 1: Backend API
-   cd api
-   func start --host 0.0.0.0 --port 7071
-   
-   # Terminal 2: Frontend
-   npm run dev
-   ```
+# Access the application
+# Frontend: http://localhost:3000
+# Backend: http://localhost:7071
+```
 
-4. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:7071
+### 🧪 Testing
 
-### Environment Setup
+```bash
+# Run end-to-end tests
+npm run test:e2e
 
-Create `api/local.settings.json`:
+# Run backend tests
+npm run backend:test-deps
+
+# Validate CI/CD setup
+npm run ci:validate
+```
+
+### 🔧 Environment Configuration
+
+For local development, create these configuration files:
+
+**Backend Configuration** (`api/local.settings.json`):
 ```json
 {
   "IsEncrypted": false,
@@ -91,153 +144,176 @@ Create `api/local.settings.json`:
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "DEVELOPMENT_MODE": "true",
-    "COSMOS_DB_ENDPOINT": "your-cosmos-endpoint",
-    "COSMOS_DB_KEY": "your-cosmos-key",
-    "COSMOS_DB_DATABASE": "sutra-db"
+    "COSMOS_DB_ENDPOINT": "https://localhost:8081",
+    "COSMOS_DB_KEY": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
   }
 }
 ```
 
-Create `.env.local`:
+**Frontend Configuration** (`.env.local`):
 ```env
 VITE_API_URL=http://localhost:7071/api
 VITE_ENVIRONMENT=development
 ```
 
-## Features
+## 🚀 Deployment
 
-### ✅ Completed (MVP Ready)
+### Azure Infrastructure
 
-#### Backend Foundation
-- [x] Azure Functions API with Python runtime
-- [x] Cosmos DB integration with dev-mode fallback
-- [x] Authentication and authorization system
-- [x] Admin-controlled LLM integrations
-- [x] Budget tracking and enforcement
-- [x] Collections and Playbooks CRUD operations
-- [x] LLM execution engine
-- [x] Comprehensive error handling
+Sutra uses Infrastructure as Code (Bicep) with a two-phase deployment:
 
-#### Frontend Application
-- [x] React application with TypeScript
-- [x] Authentication flow (dev-mode ready)
-- [x] Responsive design with Tailwind CSS
-- [x] Prompt Builder with multi-LLM testing
-- [x] Collections management interface
-- [x] Playbook Builder with workflow creation
-- [x] Admin Panel with system monitoring
-- [x] Real-time API integration
+```bash
+# Deploy persistent infrastructure (data layer)
+az deployment group create \
+  --resource-group sutra-db-rg \
+  --template-file infrastructure/persistent.bicep
 
-#### DevOps & Testing
-- [x] Local development environment
-- [x] E2E testing with Playwright
-- [x] API validation scripts
-- [x] Docker Compose setup
+# Deploy compute infrastructure (application layer)
+az deployment group create \
+  --resource-group sutra-rg \
+  --template-file infrastructure/compute.bicep
+```
 
-### 🔄 In Progress
+### Cost Management
 
-- [ ] Azure AD B2C integration for production auth
-- [ ] Playbook execution engine
-- [ ] Version history and diff view
-- [ ] Advanced prompt suggestions (PromptCoach)
-- [ ] User management interface
+The two-tier architecture enables significant cost optimization:
 
-### 🎯 Planned
+- **Weekend Shutdown**: Delete compute tier, save 70-80% monthly costs
+- **Holiday Downtime**: Extended shutdown for maximum savings
+- **Rapid Recovery**: 10-minute restoration with zero data loss
+- **Persistent Data**: All prompts, workflows, and user data preserved
 
-- [ ] Two-tier Azure deployment
-- [ ] Advanced team collaboration
-- [ ] Real-time collaboration features
-- [ ] Performance optimization
-- [ ] Monitoring and alerting
-- **Database**: Azure Cosmos DB (Serverless)
-- **Authentication**: Azure AD B2C
-- **Infrastructure**: Two-tier resource groups for cost optimization
+## 📊 Features Overview
+
+### 🎯 Prompt Engineering
+- **AI-Powered Suggestions**: Get intelligent prompt recommendations
+- **Multi-Model Testing**: Compare outputs across different LLM providers
+- **Version Control**: Track prompt evolution and performance
+- **Template Library**: Reusable prompt patterns for common use cases
+
+### � Collection Management
+- **Organized Workflows**: Group related prompts into collections
+- **Team Sharing**: Collaborate on prompt libraries
+- **Access Controls**: Manage permissions and visibility
+- **Search & Discovery**: Find prompts across your organization
+
+### ⚡ Playbook Automation
+- **Workflow Builder**: Create multi-step AI processes
+- **Conditional Logic**: Build complex decision trees
+- **Integration Ready**: Connect with external APIs and services
+- **Monitoring**: Track execution success and performance
+
+### 🛡️ Enterprise Controls
+- **Budget Management**: Set spending limits per team/project
+- **Usage Analytics**: Monitor LLM consumption and costs
+- **Audit Trails**: Track all changes and executions
+- **Role-Based Access**: Granular permissions system
+
+## 🧪 Testing & Quality
+
+Sutra includes comprehensive testing at every level:
+
+### End-to-End Testing
+```bash
+# Full test suite with multiple browsers
+npm run test:e2e
+
+# Interactive testing with UI
+npm run test:e2e:ui
+
+# Headed testing for debugging
+npm run test:e2e:headed
+```
+
+### Validation Scripts
+```bash
+# Validate backend dependencies
+npm run backend:test-deps
+
+# Check for namespace collisions
+./scripts/test-namespace-collisions.sh
+
+# Validate CI/CD configuration
+npm run ci:validate
+```
 
 ## 📁 Project Structure
 
 ```
 sutra/
-├── src/                    # Frontend React application
-├── api/                    # Backend Azure Functions
-├── infrastructure/         # Azure Bicep templates
-├── tests/                  # End-to-end tests
-├── local-dev/             # Local development setup
-├── docs/                  # Documentation
-└── tasks/                 # Project task management
+├── src/                    # React frontend application
+│   ├── components/         # Reusable UI components
+│   ├── hooks/             # Custom React hooks
+│   ├── services/          # API service layer
+│   └── styles/           # Global styles and Tailwind config
+├── api/                   # Azure Functions backend
+│   ├── admin_api/         # Admin management endpoints
+│   ├── prompts/          # Prompt CRUD operations
+│   ├── collections_api/  # Collection management
+│   ├── playbooks_api/    # Playbook orchestration
+│   ├── llm_execute_api/  # LLM execution engine
+│   └── shared/           # Shared utilities and models
+├── infrastructure/        # Azure Bicep templates
+│   ├── persistent.bicep  # Data tier resources
+│   └── compute.bicep     # Application tier resources
+├── tests/e2e/            # Playwright end-to-end tests
+├── local-dev/            # Local development setup
+├── scripts/              # Validation and utility scripts
+└── docs/                 # Project documentation
 ```
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- Python 3.12+
-- Docker & Docker Compose
-- Azure Functions Core Tools
-- Azure CLI
-
-### Local Development
-```bash
-# Start local development environment
-npm run dev:local
-
-# Run tests
-npm run test:e2e
-```
-
-### End-to-End Testing
-
-The Sutra application includes a comprehensive E2E testing suite for validating critical user flows locally before deployment.
-
-**Quick Start:**
-```bash
-# Run full E2E test suite
-npm run test:e2e
-
-# Run E2E tests with UI for debugging
-npm run test:e2e:ui
-
-# Manual control of services
-npm run e2e:setup    # Start services
-npm run test:e2e:headed  # Run tests with browser visible
-npm run e2e:cleanup  # Stop services
-```
-
-**Test Coverage:**
-- 🔐 Authentication and session management
-- 🎯 Prompt creation, editing, and multi-LLM testing
-- 📁 Collection management and organization
-- ⚡ Playbook workflow creation and execution
-- 🧭 Navigation and responsive design
-
-For detailed setup instructions, troubleshooting, and test development guidelines, see [E2E_TESTING.md](./E2E_TESTING.md).
-
-## 🏗️ Resource Groups
-
-### Persistent Resources (sutra-db-rg)
-- `sutra-db` - Cosmos DB
-- `sutra-kv` - Key Vault  
-- `sutrasa99` - Storage Account
-
-### Compute Resources (sutra-rg)
-- `sutra-api` - Azure Functions
-- `sutra-web` - Static Web App
-- `sutra-fd` - Front Door
-- `sutra-ai` - Application Insights
 
 ## 📖 Documentation
 
-- [PRD](./docs/PRD-Sutra.md) - Product Requirements
-- [Functional Spec](./docs/Functional_Spec_Sutra.md) - Detailed specifications
-- [Technical Spec](./docs/Tech_Spec_Sutra.md) - Technical architecture
-- [Task List](./tasks/tasks-sutra-mvp.md) - Development roadmap
+| Document | Description |
+|----------|-------------|
+| [Technical Specification](./docs/Tech_Spec_Sutra.md) | Detailed technical architecture and design decisions |
+| [Product Requirements](./docs/PRD-Sutra.md) | Product vision, goals, and feature specifications |
+| [Functional Specification](./docs/Functional_Spec_Sutra.md) | User workflows and system behavior |
+| [Project Metadata](./docs/metadata.md) | Architecture overview and operational procedures |
+| [E2E Testing Guide](./docs/E2E_TESTING.md) | Comprehensive testing setup and procedures |
+| [Validation Summary](./docs/VALIDATION_SUMMARY.md) | System validation and quality assurance |
 
-## 🎯 MVP Features
+## 🤝 Contributing
 
-- Intelligent Prompt Engineering & Multi-LLM Optimization
-- Prompt Management & Team Collaboration
-- Linear AI Workflow Orchestration (Playbooks)
-- Admin-controlled LLM budgets and monitoring
+We welcome contributions! Please read our guidelines:
+
+1. **Development Setup**: Follow the Quick Start guide
+2. **Testing**: Ensure all tests pass before submitting
+3. **Code Quality**: Follow TypeScript/Python best practices
+4. **Documentation**: Update relevant docs with your changes
+
+### Development Workflow
+```bash
+# Create feature branch
+git checkout -b feature/your-feature
+
+# Make changes and test locally
+npm run dev:local
+npm run test:e2e
+
+# Validate everything works
+npm run ci:validate
+
+# Submit pull request
+```
+
+## 🔗 Related Projects
+
+- **Azure Functions**: [Serverless compute platform](https://azure.microsoft.com/services/functions/)
+- **React**: [Frontend framework](https://reactjs.org/)
+- **Cosmos DB**: [NoSQL database service](https://azure.microsoft.com/services/cosmos-db/)
+- **Playwright**: [End-to-end testing framework](https://playwright.dev/)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-*Built with ❤️ for systematic AI operations*
+<div align="center">
+
+**Built with ❤️ for systematic AI operations**
+
+[⭐ Star this project](https://github.com/your-username/sutra) • [🐛 Report issues](https://github.com/your-username/sutra/issues) • [💡 Request features](https://github.com/your-username/sutra/issues/new)
+
+</div>

@@ -1,26 +1,26 @@
 export default {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+  preset: "ts-jest",
+  testEnvironment: "jsdom",
+  setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
   moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^@/services/api$': '<rootDir>/src/services/__mocks__/api.ts',
-    '^../services/api$': '<rootDir>/src/services/__mocks__/api.ts',
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
+    "^@/services/api$": "<rootDir>/src/services/__mocks__/api.ts",
+    "^../services/api$": "<rootDir>/src/services/__mocks__/api.ts",
   },
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    "^.+\\.tsx?$": "ts-jest",
   },
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/test-setup.ts',
-    '!src/main.tsx',
-    '!src/vite-env.d.ts',
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/test-setup.ts",
+    "!src/main.tsx",
+    "!src/vite-env.d.ts",
   ],
-  coverageReporters: ['text', 'lcov', 'html'],
-  coverageDirectory: 'coverage',
+  coverageReporters: ["text", "lcov", "html"],
+  coverageDirectory: "coverage",
   coverageThreshold: {
     global: {
       branches: 70,
@@ -30,17 +30,13 @@ export default {
     },
   },
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{ts,tsx}',
-    '<rootDir>/src/**/*.{test,spec}.{ts,tsx}',
+    "<rootDir>/src/**/__tests__/**/*.{ts,tsx}",
+    "<rootDir>/src/**/*.{test,spec}.{ts,tsx}",
   ],
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '/dist/',
-    '/coverage/',
-  ],
+  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/coverage/"],
   // Fast feedback for CI
-  maxWorkers: process.env.CI ? '50%' : '100%',
+  maxWorkers: process.env.CI ? "50%" : "100%",
   // Cache for faster subsequent runs
   cache: true,
-  cacheDirectory: '<rootDir>/.jest-cache',
-}
+  cacheDirectory: "<rootDir>/.jest-cache",
+};

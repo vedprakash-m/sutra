@@ -1,20 +1,20 @@
-import { useState } from 'react'
-import { useAuth } from './AuthProvider'
+import { useState } from "react";
+import { useAuth } from "./AuthProvider";
 
 export default function LoginPage() {
-  const { login, isLoading } = useAuth()
-  const [loginType, setLoginType] = useState<'user' | 'admin'>('user')
+  const { login, isLoading } = useAuth();
+  const [loginType, setLoginType] = useState<"user" | "admin">("user");
 
   const handleLogin = async () => {
     try {
       await login(
-        loginType === 'admin' ? 'admin@sutra.ai' : 'user@sutra.ai',
-        loginType === 'admin'
-      )
+        loginType === "admin" ? "admin@sutra.ai" : "user@sutra.ai",
+        loginType === "admin",
+      );
     } catch (error) {
-      console.error('Login failed:', error)
+      console.error("Login failed:", error);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -38,8 +38,8 @@ export default function LoginPage() {
                   <input
                     type="radio"
                     className="mr-2"
-                    checked={loginType === 'user'}
-                    onChange={() => setLoginType('user')}
+                    checked={loginType === "user"}
+                    onChange={() => setLoginType("user")}
                   />
                   Regular User
                 </label>
@@ -47,8 +47,8 @@ export default function LoginPage() {
                   <input
                     type="radio"
                     className="mr-2"
-                    checked={loginType === 'admin'}
-                    onChange={() => setLoginType('admin')}
+                    checked={loginType === "admin"}
+                    onChange={() => setLoginType("admin")}
                   />
                   Administrator
                 </label>
@@ -62,15 +62,16 @@ export default function LoginPage() {
               disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {isLoading ? 'Signing in...' : 'Sign in (Development Mode)'}
+              {isLoading ? "Signing in..." : "Sign in (Development Mode)"}
             </button>
           </div>
-          
+
           <div className="text-xs text-gray-500 text-center">
-            This is a development environment. In production, this would integrate with Azure AD B2C.
+            This is a development environment. In production, this would
+            integrate with Azure AD B2C.
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

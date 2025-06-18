@@ -1,49 +1,51 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '@/components/auth/AuthProvider'
-import { useApi } from '@/hooks/useApi'
-import { collectionsApi } from '@/services/api'
-import VersionHistory from './VersionHistory'
-import ImportModal from './ImportModal'
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useApi } from "@/hooks/useApi";
+import { collectionsApi } from "@/services/api";
+import VersionHistory from "./VersionHistory";
+import ImportModal from "./ImportModal";
 
 export default function CollectionsPage() {
-  const { user } = useAuth()
-  const [searchTerm, setSearchTerm] = useState('')
+  const { user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
   const [versionHistoryModal, setVersionHistoryModal] = useState<{
-    isOpen: boolean
-    promptId: string
-    promptName: string
+    isOpen: boolean;
+    promptId: string;
+    promptName: string;
   }>({
     isOpen: false,
-    promptId: '',
-    promptName: ''
-  })
-  const [importModalOpen, setImportModalOpen] = useState(false)
-  
+    promptId: "",
+    promptName: "",
+  });
+  const [importModalOpen, setImportModalOpen] = useState(false);
+
   // Fetch collections from API
-  const { data: collectionsData, loading, error, refetch } = useApi(
-    () => collectionsApi.list({ search: searchTerm }),
-    [searchTerm]
-  )
+  const {
+    data: collectionsData,
+    loading,
+    error,
+    refetch,
+  } = useApi(() => collectionsApi.list({ search: searchTerm }), [searchTerm]);
 
   const handleCreateCollection = async () => {
     try {
       const newCollection = {
-        name: 'New Collection',
-        description: 'A new collection for organizing prompts',
-        type: 'private' as const,
-        owner_id: user?.id || 'dev-user'
-      }
-      await collectionsApi.create(newCollection)
-      refetch()
+        name: "New Collection",
+        description: "A new collection for organizing prompts",
+        type: "private" as const,
+        owner_id: user?.id || "dev-user",
+      };
+      await collectionsApi.create(newCollection);
+      refetch();
     } catch (error) {
-      console.error('Error creating collection:', error)
+      console.error("Error creating collection:", error);
     }
-  }
+  };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+    return new Date(dateString).toLocaleDateString();
+  };
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -94,7 +96,9 @@ export default function CollectionsPage() {
       {/* Error State */}
       {error && (
         <div className="text-center py-8">
-          <p className="text-red-600">Error loading collections. Please try again.</p>
+          <p className="text-red-600">
+            Error loading collections. Please try again.
+          </p>
         </div>
       )}
 
@@ -102,7 +106,10 @@ export default function CollectionsPage() {
       {!loading && !error && (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {collectionsData?.items?.map((collection) => (
-            <div key={collection.id} className="bg-white overflow-hidden shadow rounded-lg">
+            <div
+              key={collection.id}
+              className="bg-white overflow-hidden shadow rounded-lg"
+            >
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -139,11 +146,13 @@ export default function CollectionsPage() {
                     View collection
                   </Link>
                   <button
-                    onClick={() => setVersionHistoryModal({
-                      isOpen: true,
-                      promptId: collection.id,
-                      promptName: collection.name
-                    })}
+                    onClick={() =>
+                      setVersionHistoryModal({
+                        isOpen: true,
+                        promptId: collection.id,
+                        promptName: collection.name,
+                      })
+                    }
                     className="font-medium text-gray-600 hover:text-gray-900"
                   >
                     History
@@ -156,7 +165,10 @@ export default function CollectionsPage() {
           {/* Empty state when no collections */}
           {collectionsData?.items?.length === 0 && (
             <div className="col-span-full text-center py-8">
-              <p className="text-gray-500">No collections found. Create your first collection to get started!</p>
+              <p className="text-gray-500">
+                No collections found. Create your first collection to get
+                started!
+              </p>
             </div>
           )}
 
@@ -167,7 +179,9 @@ export default function CollectionsPage() {
                 <div className="w-8 h-8 bg-gray-400 rounded-md flex items-center justify-center mx-auto">
                   <span className="text-white text-sm font-medium">+</span>
                 </div>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">Create new collection</h3>
+                <h3 className="mt-2 text-sm font-medium text-gray-900">
+                  Create new collection
+                </h3>
                 <p className="mt-1 text-sm text-gray-500">
                   Get started by creating a new prompt collection
                 </p>
@@ -189,11 +203,17 @@ export default function CollectionsPage() {
       {/* Version History Modal */}
       <VersionHistory
         isOpen={versionHistoryModal.isOpen}
-        onClose={() => setVersionHistoryModal({ isOpen: false, promptId: '', promptName: '' })}
+        onClose={() =>
+          setVersionHistoryModal({
+            isOpen: false,
+            promptId: "",
+            promptName: "",
+          })
+        }
         promptId={versionHistoryModal.promptId}
         promptName={versionHistoryModal.promptName}
         onVersionRestore={(versionId) => {
-          console.log('Restoring version:', versionId)
+          console.log("Restoring version:", versionId);
           // TODO: Implement version restore logic
         }}
       />
@@ -203,25 +223,25 @@ export default function CollectionsPage() {
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         onImport={(prompts) => {
-          console.log('Importing prompts:', prompts)
+          console.log("Importing prompts:", prompts);
           // TODO: Implement actual import logic
           // Create collections for each imported prompt
           prompts.forEach(async (prompt) => {
             try {
               await collectionsApi.create({
                 name: prompt.title,
-                description: prompt.description || 'Imported prompt',
-                type: 'private' as const,
-                owner_id: user?.id || 'dev-user',
-                tags: ['imported', prompt.source.toLowerCase()]
-              })
+                description: prompt.description || "Imported prompt",
+                type: "private" as const,
+                owner_id: user?.id || "dev-user",
+                tags: ["imported", prompt.source.toLowerCase()],
+              });
             } catch (error) {
-              console.error('Error importing prompt:', error)
+              console.error("Error importing prompt:", error);
             }
-          })
-          refetch() // Refresh the collections list
+          });
+          refetch(); // Refresh the collections list
         }}
       />
     </div>
-  )
+  );
 }

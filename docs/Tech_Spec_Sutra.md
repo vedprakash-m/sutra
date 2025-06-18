@@ -55,50 +55,50 @@ For the MVP, the application will be deployed as a single-region, single environ
 ### 2.1. Frontend Hosting & Framework
 
 - **Azure Static Web Apps (ASWA):** For hosting the client-side application.
-  - *Justification:* Global distribution, custom domains, integrated CI/CD (GitHub Actions), automatic SSL, generous free tier.
+  - _Justification:_ Global distribution, custom domains, integrated CI/CD (GitHub Actions), automatic SSL, generous free tier.
 - **Framework:** React with TypeScript (rich UI, strong typing).
 
 ### 2.2. Backend API & Logic
 
 - **Azure Front Door (Standard Tier):** API Gateway and global entry point.
-  - *Justification:* Centralized security (WAF), performance (global load balancing, CDN caching), simplified API management, offsets compute costs.
+  - _Justification:_ Centralized security (WAF), performance (global load balancing, CDN caching), simplified API management, offsets compute costs.
 - **Azure Functions:** Serverless backend logic, API endpoints, LLM orchestration.
-  - *Justification:* Pay-per-execution, auto-scaling, cost-effective.
+  - _Justification:_ Pay-per-execution, auto-scaling, cost-effective.
   - **Runtime & Language:** Python 3.12.
-  - **Use Cases:**  
-    - User authentication & authorization callbacks  
-    - CRUD for Prompts, Collections, Playbooks  
-    - Multi-LLM orchestration  
-    - Playbook execution  
+  - **Use Cases:**
+    - User authentication & authorization callbacks
+    - CRUD for Prompts, Collections, Playbooks
+    - Multi-LLM orchestration
+    - Playbook execution
     - External integrations (future)
 
 ### 2.3. Database
 
 - **Azure Cosmos DB (NoSQL API, Serverless Mode):**
-  - *Justification:* Pay-per-use, low-latency, flexible JSON document model.
+  - _Justification:_ Pay-per-use, low-latency, flexible JSON document model.
 
 ### 2.4. Identity & Access Management
 
 - **Azure Active Directory B2C (AAD B2C):** User identities and authentication.
-  - *Justification:* Secure, scalable, cost-effective, managed.
+  - _Justification:_ Secure, scalable, cost-effective, managed.
 - **Alternative (Enterprise):** Azure AD for SSO in enterprise deployments.
 
 ### 2.5. External LLM Integration
 
 - **Direct API Calls:** Azure Functions make direct HTTP API calls to LLM providers (OpenAI, Gemini, Claude).
-  - *Justification:* Simple, avoids latency/cost of intermediaries. Users provide their own API keys.
+  - _Justification:_ Simple, avoids latency/cost of intermediaries. Users provide their own API keys.
 
 ### 2.6. File Storage
 
 - **Azure Blob Storage:** For large files (chat histories, exports, assets).
-  - *Justification:* Low-cost, scalable, pay-per-GB.
+  - _Justification:_ Low-cost, scalable, pay-per-GB.
 
 ### 2.7. Monitoring & Logging
 
 - **Azure Application Insights with Adaptive Sampling:** Performance monitoring, distributed tracing, operational logging.
-  - *Justification:* Real-time insights, cost-effective telemetry.
+  - _Justification:_ Real-time insights, cost-effective telemetry.
 - **Azure Monitor Logs (Log Analytics Workspace):** Centralized log collection and querying.
-  - *Justification:* Debugging, auditing, analytics.
+  - _Justification:_ Debugging, auditing, analytics.
 - **Cost Management:** Short retention policy (e.g., 14 days), daily ingestion cap.
 - **PII Redaction:** Redact/mask PII in logs before storage.
 - **Contextual Logging:** Structured JSON logs with trace/correlation IDs, userId, etc.
@@ -106,10 +106,10 @@ For the MVP, the application will be deployed as a single-region, single environ
 ### 2.8. Continuous Integration/Continuous Deployment (CI/CD)
 
 - **GitHub Actions:** Automated build, test, and deployment.
-  - *Justification:* Native ASWA integration, free tier, consistency.
+  - _Justification:_ Native ASWA integration, free tier, consistency.
 - **Security Scanning:** SAST and dependency scanning in CI/CD.
 - **Infrastructure as Code (IaC):** Bicep.
-  - *Justification:* Declarative syntax, native Azure support.
+  - _Justification:_ Declarative syntax, native Azure support.
 
 ---
 
@@ -129,7 +129,10 @@ All GUIDs are UUID v4. Timestamps are ISO 8601.
   "llmApiKeys": {
     "openai": "kv-ref-to-secret",
     "google_gemini": "kv-ref-to-secret",
-    "custom_endpoint_1": { "url": "https://api.custom.ai", "key": "kv-ref-to-secret" }
+    "custom_endpoint_1": {
+      "url": "https://api.custom.ai",
+      "key": "kv-ref-to-secret"
+    }
   },
   "createdAt": "2025-06-14T22:00:00Z",
   "updatedAt": "2025-06-14T22:00:00Z"
@@ -298,7 +301,8 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - `DELETE /api/prompts/{id}` – Delete a prompt
 - `GET /api/prompts/{id}/versions` – Get all versions of a prompt (pagination)
 - `POST /api/prompts/{id}/run` – Execute a specific prompt version against selected LLMs (Multi-LLM Compare)
-  - **Request Body:**  
+
+  - **Request Body:**
     ```json
     {
       "versionId": "...",
@@ -307,11 +311,14 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
       "outputFormat": "markdown"
     }
     ```
-  - **Error Response:**  
+  - **Error Response:**
     ```json
-    { "errorCode": "INVALID_LLM_KEY", "message": "Human-readable error message." }
+    {
+      "errorCode": "INVALID_LLM_KEY",
+      "message": "Human-readable error message."
+    }
     ```
-  - **Success Response:**  
+  - **Success Response:**
     ```json
     { "llmOutputs": { "openai": { "text": "...", "score": "...", "format": "markdown" }, ... } }
     ```
@@ -323,11 +330,11 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - `POST /api/playbooks` – Create a new playbook
 - `GET /api/playbooks/{id}` – Get playbook details
 - `POST /api/playbooks/{id}/run` – Execute a playbook (async)
-  - **Request Body:**  
+  - **Request Body:**
     ```json
     { "initialInputs": { "customer_name": "Alice" } }
     ```
-  - **Response:**  
+  - **Response:**
     ```json
     { "executionId": "...", "status": "running" }
     ```
@@ -347,17 +354,17 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - **Authentication & Authorization:**
   - AAD B2C for user authentication.
   - Azure Functions validate JWT tokens for all API access (signature, expiration, issuer/audience, claims).
-  - **Role-Based Access Control (RBAC):**  
-    - **Roles:** Agent, Contributor, PromptManager, Admin  
+  - **Role-Based Access Control (RBAC):**
+    - **Roles:** Agent, Contributor, PromptManager, Admin
     - **Entity-Level RBAC:** Permissions (read, write, execute, manage) on Collections, Prompts, Playbooks.
-- **Data Encryption:**  
+- **Data Encryption:**
   - At rest (Cosmos DB, Blob Storage) and in transit (HTTPS/TLS).
   - LLM API Keys stored in Azure Key Vault, accessed via Managed Identities.
   - Least privilege for Azure Functions.
-- **Input Validation & Output Sanitization:**  
+- **Input Validation & Output Sanitization:**
   - Robust input validation (schema/type/length/regex).
   - Output sanitization (HTML escaping, PII redaction/masking).
-- **Network Security:**  
+- **Network Security:**
   - CORS configured to allow only frontend domain.
   - NSGs for VNet deployments (future consideration).
 
@@ -377,7 +384,7 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - **Azure Front Door (Standard):** Base fee offset by reduced compute/egress costs.
 - **No Persistent Caching (Redis):** No fixed-cost caching.
   - **Alternative Caching:** Client-side, in-memory, and efficient indexing.
-- **Monitoring & Alerts:**  
+- **Monitoring & Alerts:**
   - Azure Monitor, Application Insights with adaptive sampling.
   - Budgets and alerts in Azure Cost Management.
   - **Efficient Code:** Directly translates to cost savings.

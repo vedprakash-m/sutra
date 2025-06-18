@@ -31,15 +31,15 @@ Sutra is a comprehensive AI operations platform designed for teams building AI-p
 
 ### ✨ Key Features
 
-| Feature | Description |
-|---------|-------------|
-| 🎯 **Intelligent Prompt Engineering** | AI-powered prompt suggestions with guided creation workflows |
-| 🔄 **Multi-LLM Optimization** | Compare outputs across OpenAI, Anthropic, and Google models |
-| 📁 **Prompt Management** | Organize prompts in collections with version control and collaboration |
-| ⚡ **Workflow Automation** | Create reusable AI playbooks with step-by-step orchestration |
-| 👥 **Team Collaboration** | Share prompts, workflows, and insights across teams |
-| 🛡️ **Enterprise Controls** | Budget management, usage monitoring, and role-based access |
-| 💰 **Cost Optimization** | Two-tier Azure architecture enabling 70-80% cost savings during downtime |
+| Feature                               | Description                                                              |
+| ------------------------------------- | ------------------------------------------------------------------------ |
+| 🎯 **Intelligent Prompt Engineering** | AI-powered prompt suggestions with guided creation workflows             |
+| 🔄 **Multi-LLM Optimization**         | Compare outputs across OpenAI, Anthropic, and Google models              |
+| 📁 **Prompt Management**              | Organize prompts in collections with version control and collaboration   |
+| ⚡ **Workflow Automation**            | Create reusable AI playbooks with step-by-step orchestration             |
+| 👥 **Team Collaboration**             | Share prompts, workflows, and insights across teams                      |
+| 🛡️ **Enterprise Controls**            | Budget management, usage monitoring, and role-based access               |
+| 💰 **Cost Optimization**              | Two-tier Azure architecture enabling 70-80% cost savings during downtime |
 
 ## Architecture
 
@@ -54,13 +54,13 @@ graph TB
         KV[Key Vault<br/>sutra-kv]
         SA[Storage Account<br/>sutrasa99]
     end
-    
+
     subgraph "Compute Tier (Can Be Deleted)"
         API[Azure Functions<br/>sutra-api]
         WEB[Static Web App<br/>sutra-web]
         AI[App Insights<br/>sutra-ai]
     end
-    
+
     Users --> WEB
     WEB --> API
     API --> DB
@@ -71,6 +71,7 @@ graph TB
 ### 🚀 Direct Access Architecture
 
 **Key Benefits**:
+
 - **Cost Optimized**: No gateway or CDN costs (~$30-50/month savings)
 - **Simple Deployment**: Direct endpoint access reduces complexity
 - **Fast Performance**: No additional hops or proxy layers
@@ -80,24 +81,28 @@ graph TB
 ### 🛡️ Technology Stack
 
 **Frontend**
+
 - React 18 + TypeScript
 - Tailwind CSS for responsive design
 - Vite for fast development
 - React Query for state management
 
 **Backend**
+
 - Azure Functions (Python 3.12)
 - Direct access architecture with rate limiting
 - REST API with OpenAPI documentation
 - JWT authentication with Azure AD B2C
 
 **Data & Storage**
+
 - Azure Cosmos DB (NoSQL, serverless)
 - Azure Blob Storage for files
 - Azure Key Vault for secrets
 - 30-day retention for cost optimization
 
 **DevOps & Monitoring**
+
 - Docker Compose for local development
 - Playwright E2E testing
 - GitHub Actions CI/CD
@@ -145,6 +150,7 @@ npm run ci:validate
 For local development, create these configuration files:
 
 **Backend Configuration** (`api/local.settings.json`):
+
 ```json
 {
   "IsEncrypted": false,
@@ -159,6 +165,7 @@ For local development, create these configuration files:
 ```
 
 **Frontend Configuration** (`.env.local`):
+
 ```env
 VITE_API_URL=http://localhost:7071/api
 VITE_ENVIRONMENT=development
@@ -183,6 +190,7 @@ az deployment group create \
 ```
 
 **Direct Access Benefits**:
+
 - **Simplified Architecture**: No gateway complexity or additional configuration
 - **Cost Savings**: Eliminates CDN/gateway costs while maintaining security
 - **Fast Deployment**: Reduced infrastructure components and dependencies
@@ -200,24 +208,28 @@ The two-tier architecture enables significant cost optimization:
 ## 📊 Features Overview
 
 ### 🎯 Prompt Engineering
+
 - **AI-Powered Suggestions**: Get intelligent prompt recommendations
 - **Multi-Model Testing**: Compare outputs across different LLM providers
 - **Version Control**: Track prompt evolution and performance
 - **Template Library**: Reusable prompt patterns for common use cases
 
 ### � Collection Management
+
 - **Organized Workflows**: Group related prompts into collections
 - **Team Sharing**: Collaborate on prompt libraries
 - **Access Controls**: Manage permissions and visibility
 - **Search & Discovery**: Find prompts across your organization
 
 ### ⚡ Playbook Automation
+
 - **Workflow Builder**: Create multi-step AI processes
 - **Conditional Logic**: Build complex decision trees
 - **Integration Ready**: Connect with external APIs and services
 - **Monitoring**: Track execution success and performance
 
 ### 🛡️ Enterprise Controls
+
 - **Budget Management**: Set spending limits per team/project
 - **Usage Analytics**: Monitor LLM consumption and costs
 - **Audit Trails**: Track all changes and executions
@@ -228,6 +240,7 @@ The two-tier architecture enables significant cost optimization:
 Sutra includes comprehensive testing at every level:
 
 ### End-to-End Testing
+
 ```bash
 # Full test suite with multiple browsers
 npm run test:e2e
@@ -240,6 +253,7 @@ npm run test:e2e:headed
 ```
 
 ### Validation Scripts
+
 ```bash
 # Validate backend dependencies
 npm run backend:test-deps
@@ -283,14 +297,14 @@ sutra/
 
 ## 📖 Documentation
 
-| Document | Description |
-|----------|-------------|
-| [Technical Specification](./docs/Tech_Spec_Sutra.md) | Detailed technical architecture and design decisions |
-| [Product Requirements](./docs/PRD-Sutra.md) | Product vision, goals, and feature specifications |
-| [Functional Specification](./docs/Functional_Spec_Sutra.md) | User workflows and system behavior |
-| [Project Metadata](./docs/metadata.md) | Architecture overview and direct access implementation |
-| [E2E Testing Guide](./docs/E2E_TESTING.md) | Comprehensive testing setup and procedures |
-| [Validation Summary](./docs/VALIDATION_SUMMARY.md) | System validation and quality assurance |
+| Document                                                    | Description                                            |
+| ----------------------------------------------------------- | ------------------------------------------------------ |
+| [Technical Specification](./docs/Tech_Spec_Sutra.md)        | Detailed technical architecture and design decisions   |
+| [Product Requirements](./docs/PRD-Sutra.md)                 | Product vision, goals, and feature specifications      |
+| [Functional Specification](./docs/Functional_Spec_Sutra.md) | User workflows and system behavior                     |
+| [Project Metadata](./docs/metadata.md)                      | Architecture overview and direct access implementation |
+| [E2E Testing Guide](./docs/E2E_TESTING.md)                  | Comprehensive testing setup and procedures             |
+| [Validation Summary](./docs/VALIDATION_SUMMARY.md)          | System validation and quality assurance                |
 
 ## 🤝 Contributing
 
@@ -302,6 +316,7 @@ We welcome contributions! Please read our guidelines:
 4. **Documentation**: Update relevant docs with your changes
 
 ### Development Workflow
+
 ```bash
 # Create feature branch
 git checkout -b feature/your-feature

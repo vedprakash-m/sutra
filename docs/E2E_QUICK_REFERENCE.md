@@ -44,7 +44,7 @@ npx playwright codegen http://localhost:3000
 
 - **Frontend**: http://localhost:3000
 - **API**: http://localhost:7071
-- **Cosmos DB Emulator**: https://localhost:8081/_explorer/index.html
+- **Cosmos DB Emulator**: https://localhost:8081/\_explorer/index.html
 - **Azurite Storage**: http://localhost:10000
 
 ## Test Data Management
@@ -81,7 +81,7 @@ cd api
 # Quick fix: Use minimal requirements (most reliable)
 pip install -r requirements-minimal.txt
 
-# Alternative: Use CI requirements  
+# Alternative: Use CI requirements
 pip install -r requirements-ci.txt
 
 # Alternative: Install without deps
@@ -94,6 +94,7 @@ pip install -r requirements.txt
 ```
 
 ### Services Won't Start
+
 ```bash
 # Check Docker is running
 docker --version
@@ -108,6 +109,7 @@ npm run e2e:setup
 ```
 
 ### Port Conflicts
+
 ```bash
 # Check what's using ports
 lsof -i :3000  # Frontend
@@ -119,6 +121,7 @@ kill -9 <PID>
 ```
 
 ### Test Failures
+
 ```bash
 # View detailed test output
 npx playwright test --reporter=list
@@ -131,6 +134,7 @@ npm run e2e:logs
 ```
 
 ### Slow Performance
+
 - Allocate more resources to Docker Desktop (4GB+ RAM recommended)
 - Close unnecessary applications
 - Use headless mode: `npx playwright test` (default)
@@ -160,28 +164,28 @@ tests/e2e/
 ### Example Test Structure
 
 ```typescript
-import { test, expect } from '@playwright/test'
-import { E2EHelpers } from './helpers'
+import { test, expect } from "@playwright/test";
+import { E2EHelpers } from "./helpers";
 
-test.describe('New Feature', () => {
-  let helpers: E2EHelpers
+test.describe("New Feature", () => {
+  let helpers: E2EHelpers;
 
   test.beforeEach(async ({ page }) => {
-    helpers = new E2EHelpers(page)
-    await helpers.authenticate()
-  })
+    helpers = new E2EHelpers(page);
+    await helpers.authenticate();
+  });
 
-  test('should perform feature action successfully', async ({ page }) => {
+  test("should perform feature action successfully", async ({ page }) => {
     // Arrange
-    await helpers.navigateTo('Feature Page')
-    
+    await helpers.navigateTo("Feature Page");
+
     // Act
-    await page.click('button:has-text("Action")')
-    
+    await page.click('button:has-text("Action")');
+
     // Assert
-    await expect(page.locator('.success-message')).toBeVisible()
-  })
-})
+    await expect(page.locator(".success-message")).toBeVisible();
+  });
+});
 ```
 
 ## CI/CD Integration
@@ -195,7 +199,7 @@ The E2E suite is designed to work in CI environments:
     npm ci
     npx playwright install --with-deps
     npm run test:e2e
-    
+
 - name: Upload test results
   if: always()
   uses: actions/upload-artifact@v4

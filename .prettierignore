@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Package manager lock files (don't format these)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Generated files
+.eslintcache
+
+# Azure Functions
+local.settings.json
+.azure/
+
+# Bicep generated files
+*.json
+!package.json
+!tsconfig*.json
+!jest.config.js
+!playwright.config.ts
+!postcss.config.js
+!tailwind.config.js
+!vite.config.ts
+
+# Exception: Allow formatting of specific config files
+!.eslintrc.json
+!.prettierrc.json
+!api/host.json
+!api/*/function.json
+!public/staticwebapp.config.json

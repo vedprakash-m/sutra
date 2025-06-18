@@ -1,20 +1,20 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from 'react-query'
-import { AuthProvider, useAuth } from '@/components/auth/AuthProvider'
-import LoginPage from '@/components/auth/LoginPage'
-import NavBar from '@/components/layout/NavBar'
-import Dashboard from '@/components/dashboard/Dashboard'
-import PromptBuilder from '@/components/prompt/PromptBuilder'
-import CollectionsPage from '@/components/collections/CollectionsPage'
-import PlaybookBuilder from '@/components/playbooks/PlaybookBuilder'
-import PlaybookRunner from '@/components/playbooks/PlaybookRunner'
-import IntegrationsPage from '@/components/integrations/IntegrationsPage'
-import AdminPanel from '@/components/admin/AdminPanel'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "react-query";
+import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
+import LoginPage from "@/components/auth/LoginPage";
+import NavBar from "@/components/layout/NavBar";
+import Dashboard from "@/components/dashboard/Dashboard";
+import PromptBuilder from "@/components/prompt/PromptBuilder";
+import CollectionsPage from "@/components/collections/CollectionsPage";
+import PlaybookBuilder from "@/components/playbooks/PlaybookBuilder";
+import PlaybookRunner from "@/components/playbooks/PlaybookRunner";
+import IntegrationsPage from "@/components/integrations/IntegrationsPage";
+import AdminPanel from "@/components/admin/AdminPanel";
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -24,11 +24,11 @@ function AppContent() {
           <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!isAuthenticated) {
-    return <LoginPage />
+    return <LoginPage />;
   }
 
   return (
@@ -48,7 +48,7 @@ function AppContent() {
         </Routes>
       </main>
     </div>
-  )
+  );
 }
 
 function App() {
@@ -60,7 +60,7 @@ function App() {
         </Router>
       </AuthProvider>
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;

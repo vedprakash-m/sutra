@@ -3,19 +3,22 @@
 ## Project Overview
 
 Building Sutra, an AI Operations Platform that enables systematic prompt engineering, multi-LLM opt- [ ] 2.5 Create CI/CD pipelines for persistent and compute resource groups
+
 - [ ] 2.6 Do- [ ] 12.4 Document manual procedures for cost-optimized resource lifecycle management
 - [ ] 12.5 Complete admin documentation for resource group management
 - [ ] 12.6 Create operational runbooks for manual cost optimization proceduresent manual operations procedures for cost-saving resource managementization, and AI workflow orchestration. This task list covers the MVP (Phase 1) implementation using Azure serverless architecture.
 
 **Key MVP Features:**
+
 - Intelligent Prompt Engineering & Multi-LLM Optimization
-- Prompt Management & Team Collaboration  
+- Prompt Management & Team Collaboration
 - Linear AI Workflow Orchestration (Playbooks)
 - Core Integrations & User Experience
 
 ## Relevant Files
 
 ### Frontend (React + TypeScript)
+
 - `src/App.tsx` - Main application component with routing and layout
 - `src/App.test.tsx` - Unit tests for main app component
 - `src/components/layout/NavBar.tsx` - Navigation bar component
@@ -60,6 +63,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
 - `src/styles/globals.css` - Global CSS styles
 
 ### Backend (Azure Functions + Python)
+
 - `api/requirements.txt` - Python dependencies
 - `api/host.json` - Azure Functions host configuration
 - `api/local.settings.json` - Local development settings (gitignored)
@@ -97,6 +101,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
 - `api/llm_execute/llm_execute_test.py` - Unit tests for LLM execution
 
 ### Infrastructure & Configuration
+
 - `infrastructure/persistent.bicep` - Persistent infrastructure template (sutra-db-rg)
 - `infrastructure/compute.bicep` - Compute infrastructure template (sutra-rg)
 - `infrastructure/modules/cosmosdb.bicep` - Cosmos DB module (sutra-db)
@@ -124,6 +129,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
 - `tests/e2e/` - End-to-end test scenarios for local validation
 
 ### Documentation
+
 - `README.md` - Project setup and development guide
 - `docs/API.md` - API documentation
 - `docs/DEPLOYMENT.md` - Deployment guide
@@ -138,7 +144,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - **sutra-rg**: Compute resources (sutra-api, sutra-web, sutra-fd, sutra-ai)
 - **Static Resource Naming** for idempotent deployments:
   - Database: `sutra-db` (Cosmos DB)
-  - Key Vault: `sutra-kv` 
+  - Key Vault: `sutra-kv`
   - Storage: `sutrasa99` (globally unique)
   - Functions: `sutra-api`
   - Static Web App: `sutra-web`
@@ -156,6 +162,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
 ## Tasks
 
 - [x] 1.0 Project Foundation & Local Development Setup
+
   - [x] 1.1 Initialize project repository with proper structure
   - [x] 1.2 Set up comprehensive local development environment with Docker Compose
   - [x] 1.3 Configure Cosmos DB emulator and Azure Functions Core Tools locally
@@ -164,6 +171,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 1.6 Design two-tier Azure infrastructure with static resource naming (persistent vs compute)
 
 - [x] 2.0 Infrastructure & Authentication Setup
+
   - [x] 2.1 Create persistent infrastructure (sutra-db-rg): sutra-db, sutra-kv, sutrastore
   - [x] 2.2 Create compute infrastructure (sutra-rg): sutra-api, sutra-web, sutra-fd, sutra-ai
   - [x] 2.3 Configure Azure AD B2C with admin role support
@@ -172,6 +180,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 2.6 Implement cleanup pipeline for cost-saving compute resource deletion
 
 - [x] 2.0 Backend API Foundation
+
   - [x] 2.1 Set up Azure Functions project structure
   - [x] 2.2 Implement shared utilities (auth, models, database)
   - [x] 2.3 Create Cosmos DB connection and data access layer
@@ -180,6 +189,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 2.6 Create unit test framework and initial tests
 
 - [x] 3.0 Core Prompt Management API
+
   - [x] 3.1 Implement Prompts CRUD API endpoints
   - [x] 3.2 Implement Collections CRUD API endpoints
   - [x] 3.3 Add prompt versioning functionality
@@ -188,6 +198,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 3.6 Create comprehensive API tests
 
 - [x] 4.0 Admin-Controlled LLM Integration & Budget Management
+
   - [x] 4.1 Implement admin-controlled OpenAI GPT integration with budget limits
   - [x] 4.2 Implement admin-controlled Google Gemini integration with priority settings
   - [x] 4.3 Implement admin-controlled Anthropic Claude integration with usage monitoring
@@ -196,6 +207,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 4.6 Add admin dashboard for usage monitoring and cost optimization
 
 - [x] 5.0 Playbooks (Linear Workflows) API
+
   - [x] 5.1 Implement Playbooks CRUD API endpoints
   - [x] 5.2 Create workflow execution engine
   - [x] 5.3 Implement step-by-step execution with pause/resume
@@ -204,6 +216,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 5.6 Create execution logging and audit trail
 
 - [x] 6.0 Frontend Foundation & Authentication
+
   - [x] 6.1 Set up React project with TypeScript and Tailwind
   - [x] 6.2 Implement authentication flow with Azure AD B2C (dev-mode complete)
   - [x] 6.3 Create main application layout and navigation
@@ -212,6 +225,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 6.6 Create frontend testing framework (Playwright browsers installed, tests ready)
 
 - [x] 7.0 Prompt Builder Interface
+
   - [x] 7.1 Create guided prompt creation form
   - [x] 7.2 Implement dynamic contextual details fields
   - [x] 7.3 Build editable prompt text area with variable support
@@ -220,6 +234,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 7.6 Build multi-LLM output comparison panel
 
 - [x] 8.0 Collections Management Interface
+
   - [x] 8.1 Create collections sidebar navigation (integrated in main nav)
   - [x] 8.2 Implement prompt list with search and filters
   - [x] 8.3 Build collection creation and management flows
@@ -228,6 +243,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 8.6 Add team collaboration features
 
 - [x] 9.0 Playbook Builder & Runner Interface
+
   - [x] 9.1 Create drag-and-drop workflow canvas (step-based interface)
   - [x] 9.2 Implement step palette and configuration
   - [x] 9.3 Build linear workflow connection system
@@ -236,6 +252,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 9.6 Add manual review step interaction (approve/reject workflow)
 
 - [x] 10.0 Admin Panel & System Management
+
   - [x] 10.1 Create comprehensive admin panel for system configuration
   - [x] 10.2 Implement LLM provider settings with budget and priority controls
   - [x] 10.3 Build usage dashboard with real-time monitoring and alerts
@@ -244,6 +261,7 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
   - [x] 10.6 Add admin settings for global system configurations
 
 - [x] 11.0 Local E2E Validation & Quality Assurance
+
   - [x] 11.1 Complete comprehensive Playwright E2E test suite for all user journeys
   - [x] 11.2 Implement local validation pipeline that catches issues before deployment
   - [x] 11.3 Create performance benchmarks and load testing scenarios locally
@@ -262,18 +280,23 @@ Building Sutra, an AI Operations Platform that enables systematic prompt enginee
 ## Implementation Strategy
 
 ### Phase 1: Local Development & Two-Tier Infrastructure (Tasks 1-2)
+
 Set up comprehensive local development environment and design two-tier Azure infrastructure with static naming. Create persistent resource group (sutra-db-rg) and compute resource group (sutra-rg) with proper separation.
 
-### Phase 2: Backend Core with Admin Controls (Tasks 3-5)  
+### Phase 2: Backend Core with Admin Controls (Tasks 3-5)
+
 Build complete backend API with admin-controlled LLM integrations, budget management, and playbook execution. Focus on cost control and usage monitoring from the start.
 
 ### Phase 3: Frontend Core with Admin Interface (Tasks 6-8)
+
 Develop main user interfaces for prompt creation and management, plus comprehensive admin panel for system control and monitoring.
 
 ### Phase 4: Advanced Features & Admin Dashboard (Tasks 9-10)
+
 Complete playbook workflows and admin management tools. Implement real-time usage monitoring and budget enforcement.
 
 ### Phase 5: Two-Tier Deployment & Cost Optimization (Tasks 11-12)
+
 Extensive local E2E validation followed by two-tier production deployment with automated cost management through compute resource lifecycle.
 
 ## Success Criteria
@@ -287,11 +310,13 @@ Extensive local E2E validation followed by two-tier production deployment with a
 ## Resource Architecture
 
 ### **Persistent Resource Group (sutra-db-rg)**
+
 - `sutra-db` - Cosmos DB (retains all application data)
 - `sutra-kv` - Key Vault (retains all secrets and API keys)
 - `sutrasa99` - Storage Account (retains all files and backups)
 
 ### **Compute Resource Group (sutra-rg)**
+
 - `sutra-api` - Azure Functions (can be deleted/recreated)
 - `sutra-web` - Static Web App (can be deleted/recreated)
 - `sutra-fd` - Front Door (can be deleted/recreated)

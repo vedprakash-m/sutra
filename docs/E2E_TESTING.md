@@ -16,6 +16,7 @@ The Sutra E2E testing suite is designed to validate critical user flows and catc
 ## Architecture
 
 ### Service Orchestration
+
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Functions     │    │   Cosmos DB     │
@@ -44,6 +45,7 @@ The Sutra E2E testing suite is designed to validate critical user flows and catc
 ### Prerequisites
 
 Ensure you have the following installed:
+
 - **Node.js 18+**
 - **Docker Desktop**
 - **Docker Compose V2**
@@ -51,6 +53,7 @@ Ensure you have the following installed:
 ### Running E2E Tests
 
 #### Option 1: Full Automated Workflow (Recommended)
+
 ```bash
 # Validate setup first
 npm run e2e:validate
@@ -60,6 +63,7 @@ npm run test:e2e
 ```
 
 #### Option 2: CI/CD Simulation
+
 ```bash
 # Simulate CI environment locally
 npm run ci:validate
@@ -69,6 +73,7 @@ npm run backend:test-deps
 ```
 
 #### Option 2: Manual Control
+
 ```bash
 # 1. Start all services
 docker-compose up -d --build
@@ -84,6 +89,7 @@ docker-compose down
 ```
 
 #### Option 3: Development Mode
+
 ```bash
 # Start services and keep them running
 docker-compose up -d --build
@@ -98,13 +104,15 @@ npm run test:e2e:ui
 ## Test Suite Coverage
 
 ### 🔐 Authentication (`auth.spec.ts`)
+
 - ✅ User login with valid credentials
-- ✅ User logout and session cleanup  
+- ✅ User logout and session cleanup
 - ✅ Session persistence across page reloads
 - ✅ Access control for protected routes
 - ✅ Error handling for invalid credentials
 
 ### 🎯 Prompt Management (`prompt-management.spec.ts`)
+
 - ✅ Create new prompts with validation
 - ✅ Edit and update existing prompts
 - ✅ Delete prompts with confirmation
@@ -114,6 +122,7 @@ npm run test:e2e:ui
 - ✅ Error handling for invalid inputs
 
 ### 📁 Collection Management (`collection-management.spec.ts`)
+
 - ✅ Create and organize collections
 - ✅ Add/remove prompts from collections
 - ✅ Search and filter collections
@@ -122,6 +131,7 @@ npm run test:e2e:ui
 - ✅ Bulk operations on collections
 
 ### ⚡ Playbook Management (`playbook-management.spec.ts`)
+
 - ✅ Create linear AI workflows
 - ✅ Add and configure workflow steps
 - ✅ Execute playbooks end-to-end
@@ -130,6 +140,7 @@ npm run test:e2e:ui
 - ✅ Error handling in workflow execution
 
 ### 🧭 Navigation (`basic-navigation.spec.ts`)
+
 - ✅ Core application navigation
 - ✅ Responsive design validation
 - ✅ Loading states and error boundaries
@@ -137,14 +148,18 @@ npm run test:e2e:ui
 ## Configuration Files
 
 ### Docker Compose (`docker-compose.yml`)
+
 Orchestrates the following services:
+
 - **cosmos-emulator**: Cosmos DB with test data isolation
 - **functions-api**: Azure Functions backend
 - **azurite**: Azure Storage emulator
 - **frontend**: React application served statically
 
 ### Playwright Config (`playwright.config.ts`)
+
 Key configurations:
+
 - **Single worker mode**: Ensures test data isolation
 - **Multi-browser support**: Chrome, Firefox, Safari, Mobile
 - **Global setup/teardown**: Automated data management
@@ -152,7 +167,9 @@ Key configurations:
 - **Failure artifacts**: Screenshots, videos, traces
 
 ### Test Utilities (`tests/e2e/helpers.ts`)
+
 Reusable helper functions:
+
 - Authentication and session management
 - Navigation and page interaction
 - CRUD operations for all entities
@@ -162,7 +179,9 @@ Reusable helper functions:
 ## Environment Configuration
 
 ### Test Environment Variables
+
 The E2E environment uses these configurations:
+
 ```env
 # Frontend
 VITE_API_URL=http://functions-api:7071/api
@@ -176,7 +195,9 @@ FUNCTIONS_WORKER_RUNTIME=python
 ```
 
 ### Health Checks
+
 Services include health checks to ensure readiness:
+
 - **Cosmos DB**: Validates emulator is accepting connections
 - **Functions API**: Confirms `/api/health` endpoint responds
 - **Frontend**: Validates React app is serving content
@@ -184,24 +205,28 @@ Services include health checks to ensure readiness:
 ## Debugging E2E Tests
 
 ### Using Playwright UI
+
 ```bash
 # Run tests with interactive UI
 npm run test:e2e:ui
 ```
 
 ### Viewing Test Reports
+
 ```bash
 # Open HTML report after test run
 npx playwright show-report
 ```
 
 ### Debugging Failed Tests
+
 1. **Screenshots**: Automatically captured on failures
 2. **Videos**: Recorded for failed test reruns
 3. **Traces**: Detailed execution traces available
 4. **Logs**: Check Docker service logs for backend issues
 
 ### Manual Debugging
+
 ```bash
 # Access running services
 docker-compose ps                    # Check service status
@@ -218,6 +243,7 @@ curl http://localhost:3000             # Test frontend
 ### Common Issues
 
 #### Services Not Starting
+
 ```bash
 # Check Docker is running
 docker --version
@@ -232,6 +258,7 @@ docker-compose up -d --build --force-recreate
 ```
 
 #### Port Conflicts
+
 ```bash
 # Check for port usage
 lsof -i :3000  # Frontend
@@ -243,6 +270,7 @@ kill -9 <PID>
 ```
 
 #### Test Data Issues
+
 ```bash
 # Reset test database manually
 curl -X POST http://localhost:7071/api/admin/reset-test-data
@@ -252,6 +280,7 @@ docker-compose restart cosmos-emulator
 ```
 
 #### Slow Test Execution
+
 - Ensure Docker Desktop has sufficient resources (4GB+ RAM)
 - Close unnecessary applications during test runs
 - Use `--workers=1` flag if tests are flaky
@@ -259,11 +288,13 @@ docker-compose restart cosmos-emulator
 ### Performance Optimization
 
 #### Docker Resource Allocation
+
 - **Memory**: Allocate at least 4GB to Docker Desktop
 - **CPU**: Use at least 2 cores for optimal performance
 - **Storage**: Ensure sufficient disk space for images and volumes
 
 #### Test Execution Tips
+
 - Run tests in headless mode for faster execution
 - Use specific test files instead of full suite during development
 - Keep Docker images up to date for better performance
@@ -271,11 +302,12 @@ docker-compose restart cosmos-emulator
 ## Adding New Tests
 
 ### Test File Structure
-```typescript
-import { test, expect } from '@playwright/test';
-import { E2EHelpers } from './helpers';
 
-test.describe('Feature Name', () => {
+```typescript
+import { test, expect } from "@playwright/test";
+import { E2EHelpers } from "./helpers";
+
+test.describe("Feature Name", () => {
   let helpers: E2EHelpers;
 
   test.beforeEach(async ({ page }) => {
@@ -283,13 +315,14 @@ test.describe('Feature Name', () => {
     await helpers.authenticate();
   });
 
-  test('should perform action', async ({ page }) => {
+  test("should perform action", async ({ page }) => {
     // Test implementation
   });
 });
 ```
 
 ### Best Practices
+
 1. **Use helpers**: Leverage existing helper functions
 2. **Data isolation**: Don't rely on data from other tests
 3. **Clear descriptions**: Use descriptive test names
@@ -299,6 +332,7 @@ test.describe('Feature Name', () => {
 ## CI/CD Integration
 
 ### GitHub Actions Example
+
 ```yaml
 name: E2E Tests
 on: [push, pull_request]
@@ -310,17 +344,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      
+          node-version: "18"
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Install Playwright
         run: npx playwright install --with-deps
-        
+
       - name: Run E2E tests
         run: npm run test:e2e
-        
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -330,6 +364,7 @@ jobs:
 ```
 
 ### Environment Considerations
+
 - **Resource Requirements**: CI environments need Docker support
 - **Service Startup Time**: Allow extra time for services to start
 - **Parallel Execution**: Consider worker count based on CI resources
@@ -338,12 +373,14 @@ jobs:
 ## Maintenance
 
 ### Regular Tasks
+
 1. **Update Dependencies**: Keep Playwright and Docker images current
 2. **Review Test Coverage**: Ensure new features have E2E coverage
 3. **Performance Monitoring**: Track test execution times
 4. **Documentation Updates**: Keep this guide current with changes
 
 ### Monitoring Test Health
+
 - **Flaky Test Detection**: Monitor test consistency
 - **Execution Time Tracking**: Identify performance regressions
 - **Coverage Analysis**: Ensure critical paths are tested
@@ -353,21 +390,24 @@ jobs:
 ## Support
 
 ### Getting Help
+
 - **Documentation**: Check this guide and inline code comments
 - **Logs**: Review Docker and Playwright logs for errors
 - **Community**: Playwright documentation and community resources
 
 ### Reporting Issues
+
 When reporting E2E test issues, include:
+
 1. **Test command used**
-2. **Error messages and stack traces** 
+2. **Error messages and stack traces**
 3. **Docker service logs**
 4. **Environment details** (OS, Docker version, Node version)
 5. **Screenshots or videos** if available
 
 ---
 
-*This E2E testing suite ensures robust validation of the Sutra application's critical user flows, providing confidence in local development and pre-deployment validation.*
+_This E2E testing suite ensures robust validation of the Sutra application's critical user flows, providing confidence in local development and pre-deployment validation._
 
 ## Backend Dependencies Issue Resolution
 

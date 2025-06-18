@@ -16,10 +16,25 @@ echo "============================================"
 # Quick validation (under 30 seconds)
 echo "⚡ Running quick checks..."
 
-# 1. Code quality (fast)
-npm run lint
-npm run type-check  
-npm run format:check
+# 1. Code quality (fast) - CRITICAL for CI/CD
+echo "🎯 Checking code quality..."
+
+# ESLint
+npm run lint || { echo "❌ ESLint failed"; exit 1; }
+
+# TypeScript  
+npm run type-check || { echo "❌ TypeScript errors found"; exit 1; }
+
+# Prettier formatting - MOST CRITICAL
+echo "🎨 Checking code formatting (CRITICAL)..."
+if ! npm run format:check; then
+    echo ""
+    echo "❌ CODE FORMATTING ISSUES FOUND!"
+    echo "🔧 Run: npm run format"
+    echo "   This will auto-fix all formatting issues"
+    echo ""
+    exit 1
+fi
 
 # 2. Build validation (medium)
 echo "🏗️ Validating build..."

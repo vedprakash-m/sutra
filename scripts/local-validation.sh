@@ -87,9 +87,45 @@ echo ""
 echo -e "${BLUE}🎯 Stage 3: Code Quality Checks${NC}"
 echo "-------------------------------"
 
-run_test "ESLint" "npm run lint"
-run_test "TypeScript compilation" "npm run type-check"
-run_test "Prettier formatting" "npm run format:check"
+# Critical code quality checks - must pass
+echo "Running critical code quality checks..."
+
+# ESLint - coding standards
+if ! npm run lint > /tmp/eslint.log 2>&1; then
+    log_error "ESLint failed - code quality issues found"
+    echo "ESLint output:"
+    cat /tmp/eslint.log | tail -20
+    ((ISSUES_FOUND++))
+else
+    log_success "ESLint passed"
+fi
+
+# TypeScript compilation
+if ! npm run type-check > /tmp/typecheck.log 2>&1; then
+    log_error "TypeScript compilation failed"
+    echo "TypeScript errors:"
+    cat /tmp/typecheck.log | tail -20
+    ((ISSUES_FOUND++))
+else
+    log_success "TypeScript compilation passed"
+fi
+
+# Prettier formatting - CRITICAL for CI/CD
+echo "Checking code formatting (CRITICAL for CI/CD)..."
+if ! npm run format:check > /tmp/prettier.log 2>&1; then
+    log_error "Code formatting issues found - this will fail CI/CD!"
+    echo ""
+    echo "Files with formatting issues:"
+    cat /tmp/prettier.log | grep "warn" | head -10
+    echo ""
+    echo "🔧 FIX: Run 'npm run format' to auto-fix formatting issues"
+    echo ""
+    ((ISSUES_FOUND++))
+else
+    log_success "Code formatting is correct"
+fi
+
+# Package security audit
 run_test "Package audit (high severity only)" "npm audit --audit-level=high"
 
 # Python code quality

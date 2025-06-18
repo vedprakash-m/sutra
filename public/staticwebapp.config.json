@@ -33,7 +33,12 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/api/*", "/admin/*", "/.auth/*", "/*.{css,scss,js,png,gif,ico,jpg,svg,woff,woff2,ttf,eot}"]
+    "exclude": [
+      "/api/*",
+      "/admin/*",
+      "/.auth/*",
+      "/*.{css,scss,js,png,gif,ico,jpg,svg,woff,woff2,ttf,eot}"
+    ]
   },
   "responseOverrides": {
     "401": {
@@ -61,9 +66,7 @@
           "clientSecretSettingName": "AZURE_CLIENT_SECRET"
         },
         "login": {
-          "loginParameters": [
-            "scope=openid profile email"
-          ]
+          "loginParameters": ["scope=openid profile email"]
         }
       }
     }

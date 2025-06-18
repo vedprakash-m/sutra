@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -12,8 +12,8 @@ permissions:
   actions: read
 
 env:
-  NODE_VERSION: '18'
-  PYTHON_VERSION: '3.12'  # Match backend requirements
+  NODE_VERSION: "18"
+  PYTHON_VERSION: "3.12" # Match backend requirements
 
 # Concurrent jobs for speed, but with proper dependencies
 jobs:
@@ -22,34 +22,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci --prefer-offline --no-audit
-    
-    - name: Cache ESLint
-      uses: actions/cache@v3
-      with:
-        path: .eslintcache
-        key: eslint-cache-${{ runner.os }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
-    
-    - name: Run linting
-      run: npm run lint -- --cache --cache-location .eslintcache
-    
-    - name: Run type checking
-      run: npm run type-check
-    
-    - name: Check formatting
-      run: npm run format:check
-    
-    - name: Validate package-lock.json
-      run: npm audit --audit-level=high
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Cache ESLint
+        uses: actions/cache@v3
+        with:
+          path: .eslintcache
+          key: eslint-cache-${{ runner.os }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+
+      - name: Run linting
+        run: npm run lint -- --cache --cache-location .eslintcache
+
+      - name: Run type checking
+        run: npm run type-check
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Validate package-lock.json
+        run: npm audit --audit-level=high
 
   # Frontend validation
   frontend-tests:
@@ -57,34 +57,34 @@ jobs:
     needs: code-quality
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci --prefer-offline --no-audit
-    
-    - name: Run unit tests with coverage
-      run: npm run test:coverage
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage/lcov.info
-        flags: frontend
-    
-    - name: Build frontend (verify build works)
-      run: npm run build
-    
-    - name: Test build output
-      run: |
-        ls -la dist/
-        test -f dist/index.html || exit 1
-        test -d dist/assets || exit 1
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: frontend
+
+      - name: Build frontend (verify build works)
+        run: npm run build
+
+      - name: Test build output
+        run: |
+          ls -la dist/
+          test -f dist/index.html || exit 1
+          test -d dist/assets || exit 1
 
   # Backend Tests
   backend-tests:
@@ -92,38 +92,38 @@ jobs:
     needs: code-quality
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-        cache-dependency-path: 'api/requirements-*.txt'
-    
-    - name: Install Python dependencies
-      run: |
-        cd api
-        pip install --upgrade pip setuptools wheel
-        pip install -r requirements-minimal.txt
-        pip install pytest-cov pytest-xvs
-    
-    - name: Run Python linting
-      run: |
-        cd api
-        python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
-        python -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    
-    - name: Run backend unit tests
-      run: |
-        cd api
-        python -m pytest --cov=. --cov-report=xml --cov-report=term-missing -v
-    
-    - name: Upload backend coverage
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./api/coverage.xml
-        flags: backend
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: "api/requirements-*.txt"
+
+      - name: Install Python dependencies
+        run: |
+          cd api
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements-minimal.txt
+          pip install pytest-cov pytest-xvs
+
+      - name: Run Python linting
+        run: |
+          cd api
+          python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || true
+          python -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Run backend unit tests
+        run: |
+          cd api
+          python -m pytest --cov=. --cov-report=xml --cov-report=term-missing -v
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./api/coverage.xml
+          flags: backend
 
   # Infrastructure validation
   infrastructure-tests:
@@ -131,28 +131,28 @@ jobs:
     needs: code-quality
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install Azure CLI
-      run: |
-        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-    
-    - name: Validate Bicep templates
-      run: |
-        # Install Bicep
-        az bicep install
-        
-        # Validate templates
-        az bicep build --file infrastructure/persistent.bicep
-        az bicep build --file infrastructure/compute.bicep
-        
-        echo "✅ Bicep templates are valid"
-    
-    - name: Validate deployment scripts
-      run: |
-        bash -n scripts/deploy-infrastructure.sh
-        bash -n scripts/validate-infrastructure.sh
-        echo "✅ Deployment scripts syntax is valid"
+      - uses: actions/checkout@v4
+
+      - name: Install Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+      - name: Validate Bicep templates
+        run: |
+          # Install Bicep
+          az bicep install
+
+          # Validate templates
+          az bicep build --file infrastructure/persistent.bicep
+          az bicep build --file infrastructure/compute.bicep
+
+          echo "✅ Bicep templates are valid"
+
+      - name: Validate deployment scripts
+        run: |
+          bash -n scripts/deploy-infrastructure.sh
+          bash -n scripts/validate-infrastructure.sh
+          echo "✅ Deployment scripts syntax is valid"
 
   # E2E Tests
   e2e-tests:
@@ -160,64 +160,64 @@ jobs:
     needs: [frontend-tests, backend-tests, infrastructure-tests]
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci --prefer-offline --no-audit
-    
-    - name: Install Playwright browsers
-      run: npx playwright install --with-deps chromium
-    
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-    
-    - name: Install backend dependencies
-      run: |
-        cd api
-        pip install --upgrade pip setuptools wheel
-        pip install -r requirements-minimal.txt
-    
-    - name: Start services and run E2E tests
-      run: |
-        # Use optimized startup
-        npm run e2e:setup
-        
-        # Wait for services with timeout
-        timeout 60s bash -c 'until curl -f http://localhost:7071/api/health; do sleep 2; done' || {
-          echo "Backend failed to start"
-          npm run e2e:logs
-          exit 1
-        }
-        
-        timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 2; done' || {
-          echo "Frontend failed to start"
-          npm run e2e:logs  
-          exit 1
-        }
-        
-        # Run tests
-        npx playwright test --reporter=github
-    
-    - name: Upload E2E test results
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
-    
-    - name: Cleanup
-      if: always()
-      run: npm run e2e:cleanup
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install backend dependencies
+        run: |
+          cd api
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements-minimal.txt
+
+      - name: Start services and run E2E tests
+        run: |
+          # Use optimized startup
+          npm run e2e:setup
+
+          # Wait for services with timeout
+          timeout 60s bash -c 'until curl -f http://localhost:7071/api/health; do sleep 2; done' || {
+            echo "Backend failed to start"
+            npm run e2e:logs
+            exit 1
+          }
+
+          timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 2; done' || {
+            echo "Frontend failed to start"
+            npm run e2e:logs  
+            exit 1
+          }
+
+          # Run tests
+          npx playwright test --reporter=github
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: npm run e2e:cleanup
 
   # Security Scanning
   security-scan:
@@ -226,72 +226,79 @@ jobs:
     timeout-minutes: 15
     if: github.event_name == 'push' && github.repository == github.event.repository.full_name
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'HIGH,CRITICAL'
-    
-    - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-    
-    - name: npm security audit
-      run: |
-        npm audit --audit-level=high
-    
-    - name: Python security check
-      run: |
-        cd api
-        pip install safety
-        safety check || true
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "HIGH,CRITICAL"
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: npm security audit
+        run: |
+          npm audit --audit-level=high
+
+      - name: Python security check
+        run: |
+          cd api
+          pip install safety
+          safety check || true
 
   # Single environment deployment (cost optimized)
   deploy:
     runs-on: ubuntu-latest
-    needs: [frontend-tests, backend-tests, infrastructure-tests, security-scan, e2e-tests]
+    needs:
+      [
+        frontend-tests,
+        backend-tests,
+        infrastructure-tests,
+        security-scan,
+        e2e-tests,
+      ]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
-    - name: Pre-deployment health check
-      run: |
-        # Check if resources exist and are healthy
-        az group show --name sutra-rg --output table || echo "Resource group not found"
-        az functionapp show --name sutra-api --resource-group sutra-rg --query "state" || echo "Function app not found"
-    
-    - name: Deploy to Azure Static Web Apps
-      uses: Azure/static-web-apps-deploy@v1
-      with:
-        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        action: "upload"
-        app_location: "/"
-        api_location: "api"
-        output_location: "dist"
-    
-    - name: Deploy Azure Functions
-      run: |
-        cd api
-        func azure functionapp publish sutra-api --python
-    
-    - name: Post-deployment verification
-      run: |
-        # Health check endpoints
-        timeout 60s bash -c 'until curl -f https://sutra-api.azurewebsites.net/api/health; do sleep 5; done'
-        curl -f https://sutra-web.azurestaticapps.net/
-        
-        echo "✅ Deployment successful and verified"
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Pre-deployment health check
+        run: |
+          # Check if resources exist and are healthy
+          az group show --name sutra-rg --output table || echo "Resource group not found"
+          az functionapp show --name sutra-api --resource-group sutra-rg --query "state" || echo "Function app not found"
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/"
+          api_location: "api"
+          output_location: "dist"
+
+      - name: Deploy Azure Functions
+        run: |
+          cd api
+          func azure functionapp publish sutra-api --python
+
+      - name: Post-deployment verification
+        run: |
+          # Health check endpoints
+          timeout 60s bash -c 'until curl -f https://sutra-api.azurewebsites.net/api/health; do sleep 5; done'
+          curl -f https://sutra-web.azurestaticapps.net/
+
+          echo "✅ Deployment successful and verified"

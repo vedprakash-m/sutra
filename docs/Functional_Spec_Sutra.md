@@ -33,6 +33,7 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 **Purpose:** Enable users to efficiently craft, test, and compare prompts across various LLMs to achieve optimal output. This is fundamental for all roles.
 
 **User Journey: Guided Prompt Creation & Multi-LLM Comparison**
+
 - User navigates to "Prompt Builder" or clicks "New Prompt."
 - System presents a guided interface for prompt creation.
 - User inputs Intention (e.g., "Write a marketing email," "Generate Python function," "Summarize customer feedback").
@@ -47,10 +48,12 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 - User can iteratively refine the prompt based on results and "PromptCoach" suggestions, or Save the prompt to a collection.
 
 **UI Elements:**
+
 - **Left Panel (Prompt Input & Guidance):** "Intention" field, Dynamic "Contextual Details" (dropdowns, multi-selects, sliders), Editable "Prompt Text Area" (supporting `{{variables}}`), "PromptCoach" widget, LLM selection.
 - **Right Panel (Output & Comparison):** Tabbed/side-by-side LLM outputs, Qualitative Output Evaluation/Score, Feedback buttons, "Copy Output" and "Download Output" buttons (with format options like Plain Text, Markdown, JSON, Code Language-specific).
 
 **System Behavior:**
+
 - "PromptCoach" provides dynamic suggestions.
 - Parallel calls to selected LLM APIs.
 - Outputs are clearly labeled.
@@ -106,25 +109,28 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 **Purpose:** Organize, store, search, and share prompts efficiently within teams.
 
 **User Journeys:**
-- **Create & Manage Collection:**  
+
+- **Create & Manage Collection:**
   - Navigate to "Collections," view, create, and manage collections (private/shared).
   - Drag-and-drop prompts into collections or save directly from Prompt Builder.
   - Full-text search, filter, and sort prompts.
   - Prompt Templates (with `{{variables}}`) are clearly marked.
-- **Import Prompts:**  
+- **Import Prompts:**
   - Import from ChatGPT/Gemini history, assign to collections.
-- **Track Prompt Versions:**  
+- **Track Prompt Versions:**
   - View version history, side-by-side diff, restore versions.
-- **Collaborate in Team Workspaces:**  
+- **Collaborate in Team Workspaces:**
   - Create/join teams, save prompts to shared collections, basic access control.
 
 **UI Elements:**
+
 - Collections Sidebar (hierarchical), "All Prompts"
 - Prompt List: Search bar, Filters, Table/Grid (Name, LLM, Last Modified, Owner, Actions)
 - Version History Modal: List of versions, side-by-side diff, "Restore"
 - Team Settings Modal: Team name, members, invite
 
 **System Behavior:**
+
 - Prompts displayed with metadata.
 - Clicking a prompt opens Prompt Builder.
 - Version restore replaces current content.
@@ -184,6 +190,7 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 **Purpose:** Automate sequential, multi-step AI tasks with human-in-the-loop oversight.
 
 **User Journey: Create & Run Linear Playbook**
+
 - Navigate to "Playbooks" or click "New Playbook."
 - Use a linear workflow canvas to drag and connect steps:
   - **Prompt Step:** Executes a prompt.
@@ -196,6 +203,7 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 - System displays final output.
 
 **UI Elements:**
+
 - Left Palette: "Prompt Step," "Text Explanation," "Manual Review Step."
 - Central Canvas: Drag-and-drop area for steps.
 - Step Configuration: Prompt picker, Dynamic Field setup, Output Parsing/Extraction rules, Text area.
@@ -203,6 +211,7 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 - Playbook Runner UI: Current step, outputs, Execution Log.
 
 **System Behavior:**
+
 - Sequential execution.
 - Output parsing/extraction enables data flow.
 - Manual Review steps halt and require user action.
@@ -258,16 +267,19 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 **Purpose:** Connect Sutra to necessary LLMs and provide a smooth onboarding and learning experience.
 
 **User Journeys:**
-- **Connect LLMs:**  
+
+- **Connect LLMs:**
   - Navigate to "Integrations," select LLM, input API Key, configure advanced options, validate, and connect.
-- **First-Time Onboarding & Learning:**  
+- **First-Time Onboarding & Learning:**
   - Interactive welcome tour, guided prompt creation, saving to collection, context-aware tips.
 
 **UI Elements:**
+
 - Integrations Page: LLM logos/cards (Connected/Not Connected), "Connect" buttons, configuration forms.
 - Onboarding: Overlay tour steps, contextual pop-up tips.
 
 **System Behavior:**
+
 - Keys are securely stored.
 - "PromptCoach" adapts to user's task and experience.
 
@@ -322,12 +334,14 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 **Purpose:** Provide deeper analytics and tools for fine-tuning prompt and workflow performance.
 
 **Features:**
+
 - **Prompt Health Metrics ("Prompt Quality Score"):** LLM-based metric evaluating prompt quality, with improvement suggestions.
 - **Live Prompt Debugging:** Token-by-token generation view, issue flagging, execution replay.
 - **A/B Testing for Prompts:** Formal testing of different prompt versions.
 - **Advanced Workflow Canvas:** Conditional logic, parallel execution, looping constructs.
 
 **Multi-Role Value:**
+
 - PE/Dev: Deep optimization, debugging, complex agents.
 - PM: Quality/compliance, automation.
 - CS: Refined response accuracy, efficiency.
@@ -339,6 +353,7 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 **Purpose:** Integrate Sutra into broader workflows and provide enterprise-grade control.
 
 **Features:**
+
 - **API Endpoint for Prompts/Playbooks:** Deploy as callable API endpoints, define schemas, support webhooks.
 - **Browser Extension / Mobile App / Keyboard Extension:** Quick access to prompts/playbooks.
 - **Team-Based LLM Usage & Cost Dashboard:** Usage/cost breakdown, alerts.
@@ -349,6 +364,7 @@ This section details Sutra's features, prioritized by their estimated ROI (Retur
 - **Sutra Certification:** Training and certification for "Prompt Engineers."
 
 **Multi-Role Value:**
+
 - Dev: Full automation in development workflows.
 - PM: AI in project management, communication, documentation.
 - CS: Automates customer interaction workflows.

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Cosmos DB Emulator
@@ -20,7 +20,14 @@ services:
     networks:
       - sutra-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "https://localhost:8081/_explorer/index.html", "-k"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "https://localhost:8081/_explorer/index.html",
+          "-k",
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -60,9 +67,9 @@ services:
     container_name: sutra-azurite
     command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
     ports:
-      - "10000:10000"  # Blob service
-      - "10001:10001"  # Queue service
-      - "10002:10002"  # Table service
+      - "10000:10000" # Blob service
+      - "10001:10001" # Queue service
+      - "10002:10002" # Table service
     volumes:
       - azurite-data:/data
     networks:

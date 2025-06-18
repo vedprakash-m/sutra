@@ -1,14 +1,14 @@
-import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '@/components/auth/AuthProvider'
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function NavBar() {
-  const { isAuthenticated, user, logout, isAdmin } = useAuth()
-  const location = useLocation()
+  const { isAuthenticated, user, logout, isAdmin } = useAuth();
+  const location = useLocation();
 
-  const isActive = (path: string) => location.pathname === path
+  const isActive = (path: string) => location.pathname === path;
 
   if (!isAuthenticated) {
-    return null
+    return null;
   }
 
   return (
@@ -23,9 +23,9 @@ export default function NavBar() {
               <Link
                 to="/"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/')
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  isActive("/")
+                    ? "border-indigo-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 Dashboard
@@ -33,9 +33,9 @@ export default function NavBar() {
               <Link
                 to="/prompts/new"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  location.pathname.startsWith('/prompts')
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  location.pathname.startsWith("/prompts")
+                    ? "border-indigo-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 Prompt Builder
@@ -43,9 +43,9 @@ export default function NavBar() {
               <Link
                 to="/collections"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/collections')
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  isActive("/collections")
+                    ? "border-indigo-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 Collections
@@ -53,9 +53,9 @@ export default function NavBar() {
               <Link
                 to="/playbooks/new"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  location.pathname.startsWith('/playbooks')
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  location.pathname.startsWith("/playbooks")
+                    ? "border-indigo-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 Playbooks
@@ -63,9 +63,9 @@ export default function NavBar() {
               <Link
                 to="/integrations"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/integrations')
-                    ? 'border-indigo-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  isActive("/integrations")
+                    ? "border-indigo-500 text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 Integrations
@@ -74,9 +74,9 @@ export default function NavBar() {
                 <Link
                   to="/admin"
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                    isActive('/admin')
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    isActive("/admin")
+                      ? "border-indigo-500 text-gray-900"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   }`}
                 >
                   Admin
@@ -100,5 +100,5 @@ export default function NavBar() {
         </div>
       </div>
     </nav>
-  )
+  );
 }

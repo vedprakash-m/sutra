@@ -2,7 +2,7 @@ export default {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  moduleNameMapper: {
+  moduleNameMapping: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '^@/services/api$': '<rootDir>/src/services/__mocks__/api.ts',
@@ -17,10 +17,30 @@ export default {
     '!src/**/*.d.ts',
     '!src/test-setup.ts',
     '!src/main.tsx',
+    '!src/vite-env.d.ts',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
+  coverageDirectory: 'coverage',
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{ts,tsx}',
     '<rootDir>/src/**/*.{test,spec}.{ts,tsx}',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/coverage/',
+  ],
+  // Fast feedback for CI
+  maxWorkers: process.env.CI ? '50%' : '100%',
+  // Cache for faster subsequent runs
+  cache: true,
+  cacheDirectory: '<rootDir>/.jest-cache',
 }

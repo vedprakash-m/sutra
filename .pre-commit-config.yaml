@@ -76,5 +76,5 @@ repos:
         pass_filenames: false
 
 # Fast hooks run first, slower ones later
-default_stages: [commit]
+default_stages: [pre-commit]
 fail_fast: false

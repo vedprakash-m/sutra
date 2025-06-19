@@ -62,7 +62,7 @@ const mockCollectionsData = {
       prompt_count: 5,
     },
     {
-      id: "2", 
+      id: "2",
       name: "Test Collection 2",
       description: "Another test collection",
       type: "public",
@@ -80,18 +80,18 @@ const renderCollectionsPage = () => {
       <AuthProvider>
         <CollectionsPage />
       </AuthProvider>
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
 
 describe("CollectionsPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseApi.mockReturnValue({ 
-      data: mockCollectionsData, 
-      loading: false, 
-      error: null, 
-      refetch: jest.fn() 
+    mockUseApi.mockReturnValue({
+      data: mockCollectionsData,
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
     });
     (collectionsApi.list as jest.Mock).mockResolvedValue(mockCollectionsData);
     (collectionsApi.create as jest.Mock).mockResolvedValue({ id: "3" });
@@ -101,17 +101,19 @@ describe("CollectionsPage", () => {
     renderCollectionsPage();
 
     expect(screen.getByText("Collections")).toBeInTheDocument();
-    expect(screen.getByText("Organize and manage your prompt collections")).toBeInTheDocument();
+    expect(
+      screen.getByText("Organize and manage your prompt collections"),
+    ).toBeInTheDocument();
   });
 
   it("should display loading state", () => {
-    mockUseApi.mockReturnValue({ 
-      data: null, 
-      loading: true, 
-      error: null, 
-      refetch: jest.fn() 
+    mockUseApi.mockReturnValue({
+      data: null,
+      loading: true,
+      error: null,
+      refetch: jest.fn(),
     });
-    
+
     renderCollectionsPage();
 
     expect(screen.getByText("Loading collections...")).toBeInTheDocument();
@@ -133,16 +135,18 @@ describe("CollectionsPage", () => {
 
   it("should handle search functionality", async () => {
     const mockRefetch = jest.fn();
-    mockUseApi.mockReturnValue({ 
-      data: mockCollectionsData, 
-      loading: false, 
-      error: null, 
-      refetch: mockRefetch 
+    mockUseApi.mockReturnValue({
+      data: mockCollectionsData,
+      loading: false,
+      error: null,
+      refetch: mockRefetch,
     });
-    
+
     renderCollectionsPage();
 
-    const searchInput = screen.getByPlaceholderText("Search collections...") as HTMLInputElement;
+    const searchInput = screen.getByPlaceholderText(
+      "Search collections...",
+    ) as HTMLInputElement;
     fireEvent.change(searchInput, { target: { value: "test search" } });
 
     // The search should trigger a re-render with the new search term
@@ -151,13 +155,13 @@ describe("CollectionsPage", () => {
 
   it("should handle create collection", async () => {
     const mockRefetch = jest.fn();
-    mockUseApi.mockReturnValue({ 
-      data: mockCollectionsData, 
-      loading: false, 
-      error: null, 
-      refetch: mockRefetch 
+    mockUseApi.mockReturnValue({
+      data: mockCollectionsData,
+      loading: false,
+      error: null,
+      refetch: mockRefetch,
     });
-    
+
     renderCollectionsPage();
 
     const createButtons = screen.getAllByText("New Collection");
@@ -185,29 +189,35 @@ describe("CollectionsPage", () => {
 
   it("should display error state", async () => {
     const errorMessage = "Failed to load collections";
-    mockUseApi.mockReturnValue({ 
-      data: null, 
-      loading: false, 
-      error: new Error(errorMessage), 
-      refetch: jest.fn() 
+    mockUseApi.mockReturnValue({
+      data: null,
+      loading: false,
+      error: new Error(errorMessage),
+      refetch: jest.fn(),
     });
 
     renderCollectionsPage();
 
-    expect(screen.getByText("Error loading collections. Please try again.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Error loading collections. Please try again."),
+    ).toBeInTheDocument();
   });
 
   it("should handle empty collections state", async () => {
-    mockUseApi.mockReturnValue({ 
-      data: { items: [] }, 
-      loading: false, 
-      error: null, 
-      refetch: jest.fn() 
+    mockUseApi.mockReturnValue({
+      data: { items: [] },
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
     });
 
     renderCollectionsPage();
 
-    expect(screen.getByText("No collections found. Create your first collection to get started!")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "No collections found. Create your first collection to get started!",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("should format dates correctly", async () => {

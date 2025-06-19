@@ -40,7 +40,7 @@ const mockUsageStats = {
 
 const mockLLMSettings = {
   providers: [
-    { name: "OpenAI", status: "connected", apiKey: "sk-***" },
+    { name: "OpenAI", status: "connected", apiKey: "sk-***" }, // pragma: allowlist secret
     { name: "Anthropic", status: "disconnected", apiKey: "" },
   ],
 };
@@ -63,7 +63,11 @@ describe("AdminPanel", () => {
     render(<AdminPanel />);
 
     expect(screen.getByText("Access Denied")).toBeInTheDocument();
-    expect(screen.getByText("You do not have administrative privileges to access this page.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "You do not have administrative privileges to access this page.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("should render admin panel for admin users", () => {
@@ -75,7 +79,9 @@ describe("AdminPanel", () => {
     render(<AdminPanel />);
 
     expect(screen.getByText("Admin Panel")).toBeInTheDocument();
-    expect(screen.getByText("Manage system settings, users, and LLM configurations")).toBeInTheDocument();
+    expect(
+      screen.getByText("Manage system settings, users, and LLM configurations"),
+    ).toBeInTheDocument();
   });
 
   it("should render tab navigation", () => {
@@ -171,7 +177,9 @@ describe("AdminPanel", () => {
     const usersTab = screen.getByText("User Management");
     fireEvent.click(usersTab);
 
-    expect(screen.getByText("User management features coming soon...")).toBeInTheDocument();
+    expect(
+      screen.getByText("User management features coming soon..."),
+    ).toBeInTheDocument();
   });
 
   it("should handle system tab", () => {
@@ -198,6 +206,9 @@ describe("AdminPanel", () => {
 
     // Overview should be active by default
     const overviewTab = screen.getByText("Overview");
-    expect(overviewTab.closest('button')).toHaveClass('border-indigo-500', 'text-indigo-600');
+    expect(overviewTab.closest("button")).toHaveClass(
+      "border-indigo-500",
+      "text-indigo-600",
+    );
   });
 });

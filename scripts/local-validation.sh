@@ -2,6 +2,7 @@
 
 # Enhanced Local Validation - Match GitHub CI/CD exactly
 # This script provides comprehensive pre-commit validation
+# MUST be run before every commit to prevent CI/CD failures
 
 set -e
 
@@ -30,9 +31,9 @@ run_test() {
     local test_name="$1"
     local test_command="$2"
     local start_time=$(date +%s)
-    
+
     echo -n "Testing $test_name... "
-    
+
     if eval "$test_command" > /tmp/test_output 2>&1; then
         local end_time=$(date +%s)
         local duration=$((end_time - start_time))
@@ -192,7 +193,7 @@ if command -v az &> /dev/null; then
         echo "Installing Bicep..."
         az bicep install
     fi
-    
+
     run_test "Bicep persistent template" "az bicep build --file infrastructure/persistent.bicep --stdout > /dev/null"
     run_test "Bicep compute template" "az bicep build --file infrastructure/compute.bicep --stdout > /dev/null"
 else
@@ -208,28 +209,28 @@ echo ""
 if [[ "$1" == "--full" ]] || [[ "$1" == "--e2e" ]]; then
     echo -e "${BLUE}🔗 Stage 7: Integration Tests (E2E)${NC}"
     echo "-----------------------------------"
-    
+
     # Clean up any existing containers
     docker compose down --remove-orphans > /dev/null 2>&1 || true
-    
+
     echo "Starting test environment..."
     if npm run e2e:setup > /tmp/e2e_setup.log 2>&1; then
         log_success "Test environment started"
-        
+
         # Wait for services to be ready
         echo "Waiting for services to be ready..."
         timeout 60s bash -c 'until curl -f http://localhost:7071/api/health > /dev/null 2>&1; do sleep 2; done' && \
         timeout 60s bash -c 'until curl -f http://localhost:5173 > /dev/null 2>&1; do sleep 2; done'
-        
+
         if [ $? -eq 0 ]; then
             log_success "Services are ready"
-            
+
             # Install Playwright browsers if needed
             if ! npx playwright install --dry-run chromium > /dev/null 2>&1; then
                 echo "Installing Playwright browsers..."
                 npx playwright install chromium > /dev/null 2>&1
             fi
-            
+
             # Run E2E tests
             if npx playwright test --reporter=line > /tmp/e2e_results.log 2>&1; then
                 log_success "E2E tests passed"
@@ -243,7 +244,7 @@ if [[ "$1" == "--full" ]] || [[ "$1" == "--e2e" ]]; then
             echo "Setup log:"
             cat /tmp/e2e_setup.log | tail -20
         fi
-        
+
         # Cleanup
         npm run e2e:cleanup > /dev/null 2>&1 || true
     else
@@ -278,7 +279,7 @@ if command -v grep &> /dev/null; then
     echo "Checking for potential secrets..."
     if grep -r -i --exclude-dir=node_modules --exclude-dir=.git --exclude="*.log" \
        -E "(password|secret|key|token)" . > /tmp/secrets_check.log 2>&1; then
-        
+
         # Filter out obviously safe matches
         if grep -v -E "(\.md:|example|test|mock|placeholder|<password>|<secret>|<key>|<token>)" /tmp/secrets_check.log > /tmp/secrets_filtered.log; then
             if [ -s /tmp/secrets_filtered.log ]; then

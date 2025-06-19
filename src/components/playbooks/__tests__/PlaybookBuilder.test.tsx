@@ -51,7 +51,7 @@ const renderPlaybookBuilder = () => {
   return render(
     <BrowserRouter>
       <PlaybookBuilder />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
 };
 
@@ -61,7 +61,7 @@ describe("PlaybookBuilder", () => {
 
     expect(screen.getByText("Playbook Builder")).toBeInTheDocument();
     expect(
-      screen.getByText("Create linear AI workflows and automation playbooks")
+      screen.getByText("Create linear AI workflows and automation playbooks"),
     ).toBeInTheDocument();
   });
 
@@ -143,10 +143,10 @@ describe("PlaybookBuilder", () => {
 
     // Find and click remove button (trash icon) - there should be multiple buttons now
     const buttons = screen.getAllByRole("button");
-    const removeButton = buttons.find(button => 
-      button.querySelector('svg path[d*="M19 7l-.867 12.142"]')
+    const removeButton = buttons.find((button) =>
+      button.querySelector('svg path[d*="M19 7l-.867 12.142"]'),
     );
-    
+
     if (removeButton) {
       fireEvent.click(removeButton);
     }
@@ -197,7 +197,7 @@ describe("PlaybookBuilder", () => {
 
   it("should handle save errors", async () => {
     (playbooksApi.create as jest.Mock).mockRejectedValue(
-      new Error("Save failed")
+      new Error("Save failed"),
     );
 
     renderPlaybookBuilder();
@@ -219,6 +219,10 @@ describe("PlaybookBuilder", () => {
     renderPlaybookBuilder();
 
     expect(screen.getByText("Build Your First Workflow")).toBeInTheDocument();
-    expect(screen.getByText("Add steps to create a workflow. Steps will be executed in order from top to bottom.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Add steps to create a workflow. Steps will be executed in order from top to bottom.",
+      ),
+    ).toBeInTheDocument();
   });
 });

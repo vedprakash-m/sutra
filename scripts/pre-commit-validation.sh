@@ -22,7 +22,7 @@ echo "🎯 Checking code quality..."
 # ESLint
 npm run lint || { echo "❌ ESLint failed"; exit 1; }
 
-# TypeScript  
+# TypeScript
 npm run type-check || { echo "❌ TypeScript errors found"; exit 1; }
 
 # Prettier formatting - MOST CRITICAL

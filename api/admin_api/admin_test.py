@@ -9,33 +9,33 @@ from api.admin_api import main as admin_main
 
 class TestAdminAPI:
     """Test suite for Admin API endpoints."""
-    
+
     @pytest.fixture
     def mock_admin_auth(self):
         """Mock successful admin authentication."""
-        with patch('api.admin_api.verify_jwt_token') as mock_verify, \
-             patch('api.admin_api.get_user_id_from_token') as mock_user_id, \
-             patch('api.admin_api.check_admin_role') as mock_admin:
-            mock_verify.return_value = {'valid': True}
-            mock_user_id.return_value = 'admin-user-123'
+        with patch("api.admin_api.verify_jwt_token") as mock_verify, patch(
+            "api.admin_api.get_user_id_from_token"
+        ) as mock_user_id, patch("api.admin_api.check_admin_role") as mock_admin:
+            mock_verify.return_value = {"valid": True}
+            mock_user_id.return_value = "admin-user-123"
             mock_admin.return_value = True
             yield
-    
+
     @pytest.fixture
     def mock_non_admin_auth(self):
         """Mock successful authentication but non-admin user."""
-        with patch('api.admin_api.verify_jwt_token') as mock_verify, \
-             patch('api.admin_api.get_user_id_from_token') as mock_user_id, \
-             patch('api.admin_api.check_admin_role') as mock_admin:
-            mock_verify.return_value = {'valid': True}
-            mock_user_id.return_value = 'regular-user-123'
+        with patch("api.admin_api.verify_jwt_token") as mock_verify, patch(
+            "api.admin_api.get_user_id_from_token"
+        ) as mock_user_id, patch("api.admin_api.check_admin_role") as mock_admin:
+            mock_verify.return_value = {"valid": True}
+            mock_user_id.return_value = "regular-user-123"
             mock_admin.return_value = False
             yield
-    
+
     @pytest.fixture
     def mock_cosmos_client(self):
         """Mock database manager."""
-        with patch('api.admin_api.get_database_manager') as mock_db_manager:
+        with patch("api.admin_api.get_database_manager") as mock_db_manager:
             mock_manager = Mock()
             # Make database methods async
             mock_manager.query_items = AsyncMock()
@@ -44,210 +44,221 @@ class TestAdminAPI:
             mock_manager.update_item = AsyncMock()
             mock_manager.delete_item = AsyncMock()
             mock_manager.read_item = AsyncMock()
-            
+
             # Mock separate container instances for each container type
             users_container = Mock()
             users_container.query_items = Mock()
             users_container.read_item = Mock()
             users_container.replace_item = Mock()
-            
+
             prompts_container = Mock()
             prompts_container.query_items = Mock()
             prompts_container.read_item = Mock()
             prompts_container.replace_item = Mock()
-            
+
             collections_container = Mock()
             collections_container.query_items = Mock()
             collections_container.read_item = Mock()
             collections_container.replace_item = Mock()
-            
+
             playbooks_container = Mock()
             playbooks_container.query_items = Mock()
             playbooks_container.read_item = Mock()
             playbooks_container.replace_item = Mock()
-            
+
             config_container = Mock()
             config_container.query_items = Mock()
             config_container.read_item = Mock()  # Sync, not async
             config_container.replace_item = Mock()  # Sync, not async
             config_container.create_item = Mock()  # Sync, not async
-            
+
             executions_container = Mock()
             executions_container.query_items = Mock()
             executions_container.read_item = Mock()
             executions_container.replace_item = Mock()
-            
+
             mock_manager.get_users_container = Mock(return_value=users_container)
             mock_manager.get_prompts_container = Mock(return_value=prompts_container)
-            mock_manager.get_collections_container = Mock(return_value=collections_container) 
-            mock_manager.get_playbooks_container = Mock(return_value=playbooks_container)
+            mock_manager.get_collections_container = Mock(
+                return_value=collections_container
+            )
+            mock_manager.get_playbooks_container = Mock(
+                return_value=playbooks_container
+            )
             mock_manager.get_settings_container = Mock(return_value=config_container)
             mock_manager.get_config_container = Mock(return_value=config_container)
-            mock_manager.get_executions_container = Mock(return_value=executions_container)
-            
+            mock_manager.get_executions_container = Mock(
+                return_value=executions_container
+            )
+
             mock_db_manager.return_value = mock_manager
             yield mock_manager
-    
+
     @pytest.mark.asyncio
     async def test_list_users_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful user listing by admin."""
         # Arrange
         mock_users = [
             {
-                'id': 'user-1',
-                'email': 'user1@example.com',
-                'name': 'User One',
-                'role': 'member',
-                'createdAt': '2025-06-15T09:00:00Z',
-                'llmApiKeys': {
-                    'openai': 'kv-ref-key',
-                    'google_gemini': {'enabled': True, 'status': 'active'}
-                }
+                "id": "user-1",
+                "email": "user1@example.com",
+                "name": "User One",
+                "role": "member",
+                "createdAt": "2025-06-15T09:00:00Z",
+                "llmApiKeys": {
+                    "openai": "kv-ref-key",
+                    "google_gemini": {"enabled": True, "status": "active"},
+                },
             },
             {
-                'id': 'user-2',
-                'email': 'user2@example.com',
-                'name': 'User Two',
-                'role': 'contributor',
-                'createdAt': '2025-06-15T10:00:00Z'
-            }
+                "id": "user-2",
+                "email": "user2@example.com",
+                "name": "User Two",
+                "role": "contributor",
+                "createdAt": "2025-06-15T10:00:00Z",
+            },
         ]
-        
+
         # Mock database responses - using AsyncMock for async methods
         from unittest.mock import AsyncMock
-        mock_cosmos_client.query_items = AsyncMock(side_effect=[
-            mock_users,  # Users list
-            [2]          # Count
-        ])
-        
+
+        mock_cosmos_client.query_items = AsyncMock(
+            side_effect=[mock_users, [2]]  # Users list  # Count
+        )
+
         # Create request
         req = func.HttpRequest(
-            method='GET',
-            url='http://localhost/api/admin/users?page=1&limit=50',
-            body=b'',
+            method="GET",
+            url="http://localhost/api/admin/users?page=1&limit=50",
+            body=b"",
             headers={},
-            route_params={'resource': 'users'},
-            params={'page': '1', 'limit': '50'}
+            route_params={"resource": "users"},
+            params={"page": "1", "limit": "50"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert len(response_data['users']) == 2
-        assert response_data['pagination']['total_count'] == 2
-        
+        assert len(response_data["users"]) == 2
+        assert response_data["pagination"]["total_count"] == 2
+
         # Check that API keys are masked
-        user1 = response_data['users'][0]
-        assert 'llmApiKeys' in user1
-        assert user1['llmApiKeys']['openai']['enabled'] == True
-        assert 'kv-ref-key' not in str(user1['llmApiKeys'])
-    
+        user1 = response_data["users"][0]
+        assert "llmApiKeys" in user1
+        assert user1["llmApiKeys"]["openai"]["enabled"] == True
+        assert "kv-ref-key" not in str(user1["llmApiKeys"])
+
     @pytest.mark.asyncio
     async def test_update_user_role_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful user role update by admin."""
         # Arrange
-        target_user_id = 'user-123'
+        target_user_id = "user-123"
         existing_user = {
-            'id': target_user_id,
-            'email': 'user@example.com',
-            'name': 'Test User',
-            'role': 'member',
-            'createdAt': '2025-06-15T09:00:00Z'
+            "id": target_user_id,
+            "email": "user@example.com",
+            "name": "Test User",
+            "role": "member",
+            "createdAt": "2025-06-15T09:00:00Z",
         }
-        
-        new_role_data = {'role': 'contributor'}
-        
+
+        new_role_data = {"role": "contributor"}
+
         # Mock database responses - using AsyncMock for async methods
         from unittest.mock import AsyncMock
+
         mock_cosmos_client.query_items = AsyncMock(return_value=[existing_user])
-        mock_cosmos_client.update_item = AsyncMock(return_value={
-            **existing_user,
-            'role': 'contributor',
-            'updatedAt': '2025-06-15T10:00:00Z'
-        })
-        
-        # Create request
-        req = func.HttpRequest(
-            method='PUT',
-            url=f'http://localhost/api/admin/users/{target_user_id}/role',
-            body=json.dumps(new_role_data).encode(),
-            headers={'Content-Type': 'application/json'},
-            route_params={
-                'resource': 'users',
-                'user_id': target_user_id,
-                'action': 'role'
+        mock_cosmos_client.update_item = AsyncMock(
+            return_value={
+                **existing_user,
+                "role": "contributor",
+                "updatedAt": "2025-06-15T10:00:00Z",
             }
         )
-        
+
+        # Create request
+        req = func.HttpRequest(
+            method="PUT",
+            url=f"http://localhost/api/admin/users/{target_user_id}/role",
+            body=json.dumps(new_role_data).encode(),
+            headers={"Content-Type": "application/json"},
+            route_params={
+                "resource": "users",
+                "user_id": target_user_id,
+                "action": "role",
+            },
+        )
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert response_data['newRole'] == 'contributor'
-        assert response_data['oldRole'] == 'member'
-        assert response_data['userId'] == target_user_id
+        assert response_data["newRole"] == "contributor"
+        assert response_data["oldRole"] == "member"
+        assert response_data["userId"] == target_user_id
         mock_cosmos_client.update_item.assert_called_once()
-    
+
     @pytest.mark.asyncio
-    async def test_update_user_role_invalid_role(self, mock_admin_auth, mock_cosmos_client):
+    async def test_update_user_role_invalid_role(
+        self, mock_admin_auth, mock_cosmos_client
+    ):
         """Test user role update with invalid role."""
         # Arrange
-        target_user_id = 'user-123'
-        invalid_role_data = {'role': 'invalid_role'}
-        
+        target_user_id = "user-123"
+        invalid_role_data = {"role": "invalid_role"}
+
         # Create request
         req = func.HttpRequest(
-            method='PUT',
-            url=f'http://localhost/api/admin/users/{target_user_id}/role',
+            method="PUT",
+            url=f"http://localhost/api/admin/users/{target_user_id}/role",
             body=json.dumps(invalid_role_data).encode(),
-            headers={'Content-Type': 'application/json'},
+            headers={"Content-Type": "application/json"},
             route_params={
-                'resource': 'users',
-                'user_id': target_user_id,
-                'action': 'role'
-            }
+                "resource": "users",
+                "user_id": target_user_id,
+                "action": "role",
+            },
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 400
         response_data = json.loads(response.get_body())
-        assert 'Invalid role' in response_data['error']
-        assert 'member, contributor, prompt_manager, admin' in response_data['message']
-    
+        assert "Invalid role" in response_data["error"]
+        assert "member, contributor, prompt_manager, admin" in response_data["message"]
+
     @pytest.mark.asyncio
     async def test_get_system_health_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful system health check."""
         # Arrange
         # Mock successful database query
         mock_cosmos_client.query_items.return_value = [1]  # Successful query
-        
+
         # Create request
         req = func.HttpRequest(
-            method='GET',
-            url='http://localhost/api/admin/system/health',
-            body=b'',
+            method="GET",
+            url="http://localhost/api/admin/system/health",
+            body=b"",
             headers={},
-            route_params={'resource': 'system', 'action': 'health'}
+            route_params={"resource": "system", "action": "health"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert response_data['status'] == 'healthy'
-        assert response_data['components']['database']['status'] == 'healthy'
-        assert response_data['components']['api']['status'] == 'healthy'
-    
+        assert response_data["status"] == "healthy"
+        assert response_data["components"]["database"]["status"] == "healthy"
+        assert response_data["components"]["api"]["status"] == "healthy"
+
     @pytest.mark.asyncio
     async def test_get_system_stats_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful system statistics retrieval."""
@@ -255,173 +266,182 @@ class TestAdminAPI:
         # Mock database responses for different counts
         # Use return_value for repeatable calls instead of side_effect which can be exhausted
         users_container_mock = mock_cosmos_client.get_users_container()
-        users_container_mock.query_items.side_effect = [[10], [3]]  # User count, then recent users
-        
+        users_container_mock.query_items.side_effect = [
+            [10],
+            [3],
+        ]  # User count, then recent users
+
         prompts_container_mock = mock_cosmos_client.get_prompts_container()
-        prompts_container_mock.query_items.side_effect = [[25], [7]]  # Prompt count, then recent prompts
-        
+        prompts_container_mock.query_items.side_effect = [
+            [25],
+            [7],
+        ]  # Prompt count, then recent prompts
+
         collections_container_mock = mock_cosmos_client.get_collections_container()
         collections_container_mock.query_items.return_value = [5]  # Collection count
-        
+
         playbooks_container_mock = mock_cosmos_client.get_playbooks_container()
         playbooks_container_mock.query_items.return_value = [8]  # Playbook count
-        
+
         # Create request
         req = func.HttpRequest(
-            method='GET',
-            url='http://localhost/api/admin/system/stats',
-            body=b'',
+            method="GET",
+            url="http://localhost/api/admin/system/stats",
+            body=b"",
             headers={},
-            route_params={'resource': 'system', 'action': 'stats'}
+            route_params={"resource": "system", "action": "stats"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert response_data['totals']['users'] == 10
-        assert response_data['totals']['prompts'] == 25
-        assert response_data['totals']['collections'] == 5
-        assert response_data['totals']['playbooks'] == 8
-        assert response_data['recent_activity']['new_users'] == 3
-        assert response_data['recent_activity']['new_prompts'] == 7
-    
+        assert response_data["totals"]["users"] == 10
+        assert response_data["totals"]["prompts"] == 25
+        assert response_data["totals"]["collections"] == 5
+        assert response_data["totals"]["playbooks"] == 8
+        assert response_data["recent_activity"]["new_users"] == 3
+        assert response_data["recent_activity"]["new_prompts"] == 7
+
     @pytest.mark.asyncio
-    async def test_set_maintenance_mode_enable(self, mock_admin_auth, mock_cosmos_client):
+    async def test_set_maintenance_mode_enable(
+        self, mock_admin_auth, mock_cosmos_client
+    ):
         """Test enabling maintenance mode."""
         # Arrange
         maintenance_data = {
-            'enabled': True,
-            'message': 'System maintenance in progress'
+            "enabled": True,
+            "message": "System maintenance in progress",
         }
-        
+
         mock_cosmos_client.replace_item.return_value = {
-            'id': 'maintenance_mode',
-            'enabled': True,
-            'message': 'System maintenance in progress',
-            'setBy': 'admin-user-123'
+            "id": "maintenance_mode",
+            "enabled": True,
+            "message": "System maintenance in progress",
+            "setBy": "admin-user-123",
         }
-        
+
         # Create request
         req = func.HttpRequest(
-            method='POST',
-            url='http://localhost/api/admin/system/maintenance',
+            method="POST",
+            url="http://localhost/api/admin/system/maintenance",
             body=json.dumps(maintenance_data).encode(),
-            headers={'Content-Type': 'application/json'},
-            route_params={'resource': 'system', 'action': 'maintenance'}
+            headers={"Content-Type": "application/json"},
+            route_params={"resource": "system", "action": "maintenance"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert response_data['enabled'] is True
-        assert 'enabled' in response_data['message']
-        assert response_data['maintenanceMessage'] == 'System maintenance in progress'
-    
+        assert response_data["enabled"] is True
+        assert "enabled" in response_data["message"]
+        assert response_data["maintenanceMessage"] == "System maintenance in progress"
+
     @pytest.mark.asyncio
     async def test_get_llm_settings_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful LLM settings retrieval."""
         # Arrange
         llm_settings = {
-            'id': 'llm_settings',
-            'providers': {
-                'openai': {
-                    'enabled': True,
-                    'priority': 1,
-                    'rateLimits': {'requestsPerMinute': 60},
-                    'budgetLimits': {'dailyBudget': 50.0}
+            "id": "llm_settings",
+            "providers": {
+                "openai": {
+                    "enabled": True,
+                    "priority": 1,
+                    "rateLimits": {"requestsPerMinute": 60},
+                    "budgetLimits": {"dailyBudget": 50.0},
                 },
-                'google_gemini': {
-                    'enabled': True,
-                    'priority': 2,
-                    'rateLimits': {'requestsPerMinute': 60},
-                    'budgetLimits': {'dailyBudget': 30.0}
-                }
+                "google_gemini": {
+                    "enabled": True,
+                    "priority": 2,
+                    "rateLimits": {"requestsPerMinute": 60},
+                    "budgetLimits": {"dailyBudget": 30.0},
+                },
             },
-            'defaultProvider': 'openai'
+            "defaultProvider": "openai",
         }
-        
+
         mock_cosmos_client.read_item.return_value = llm_settings
-        
+
         # Create request
         req = func.HttpRequest(
-            method='GET',
-            url='http://localhost/api/admin/llm/settings',
-            body=b'',
+            method="GET",
+            url="http://localhost/api/admin/llm/settings",
+            body=b"",
             headers={},
-            route_params={'resource': 'llm', 'action': 'settings'}
+            route_params={"resource": "llm", "action": "settings"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert 'providers' in response_data
-        assert response_data['defaultProvider'] == 'openai'
-        assert response_data['providers']['openai']['enabled'] is True
-        assert response_data['providers']['openai']['priority'] == 1
+        assert "providers" in response_data
+        assert response_data["defaultProvider"] == "openai"
+        assert response_data["providers"]["openai"]["enabled"] is True
+        assert response_data["providers"]["openai"]["priority"] == 1
 
     @pytest.mark.asyncio
-    async def test_update_llm_settings_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_update_llm_settings_success(
+        self, mock_admin_auth, mock_cosmos_client
+    ):
         """Test successful LLM settings update."""
         # Arrange
         existing_settings = {
-            'id': 'llm_settings',
-            'providers': {
-                'openai': {'enabled': True, 'priority': 1}
-            }
+            "id": "llm_settings",
+            "providers": {"openai": {"enabled": True, "priority": 1}},
         }
 
         update_data = {
-            'providers': {
-                'openai': {
-                    'enabled': True,
-                    'priority': 1,
-                    'budgetLimits': {'dailyBudget': 100.0}
+            "providers": {
+                "openai": {
+                    "enabled": True,
+                    "priority": 1,
+                    "budgetLimits": {"dailyBudget": 100.0},
                 },
-                'google_gemini': {
-                    'enabled': False,
-                    'priority': 2
-                }
+                "google_gemini": {"enabled": False, "priority": 2},
             },
-            'defaultProvider': 'openai'
+            "defaultProvider": "openai",
         }
 
-        mock_cosmos_client.get_config_container().read_item.return_value = existing_settings
+        mock_cosmos_client.get_config_container().read_item.return_value = (
+            existing_settings
+        )
         mock_cosmos_client.get_config_container().replace_item.return_value = {
             **existing_settings,
             **update_data,
-            'updatedAt': '2025-06-15T10:00:00Z',
-            'updatedBy': 'admin-user-123'
+            "updatedAt": "2025-06-15T10:00:00Z",
+            "updatedBy": "admin-user-123",
         }
-        
+
         # Create request
         req = func.HttpRequest(
-            method='PUT',
-            url='http://localhost/api/admin/llm/settings',
+            method="PUT",
+            url="http://localhost/api/admin/llm/settings",
             body=json.dumps(update_data).encode(),
-            headers={'Content-Type': 'application/json'},
-            route_params={'resource': 'llm', 'action': 'settings'}
+            headers={"Content-Type": "application/json"},
+            route_params={"resource": "llm", "action": "settings"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert response_data['providers']['openai']['budgetLimits']['dailyBudget'] == 100.0
-        assert response_data['providers']['google_gemini']['enabled'] is False
-        assert response_data['updatedBy'] == 'admin-user-123'
+        assert (
+            response_data["providers"]["openai"]["budgetLimits"]["dailyBudget"] == 100.0
+        )
+        assert response_data["providers"]["google_gemini"]["enabled"] is False
+        assert response_data["updatedBy"] == "admin-user-123"
         mock_cosmos_client.get_config_container().replace_item.assert_called_once()
-    
+
     @pytest.mark.asyncio
     async def test_get_usage_stats_success(self, mock_admin_auth, mock_cosmos_client):
         """Test successful usage statistics retrieval."""
@@ -430,109 +450,117 @@ class TestAdminAPI:
         mock_cosmos_client.get_executions_container().query_items.side_effect = [
             [15],  # Total executions
             [12],  # Successful executions
-            [3],   # Failed executions
+            [3],  # Failed executions
         ]
-        mock_cosmos_client.get_users_container().query_items.return_value = [8]  # Active users
-        
+        mock_cosmos_client.get_users_container().query_items.return_value = [
+            8
+        ]  # Active users
+
         # Create request
         req = func.HttpRequest(
-            method='GET',
-            url='http://localhost/api/admin/usage?period=day',
-            body=b'',
+            method="GET",
+            url="http://localhost/api/admin/usage?period=day",
+            body=b"",
             headers={},
-            route_params={'resource': 'usage'},
-            params={'period': 'day'}
+            route_params={"resource": "usage"},
+            params={"period": "day"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert response_data['period'] == 'day'
-        assert response_data['statistics']['executions']['total'] == 15
-        assert response_data['statistics']['executions']['successful'] == 12
-        assert response_data['statistics']['executions']['failed'] == 3
-        assert response_data['statistics']['executions']['success_rate'] == 80.0
-        assert response_data['statistics']['users']['active'] == 8
-    
+        assert response_data["period"] == "day"
+        assert response_data["statistics"]["executions"]["total"] == 15
+        assert response_data["statistics"]["executions"]["successful"] == 12
+        assert response_data["statistics"]["executions"]["failed"] == 3
+        assert response_data["statistics"]["executions"]["success_rate"] == 80.0
+        assert response_data["statistics"]["users"]["active"] == 8
+
     @pytest.mark.asyncio
     async def test_non_admin_access_forbidden(self, mock_non_admin_auth):
         """Test that non-admin users cannot access admin endpoints."""
         # Create request
         req = func.HttpRequest(
-            method='GET',
-            url='http://localhost/api/admin/users',
-            body=b'',
+            method="GET",
+            url="http://localhost/api/admin/users",
+            body=b"",
             headers={},
-            route_params={'resource': 'users'}
+            route_params={"resource": "users"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 403
         response_data = json.loads(response.get_body())
-        assert response_data['error'] == 'Forbidden'
-        assert 'Admin privileges required' in response_data['message']
-    
+        assert response_data["error"] == "Forbidden"
+        assert "Admin privileges required" in response_data["message"]
+
     @pytest.mark.asyncio
-    async def test_get_system_health_database_failure(self, mock_admin_auth, mock_cosmos_client):
+    async def test_get_system_health_database_failure(
+        self, mock_admin_auth, mock_cosmos_client
+    ):
         """Test system health check when database is unavailable."""
         # Arrange
         # Mock database failure
-        mock_cosmos_client.query_items.side_effect = Exception("Database connection failed")
-        
+        mock_cosmos_client.query_items.side_effect = Exception(
+            "Database connection failed"
+        )
+
         # Create request
         req = func.HttpRequest(
-            method='GET',
-            url='http://localhost/api/admin/system/health',
-            body=b'',
+            method="GET",
+            url="http://localhost/api/admin/system/health",
+            body=b"",
             headers={},
-            route_params={'resource': 'system', 'action': 'health'}
+            route_params={"resource": "system", "action": "health"},
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 503
         response_data = json.loads(response.get_body())
-        assert response_data['status'] == 'degraded'
-        assert 'unhealthy' in response_data['components']['database']['status']
-    
+        assert response_data["status"] == "degraded"
+        assert "unhealthy" in response_data["components"]["database"]["status"]
+
     @pytest.mark.asyncio
-    async def test_update_user_role_user_not_found(self, mock_admin_auth, mock_cosmos_client):
+    async def test_update_user_role_user_not_found(
+        self, mock_admin_auth, mock_cosmos_client
+    ):
         """Test user role update when user doesn't exist."""
         # Arrange
-        target_user_id = 'nonexistent-user'
-        new_role_data = {'role': 'contributor'}
-        
+        target_user_id = "nonexistent-user"
+        new_role_data = {"role": "contributor"}
+
         mock_cosmos_client.query_items.return_value = []  # No user found
-        
+
         # Create request
         req = func.HttpRequest(
-            method='PUT',
-            url=f'http://localhost/api/admin/users/{target_user_id}/role',
+            method="PUT",
+            url=f"http://localhost/api/admin/users/{target_user_id}/role",
             body=json.dumps(new_role_data).encode(),
-            headers={'Content-Type': 'application/json'},
+            headers={"Content-Type": "application/json"},
             route_params={
-                'resource': 'users',
-                'user_id': target_user_id,
-                'action': 'role'
-            }
+                "resource": "users",
+                "user_id": target_user_id,
+                "action": "role",
+            },
         )
-        
+
         # Act
         response = await admin_main(req)
-        
+
         # Assert
         assert response.status_code == 404
         response_data = json.loads(response.get_body())
-        assert response_data['error'] == 'User not found'
+        assert response_data["error"] == "User not found"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

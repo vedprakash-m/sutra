@@ -228,6 +228,6 @@ The E2E suite is designed to work in CI environments:
 
 ---
 
-📖 **Full Documentation**: [E2E_TESTING.md](./E2E_TESTING.md)  
-🔧 **Project Setup**: [README.md](./README.md)  
+📖 **Full Documentation**: [E2E_TESTING.md](./E2E_TESTING.md)
+🔧 **Project Setup**: [README.md](./README.md)
 🏗️ **Architecture**: [Tech_Spec_Sutra.md](./docs/Tech_Spec_Sutra.md)

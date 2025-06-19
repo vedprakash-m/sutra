@@ -1,6 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
 import {
   XMarkIcon,
   DocumentArrowUpIcon,
@@ -349,6 +348,7 @@ export default function ImportModal({
                             type="file"
                             accept=".json,.txt,.md"
                             onChange={handleFileUpload}
+                            data-testid="file-input"
                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                           />
                           <p className="mt-2 text-sm text-gray-500">

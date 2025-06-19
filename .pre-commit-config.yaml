@@ -63,7 +63,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
-        exclude: package-lock.json
+        exclude: package-lock.json|\.jest-cache/|\.venv/|\.venv-test/|node_modules/|__pycache__/|\.git/
 
   # Azure/Infrastructure
   - repo: local

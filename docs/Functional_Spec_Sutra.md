@@ -6,7 +6,7 @@ Ved Mishra - June 2025 - Version: 1.0
 
 This document details the functional specifications for the Minimum Viable Product (MVP) of Sutra, an AI Operations Platform. It focuses on comprehensively describing the user experience, interactions, and system behaviors for core functionalities, translating the PRD into actionable design and development requirements.
 
-**Sutra: Weaving your AI solutions.**  
+**Sutra: Weaving your AI solutions.**
 The platform aims to streamline prompt engineering, enable multi-LLM optimization, and facilitate AI workflow orchestration, ensuring consistent and high-quality AI outputs.
 
 ## 2. Core UX Principles

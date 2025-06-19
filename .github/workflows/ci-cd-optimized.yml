@@ -258,7 +258,7 @@ jobs:
 
           timeout 60s bash -c 'until curl -f http://localhost:5173; do sleep 2; done' || {
             echo "Frontend failed to start"
-            npm run e2e:logs  
+            npm run e2e:logs
             exit 1
           }
 

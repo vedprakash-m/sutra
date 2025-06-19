@@ -25,7 +25,7 @@ if [ ! -f ".github/workflows/ci-cd.yml" ]; then
     ((ISSUES_FOUND++))
 else
     echo -e "${GREEN}✅ CI/CD workflow file found${NC}"
-    
+
     # Check if CI is using the correct requirements file
     if grep -q "requirements\.txt" .github/workflows/ci-cd.yml; then
         echo -e "${RED}❌ CI/CD is using requirements.txt (problematic)${NC}"
@@ -38,15 +38,15 @@ else
         echo -e "${YELLOW}⚠️ Cannot determine which requirements file CI is using${NC}"
         ((ISSUES_FOUND++))
     fi
-    
+
     # Check Python version consistency
     if grep -q "python-version:" .github/workflows/ci-cd.yml; then
         CI_PYTHON_VERSION=$(grep "python-version:" .github/workflows/ci-cd.yml | head -1 | sed 's/.*python-version: *//' | sed 's/ *$//')
         echo "🐍 CI Python version: $CI_PYTHON_VERSION"
-        
+
         LOCAL_PYTHON_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
         echo "🐍 Local Python version: $LOCAL_PYTHON_VERSION"
-        
+
         if [[ "$CI_PYTHON_VERSION" != "$LOCAL_PYTHON_VERSION"* ]]; then
             echo -e "${YELLOW}⚠️ Python version mismatch between local and CI${NC}"
         else
@@ -71,24 +71,24 @@ for req_file in requirements-minimal.txt requirements-ci.txt requirements.txt; d
     if [ -f "$req_file" ]; then
         echo ""
         echo "📦 Testing $req_file (as CI would)..."
-        
+
         # Skip problematic files on local testing to save time
         if [[ "$req_file" == "requirements-ci.txt" || "$req_file" == "requirements.txt" ]]; then
             echo "⏭️ Skipping $req_file (contains grpcio compilation - tested elsewhere)"
             continue
         fi
-        
+
         # Create isolated environment
         python3 -m venv test-ci-env
         source test-ci-env/bin/activate
-        
+
         # Upgrade pip like CI does
         pip install --upgrade pip setuptools wheel
-        
+
         # Try to install requirements
         if pip install -r "$req_file" > install_log.txt 2>&1; then
             echo -e "${GREEN}✅ $req_file installs successfully${NC}"
-            
+
             # Test key imports
             if python3 -c "
 import azure.functions
@@ -99,7 +99,7 @@ import httpx
 print('All imports successful')
 " 2>/dev/null; then
                 echo -e "${GREEN}✅ Key modules import successfully${NC}"
-                
+
                 # Test pytest with coverage like CI does
                 echo "🧪 Testing pytest with coverage (CI simulation)..."
                 cd "$ORIGINAL_DIR/api"
@@ -110,7 +110,7 @@ print('All imports successful')
                     echo "   This would cause CI backend-tests to fail"
                     ((ISSUES_FOUND++))
                 fi
-                
+
                 # Test for namespace collisions (critical for CI success)
                 echo "🔍 Testing for namespace collisions..."
                 python -c "
@@ -119,7 +119,7 @@ import sys
 
 # Critical Python built-in modules that must not conflict
 critical_modules = [
-    'collections', 'os', 'sys', 'json', 'time', 'datetime', 'itertools', 
+    'collections', 'os', 'sys', 'json', 'time', 'datetime', 'itertools',
     'functools', 'operator', 'pathlib', 'urllib', 'http', 'email', 'calendar',
     'uuid', 'random', 'math', 'statistics', 'decimal', 'fractions',
     'logging', 'warnings', 'traceback', 'contextlib', 'abc', 'types',
@@ -153,7 +153,7 @@ except ImportError as e:
                 else
                     echo -e "${GREEN}✅ No namespace collisions detected${NC}"
                 fi
-                
+
                 cd "$TEMP_DIR"
             else
                 echo -e "${RED}❌ Import test failed for $req_file${NC}"
@@ -165,7 +165,7 @@ except ImportError as e:
             tail -10 install_log.txt
             ((ISSUES_FOUND++))
         fi
-        
+
         deactivate
         rm -rf test-ci-env
     fi

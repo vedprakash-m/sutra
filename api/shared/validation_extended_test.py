@@ -7,7 +7,7 @@ from api.shared.validation import (
     validate_llm_integration_data,
     validate_playbook_data,
     ValidationException,
-    MAX_STRING_LENGTH
+    MAX_STRING_LENGTH,
 )
 
 
@@ -30,25 +30,33 @@ class TestValidationExtended:
 
     def test_validate_budget_limits_valid(self):
         """Test budget limits validation with valid inputs."""
-        assert validate_budget_limits({"total_budget": 100.0, "usage_limit": 10.0}) is True
-        assert validate_budget_limits({"current_usage": 10.0, "budget_limit": 100.0}) is True
+        assert (
+            validate_budget_limits({"total_budget": 100.0, "usage_limit": 10.0}) is True
+        )
+        assert (
+            validate_budget_limits({"current_usage": 10.0, "budget_limit": 100.0})
+            is True
+        )
 
     def test_validate_budget_limits_invalid(self):
         """Test budget limits validation with invalid inputs."""
-        with pytest.raises(ValidationException, match="Budget values cannot be negative"):
+        with pytest.raises(
+            ValidationException, match="Budget values cannot be negative"
+        ):
             validate_budget_limits({"total_budget": -10.0, "usage_limit": 5.0})
-        with pytest.raises(ValidationException, match="Usage limit cannot exceed total budget"):
+        with pytest.raises(
+            ValidationException, match="Usage limit cannot exceed total budget"
+        ):
             validate_budget_limits({"total_budget": 5.0, "usage_limit": 10.0})
-        with pytest.raises(ValidationException, match="Current usage cannot exceed budget limit"):
+        with pytest.raises(
+            ValidationException, match="Current usage cannot exceed budget limit"
+        ):
             validate_budget_limits({"current_usage": 110.0, "budget_limit": 100.0})
 
     def test_validate_llm_integration_edge_cases(self):
         """Test LLM integration validation with edge cases."""
         # Missing provider
-        data = {
-            "api_key": "test-key",
-            "budget_limit": 100.0
-        }
+        data = {"api_key": "test-key", "budget_limit": 100.0}
         result = validate_llm_integration_data(data)
         assert result["valid"] is False
         assert any("provider" in e.lower() for e in result["errors"])
@@ -57,7 +65,7 @@ class TestValidationExtended:
         data = {
             "provider": "openai",
             "api_key": "test-key",
-            "budget_limit": "not_a_number"
+            "budget_limit": "not_a_number",
         }
         result = validate_llm_integration_data(data)
         assert result["valid"] is False
@@ -67,11 +75,11 @@ class TestValidationExtended:
         # Very long name
         data = {
             "name": "a" * (MAX_STRING_LENGTH + 1),  # Very long name
-            "description": "Test description"
+            "description": "Test description",
         }
         result = validate_collection_data(data)
         assert result["valid"] is False
-        assert any("less than" in e for e in result["errors"]) 
+        assert any("less than" in e for e in result["errors"])
 
     def test_validate_playbook_data_complex_steps(self):
         """Test playbook validation with complex step configurations."""
@@ -84,7 +92,7 @@ class TestValidationExtended:
                     "type": "prompt",
                     "description": "First step",
                     "promptText": "Test prompt",
-                    "llm_providers": ["openai", "anthropic"]
+                    "llm_providers": ["openai", "anthropic"],
                 },
                 {
                     "name": "Step 2",
@@ -92,12 +100,15 @@ class TestValidationExtended:
                     "description": "Second step",
                     "promptId": "prompt-123",
                     "llm_providers": ["google"],
-                    "variables_mapping": {"output1": "input2"}
-                }
-            ]
+                    "variables_mapping": {"output1": "input2"},
+                },
+            ],
         }
         result = validate_playbook_data(data)
-        assert result["valid"] is True, f"Validation failed with errors: {result['errors']}"
+        assert (
+            result["valid"] is True
+        ), f"Validation failed with errors: {result['errors']}"
+
 
 class TestValidationErrorHandling:
     """Test suite for error handling in validation functions."""
@@ -119,19 +130,21 @@ class TestValidationErrorHandling:
         data = {
             "name": 123,  # Should be string
             "description": ["not", "a", "string"],  # Should be string
-            "tags": "not_a_list"  # Should be list
+            "tags": "not_a_list",  # Should be list
         }
         result = validate_collection_data(data)
         assert result["valid"] is False
         assert any("name must be a string" in e.lower() for e in result["errors"])
-        assert any("description must be a string" in e.lower() for e in result["errors"])
+        assert any(
+            "description must be a string" in e.lower() for e in result["errors"]
+        )
         assert any("tags must be a list" in e.lower() for e in result["errors"])
 
         # Playbook with malformed steps
         data = {
             "name": "Test Playbook",
             "description": "Test description",
-            "steps": "not_a_list"  # Should be list
+            "steps": "not_a_list",  # Should be list
         }
         result = validate_playbook_data(data)
         assert result["valid"] is False

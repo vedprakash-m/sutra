@@ -6,6 +6,7 @@ from enum import Enum
 
 class UserRole(str, Enum):
     """User roles in the system."""
+
     MEMBER = "member"
     CONTRIBUTOR = "contributor"
     PROMPT_MANAGER = "prompt_manager"
@@ -16,6 +17,7 @@ class UserRole(str, Enum):
 
 class PromptStatus(str, Enum):
     """Status of a prompt."""
+
     DRAFT = "draft"
     ACTIVE = "active"
     ARCHIVED = "archived"
@@ -23,6 +25,7 @@ class PromptStatus(str, Enum):
 
 class PlaybookStatus(str, Enum):
     """Status of a playbook execution."""
+
     DRAFT = "draft"
     RUNNING = "running"
     PAUSED = "paused"
@@ -32,6 +35,7 @@ class PlaybookStatus(str, Enum):
 
 class LLMProvider(str, Enum):
     """Supported LLM providers."""
+
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     GOOGLE = "google"
@@ -41,25 +45,28 @@ class LLMProvider(str, Enum):
 # USER MODELS
 # =============================================================================
 
+
 class User(BaseModel):
     """User model."""
+
     id: str
     email: str
     name: str
     roles: List[UserRole] = [UserRole.USER]
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
 class UserPreferences(BaseModel):
     """User preferences model."""
+
     user_id: str
     default_llm_providers: List[LLMProvider] = []
     prompt_templates: Dict[str, str] = {}
     ui_preferences: Dict[str, Any] = {}
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
@@ -67,8 +74,10 @@ class UserPreferences(BaseModel):
 # PROMPT MODELS
 # =============================================================================
 
+
 class PromptVariable(BaseModel):
     """Variable definition for prompts."""
+
     name: str
     description: str
     type: str = "string"  # string, number, boolean
@@ -78,6 +87,7 @@ class PromptVariable(BaseModel):
 
 class PromptTemplate(BaseModel):
     """Prompt template model."""
+
     id: str
     user_id: str
     title: str
@@ -90,12 +100,13 @@ class PromptTemplate(BaseModel):
     parent_id: Optional[str] = None  # For versioning
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
 class PromptExecution(BaseModel):
     """Record of a prompt execution."""
+
     id: str
     prompt_id: str
     user_id: str
@@ -108,7 +119,7 @@ class PromptExecution(BaseModel):
     tokens_used: int = 0
     execution_time_ms: int = 0
     created_at: datetime
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
@@ -116,8 +127,10 @@ class PromptExecution(BaseModel):
 # COLLECTION MODELS
 # =============================================================================
 
+
 class Collection(BaseModel):
     """Prompt collection model."""
+
     id: str
     user_id: str
     name: str
@@ -131,6 +144,7 @@ class Collection(BaseModel):
 
 class CollectionShare(BaseModel):
     """Collection sharing model."""
+
     id: str
     collection_id: str
     shared_by_user_id: str
@@ -143,8 +157,10 @@ class CollectionShare(BaseModel):
 # PLAYBOOK MODELS
 # =============================================================================
 
+
 class PlaybookStep(BaseModel):
     """Individual step in a playbook."""
+
     id: str
     step_number: int
     name: str
@@ -154,14 +170,17 @@ class PlaybookStep(BaseModel):
     llm_providers: List[LLMProvider] = []
     requires_manual_review: bool = False
     auto_proceed: bool = True
-    variables_mapping: Dict[str, str] = {}  # Maps output vars to input vars of next step
+    variables_mapping: Dict[
+        str, str
+    ] = {}  # Maps output vars to input vars of next step
     conditions: Dict[str, Any] = {}  # Conditional logic
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
 class Playbook(BaseModel):
     """Playbook (workflow) model."""
+
     id: str
     user_id: str
     name: str
@@ -171,12 +190,13 @@ class Playbook(BaseModel):
     tags: List[str] = []
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
 class PlaybookExecution(BaseModel):
     """Playbook execution instance."""
+
     id: str
     playbook_id: str
     user_id: str
@@ -189,7 +209,7 @@ class PlaybookExecution(BaseModel):
     started_at: datetime
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
@@ -197,8 +217,10 @@ class PlaybookExecution(BaseModel):
 # ADMIN MODELS
 # =============================================================================
 
+
 class LLMProviderConfig(BaseModel):
     """LLM provider configuration."""
+
     provider: LLMProvider
     enabled: bool = False
     api_key_secret_name: str
@@ -206,12 +228,13 @@ class LLMProviderConfig(BaseModel):
     priority: int = 1
     provider_config: Dict[str, Any] = {}
     rate_limits: Dict[str, Any] = {}
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
 class UsageRecord(BaseModel):
     """Usage tracking record."""
+
     id: str
     user_id: str
     provider: LLMProvider
@@ -222,12 +245,13 @@ class UsageRecord(BaseModel):
     date: str  # YYYY-MM-DD for partitioning
     timestamp: datetime
     metadata: Dict[str, Any] = {}
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
 class SystemConfig(BaseModel):
     """System-wide configuration."""
+
     id: str = "system_config"
     type: str = "system"
     llm_providers: List[LLMProviderConfig] = []
@@ -245,15 +269,17 @@ class SystemConfig(BaseModel):
 # API REQUEST/RESPONSE MODELS
 # =============================================================================
 
+
 class CreatePromptRequest(BaseModel):
     """Request to create a new prompt."""
+
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., max_length=1000)
     content: str = Field(..., min_length=1)
     variables: List[PromptVariable] = []
     tags: List[str] = []
-    
-    @field_validator('tags')
+
+    @field_validator("tags")
     @classmethod
     def validate_tags(cls, v):
         return [tag.strip().lower() for tag in v if tag.strip()]
@@ -261,14 +287,15 @@ class CreatePromptRequest(BaseModel):
 
 class UpdatePromptRequest(BaseModel):
     """Request to update an existing prompt."""
+
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, max_length=1000)
     content: Optional[str] = Field(None, min_length=1)
     variables: Optional[List[PromptVariable]] = None
     tags: Optional[List[str]] = None
     status: Optional[PromptStatus] = None
-    
-    @field_validator('tags')
+
+    @field_validator("tags")
     @classmethod
     def validate_tags(cls, v):
         if v is not None:
@@ -278,23 +305,25 @@ class UpdatePromptRequest(BaseModel):
 
 class ExecutePromptRequest(BaseModel):
     """Request to execute a prompt."""
+
     prompt_id: Optional[str] = None
     prompt_content: Optional[str] = None
     variables: Dict[str, Any] = {}
     providers: List[LLMProvider] = []
-    
-    @field_validator('providers')
+
+    @field_validator("providers")
     @classmethod
     def validate_providers(cls, v):
         if not v:
             return [LLMProvider.OPENAI]  # Default to OpenAI
         return v
-    
+
     model_config = ConfigDict(use_enum_values=True)
 
 
 class PromptExecutionResponse(BaseModel):
     """Response from prompt execution."""
+
     execution_id: str
     results: List[Dict[str, Any]]
     errors: List[Dict[str, Any]] = []
@@ -305,6 +334,7 @@ class PromptExecutionResponse(BaseModel):
 
 class CreateCollectionRequest(BaseModel):
     """Request to create a new collection."""
+
     name: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., max_length=1000)
     prompt_ids: List[str] = []
@@ -314,6 +344,7 @@ class CreateCollectionRequest(BaseModel):
 
 class CreatePlaybookRequest(BaseModel):
     """Request to create a new playbook."""
+
     name: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., max_length=1000)
     steps: List[PlaybookStep] = []
@@ -322,6 +353,7 @@ class CreatePlaybookRequest(BaseModel):
 
 class ExecutePlaybookRequest(BaseModel):
     """Request to execute a playbook."""
+
     playbook_id: str
     variables: Dict[str, Any] = {}
     auto_proceed: bool = True
@@ -331,8 +363,10 @@ class ExecutePlaybookRequest(BaseModel):
 # EXCEPTION MODELS
 # =============================================================================
 
+
 class ValidationError(Exception):
     """Exception raised when validation fails."""
+
     def __init__(self, message: str, field: str = None):
         self.message = message
         self.field = field
@@ -343,8 +377,10 @@ class ValidationError(Exception):
 # ERROR MODELS
 # =============================================================================
 
+
 class ErrorResponse(BaseModel):
     """Standard error response."""
+
     error: str
     message: str
     details: Optional[Dict[str, Any]] = None
@@ -353,6 +389,7 @@ class ErrorResponse(BaseModel):
 
 class ValidationErrorResponse(BaseModel):
     """Validation error response."""
+
     error: str = "validation_error"
     message: str
     field_errors: Dict[str, List[str]]

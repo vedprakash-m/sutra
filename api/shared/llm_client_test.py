@@ -9,8 +9,13 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timezone
 
 from api.shared.llm_client import (
-    LLMProvider, OpenAIProvider, AnthropicProvider, GoogleProvider,
-    LLMManager, get_llm_manager, get_llm_client
+    LLMProvider,
+    OpenAIProvider,
+    AnthropicProvider,
+    GoogleProvider,
+    LLMManager,
+    get_llm_manager,
+    get_llm_client,
 )
 
 
@@ -20,7 +25,7 @@ class TestLLMProvider:
     def test_init(self):
         """Test LLMProvider initialization."""
         provider = LLMProvider("TestProvider")
-        
+
         assert provider.name == "TestProvider"
         assert provider.enabled is False
         assert provider.api_key is None
@@ -29,7 +34,7 @@ class TestLLMProvider:
         assert provider.priority == 1
 
     @pytest.mark.asyncio
-    @patch('api.shared.llm_client.SecretClient')
+    @patch("api.shared.llm_client.SecretClient")
     async def test_initialize_success(self, mock_secret_client):
         """Test successful provider initialization."""
         # Mock Key Vault responses
@@ -37,17 +42,15 @@ class TestLLMProvider:
         mock_api_secret = Mock()
         mock_api_secret.value = "test-api-key"
         mock_config_secret = Mock()
-        mock_config_secret.value = json.dumps({
-            "budget_limit": 100.0,
-            "priority": 2,
-            "enabled": True
-        })
-        
+        mock_config_secret.value = json.dumps(
+            {"budget_limit": 100.0, "priority": 2, "enabled": True}
+        )
+
         mock_kv_client.get_secret.side_effect = [mock_api_secret, mock_config_secret]
-        
+
         provider = LLMProvider("TestProvider")
         result = await provider.initialize(mock_kv_client)
-        
+
         assert result is True
         assert provider.api_key == "test-api-key"
         assert provider.budget_limit == 100.0
@@ -55,18 +58,18 @@ class TestLLMProvider:
         assert provider.enabled is True
 
     @pytest.mark.asyncio
-    @patch('api.shared.llm_client.SecretClient')
+    @patch("api.shared.llm_client.SecretClient")
     async def test_initialize_api_key_only(self, mock_secret_client):
         """Test initialization with API key but no config."""
         mock_kv_client = Mock()
         mock_api_secret = Mock()
         mock_api_secret.value = "test-api-key"
-        
+
         mock_kv_client.get_secret.side_effect = [mock_api_secret, None]
-        
+
         provider = LLMProvider("TestProvider")
         result = await provider.initialize(mock_kv_client)
-        
+
         assert result is True
         assert provider.api_key == "test-api-key"
         assert provider.budget_limit == 0.0
@@ -77,10 +80,10 @@ class TestLLMProvider:
         """Test initialization failure."""
         mock_kv_client = Mock()
         mock_kv_client.get_secret.side_effect = Exception("Key Vault error")
-        
+
         provider = LLMProvider("TestProvider")
         result = await provider.initialize(mock_kv_client)
-        
+
         assert result is False
         assert provider.api_key is None
 
@@ -90,7 +93,7 @@ class TestLLMProvider:
         provider = LLMProvider("TestProvider")
         provider.budget_limit = 0.0
         provider.current_usage = 50.0
-        
+
         result = await provider.check_budget()
         assert result is True
 
@@ -100,7 +103,7 @@ class TestLLMProvider:
         provider = LLMProvider("TestProvider")
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
-        
+
         result = await provider.check_budget()
         assert result is True
 
@@ -110,7 +113,7 @@ class TestLLMProvider:
         provider = LLMProvider("TestProvider")
         provider.budget_limit = 100.0
         provider.current_usage = 150.0
-        
+
         result = await provider.check_budget()
         assert result is False
 
@@ -118,7 +121,7 @@ class TestLLMProvider:
     async def test_execute_prompt_not_implemented(self):
         """Test that base provider execute_prompt raises NotImplementedError."""
         provider = LLMProvider("TestProvider")
-        
+
         with pytest.raises(NotImplementedError):
             await provider.execute_prompt("test prompt", {})
 
@@ -129,7 +132,7 @@ class TestOpenAIProvider:
     def test_init(self):
         """Test OpenAIProvider initialization."""
         provider = OpenAIProvider()
-        
+
         assert provider.name == "OpenAI"
         assert provider.model == "gpt-4"
         assert provider.max_tokens == 2000
@@ -142,9 +145,9 @@ class TestOpenAIProvider:
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
-        
+
         result = await provider.execute_prompt("Hello, world!", {"user_id": "123"})
-        
+
         assert result["provider"] == "OpenAI"
         assert result["model"] == "gpt-4"
         assert "Mock OpenAI response" in result["response"]
@@ -157,7 +160,7 @@ class TestOpenAIProvider:
         """Test prompt execution when provider is disabled."""
         provider = OpenAIProvider()
         provider.enabled = False
-        
+
         with pytest.raises(Exception, match="disabled or over budget"):
             await provider.execute_prompt("Hello, world!", {})
 
@@ -168,7 +171,7 @@ class TestOpenAIProvider:
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 150.0
-        
+
         with pytest.raises(Exception, match="disabled or over budget"):
             await provider.execute_prompt("Hello, world!", {})
 
@@ -179,7 +182,7 @@ class TestAnthropicProvider:
     def test_init(self):
         """Test AnthropicProvider initialization."""
         provider = AnthropicProvider()
-        
+
         assert provider.name == "Anthropic"
         assert provider.model == "claude-3-sonnet-20240229"
         assert provider.max_tokens == 2000
@@ -191,9 +194,9 @@ class TestAnthropicProvider:
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
-        
+
         result = await provider.execute_prompt("Hello, world!", {"user_id": "123"})
-        
+
         assert result["provider"] == "Anthropic"
         assert result["model"] == "claude-3-sonnet-20240229"
         assert "Mock Anthropic response" in result["response"]
@@ -208,7 +211,7 @@ class TestGoogleProvider:
     def test_init(self):
         """Test GoogleProvider initialization."""
         provider = GoogleProvider()
-        
+
         assert provider.name == "Google"
         assert provider.model == "gemini-pro"
         assert provider.max_tokens == 2000
@@ -220,9 +223,9 @@ class TestGoogleProvider:
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
-        
+
         result = await provider.execute_prompt("Hello, world!", {"user_id": "123"})
-        
+
         assert result["provider"] == "Google"
         assert result["model"] == "gemini-pro"
         assert "Mock Google response" in result["response"]
@@ -235,21 +238,21 @@ class TestLLMManager:
     def test_init(self):
         """Test LLMManager initialization."""
         manager = LLMManager()
-        
+
         assert "openai" in manager.providers
         assert "anthropic" in manager.providers
         assert "google" in manager.providers
         assert manager._initialized is False
 
-    @patch.dict(os.environ, {'KEY_VAULT_URI': 'https://test-vault.vault.azure.net/'})
-    @patch('api.shared.llm_client.DefaultAzureCredential')
-    @patch('api.shared.llm_client.SecretClient')
+    @patch.dict(os.environ, {"KEY_VAULT_URI": "https://test-vault.vault.azure.net/"})
+    @patch("api.shared.llm_client.DefaultAzureCredential")
+    @patch("api.shared.llm_client.SecretClient")
     def test_kv_client_property(self, mock_secret_client, mock_credential):
         """Test Key Vault client property."""
         manager = LLMManager()
-        
+
         client = manager.kv_client
-        
+
         assert client is not None
         mock_secret_client.assert_called_once()
         mock_credential.assert_called_once()
@@ -258,23 +261,25 @@ class TestLLMManager:
         """Test Key Vault client property without URI."""
         with patch.dict(os.environ, {}, clear=True):
             manager = LLMManager()
-            
-            with pytest.raises(ValueError, match="KEY_VAULT_URI environment variable is required"):
+
+            with pytest.raises(
+                ValueError, match="KEY_VAULT_URI environment variable is required"
+            ):
                 _ = manager.kv_client
 
     @pytest.mark.asyncio
-    @patch.dict(os.environ, {'KEY_VAULT_URI': 'https://test-vault.vault.azure.net/'})
-    @patch('api.shared.llm_client.SecretClient')
+    @patch.dict(os.environ, {"KEY_VAULT_URI": "https://test-vault.vault.azure.net/"})
+    @patch("api.shared.llm_client.SecretClient")
     async def test_initialize_success(self, mock_secret_client):
         """Test successful LLM manager initialization."""
         # Mock all provider initializations to succeed
         manager = LLMManager()
-        
+
         for provider in manager.providers.values():
             provider.initialize = AsyncMock(return_value=True)
-        
+
         result = await manager.initialize()
-        
+
         assert result is True
         assert manager._initialized is True
 
@@ -283,10 +288,10 @@ class TestLLMManager:
     async def test_initialize_failure(self):
         """Test LLM manager initialization failure."""
         manager = LLMManager()
-        
+
         # No KEY_VAULT_URI set, should fail
         result = await manager.initialize()
-        
+
         assert result is False
         assert manager._initialized is False
 
@@ -295,22 +300,22 @@ class TestLLMManager:
         """Test getting available providers."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=True)
-        
+
         # Set up providers with different states
         manager.providers["openai"].enabled = True
         manager.providers["openai"].budget_limit = 100.0
         manager.providers["openai"].current_usage = 50.0
         manager.providers["openai"].priority = 2
-        
+
         manager.providers["anthropic"].enabled = True
         manager.providers["anthropic"].budget_limit = 100.0
         manager.providers["anthropic"].current_usage = 50.0
         manager.providers["anthropic"].priority = 1
-        
+
         manager.providers["google"].enabled = False
-        
+
         available = await manager.get_available_providers()
-        
+
         # Should return enabled providers within budget, sorted by priority
         assert available == ["anthropic", "openai"]  # anthropic has priority 1
 
@@ -319,20 +324,19 @@ class TestLLMManager:
         """Test successful prompt execution."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=True)
-        
+
         # Mock provider with proper attributes
         mock_provider = Mock()
         mock_provider.enabled = True
         mock_provider.current_usage = 0.0  # Start with 0
         mock_provider.check_budget = AsyncMock(return_value=True)
-        mock_provider.execute_prompt = AsyncMock(return_value={
-            "response": "Test response",
-            "cost": 0.02
-        })
+        mock_provider.execute_prompt = AsyncMock(
+            return_value={"response": "Test response", "cost": 0.02}
+        )
         manager.providers["openai"] = mock_provider
-        
+
         result = await manager.execute_prompt("openai", "Hello!", {"user": "123"})
-        
+
         assert result["response"] == "Test response"
         assert mock_provider.current_usage == 0.02
 
@@ -341,7 +345,7 @@ class TestLLMManager:
         """Test prompt execution with unknown provider."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=True)
-        
+
         with pytest.raises(ValueError, match="Unknown provider: unknown"):
             await manager.execute_prompt("unknown", "Hello!", {})
 
@@ -350,9 +354,9 @@ class TestLLMManager:
         """Test prompt execution with disabled provider."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=True)
-        
+
         manager.providers["openai"].enabled = False
-        
+
         with pytest.raises(Exception, match="Provider openai is disabled"):
             await manager.execute_prompt("openai", "Hello!", {})
 
@@ -360,14 +364,18 @@ class TestLLMManager:
     async def test_execute_multi_llm_success(self):
         """Test multi-LLM execution success."""
         manager = LLMManager()
-        manager.get_available_providers = AsyncMock(return_value=["openai", "anthropic"])
-        manager.execute_prompt = AsyncMock(side_effect=[
-            {"provider": "openai", "response": "OpenAI response"},
-            {"provider": "anthropic", "response": "Anthropic response"}
-        ])
-        
+        manager.get_available_providers = AsyncMock(
+            return_value=["openai", "anthropic"]
+        )
+        manager.execute_prompt = AsyncMock(
+            side_effect=[
+                {"provider": "openai", "response": "OpenAI response"},
+                {"provider": "anthropic", "response": "Anthropic response"},
+            ]
+        )
+
         result = await manager.execute_multi_llm("Hello!")
-        
+
         assert len(result["results"]) == 2
         assert len(result["errors"]) == 0
         assert result["successful_providers"] == 2
@@ -377,14 +385,18 @@ class TestLLMManager:
     async def test_execute_multi_llm_with_failures(self):
         """Test multi-LLM execution with some failures."""
         manager = LLMManager()
-        manager.get_available_providers = AsyncMock(return_value=["openai", "anthropic"])
-        manager.execute_prompt = AsyncMock(side_effect=[
-            {"provider": "openai", "response": "OpenAI response"},
-            Exception("Anthropic failed")
-        ])
-        
+        manager.get_available_providers = AsyncMock(
+            return_value=["openai", "anthropic"]
+        )
+        manager.execute_prompt = AsyncMock(
+            side_effect=[
+                {"provider": "openai", "response": "OpenAI response"},
+                Exception("Anthropic failed"),
+            ]
+        )
+
         result = await manager.execute_multi_llm("Hello!")
-        
+
         assert len(result["results"]) == 1
         assert len(result["errors"]) == 1
         assert result["successful_providers"] == 1
@@ -396,15 +408,15 @@ class TestLLMManager:
         """Test getting provider status."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=True)
-        
+
         # Set up provider states
         manager.providers["openai"].enabled = True
         manager.providers["openai"].budget_limit = 100.0
         manager.providers["openai"].current_usage = 75.0
         manager.providers["openai"].priority = 1
-        
+
         status = await manager.get_provider_status()
-        
+
         assert "openai" in status
         assert status["openai"]["enabled"] is True
         assert status["openai"]["budget_limit"] == 100.0
@@ -422,7 +434,7 @@ class TestLLMManagerEdgeCases:
         """Test getting available providers when not initialized."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=False)
-        
+
         available = await manager.get_available_providers()
         assert available == []
 
@@ -431,7 +443,7 @@ class TestLLMManagerEdgeCases:
         """Test prompt execution when not initialized."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=False)
-        
+
         with pytest.raises(Exception, match="LLM Manager not initialized"):
             await manager.execute_prompt("openai", "Hello!", {})
 
@@ -440,7 +452,7 @@ class TestLLMManagerEdgeCases:
         """Test getting provider status when not initialized."""
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=False)
-        
+
         status = await manager.get_provider_status()
         assert status == {}
 
@@ -452,7 +464,7 @@ class TestGlobalFunctions:
         """Test getting global LLM manager."""
         manager1 = get_llm_manager()
         manager2 = get_llm_manager()
-        
+
         # Should return the same instance
         assert manager1 is manager2
 

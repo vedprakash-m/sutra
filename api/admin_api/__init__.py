@@ -13,10 +13,11 @@ from ..shared.error_handling import handle_api_error, SutraAPIError
 # Initialize logging
 logger = logging.getLogger(__name__)
 
+
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Admin API endpoint for system administration and management.
-    
+
     Supports:
     - GET /api/admin/users - List all users (admin only)
     - PUT /api/admin/users/{user_id}/role - Update user role (admin only)
@@ -30,62 +31,66 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Verify authentication
         auth_result = verify_jwt_token(req)
-        if not auth_result['valid']:
+        if not auth_result["valid"]:
             return func.HttpResponse(
-                json.dumps({'error': 'Unauthorized', 'message': auth_result['message']}),
+                json.dumps(
+                    {"error": "Unauthorized", "message": auth_result["message"]}
+                ),
                 status_code=401,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         user_id = get_user_id_from_token(req)
-        
+
         # Check admin privileges
         if not check_admin_role(req):
             return func.HttpResponse(
-                json.dumps({'error': 'Forbidden', 'message': 'Admin privileges required'}),
+                json.dumps(
+                    {"error": "Forbidden", "message": "Admin privileges required"}
+                ),
                 status_code=403,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         method = req.method
         route_params = req.route_params
-        resource = route_params.get('resource')  # users, system, llm, usage
-        action = route_params.get('action')      # health, stats, maintenance, settings
-        target_user_id = route_params.get('user_id')
-        
+        resource = route_params.get("resource")  # users, system, llm, usage
+        action = route_params.get("action")  # health, stats, maintenance, settings
+        target_user_id = route_params.get("user_id")
+
         # Route to appropriate handler
-        if resource == 'users':
-            if method == 'GET':
+        if resource == "users":
+            if method == "GET":
                 return await list_users(user_id, req)
-            elif method == 'PUT' and target_user_id and action == 'role':
+            elif method == "PUT" and target_user_id and action == "role":
                 return await update_user_role(user_id, target_user_id, req)
-        elif resource == 'system':
-            if method == 'GET' and action == 'health':
+        elif resource == "system":
+            if method == "GET" and action == "health":
                 return await get_system_health()
-            elif method == 'GET' and action == 'stats':
+            elif method == "GET" and action == "stats":
                 return await get_system_stats()
-            elif method == 'POST' and action == 'maintenance':
+            elif method == "POST" and action == "maintenance":
                 return await set_maintenance_mode(user_id, req)
-        elif resource == 'llm':
-            if method == 'GET' and action == 'settings':
+        elif resource == "llm":
+            if method == "GET" and action == "settings":
                 return await get_llm_settings()
-            elif method == 'PUT' and action == 'settings':
+            elif method == "PUT" and action == "settings":
                 return await update_llm_settings(user_id, req)
-        elif resource == 'usage':
-            if method == 'GET':
+        elif resource == "usage":
+            if method == "GET":
                 return await get_usage_stats(req)
-        elif resource == 'test-data':
-            if method == 'POST' and action == 'reset':
+        elif resource == "test-data":
+            if method == "POST" and action == "reset":
                 return await reset_test_data(user_id, req)
-            elif method == 'POST' and action == 'seed':
+            elif method == "POST" and action == "seed":
                 return await seed_test_data(user_id, req)
         else:
             return func.HttpResponse(
-                json.dumps({'error': 'Resource not found'}),
+                json.dumps({"error": "Resource not found"}),
                 status_code=404,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-            
+
     except Exception as e:
         return handle_api_error(e)
 
@@ -95,104 +100,107 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
     try:
         # Parse query parameters
         params = req.params
-        page = int(params.get('page', 1))
-        limit = min(int(params.get('limit', 50)), 100)
-        search = params.get('search', '').strip()
-        role_filter = params.get('role')
-        
+        page = int(params.get("page", 1))
+        limit = min(int(params.get("limit", 50)), 100)
+        search = params.get("search", "").strip()
+        role_filter = params.get("role")
+
         db_manager = get_database_manager()
-        
+
         # Build query
         query_parts = ["SELECT * FROM c"]
         query_params = []
-        
+
         # Add filters
         where_conditions = []
-        
+
         if search:
-            where_conditions.append("(CONTAINS(LOWER(c.name), LOWER(@search)) OR CONTAINS(LOWER(c.email), LOWER(@search)))")
+            where_conditions.append(
+                "(CONTAINS(LOWER(c.name), LOWER(@search)) OR CONTAINS(LOWER(c.email), LOWER(@search)))"
+            )
             query_params.append({"name": "@search", "value": search})
-        
+
         if role_filter:
             where_conditions.append("c.role = @role")
             query_params.append({"name": "@role", "value": role_filter})
-        
+
         if where_conditions:
             query_parts.append("WHERE " + " AND ".join(where_conditions))
-        
+
         # Add ordering and pagination
         query_parts.append("ORDER BY c.createdAt DESC")
         query_parts.append(f"OFFSET {(page - 1) * limit} LIMIT {limit}")
-        
+
         query = " ".join(query_parts)
-        
+
         # Execute query
         items = await db_manager.query_items(
-            container_name='users',
-            query=query,
-            parameters=query_params
+            container_name="users", query=query, parameters=query_params
         )
-        
+
         # Mask sensitive data
         for user in items:
-            if 'llmApiKeys' in user:
+            if "llmApiKeys" in user:
                 # Mask API keys for security
                 masked_keys = {}
-                for provider, config in user['llmApiKeys'].items():
+                for provider, config in user["llmApiKeys"].items():
                     if isinstance(config, dict):
                         masked_keys[provider] = {
-                            'enabled': config.get('enabled', True),
-                            'lastTested': config.get('lastTested'),
-                            'status': config.get('status', 'unknown')
+                            "enabled": config.get("enabled", True),
+                            "lastTested": config.get("lastTested"),
+                            "status": config.get("status", "unknown"),
                         }
                     else:
-                        masked_keys[provider] = {'enabled': True, 'status': 'configured'}
-                user['llmApiKeys'] = masked_keys
-        
+                        masked_keys[provider] = {
+                            "enabled": True,
+                            "status": "configured",
+                        }
+                user["llmApiKeys"] = masked_keys
+
         # Get total count for pagination
         count_query = "SELECT VALUE COUNT(1) FROM c"
         count_params = []
-        
+
         if where_conditions:
             count_query += " WHERE " + " AND ".join(where_conditions)
             if search:
                 count_params.append({"name": "@search", "value": search})
             if role_filter:
                 count_params.append({"name": "@role", "value": role_filter})
-        
+
         total_count_result = await db_manager.query_items(
-            container_name='users',
-            query=count_query,
-            parameters=count_params
+            container_name="users", query=count_query, parameters=count_params
         )
         total_count = total_count_result[0] if total_count_result else 0
-        
+
         total_pages = (total_count + limit - 1) // limit
-        
+
         response_data = {
-            'users': items,
-            'pagination': {
-                'current_page': page,
-                'total_pages': total_pages,
-                'total_count': total_count,
-                'limit': limit,
-                'has_next': page < total_pages,
-                'has_prev': page > 1
-            }
+            "users": items,
+            "pagination": {
+                "current_page": page,
+                "total_pages": total_pages,
+                "total_count": total_count,
+                "limit": limit,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+            },
         }
-        
+
         return func.HttpResponse(
             json.dumps(response_data, default=str),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error listing users: {str(e)}")
         raise SutraAPIError(f"Failed to list users: {str(e)}", 500)
 
 
-async def update_user_role(admin_user_id: str, target_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+async def update_user_role(
+    admin_user_id: str, target_user_id: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """Update user role (admin only)."""
     try:
         # Parse request body
@@ -200,70 +208,74 @@ async def update_user_role(admin_user_id: str, target_user_id: str, req: func.Ht
             body = req.get_json()
         except ValueError:
             return func.HttpResponse(
-                json.dumps({'error': 'Invalid JSON in request body'}),
+                json.dumps({"error": "Invalid JSON in request body"}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
-        new_role = body.get('role')
-        valid_roles = ['member', 'contributor', 'prompt_manager', 'admin']
-        
+
+        new_role = body.get("role")
+        valid_roles = ["member", "contributor", "prompt_manager", "admin"]
+
         if new_role not in valid_roles:
             return func.HttpResponse(
-                json.dumps({
-                    'error': 'Invalid role',
-                    'message': f'Role must be one of: {", ".join(valid_roles)}'
-                }),
+                json.dumps(
+                    {
+                        "error": "Invalid role",
+                        "message": f'Role must be one of: {", ".join(valid_roles)}',
+                    }
+                ),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         db_manager = get_database_manager()
-        
+
         # Get target user
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": target_user_id}]
-        
+
         items = await db_manager.query_items(
-            container_name='users',
-            query=query,
-            parameters=parameters
+            container_name="users", query=query, parameters=parameters
         )
-        
+
         if not items:
             return func.HttpResponse(
-                json.dumps({'error': 'User not found'}),
+                json.dumps({"error": "User not found"}),
                 status_code=404,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         user_data = items[0]
-        
+
         # Update role
-        old_role = user_data.get('role', 'member')
-        user_data['role'] = new_role
-        user_data['updatedAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-        
+        old_role = user_data.get("role", "member")
+        user_data["role"] = new_role
+        user_data["updatedAt"] = (
+            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        )
+
         # Save to database
         updated_user = await db_manager.update_item(
-            container_name='users',
-            item=user_data,
-            partition_key=user_data['id']
+            container_name="users", item=user_data, partition_key=user_data["id"]
         )
-        
-        logger.info(f"Admin {admin_user_id} updated user {target_user_id} role from {old_role} to {new_role}")
-        
+
+        logger.info(
+            f"Admin {admin_user_id} updated user {target_user_id} role from {old_role} to {new_role}"
+        )
+
         return func.HttpResponse(
-            json.dumps({
-                'message': f'Successfully updated user role to {new_role}',
-                'userId': target_user_id,
-                'oldRole': old_role,
-                'newRole': new_role
-            }),
+            json.dumps(
+                {
+                    "message": f"Successfully updated user role to {new_role}",
+                    "userId": target_user_id,
+                    "oldRole": old_role,
+                    "newRole": new_role,
+                }
+            ),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error updating user role: {str(e)}")
         raise SutraAPIError(f"Failed to update user role: {str(e)}", 500)
@@ -273,54 +285,51 @@ async def get_system_health() -> func.HttpResponse:
     """Get system health status."""
     try:
         db_manager = get_database_manager()
-        
+
         # Check database connectivity
         try:
             # Simple query to test database
             await db_manager.query_items(
-                container_name='users',
-                query="SELECT VALUE COUNT(1) FROM c"
+                container_name="users", query="SELECT VALUE COUNT(1) FROM c"
             )
-            db_status = 'healthy'
+            db_status = "healthy"
         except Exception as e:
-            db_status = f'unhealthy: {str(e)}'
-        
+            db_status = f"unhealthy: {str(e)}"
+
         # Check system components
         health_data = {
-            'status': 'healthy' if db_status == 'healthy' else 'degraded',
-            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
-            'components': {
-                'database': {
-                    'status': db_status,
-                    'type': 'Cosmos DB'
-                },
-                'api': {
-                    'status': 'healthy',
-                    'type': 'Azure Functions'
-                }
+            "status": "healthy" if db_status == "healthy" else "degraded",
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "components": {
+                "database": {"status": db_status, "type": "Cosmos DB"},
+                "api": {"status": "healthy", "type": "Azure Functions"},
             },
-            'uptime': 'Available',  # Would be calculated from deployment time
-            'version': '1.0.0'
+            "uptime": "Available",  # Would be calculated from deployment time
+            "version": "1.0.0",
         }
-        
-        status_code = 200 if health_data['status'] == 'healthy' else 503
-        
+
+        status_code = 200 if health_data["status"] == "healthy" else 503
+
         return func.HttpResponse(
             json.dumps(health_data, default=str),
             status_code=status_code,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting system health: {str(e)}")
         return func.HttpResponse(
-            json.dumps({
-                'status': 'unhealthy',
-                'error': str(e),
-                'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-            }),
+            json.dumps(
+                {
+                    "status": "unhealthy",
+                    "error": str(e),
+                    "timestamp": datetime.now(timezone.utc)
+                    .isoformat()
+                    .replace("+00:00", "Z"),
+                }
+            ),
             status_code=503,
-            mimetype='application/json'
+            mimetype="application/json",
         )
 
 
@@ -328,77 +337,91 @@ async def get_system_stats() -> func.HttpResponse:
     """Get system statistics."""
     try:
         db_manager = get_database_manager()
-        
+
         # Get user count
         users_container = db_manager.get_users_container()
-        user_count = list(users_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c",
-            enable_cross_partition_query=True
-        ))[0]
-        
+        user_count = list(
+            users_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
+            )
+        )[0]
+
         # Get prompt count
         prompts_container = db_manager.get_prompts_container()
-        prompt_count = list(prompts_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c",
-            enable_cross_partition_query=True
-        ))[0]
-        
+        prompt_count = list(
+            prompts_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
+            )
+        )[0]
+
         # Get collection count
         collections_container = db_manager.get_collections_container()
-        collection_count = list(collections_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c",
-            enable_cross_partition_query=True
-        ))[0]
-        
+        collection_count = list(
+            collections_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
+            )
+        )[0]
+
         # Get playbook count
         playbooks_container = db_manager.get_playbooks_container()
-        playbook_count = list(playbooks_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c",
-            enable_cross_partition_query=True
-        ))[0]
-        
+        playbook_count = list(
+            playbooks_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
+            )
+        )[0]
+
         # Get recent activity (last 24 hours)
-        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat().replace('+00:00', 'Z')
-        
-        recent_users = list(users_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c WHERE c.createdAt >= @yesterday",
-            parameters=[{"name": "@yesterday", "value": yesterday}],
-            enable_cross_partition_query=True
-        ))[0]
-        
-        recent_prompts = list(prompts_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c WHERE c.createdAt >= @yesterday",
-            parameters=[{"name": "@yesterday", "value": yesterday}],
-            enable_cross_partition_query=True
-        ))[0]
-        
+        yesterday = (
+            (datetime.now(timezone.utc) - timedelta(days=1))
+            .isoformat()
+            .replace("+00:00", "Z")
+        )
+
+        recent_users = list(
+            users_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c WHERE c.createdAt >= @yesterday",
+                parameters=[{"name": "@yesterday", "value": yesterday}],
+                enable_cross_partition_query=True,
+            )
+        )[0]
+
+        recent_prompts = list(
+            prompts_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c WHERE c.createdAt >= @yesterday",
+                parameters=[{"name": "@yesterday", "value": yesterday}],
+                enable_cross_partition_query=True,
+            )
+        )[0]
+
         stats_data = {
-            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
-            'totals': {
-                'users': user_count,
-                'prompts': prompt_count,
-                'collections': collection_count,
-                'playbooks': playbook_count
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "totals": {
+                "users": user_count,
+                "prompts": prompt_count,
+                "collections": collection_count,
+                "playbooks": playbook_count,
             },
-            'recent_activity': {
-                'period': '24 hours',
-                'new_users': recent_users,
-                'new_prompts': recent_prompts
-            }
+            "recent_activity": {
+                "period": "24 hours",
+                "new_users": recent_users,
+                "new_prompts": recent_prompts,
+            },
         }
-        
+
         return func.HttpResponse(
             json.dumps(stats_data, default=str),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting system stats: {str(e)}")
         raise SutraAPIError(f"Failed to get system stats: {str(e)}", 500)
 
 
-async def set_maintenance_mode(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+async def set_maintenance_mode(
+    admin_user_id: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """Enable/disable maintenance mode."""
     try:
         # Parse request body
@@ -406,46 +429,48 @@ async def set_maintenance_mode(admin_user_id: str, req: func.HttpRequest) -> fun
             body = req.get_json()
         except ValueError:
             return func.HttpResponse(
-                json.dumps({'error': 'Invalid JSON in request body'}),
+                json.dumps({"error": "Invalid JSON in request body"}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
-        enabled = body.get('enabled', False)
-        message = body.get('message', 'System maintenance in progress')
-        
+
+        enabled = body.get("enabled", False)
+        message = body.get("message", "System maintenance in progress")
+
         # Store maintenance mode status (in production, this would be in a dedicated config store)
         db_manager = get_database_manager()
         config_container = db_manager.get_config_container()
-        
+
         config_data = {
-            'id': 'maintenance_mode',
-            'enabled': enabled,
-            'message': message,
-            'setBy': admin_user_id,
-            'timestamp': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+            "id": "maintenance_mode",
+            "enabled": enabled,
+            "message": message,
+            "setBy": admin_user_id,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
-        
+
         try:
             # Try to update existing config
-            config_container.replace_item(item='maintenance_mode', body=config_data)
+            config_container.replace_item(item="maintenance_mode", body=config_data)
         except:
             # Create new config if it doesn't exist
             config_container.create_item(config_data)
-        
-        action = 'enabled' if enabled else 'disabled'
+
+        action = "enabled" if enabled else "disabled"
         logger.info(f"Admin {admin_user_id} {action} maintenance mode")
-        
+
         return func.HttpResponse(
-            json.dumps({
-                'message': f'Maintenance mode {action}',
-                'enabled': enabled,
-                'maintenanceMessage': message if enabled else None
-            }),
+            json.dumps(
+                {
+                    "message": f"Maintenance mode {action}",
+                    "enabled": enabled,
+                    "maintenanceMessage": message if enabled else None,
+                }
+            ),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error setting maintenance mode: {str(e)}")
         raise SutraAPIError(f"Failed to set maintenance mode: {str(e)}", 500)
@@ -455,71 +480,57 @@ async def get_llm_settings() -> func.HttpResponse:
     """Get LLM provider settings."""
     try:
         db_manager = get_database_manager()
-        
+
         try:
             config = await db_manager.read_item(
-                container_name='SystemConfig',
-                item_id='llm_settings',
-                partition_key='llm_settings'
+                container_name="SystemConfig",
+                item_id="llm_settings",
+                partition_key="llm_settings",
             )
         except:
             # Default settings if not configured
             config = {
-                'id': 'llm_settings',
-                'providers': {
-                    'openai': {
-                        'enabled': True,
-                        'priority': 1,
-                        'rateLimits': {
-                            'requestsPerMinute': 60,
-                            'tokensPerDay': 100000
-                        },
-                        'budgetLimits': {
-                            'dailyBudget': 50.0,
-                            'monthlyBudget': 1000.0
-                        }
+                "id": "llm_settings",
+                "providers": {
+                    "openai": {
+                        "enabled": True,
+                        "priority": 1,
+                        "rateLimits": {"requestsPerMinute": 60, "tokensPerDay": 100000},
+                        "budgetLimits": {"dailyBudget": 50.0, "monthlyBudget": 1000.0},
                     },
-                    'google_gemini': {
-                        'enabled': True,
-                        'priority': 2,
-                        'rateLimits': {
-                            'requestsPerMinute': 60,
-                            'tokensPerDay': 100000
-                        },
-                        'budgetLimits': {
-                            'dailyBudget': 30.0,
-                            'monthlyBudget': 600.0
-                        }
+                    "google_gemini": {
+                        "enabled": True,
+                        "priority": 2,
+                        "rateLimits": {"requestsPerMinute": 60, "tokensPerDay": 100000},
+                        "budgetLimits": {"dailyBudget": 30.0, "monthlyBudget": 600.0},
                     },
-                    'anthropic': {
-                        'enabled': True,
-                        'priority': 3,
-                        'rateLimits': {
-                            'requestsPerMinute': 50,
-                            'tokensPerDay': 80000
-                        },
-                        'budgetLimits': {
-                            'dailyBudget': 40.0,
-                            'monthlyBudget': 800.0
-                        }
-                    }
+                    "anthropic": {
+                        "enabled": True,
+                        "priority": 3,
+                        "rateLimits": {"requestsPerMinute": 50, "tokensPerDay": 80000},
+                        "budgetLimits": {"dailyBudget": 40.0, "monthlyBudget": 800.0},
+                    },
                 },
-                'defaultProvider': 'openai',
-                'updatedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+                "defaultProvider": "openai",
+                "updatedAt": datetime.now(timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z"),
             }
-        
+
         return func.HttpResponse(
             json.dumps(config, default=str),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting LLM settings: {str(e)}")
         raise SutraAPIError(f"Failed to get LLM settings: {str(e)}", 500)
 
 
-async def update_llm_settings(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+async def update_llm_settings(
+    admin_user_id: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """Update LLM provider settings."""
     try:
         # Parse request body
@@ -527,44 +538,50 @@ async def update_llm_settings(admin_user_id: str, req: func.HttpRequest) -> func
             body = req.get_json()
         except ValueError:
             return func.HttpResponse(
-                json.dumps({'error': 'Invalid JSON in request body'}),
+                json.dumps({"error": "Invalid JSON in request body"}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         db_manager = get_database_manager()
         config_container = db_manager.get_config_container()
-        
+
         # Get existing settings
         try:
-            existing_config = config_container.read_item(item='llm_settings', partition_key='llm_settings')
+            existing_config = config_container.read_item(
+                item="llm_settings", partition_key="llm_settings"
+            )
         except:
-            existing_config = {'id': 'llm_settings', 'providers': {}}
-        
+            existing_config = {"id": "llm_settings", "providers": {}}
+
         # Update settings
-        if 'providers' in body:
-            existing_config['providers'] = body['providers']
-        
-        if 'defaultProvider' in body:
-            existing_config['defaultProvider'] = body['defaultProvider']
-        
-        existing_config['updatedAt'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-        existing_config['updatedBy'] = admin_user_id
-        
+        if "providers" in body:
+            existing_config["providers"] = body["providers"]
+
+        if "defaultProvider" in body:
+            existing_config["defaultProvider"] = body["defaultProvider"]
+
+        existing_config["updatedAt"] = (
+            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        )
+        existing_config["updatedBy"] = admin_user_id
+
         # Save settings
         try:
-            updated_config = config_container.replace_item(item='llm_settings', body=existing_config)
+            updated_config = config_container.replace_item(
+                item="llm_settings", body=existing_config
+            )
         except:
             updated_config = config_container.create_item(existing_config)
-        
+
         logger.info(f"Admin {admin_user_id} updated LLM settings")
-        
+
         return func.HttpResponse(
             json.dumps(updated_config, default=str),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error updating LLM settings: {str(e)}")
         raise SutraAPIError(f"Failed to update LLM settings: {str(e)}", 500)
@@ -575,364 +592,400 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Parse query parameters
         params = req.params
-        period = params.get('period', 'day')  # day, week, month
-        
+        period = params.get("period", "day")  # day, week, month
+
         db_manager = get_database_manager()
-        
+
         # Calculate date range
         now = datetime.now(timezone.utc)
-        if period == 'day':
+        if period == "day":
             start_date = now - timedelta(days=1)
-        elif period == 'week':
+        elif period == "week":
             start_date = now - timedelta(weeks=1)
-        elif period == 'month':
+        elif period == "month":
             start_date = now - timedelta(days=30)
         else:
             start_date = now - timedelta(days=1)
-        
-        start_iso = start_date.isoformat() + 'Z'
-        
+
+        start_iso = start_date.isoformat() + "Z"
+
         # Get execution stats
         executions_container = db_manager.get_executions_container()
-        
-        total_executions = list(executions_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date",
-            parameters=[{"name": "@start_date", "value": start_iso}],
-            enable_cross_partition_query=True
-        ))[0]
-        
-        successful_executions = list(executions_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date AND c.status = 'completed'",
-            parameters=[{"name": "@start_date", "value": start_iso}],
-            enable_cross_partition_query=True
-        ))[0]
-        
-        failed_executions = list(executions_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date AND c.status = 'failed'",
-            parameters=[{"name": "@start_date", "value": start_iso}],
-            enable_cross_partition_query=True
-        ))[0]
-        
+
+        total_executions = list(
+            executions_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date",
+                parameters=[{"name": "@start_date", "value": start_iso}],
+                enable_cross_partition_query=True,
+            )
+        )[0]
+
+        successful_executions = list(
+            executions_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date AND c.status = 'completed'",
+                parameters=[{"name": "@start_date", "value": start_iso}],
+                enable_cross_partition_query=True,
+            )
+        )[0]
+
+        failed_executions = list(
+            executions_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date AND c.status = 'failed'",
+                parameters=[{"name": "@start_date", "value": start_iso}],
+                enable_cross_partition_query=True,
+            )
+        )[0]
+
         # Get active users
         users_container = db_manager.get_users_container()
-        active_users = list(users_container.query_items(
-            query="SELECT VALUE COUNT(1) FROM c WHERE c.updatedAt >= @start_date",
-            parameters=[{"name": "@start_date", "value": start_iso}],
-            enable_cross_partition_query=True
-        ))[0]
-        
+        active_users = list(
+            users_container.query_items(
+                query="SELECT VALUE COUNT(1) FROM c WHERE c.updatedAt >= @start_date",
+                parameters=[{"name": "@start_date", "value": start_iso}],
+                enable_cross_partition_query=True,
+            )
+        )[0]
+
         usage_data = {
-            'period': period,
-            'start_date': start_iso,
-            'end_date': now.isoformat() + 'Z',
-            'statistics': {
-                'executions': {
-                    'total': total_executions,
-                    'successful': successful_executions,
-                    'failed': failed_executions,
-                    'success_rate': (successful_executions / total_executions * 100) if total_executions > 0 else 0
+            "period": period,
+            "start_date": start_iso,
+            "end_date": now.isoformat() + "Z",
+            "statistics": {
+                "executions": {
+                    "total": total_executions,
+                    "successful": successful_executions,
+                    "failed": failed_executions,
+                    "success_rate": (successful_executions / total_executions * 100)
+                    if total_executions > 0
+                    else 0,
                 },
-                'users': {
-                    'active': active_users
-                }
-            }
+                "users": {"active": active_users},
+            },
         }
-        
+
         return func.HttpResponse(
             json.dumps(usage_data, default=str),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting usage stats: {str(e)}")
         raise SutraAPIError(f"Failed to get usage stats: {str(e)}", 500)
 
+
 # Test Data Management Functions (for E2E testing)
 
-async def reset_test_data(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+
+async def reset_test_data(
+    admin_user_id: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """
     Reset test database to clean state (E2E testing only).
     Only works in test/development environments.
     """
     try:
         import os
-        environment = os.getenv('ENVIRONMENT', 'production')
-        
+
+        environment = os.getenv("ENVIRONMENT", "production")
+
         # Security check: only allow in test/dev environments
-        if environment not in ['test', 'development', 'local']:
+        if environment not in ["test", "development", "local"]:
             return func.HttpResponse(
-                json.dumps({
-                    'error': 'Forbidden', 
-                    'message': 'Test data reset only available in test environments'
-                }),
+                json.dumps(
+                    {
+                        "error": "Forbidden",
+                        "message": "Test data reset only available in test environments",
+                    }
+                ),
                 status_code=403,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         db_manager = get_database_manager()
-        
+
         # List of containers to reset
         containers_to_reset = [
-            'Users', 'Prompts', 'Collections', 'Playbooks', 
-            'Executions', 'LLMExecutions', 'AdminSettings'
+            "Users",
+            "Prompts",
+            "Collections",
+            "Playbooks",
+            "Executions",
+            "LLMExecutions",
+            "AdminSettings",
         ]
-        
+
         reset_summary = {
-            'environment': environment,
-            'reset_at': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
-            'reset_by': admin_user_id,
-            'containers_reset': []
+            "environment": environment,
+            "reset_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "reset_by": admin_user_id,
+            "containers_reset": [],
         }
-        
+
         for container_name in containers_to_reset:
             try:
                 # Delete all documents in container
                 query = f"SELECT * FROM c"
                 items = await db_manager.query_items(container_name, query)
-                
+
                 deleted_count = 0
                 for item in items:
-                    await db_manager.delete_item(container_name, item['id'], item.get('userId', item['id']))
+                    await db_manager.delete_item(
+                        container_name, item["id"], item.get("userId", item["id"])
+                    )
                     deleted_count += 1
-                
-                reset_summary['containers_reset'].append({
-                    'name': container_name,
-                    'items_deleted': deleted_count,
-                    'status': 'success'
-                })
-                
-                logger.info(f"Reset container {container_name}: deleted {deleted_count} items")
-                
+
+                reset_summary["containers_reset"].append(
+                    {
+                        "name": container_name,
+                        "items_deleted": deleted_count,
+                        "status": "success",
+                    }
+                )
+
+                logger.info(
+                    f"Reset container {container_name}: deleted {deleted_count} items"
+                )
+
             except Exception as container_error:
-                reset_summary['containers_reset'].append({
-                    'name': container_name,
-                    'error': str(container_error),
-                    'status': 'error'
-                })
-                logger.error(f"Error resetting container {container_name}: {container_error}")
-        
+                reset_summary["containers_reset"].append(
+                    {
+                        "name": container_name,
+                        "error": str(container_error),
+                        "status": "error",
+                    }
+                )
+                logger.error(
+                    f"Error resetting container {container_name}: {container_error}"
+                )
+
         return func.HttpResponse(
-            json.dumps(reset_summary),
-            status_code=200,
-            mimetype='application/json'
+            json.dumps(reset_summary), status_code=200, mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error in reset_test_data: {e}")
         return func.HttpResponse(
-            json.dumps({
-                'error': 'Internal Server Error',
-                'message': 'Failed to reset test data',
-                'details': str(e)
-            }),
+            json.dumps(
+                {
+                    "error": "Internal Server Error",
+                    "message": "Failed to reset test data",
+                    "details": str(e),
+                }
+            ),
             status_code=500,
-            mimetype='application/json'
+            mimetype="application/json",
         )
 
 
-async def seed_test_data(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+async def seed_test_data(
+    admin_user_id: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """
     Seed test database with initial data for E2E testing.
     Only works in test/development environments.
     """
     try:
         import os
-        environment = os.getenv('ENVIRONMENT', 'production')
-        
+
+        environment = os.getenv("ENVIRONMENT", "production")
+
         # Security check: only allow in test/dev environments
-        if environment not in ['test', 'development', 'local']:
+        if environment not in ["test", "development", "local"]:
             return func.HttpResponse(
-                json.dumps({
-                    'error': 'Forbidden', 
-                    'message': 'Test data seeding only available in test environments'
-                }),
+                json.dumps(
+                    {
+                        "error": "Forbidden",
+                        "message": "Test data seeding only available in test environments",
+                    }
+                ),
                 status_code=403,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         # Parse request body for seed options
         try:
             body = req.get_json()
             seed_options = body if body else {}
         except:
             seed_options = {}
-        
+
         db_manager = get_database_manager()
-        now = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
-        
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
         seed_summary = {
-            'environment': environment,
-            'seeded_at': now,
-            'seeded_by': admin_user_id,
-            'data_created': []
+            "environment": environment,
+            "seeded_at": now,
+            "seeded_by": admin_user_id,
+            "data_created": [],
         }
-        
+
         # Create test users
         test_users = [
             {
-                'id': 'test-user-1',
-                'email': 'testuser1@example.com',
-                'name': 'Test User One',
-                'role': 'user',
-                'userId': 'test-user-1',
-                'createdAt': now,
-                'updatedAt': now
+                "id": "test-user-1",
+                "email": "testuser1@example.com",
+                "name": "Test User One",
+                "role": "user",
+                "userId": "test-user-1",
+                "createdAt": now,
+                "updatedAt": now,
             },
             {
-                'id': 'test-admin-1',
-                'email': 'testadmin@example.com',
-                'name': 'Test Admin',
-                'role': 'admin',
-                'userId': 'test-admin-1',
-                'createdAt': now,
-                'updatedAt': now
-            }
+                "id": "test-admin-1",
+                "email": "testadmin@example.com",
+                "name": "Test Admin",
+                "role": "admin",
+                "userId": "test-admin-1",
+                "createdAt": now,
+                "updatedAt": now,
+            },
         ]
-        
+
         for user in test_users:
             try:
-                await db_manager.create_item('Users', user)
-                seed_summary['data_created'].append({
-                    'type': 'user',
-                    'id': user['id'],
-                    'status': 'success'
-                })
+                await db_manager.create_item("Users", user)
+                seed_summary["data_created"].append(
+                    {"type": "user", "id": user["id"], "status": "success"}
+                )
             except Exception as e:
-                seed_summary['data_created'].append({
-                    'type': 'user',
-                    'id': user['id'],
-                    'error': str(e),
-                    'status': 'error'
-                })
-        
+                seed_summary["data_created"].append(
+                    {
+                        "type": "user",
+                        "id": user["id"],
+                        "error": str(e),
+                        "status": "error",
+                    }
+                )
+
         # Create test collections
         test_collections = [
             {
-                'id': str(uuid.uuid4()),
-                'name': 'Test Collection 1',
-                'description': 'A test collection for E2E testing',
-                'userId': 'test-user-1',
-                'isPublic': False,
-                'promptIds': [],
-                'createdAt': now,
-                'updatedAt': now
+                "id": str(uuid.uuid4()),
+                "name": "Test Collection 1",
+                "description": "A test collection for E2E testing",
+                "userId": "test-user-1",
+                "isPublic": False,
+                "promptIds": [],
+                "createdAt": now,
+                "updatedAt": now,
             },
             {
-                'id': str(uuid.uuid4()),
-                'name': 'Public Test Collection',
-                'description': 'A public test collection',
-                'userId': 'test-admin-1',
-                'isPublic': True,
-                'promptIds': [],
-                'createdAt': now,
-                'updatedAt': now
-            }
+                "id": str(uuid.uuid4()),
+                "name": "Public Test Collection",
+                "description": "A public test collection",
+                "userId": "test-admin-1",
+                "isPublic": True,
+                "promptIds": [],
+                "createdAt": now,
+                "updatedAt": now,
+            },
         ]
-        
+
         for collection in test_collections:
             try:
-                await db_manager.create_item('Collections', collection)
-                seed_summary['data_created'].append({
-                    'type': 'collection',
-                    'id': collection['id'],
-                    'status': 'success'
-                })
+                await db_manager.create_item("Collections", collection)
+                seed_summary["data_created"].append(
+                    {"type": "collection", "id": collection["id"], "status": "success"}
+                )
             except Exception as e:
-                seed_summary['data_created'].append({
-                    'type': 'collection',
-                    'id': collection['id'],
-                    'error': str(e),
-                    'status': 'error'
-                })
-        
+                seed_summary["data_created"].append(
+                    {
+                        "type": "collection",
+                        "id": collection["id"],
+                        "error": str(e),
+                        "status": "error",
+                    }
+                )
+
         # Create test prompts
         test_prompts = [
             {
-                'id': str(uuid.uuid4()),
-                'name': 'Test Prompt 1',
-                'content': 'This is a test prompt for E2E testing. Respond with: "Test successful"',
-                'description': 'A simple test prompt',
-                'userId': 'test-user-1',
-                'version': 1,
-                'isPublic': False,
-                'tags': ['test', 'e2e'],
-                'llmSettings': {
-                    'preferredProvider': 'openai',
-                    'model': 'gpt-3.5-turbo',
-                    'temperature': 0.7
+                "id": str(uuid.uuid4()),
+                "name": "Test Prompt 1",
+                "content": 'This is a test prompt for E2E testing. Respond with: "Test successful"',
+                "description": "A simple test prompt",
+                "userId": "test-user-1",
+                "version": 1,
+                "isPublic": False,
+                "tags": ["test", "e2e"],
+                "llmSettings": {
+                    "preferredProvider": "openai",
+                    "model": "gpt-3.5-turbo",
+                    "temperature": 0.7,
                 },
-                'createdAt': now,
-                'updatedAt': now
+                "createdAt": now,
+                "updatedAt": now,
             }
         ]
-        
+
         for prompt in test_prompts:
             try:
-                await db_manager.create_item('Prompts', prompt)
-                seed_summary['data_created'].append({
-                    'type': 'prompt',
-                    'id': prompt['id'],
-                    'status': 'success'
-                })
+                await db_manager.create_item("Prompts", prompt)
+                seed_summary["data_created"].append(
+                    {"type": "prompt", "id": prompt["id"], "status": "success"}
+                )
             except Exception as e:
-                seed_summary['data_created'].append({
-                    'type': 'prompt',
-                    'id': prompt['id'],
-                    'error': str(e),
-                    'status': 'error'
-                })
-        
+                seed_summary["data_created"].append(
+                    {
+                        "type": "prompt",
+                        "id": prompt["id"],
+                        "error": str(e),
+                        "status": "error",
+                    }
+                )
+
         # Create admin settings for testing
         admin_settings = {
-            'id': 'test-settings',
-            'llmProviders': {
-                'openai': {
-                    'enabled': True,
-                    'models': ['gpt-3.5-turbo', 'gpt-4'],
-                    'rateLimit': 100
+            "id": "test-settings",
+            "llmProviders": {
+                "openai": {
+                    "enabled": True,
+                    "models": ["gpt-3.5-turbo", "gpt-4"],
+                    "rateLimit": 100,
                 }
             },
-            'systemLimits': {
-                'maxPromptsPerUser': 1000,
-                'maxCollectionsPerUser': 100
-            },
-            'maintenanceMode': False,
-            'updatedAt': now,
-            'updatedBy': admin_user_id
+            "systemLimits": {"maxPromptsPerUser": 1000, "maxCollectionsPerUser": 100},
+            "maintenanceMode": False,
+            "updatedAt": now,
+            "updatedBy": admin_user_id,
         }
-        
+
         try:
-            await db_manager.create_item('AdminSettings', admin_settings)
-            seed_summary['data_created'].append({
-                'type': 'admin_settings',
-                'id': admin_settings['id'],
-                'status': 'success'
-            })
+            await db_manager.create_item("AdminSettings", admin_settings)
+            seed_summary["data_created"].append(
+                {
+                    "type": "admin_settings",
+                    "id": admin_settings["id"],
+                    "status": "success",
+                }
+            )
         except Exception as e:
-            seed_summary['data_created'].append({
-                'type': 'admin_settings',
-                'id': admin_settings['id'],
-                'error': str(e),
-                'status': 'error'
-            })
-        
+            seed_summary["data_created"].append(
+                {
+                    "type": "admin_settings",
+                    "id": admin_settings["id"],
+                    "error": str(e),
+                    "status": "error",
+                }
+            )
+
         logger.info(f"Test data seeded by {admin_user_id} in {environment} environment")
-        
+
         return func.HttpResponse(
-            json.dumps(seed_summary),
-            status_code=200,
-            mimetype='application/json'
+            json.dumps(seed_summary), status_code=200, mimetype="application/json"
         )
-        
+
     except Exception as e:
         logger.error(f"Error in seed_test_data: {e}")
         return func.HttpResponse(
-            json.dumps({
-                'error': 'Internal Server Error',
-                'message': 'Failed to seed test data',
-                'details': str(e)
-            }),
+            json.dumps(
+                {
+                    "error": "Internal Server Error",
+                    "message": "Failed to seed test data",
+                    "details": str(e),
+                }
+            ),
             status_code=500,
-            mimetype='application/json'
+            mimetype="application/json",
         )

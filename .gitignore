@@ -34,6 +34,15 @@ yarn-debug.log*
 test-results/
 playwright-report/
 coverage/
+htmlcov/
+.jest-cache/
+.eslintcache
+
+# Python virtual environments
+.venv/
+.venv-test/
+venv/
+__pycache__/
 
 # Build artifacts
 *.tgz

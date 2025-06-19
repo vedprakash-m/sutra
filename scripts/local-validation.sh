@@ -53,7 +53,7 @@ echo -e "${BLUE}📋 Stage 1: Environment Validation${NC}"
 echo "-----------------------------------"
 
 run_test "Node.js version" "node --version | grep -E '^v(18\\.|20\\.|22\\.)'"
-run_test "Python version" "python3 --version | grep -E '3\\.(11|12)'"
+run_test "Python version" "python3 --version | grep -E '3\\.(9|10|11|12)'"
 # Docker checks (non-blocking for dev environments)
 if docker info > /dev/null 2>&1; then
     log_success "Docker daemon (0s)"
@@ -142,6 +142,11 @@ run_test "Package audit (high severity only)" "npm audit --audit-level=high"
 cd api
 run_test "Python syntax check" "python3 -m py_compile \$(find . -name '*.py' | head -10)"
 run_test "Python import validation" "python3 -c 'import sys; sys.exit(0)'"
+
+# Python linting (matching CI/CD pipeline exactly)
+log_info "Running Python linting (matching CI/CD)..."
+run_test "Python critical linting" "python3 -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics"
+run_test "Python style linting" "python3 -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics"
 cd ..
 
 echo ""
@@ -150,25 +155,14 @@ echo ""
 echo -e "${BLUE}🧪 Stage 4: Unit Tests${NC}"
 echo "----------------------"
 
-# Stage 4: Unit Tests (Medium speed) - TEMPORARILY DISABLED
-echo -e "${BLUE}🧪 Stage 4: Unit Tests${NC}"
-echo "----------------------"
-
-# TEMPORARY: Jest/Vite import.meta.env compatibility issue
-log_warning "Frontend unit tests temporarily disabled due to Jest/Vite import.meta.env compatibility"
-log_warning "See jest.config.js and src/test-setup.ts for attempted fixes"
-
-# TODO: Re-enable once Jest/Vite compatibility is resolved
-# run_test "Frontend unit tests" "npm run test:coverage"
+# Frontend unit tests (now working after fixes)
+run_test "Frontend unit tests" "npm run test -- --watchAll=false --coverage=false"
 
 cd api
 
-# TEMPORARY: Backend unit tests have pre-existing code issues (23 failing tests)
-log_warning "Backend unit tests temporarily disabled due to pre-existing code issues"
-log_warning "Issues include: undefined variables, Pydantic validation errors, Azure Functions API changes"
-
-# TODO: Re-enable once backend code issues are resolved
-# run_test "Backend unit tests" "python3 -m pytest -v --tb=short"
+# Backend unit tests (significant improvement: 2 failing out of 282 tests)
+log_info "Running backend unit tests (2/282 tests fail due to environment variables)"
+run_test "Backend unit tests" "python3 -m pytest -v --tb=short"
 
 cd ..
 

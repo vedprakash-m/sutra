@@ -15,7 +15,7 @@ import sys
 
 # Critical Python built-in modules that must not conflict
 critical_modules = [
-    'collections', 'os', 'sys', 'json', 'time', 'datetime', 'itertools', 
+    'collections', 'os', 'sys', 'json', 'time', 'datetime', 'itertools',
     'functools', 'operator', 'pathlib', 'urllib', 'http', 'email', 'calendar',
     'uuid', 'random', 'math', 'statistics', 'decimal', 'fractions',
     'logging', 'warnings', 'traceback', 'contextlib', 'abc', 'types',

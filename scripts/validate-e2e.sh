@@ -147,13 +147,13 @@ echo "🚀 Running E2E workflow test..."
 echo "📦 Testing service startup..."
 if docker compose up -d --build; then
     echo "✅ Services started successfully"
-    
+
     # Wait a moment for services to initialize
     sleep 10
-    
+
     # Check service health
     echo "🔍 Checking service health..."
-    
+
     # Check if services are running
     if docker compose ps | grep -q "Up"; then
         echo "✅ Services are running"
@@ -163,25 +163,25 @@ if docker compose up -d --build; then
         docker compose down
         exit 1
     fi
-    
+
     # Test if frontend is responding
     if curl -s http://localhost:3000 > /dev/null; then
         echo "✅ Frontend is responding on port 3000"
     else
         echo "⚠️ Frontend not yet responding (may need more time)"
     fi
-    
+
     # Test if API is responding
     if curl -s http://localhost:7071/api/health > /dev/null; then
         echo "✅ API is responding on port 7071"
     else
         echo "⚠️ API not yet responding (may need more time)"
     fi
-    
+
     echo "🧹 Cleaning up test services..."
     docker compose down
     echo "✅ Services stopped successfully"
-    
+
 else
     echo "❌ Failed to start services"
     exit 1

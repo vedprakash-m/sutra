@@ -16,10 +16,11 @@ from ..shared.error_handling import handle_api_error, SutraAPIError
 # Initialize logging
 logger = logging.getLogger(__name__)
 
+
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Integrations API endpoint for managing LLM provider integrations.
-    
+
     Supports:
     - GET /api/integrations/llm - List user's LLM integrations
     - POST /api/integrations/llm - Add new LLM integration
@@ -30,38 +31,40 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         # Verify authentication
         auth_result = verify_jwt_token(req)
-        if not auth_result['valid']:
+        if not auth_result["valid"]:
             return func.HttpResponse(
-                json.dumps({'error': 'Unauthorized', 'message': auth_result['message']}),
+                json.dumps(
+                    {"error": "Unauthorized", "message": auth_result["message"]}
+                ),
                 status_code=401,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         user_id = get_user_id_from_token(req)
         method = req.method
         route_params = req.route_params
-        provider = route_params.get('provider')
-        action = route_params.get('action')
-        
+        provider = route_params.get("provider")
+        action = route_params.get("action")
+
         # Route to appropriate handler
-        if method == 'GET':
+        if method == "GET":
             return await list_llm_integrations(user_id)
-        elif method == 'POST':
-            if provider and action == 'test':
+        elif method == "POST":
+            if provider and action == "test":
                 return await test_llm_connection(user_id, provider, req)
             else:
                 return await create_llm_integration(user_id, req)
-        elif method == 'PUT' and provider:
+        elif method == "PUT" and provider:
             return await update_llm_integration(user_id, provider, req)
-        elif method == 'DELETE' and provider:
+        elif method == "DELETE" and provider:
             return await delete_llm_integration(user_id, provider)
         else:
             return func.HttpResponse(
-                json.dumps({'error': 'Method not allowed'}),
+                json.dumps({"error": "Method not allowed"}),
                 status_code=405,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-            
+
     except Exception as e:
         return handle_api_error(e)
 
@@ -70,87 +73,87 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
     """List LLM integrations for the authenticated user."""
     try:
         db_manager = get_database_manager()
-        
+
         # Get user profile with LLM integrations
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
-        
+
         items = await db_manager.query_items(
-            container_name='Users',
-            query=query,
-            parameters=parameters
+            container_name="Users", query=query, parameters=parameters
         )
-        
+
         if not items:
             return func.HttpResponse(
-                json.dumps({'error': 'User not found'}),
+                json.dumps({"error": "User not found"}),
                 status_code=404,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         user = items[0]
-        llm_integrations = user.get('llmApiKeys', {})
-        
+        llm_integrations = user.get("llmApiKeys", {})
+
         # Return masked API keys for security
         masked_integrations = {}
         for provider, config in llm_integrations.items():
             if isinstance(config, dict):
                 masked_integrations[provider] = {
-                    'url': config.get('url'),
-                    'keyRef': '***masked***',
-                    'enabled': config.get('enabled', True),
-                    'lastTested': config.get('lastTested'),
-                    'status': config.get('status', 'unknown')
+                    "url": config.get("url"),
+                    "keyRef": "***masked***",
+                    "enabled": config.get("enabled", True),
+                    "lastTested": config.get("lastTested"),
+                    "status": config.get("status", "unknown"),
                 }
             else:
                 masked_integrations[provider] = {
-                    'keyRef': '***masked***',
-                    'enabled': True,
-                    'status': 'unknown'
+                    "keyRef": "***masked***",
+                    "enabled": True,
+                    "status": "unknown",
                 }
-        
+
         response_data = {
-            'integrations': masked_integrations,
-            'supportedProviders': [
+            "integrations": masked_integrations,
+            "supportedProviders": [
                 {
-                    'id': 'openai',
-                    'name': 'OpenAI',
-                    'models': ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-                    'requiresUrl': False
+                    "id": "openai",
+                    "name": "OpenAI",
+                    "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+                    "requiresUrl": False,
                 },
                 {
-                    'id': 'google_gemini',
-                    'name': 'Google Gemini',
-                    'models': ['gemini-1.5-pro', 'gemini-1.5-flash'],
-                    'requiresUrl': False
+                    "id": "google_gemini",
+                    "name": "Google Gemini",
+                    "models": ["gemini-1.5-pro", "gemini-1.5-flash"],
+                    "requiresUrl": False,
                 },
                 {
-                    'id': 'anthropic',
-                    'name': 'Anthropic Claude',
-                    'models': ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
-                    'requiresUrl': False
+                    "id": "anthropic",
+                    "name": "Anthropic Claude",
+                    "models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
+                    "requiresUrl": False,
                 },
                 {
-                    'id': 'custom',
-                    'name': 'Custom OpenAI-Compatible',
-                    'models': [],
-                    'requiresUrl': True
-                }
-            ]
+                    "id": "custom",
+                    "name": "Custom OpenAI-Compatible",
+                    "models": [],
+                    "requiresUrl": True,
+                },
+            ],
         }
-        
+
         return func.HttpResponse(
             json.dumps(response_data, default=str),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error listing LLM integrations: {str(e)}")
         raise SutraAPIError(f"Failed to list LLM integrations: {str(e)}", 500)
 
 
-async def create_llm_integration(user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+async def create_llm_integration(
+    user_id: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """Add a new LLM integration."""
     try:
         # Parse request body
@@ -158,108 +161,119 @@ async def create_llm_integration(user_id: str, req: func.HttpRequest) -> func.Ht
             body = req.get_json()
         except ValueError:
             return func.HttpResponse(
-                json.dumps({'error': 'Invalid JSON in request body'}),
+                json.dumps({"error": "Invalid JSON in request body"}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         # Validate required fields
         validation_result = validate_llm_integration_data(body)
-        if not validation_result['valid']:
+        if not validation_result["valid"]:
             return func.HttpResponse(
-                json.dumps({'error': 'Validation failed', 'details': validation_result['errors']}),
+                json.dumps(
+                    {
+                        "error": "Validation failed",
+                        "details": validation_result["errors"],
+                    }
+                ),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
-        provider = body['provider']
-        api_key = body['apiKey']
-        custom_url = body.get('url')
-        
+
+        provider = body["provider"]
+        api_key = body["apiKey"]
+        custom_url = body.get("url")
+
         # Pre-validate API key
         validation_result = await validate_llm_api_key(provider, api_key, custom_url)
-        if not validation_result['valid']:
+        if not validation_result["valid"]:
             return func.HttpResponse(
-                json.dumps({
-                    'error': 'API key validation failed',
-                    'details': validation_result['error']
-                }),
+                json.dumps(
+                    {
+                        "error": "API key validation failed",
+                        "details": validation_result["error"],
+                    }
+                ),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         db_manager = get_database_manager()
-        db_manager = get_database_manager()
-        
+        container = db_manager.get_container("Users")
+
         # Get user profile
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
-        
-        items = list(container.query_items(
-            query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ))
-        
+
+        items = list(
+            container.query_items(
+                query=query, parameters=parameters, enable_cross_partition_query=True
+            )
+        )
+
         if not items:
             # Create user profile if it doesn't exist
-            now = datetime.utcnow().isoformat() + 'Z'
+            now = datetime.utcnow().isoformat() + "Z"
             user_data = {
-                'id': user_id,
-                'email': body.get('email', ''),
-                'name': body.get('name', ''),
-                'llmApiKeys': {},
-                'createdAt': now,
-                'updatedAt': now
+                "id": user_id,
+                "email": body.get("email", ""),
+                "name": body.get("name", ""),
+                "llmApiKeys": {},
+                "createdAt": now,
+                "updatedAt": now,
             }
         else:
             user_data = items[0]
-        
+
         # Store API key reference (in production, this would be stored in Azure Key Vault)
         key_ref = f"kv-ref-{provider}-{user_id[:8]}"
-        
-        if 'llmApiKeys' not in user_data:
-            user_data['llmApiKeys'] = {}
-        
+
+        if "llmApiKeys" not in user_data:
+            user_data["llmApiKeys"] = {}
+
         if custom_url:
-            user_data['llmApiKeys'][provider] = {
-                'url': custom_url,
-                'keyRef': key_ref,
-                'enabled': True,
-                'lastTested': datetime.utcnow().isoformat() + 'Z',
-                'status': 'active'
+            user_data["llmApiKeys"][provider] = {
+                "url": custom_url,
+                "keyRef": key_ref,
+                "enabled": True,
+                "lastTested": datetime.utcnow().isoformat() + "Z",
+                "status": "active",
             }
         else:
-            user_data['llmApiKeys'][provider] = key_ref
-        
-        user_data['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
-        
+            user_data["llmApiKeys"][provider] = key_ref
+
+        user_data["updatedAt"] = datetime.utcnow().isoformat() + "Z"
+
         # Save to database
         if items:
-            updated_user = container.replace_item(item=user_data['id'], body=user_data)
+            updated_user = container.replace_item(item=user_data["id"], body=user_data)
         else:
             updated_user = container.create_item(user_data)
-        
+
         # TODO: Store actual API key in Azure Key Vault using key_ref
-        
+
         logger.info(f"Added LLM integration {provider} for user {user_id}")
-        
+
         return func.HttpResponse(
-            json.dumps({
-                'message': f'Successfully added {provider} integration',
-                'provider': provider,
-                'status': 'active'
-            }),
+            json.dumps(
+                {
+                    "message": f"Successfully added {provider} integration",
+                    "provider": provider,
+                    "status": "active",
+                }
+            ),
             status_code=201,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error creating LLM integration: {str(e)}")
         raise SutraAPIError(f"Failed to create LLM integration: {str(e)}", 500)
 
 
-async def update_llm_integration(user_id: str, provider: str, req: func.HttpRequest) -> func.HttpResponse:
+async def update_llm_integration(
+    user_id: str, provider: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """Update an existing LLM integration."""
     try:
         # Parse request body
@@ -267,91 +281,99 @@ async def update_llm_integration(user_id: str, provider: str, req: func.HttpRequ
             body = req.get_json()
         except ValueError:
             return func.HttpResponse(
-                json.dumps({'error': 'Invalid JSON in request body'}),
+                json.dumps({"error": "Invalid JSON in request body"}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         db_manager = get_database_manager()
-        db_manager = get_database_manager()
-        
+        container = db_manager.get_container("Users")
+
         # Get user profile
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
-        
-        items = list(container.query_items(
-            query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ))
-        
+
+        items = list(
+            container.query_items(
+                query=query, parameters=parameters, enable_cross_partition_query=True
+            )
+        )
+
         if not items:
             return func.HttpResponse(
-                json.dumps({'error': 'User not found'}),
+                json.dumps({"error": "User not found"}),
                 status_code=404,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         user_data = items[0]
-        
-        if 'llmApiKeys' not in user_data or provider not in user_data['llmApiKeys']:
+
+        if "llmApiKeys" not in user_data or provider not in user_data["llmApiKeys"]:
             return func.HttpResponse(
-                json.dumps({'error': f'Integration for {provider} not found'}),
+                json.dumps({"error": f"Integration for {provider} not found"}),
                 status_code=404,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         # Update integration
-        if 'apiKey' in body:
+        if "apiKey" in body:
             # Validate new API key
-            api_key = body['apiKey']
-            custom_url = body.get('url')
-            
-            validation_result = await validate_llm_api_key(provider, api_key, custom_url)
-            if not validation_result['valid']:
+            api_key = body["apiKey"]
+            custom_url = body.get("url")
+
+            validation_result = await validate_llm_api_key(
+                provider, api_key, custom_url
+            )
+            if not validation_result["valid"]:
                 return func.HttpResponse(
-                    json.dumps({
-                        'error': 'API key validation failed',
-                        'details': validation_result['error']
-                    }),
+                    json.dumps(
+                        {
+                            "error": "API key validation failed",
+                            "details": validation_result["error"],
+                        }
+                    ),
                     status_code=400,
-                    mimetype='application/json'
+                    mimetype="application/json",
                 )
-            
+
             # Update key reference
             key_ref = f"kv-ref-{provider}-{user_id[:8]}"
-            
-            if isinstance(user_data['llmApiKeys'][provider], dict):
-                user_data['llmApiKeys'][provider]['keyRef'] = key_ref
+
+            if isinstance(user_data["llmApiKeys"][provider], dict):
+                user_data["llmApiKeys"][provider]["keyRef"] = key_ref
                 if custom_url:
-                    user_data['llmApiKeys'][provider]['url'] = custom_url
-                user_data['llmApiKeys'][provider]['lastTested'] = datetime.utcnow().isoformat() + 'Z'
-                user_data['llmApiKeys'][provider]['status'] = 'active'
+                    user_data["llmApiKeys"][provider]["url"] = custom_url
+                user_data["llmApiKeys"][provider]["lastTested"] = (
+                    datetime.utcnow().isoformat() + "Z"
+                )
+                user_data["llmApiKeys"][provider]["status"] = "active"
             else:
-                user_data['llmApiKeys'][provider] = key_ref
-        
+                user_data["llmApiKeys"][provider] = key_ref
+
         # Update enabled status
-        if 'enabled' in body:
-            if isinstance(user_data['llmApiKeys'][provider], dict):
-                user_data['llmApiKeys'][provider]['enabled'] = body['enabled']
-        
-        user_data['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
-        
+        if "enabled" in body:
+            if isinstance(user_data["llmApiKeys"][provider], dict):
+                user_data["llmApiKeys"][provider]["enabled"] = body["enabled"]
+
+        user_data["updatedAt"] = datetime.utcnow().isoformat() + "Z"
+
         # Save to database
-        updated_user = container.replace_item(item=user_data['id'], body=user_data)
-        
+        updated_user = container.replace_item(item=user_data["id"], body=user_data)
+
         logger.info(f"Updated LLM integration {provider} for user {user_id}")
-        
+
         return func.HttpResponse(
-            json.dumps({
-                'message': f'Successfully updated {provider} integration',
-                'provider': provider,
-                'status': 'active'
-            }),
+            json.dumps(
+                {
+                    "message": f"Successfully updated {provider} integration",
+                    "provider": provider,
+                    "status": "active",
+                }
+            ),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error updating LLM integration {provider}: {str(e)}")
         raise SutraAPIError(f"Failed to update LLM integration: {str(e)}", 500)
@@ -361,59 +383,59 @@ async def delete_llm_integration(user_id: str, provider: str) -> func.HttpRespon
     """Remove an LLM integration."""
     try:
         db_manager = get_database_manager()
-        db_manager = get_database_manager()
-        
+        container = db_manager.get_container("Users")
+
         # Get user profile
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
-        
-        items = list(container.query_items(
-            query=query,
-            parameters=parameters,
-            enable_cross_partition_query=True
-        ))
-        
+
+        items = list(
+            container.query_items(
+                query=query, parameters=parameters, enable_cross_partition_query=True
+            )
+        )
+
         if not items:
             return func.HttpResponse(
-                json.dumps({'error': 'User not found'}),
+                json.dumps({"error": "User not found"}),
                 status_code=404,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         user_data = items[0]
-        
-        if 'llmApiKeys' not in user_data or provider not in user_data['llmApiKeys']:
+
+        if "llmApiKeys" not in user_data or provider not in user_data["llmApiKeys"]:
             return func.HttpResponse(
-                json.dumps({'error': f'Integration for {provider} not found'}),
+                json.dumps({"error": f"Integration for {provider} not found"}),
                 status_code=404,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         # Remove integration
-        del user_data['llmApiKeys'][provider]
-        user_data['updatedAt'] = datetime.utcnow().isoformat() + 'Z'
-        
+        del user_data["llmApiKeys"][provider]
+        user_data["updatedAt"] = datetime.utcnow().isoformat() + "Z"
+
         # Save to database
-        updated_user = container.replace_item(item=user_data['id'], body=user_data)
-        
+        updated_user = container.replace_item(item=user_data["id"], body=user_data)
+
         # TODO: Remove API key from Azure Key Vault
-        
+
         logger.info(f"Removed LLM integration {provider} for user {user_id}")
-        
+
         return func.HttpResponse(
-            json.dumps({
-                'message': f'Successfully removed {provider} integration'
-            }),
+            json.dumps({"message": f"Successfully removed {provider} integration"}),
             status_code=200,
-            mimetype='application/json'
+            mimetype="application/json",
         )
-        
+
     except Exception as e:
         logger.error(f"Error deleting LLM integration {provider}: {str(e)}")
         raise SutraAPIError(f"Failed to delete LLM integration: {str(e)}", 500)
 
 
-async def test_llm_connection(user_id: str, provider: str, req: func.HttpRequest) -> func.HttpResponse:
+async def test_llm_connection(
+    user_id: str, provider: str, req: func.HttpRequest
+) -> func.HttpResponse:
     """Test LLM connection."""
     try:
         # Parse request body
@@ -421,163 +443,158 @@ async def test_llm_connection(user_id: str, provider: str, req: func.HttpRequest
             body = req.get_json()
         except ValueError:
             return func.HttpResponse(
-                json.dumps({'error': 'Invalid JSON in request body'}),
+                json.dumps({"error": "Invalid JSON in request body"}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
-        api_key = body.get('apiKey')
-        custom_url = body.get('url')
-        
+
+        api_key = body.get("apiKey")
+        custom_url = body.get("url")
+
         if not api_key:
             return func.HttpResponse(
-                json.dumps({'error': 'API key required for testing'}),
+                json.dumps({"error": "API key required for testing"}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
         # Test the connection
         validation_result = await validate_llm_api_key(provider, api_key, custom_url)
-        
-        if validation_result['valid']:
+
+        if validation_result["valid"]:
             return func.HttpResponse(
-                json.dumps({
-                    'valid': True,
-                    'message': f'Successfully connected to {provider}',
-                    'model': validation_result.get('model'),
-                    'response_time_ms': validation_result.get('response_time_ms')
-                }),
+                json.dumps(
+                    {
+                        "valid": True,
+                        "message": f"Successfully connected to {provider}",
+                        "model": validation_result.get("model"),
+                        "response_time_ms": validation_result.get("response_time_ms"),
+                    }
+                ),
                 status_code=200,
-                mimetype='application/json'
+                mimetype="application/json",
             )
         else:
             return func.HttpResponse(
-                json.dumps({
-                    'valid': False,
-                    'error': validation_result['error']
-                }),
+                json.dumps({"valid": False, "error": validation_result["error"]}),
                 status_code=400,
-                mimetype='application/json'
+                mimetype="application/json",
             )
-        
+
     except Exception as e:
         logger.error(f"Error testing LLM connection {provider}: {str(e)}")
         raise SutraAPIError(f"Failed to test LLM connection: {str(e)}", 500)
 
 
-async def validate_llm_api_key(provider: str, api_key: str, custom_url: Optional[str] = None) -> Dict[str, Any]:
+async def validate_llm_api_key(
+    provider: str, api_key: str, custom_url: Optional[str] = None
+) -> Dict[str, Any]:
     """Validate LLM API key by making a lightweight test call."""
     try:
         start_time = datetime.utcnow()
-        
+
         async with httpx.AsyncClient(timeout=10.0) as client:
-            if provider == 'openai':
+            if provider == "openai":
                 response = await client.get(
-                    'https://api.openai.com/v1/models',
-                    headers={'Authorization': f'Bearer {api_key}'}
+                    "https://api.openai.com/v1/models",
+                    headers={"Authorization": f"Bearer {api_key}"},
                 )
-                
+
                 if response.status_code == 200:
                     models = response.json()
                     end_time = datetime.utcnow()
                     response_time = (end_time - start_time).total_seconds() * 1000
-                    
+
                     return {
-                        'valid': True,
-                        'model': 'gpt-3.5-turbo',
-                        'response_time_ms': int(response_time)
+                        "valid": True,
+                        "model": "gpt-3.5-turbo",
+                        "response_time_ms": int(response_time),
                     }
                 else:
                     return {
-                        'valid': False,
-                        'error': f'OpenAI API error: {response.status_code} - {response.text}'
+                        "valid": False,
+                        "error": f"OpenAI API error: {response.status_code} - {response.text}",
                     }
-            
-            elif provider == 'google_gemini':
+
+            elif provider == "google_gemini":
                 response = await client.get(
-                    f'https://generativelanguage.googleapis.com/v1beta/models?key={api_key}'
+                    f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
                 )
-                
+
                 if response.status_code == 200:
                     end_time = datetime.utcnow()
                     response_time = (end_time - start_time).total_seconds() * 1000
-                    
+
                     return {
-                        'valid': True,
-                        'model': 'gemini-1.5-pro',
-                        'response_time_ms': int(response_time)
+                        "valid": True,
+                        "model": "gemini-1.5-pro",
+                        "response_time_ms": int(response_time),
                     }
                 else:
                     return {
-                        'valid': False,
-                        'error': f'Google Gemini API error: {response.status_code} - {response.text}'
+                        "valid": False,
+                        "error": f"Google Gemini API error: {response.status_code} - {response.text}",
                     }
-            
-            elif provider == 'anthropic':
+
+            elif provider == "anthropic":
                 response = await client.post(
-                    'https://api.anthropic.com/v1/messages',
+                    "https://api.anthropic.com/v1/messages",
                     headers={
-                        'Authorization': f'Bearer {api_key}',
-                        'Content-Type': 'application/json',
-                        'anthropic-version': '2023-06-01'
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                        "anthropic-version": "2023-06-01",
                     },
                     json={
-                        'model': 'claude-3-haiku-20240307',
-                        'max_tokens': 10,
-                        'messages': [{'role': 'user', 'content': 'test'}]
-                    }
+                        "model": "claude-3-haiku-20240307",
+                        "max_tokens": 10,
+                        "messages": [{"role": "user", "content": "test"}],
+                    },
                 )
-                
+
                 if response.status_code == 200:
                     end_time = datetime.utcnow()
                     response_time = (end_time - start_time).total_seconds() * 1000
-                    
+
                     return {
-                        'valid': True,
-                        'model': 'claude-3-haiku',
-                        'response_time_ms': int(response_time)
+                        "valid": True,
+                        "model": "claude-3-haiku",
+                        "response_time_ms": int(response_time),
                     }
                 else:
                     return {
-                        'valid': False,
-                        'error': f'Anthropic API error: {response.status_code} - {response.text}'
+                        "valid": False,
+                        "error": f"Anthropic API error: {response.status_code} - {response.text}",
                     }
-            
-            elif provider == 'custom' and custom_url:
+
+            elif provider == "custom" and custom_url:
                 # Test custom OpenAI-compatible endpoint
                 response = await client.get(
-                    f'{custom_url}/v1/models',
-                    headers={'Authorization': f'Bearer {api_key}'}
+                    f"{custom_url}/v1/models",
+                    headers={"Authorization": f"Bearer {api_key}"},
                 )
-                
+
                 if response.status_code == 200:
                     end_time = datetime.utcnow()
                     response_time = (end_time - start_time).total_seconds() * 1000
-                    
+
                     return {
-                        'valid': True,
-                        'model': 'custom',
-                        'response_time_ms': int(response_time)
+                        "valid": True,
+                        "model": "custom",
+                        "response_time_ms": int(response_time),
                     }
                 else:
                     return {
-                        'valid': False,
-                        'error': f'Custom API error: {response.status_code} - {response.text}'
+                        "valid": False,
+                        "error": f"Custom API error: {response.status_code} - {response.text}",
                     }
-            
+
             else:
-                return {
-                    'valid': False,
-                    'error': f'Unsupported provider: {provider}'
-                }
-    
+                return {"valid": False, "error": f"Unsupported provider: {provider}"}
+
     except asyncio.TimeoutError:
         return {
-            'valid': False,
-            'error': 'Connection timeout - API endpoint unreachable'
+            "valid": False,
+            "error": "Connection timeout - API endpoint unreachable",
         }
     except Exception as e:
-        return {
-            'valid': False,
-            'error': f'Connection error: {str(e)}'
-        }
+        return {"valid": False, "error": f"Connection error: {str(e)}"}

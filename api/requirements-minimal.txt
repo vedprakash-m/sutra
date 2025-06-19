@@ -12,3 +12,6 @@ requests==2.31.0
 python-dotenv==1.0.0
 pyjwt==2.8.0
 mock==4.0.3
+
+# Code quality tools
+flake8==6.1.0

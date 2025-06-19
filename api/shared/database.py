@@ -7,25 +7,28 @@ from azure.cosmos.database import DatabaseProxy
 from azure.cosmos.container import ContainerProxy
 from azure.core.exceptions import AzureError
 
+
 class DatabaseManager:
     """Manages Cosmos DB connections and operations for the Sutra application."""
-    
+
     def __init__(self):
         self._client: Optional[CosmosClient] = None
         self._database: Optional[DatabaseProxy] = None
         self._containers: Dict[str, ContainerProxy] = {}
-        
+
         # Check if we're in development mode or testing
-        env = os.getenv('ENVIRONMENT', '').lower()
-        self._development_mode = env in ('development', 'test')
+        env = os.getenv("ENVIRONMENT", "").lower()
+        self._development_mode = env in ("development", "test")
 
         # Get connection string from environment
-        self._connection_string = os.getenv('COSMOS_DB_CONNECTION_STRING')
+        self._connection_string = os.getenv("COSMOS_DB_CONNECTION_STRING")
         if not self._connection_string and not self._development_mode:
-            raise ValueError("COSMOS_DB_CONNECTION_STRING environment variable is required")
-        
-        self._database_name = 'sutra'
-        
+            raise ValueError(
+                "COSMOS_DB_CONNECTION_STRING environment variable is required"
+            )
+
+        self._database_name = "sutra"
+
     @property
     def client(self) -> CosmosClient:
         """Get or create Cosmos DB client."""
@@ -55,149 +58,181 @@ class DatabaseManager:
         if container_name not in self._containers:
             database = self.database
             if database:
-                self._containers[container_name] = database.get_container_client(container_name)
+                self._containers[container_name] = database.get_container_client(
+                    container_name
+                )
             else:
                 return None
         return self._containers.get(container_name)
 
-    async def create_item(self, container_name: str, item: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_item(
+        self, container_name: str, item: Dict[str, Any], partition_key: str = None
+    ) -> Dict[str, Any]:
         """Create a new item in the specified container."""
         if self._development_mode:
             # Return mock response for development
             logging.info(f"DEV MODE: Creating item in {container_name}")
-            return {**item, 'id': item.get('id', 'mock-id'), '_mock': True}
-        
+            return {**item, "id": item.get("id", "mock-id"), "_mock": True}
+
         try:
             container = self.get_container(container_name)
-            
-            # Ensure partition key is set in the item
-            if 'userId' in item and partition_key != item['userId']:
-                item['userId'] = partition_key
-            elif 'date' in item and partition_key != item['date']:
-                item['date'] = partition_key
-            elif 'type' in item and partition_key != item['type']:
-                item['type'] = partition_key
-            
+
+            # Ensure partition key is set in the item if provided
+            if partition_key:
+                if "userId" in item and partition_key != item["userId"]:
+                    item["userId"] = partition_key
+                elif "date" in item and partition_key != item["date"]:
+                    item["date"] = partition_key
+                elif "type" in item and partition_key != item["type"]:
+                    item["type"] = partition_key
+
             result = container.create_item(body=item, partition_key=partition_key)
             return result
-            
+
         except exceptions.CosmosResourceExistsError:
             logging.warning(f"Item already exists in {container_name}")
             raise
         except exceptions.CosmosHttpResponseError as e:
             logging.error(f"Error creating item in {container_name}: {e}")
             raise
-    
-    async def read_item(self, container_name: str, item_id: str, partition_key: str) -> Optional[Dict[str, Any]]:
+
+    async def read_item(
+        self, container_name: str, item_id: str, partition_key: str
+    ) -> Optional[Dict[str, Any]]:
         """Read an item from the specified container."""
         if self._development_mode:
             # Return mock response for development
             logging.info(f"DEV MODE: Reading item {item_id} from {container_name}")
-            return {'id': item_id, 'name': 'Mock Item', '_mock': True}
-        
+            return {"id": item_id, "name": "Mock Item", "_mock": True}
+
         try:
             container = self.get_container(container_name)
             result = container.read_item(item=item_id, partition_key=partition_key)
             return result
-            
+
         except exceptions.CosmosResourceNotFoundError:
             return None
         except exceptions.CosmosHttpResponseError as e:
             logging.error(f"Error reading item from {container_name}: {e}")
             raise
-    
-    async def update_item(self, container_name: str, item: Dict[str, Any], partition_key: str) -> Dict[str, Any]:
+
+    async def update_item(
+        self, container_name: str, item: Dict[str, Any], partition_key: str
+    ) -> Dict[str, Any]:
         """Update an item in the specified container."""
         if self._development_mode:
             # Return mock response for development
             logging.info(f"DEV MODE: Updating item in {container_name}")
-            return {**item, '_mock': True}
-        
+            return {**item, "_mock": True}
+
         try:
             container = self.get_container(container_name)
-            
+
             # Ensure the partition key is correct in the item
-            if 'userId' in item and partition_key != item['userId']:
-                item['userId'] = partition_key
-            elif 'date' in item and partition_key != item['date']:
-                item['date'] = partition_key
-            elif 'type' in item and partition_key != item['type']:
-                item['type'] = partition_key
-            
+            if "userId" in item and partition_key != item["userId"]:
+                item["userId"] = partition_key
+            elif "date" in item and partition_key != item["date"]:
+                item["date"] = partition_key
+            elif "type" in item and partition_key != item["type"]:
+                item["type"] = partition_key
+
             result = container.upsert_item(body=item, partition_key=partition_key)
             return result
-            
+
         except exceptions.CosmosHttpResponseError as e:
             logging.error(f"Error updating item in {container_name}: {e}")
             raise
-    
-    async def delete_item(self, container_name: str, item_id: str, partition_key: str) -> None:
+
+    async def delete_item(
+        self, container_name: str, item_id: str, partition_key: str
+    ) -> None:
         """Delete an item from the specified container."""
         if self._development_mode:
             # Mock delete for development
             logging.info(f"DEV MODE: Deleting item {item_id} from {container_name}")
             return
-        
+
         try:
             container = self.get_container(container_name)
             container.delete_item(item=item_id, partition_key=partition_key)
             return True
-            
+
         except exceptions.CosmosResourceNotFoundError:
             return False
         except exceptions.CosmosHttpResponseError as e:
             logging.error(f"Error deleting item from {container_name}: {e}")
             raise
-    
-    async def query_items(self, container_name: str, query: str, parameters: Optional[list] = None, partition_key: Optional[str] = None) -> list:
+
+    async def query_items(
+        self,
+        container_name: str,
+        query: str,
+        parameters: Optional[list] = None,
+        partition_key: Optional[str] = None,
+    ) -> list:
         """Query items from the specified container."""
         if self._development_mode:
             # Return mock query results for development
-            logging.info(f"DEV MODE: Querying items from {container_name} with query: {query}")
+            logging.info(
+                f"DEV MODE: Querying items from {container_name} with query: {query}"
+            )
             return [
-                {'id': 'mock-query-result-1', 'name': 'Mock Query Result 1', '_mock': True},
-                {'id': 'mock-query-result-2', 'name': 'Mock Query Result 2', '_mock': True}
+                {
+                    "id": "mock-query-result-1",
+                    "name": "Mock Query Result 1",
+                    "_mock": True,
+                },
+                {
+                    "id": "mock-query-result-2",
+                    "name": "Mock Query Result 2",
+                    "_mock": True,
+                },
             ]
-        
+
         try:
             container = self.get_container(container_name)
-            
+
             query_options = {}
             if partition_key:
-                query_options['partition_key'] = partition_key
-            
-            items = list(container.query_items(
-                query=query,
-                parameters=parameters,
-                **query_options
-            ))
-            
+                query_options["partition_key"] = partition_key
+
+            items = list(
+                container.query_items(
+                    query=query, parameters=parameters, **query_options
+                )
+            )
+
             return items
-            
+
         except exceptions.CosmosHttpResponseError as e:
             logging.error(f"Error querying items from {container_name}: {e}")
             raise
-    
-    async def list_items(self, container_name: str, partition_key: Optional[str] = None, max_item_count: int = 100) -> list:
+
+    async def list_items(
+        self,
+        container_name: str,
+        partition_key: Optional[str] = None,
+        max_item_count: int = 100,
+    ) -> list:
         """List items from the specified container."""
         if self._development_mode:
             # Return mock list for development
             logging.info(f"DEV MODE: Listing items from {container_name}")
             return [
-                {'id': 'mock-item-1', 'name': 'Mock Item 1', '_mock': True},
-                {'id': 'mock-item-2', 'name': 'Mock Item 2', '_mock': True}
+                {"id": "mock-item-1", "name": "Mock Item 1", "_mock": True},
+                {"id": "mock-item-2", "name": "Mock Item 2", "_mock": True},
             ]
-        
+
         try:
             container = self.get_container(container_name)
-            
-            query_options = {'max_item_count': max_item_count}
+
+            query_options = {"max_item_count": max_item_count}
             if partition_key:
-                query_options['partition_key'] = partition_key
-            
+                query_options["partition_key"] = partition_key
+
             items = list(container.read_all_items(**query_options))
             return items
-            
+
         except exceptions.CosmosHttpResponseError as e:
             logging.error(f"Error listing items from {container_name}: {e}")
             raise

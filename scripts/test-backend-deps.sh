@@ -63,7 +63,7 @@ import traceback
 
 critical_imports = [
     'azure.functions',
-    'azure.cosmos', 
+    'azure.cosmos',
     'azure.identity',
     'pydantic',
     'httpx',
@@ -114,7 +114,7 @@ if [ $? -ne 0 ]; then
     ((ISSUES_FOUND++))
 else
     echo -e "${GREEN}✅ pytest-cov is available${NC}"
-    
+
     # Test the exact command used in CI
     echo "🧪 Testing CI coverage command: pytest --cov=. --cov-report=xml --version"
     if python3 -m pytest --cov=. --cov-report=xml --version >/dev/null 2>&1; then
@@ -135,7 +135,7 @@ import sys
 
 # Common Python built-in modules that could conflict
 critical_modules = [
-    'collections', 'os', 'sys', 'json', 'time', 'datetime', 'itertools', 
+    'collections', 'os', 'sys', 'json', 'time', 'datetime', 'itertools',
     'functools', 'operator', 'pathlib', 'urllib', 'http', 'email', 'calendar',
     'uuid', 'random', 'math', 'statistics', 'decimal', 'fractions',
     'logging', 'warnings', 'traceback', 'contextlib', 'abc', 'types',
@@ -204,7 +204,7 @@ source test-ci-minimal/bin/activate
 pip install --upgrade pip setuptools wheel >/dev/null 2>&1
 if pip install -r requirements-minimal.txt >/dev/null 2>&1; then
     echo "✅ Minimal requirements installed in isolated environment"
-    
+
     # Test critical imports in isolation
     if python -c "
 try:
@@ -225,7 +225,7 @@ except ImportError as e:
         rm -rf test-ci-minimal
         exit 1
     fi
-    
+
     # Test pytest collection in isolation (exact CI simulation)
     cd "$PROJECT_ROOT"
     if python -m pytest --collect-only >/dev/null 2>&1; then
@@ -238,7 +238,7 @@ except ImportError as e:
         rm -rf test-ci-minimal
         exit 1
     fi
-    
+
     deactivate
     cd "$API_DIR"
     rm -rf test-ci-minimal

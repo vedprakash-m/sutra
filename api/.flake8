@@ -1,0 +1,29 @@
+[flake8]
+# Configuration matching CI/CD pipeline requirements
+max-line-length = 127
+max-complexity = 10
+
+# Error codes that cause immediate failure (matching CI/CD)
+select = E9,F63,F7,F82
+
+# Ignore specific patterns for Azure Functions
+ignore = 
+    F401,
+    E203,
+    W503
+
+# Exclude directories
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    .pytest_cache,
+    htmlcov,
+    dist,
+    build,
+    *.egg-info
+
+# Show source code for errors
+show-source = True
+statistics = True
+count = True

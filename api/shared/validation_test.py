@@ -6,9 +6,14 @@ import pytest
 from datetime import datetime
 
 from .validation import (
-    ValidationException, SecurityValidationException, BusinessLogicException,
-    validate_email, validate_identifier,
-    validate_collection_data, validate_playbook_data, validate_llm_integration_data
+    ValidationException,
+    SecurityValidationException,
+    BusinessLogicException,
+    validate_email,
+    validate_identifier,
+    validate_collection_data,
+    validate_playbook_data,
+    validate_llm_integration_data,
 )
 
 
@@ -45,7 +50,7 @@ def test_validate_collection_data_valid():
         "description": "A test collection",
         "prompt_ids": [],
         "tags": ["test", "collection"],
-        "is_public": False
+        "is_public": False,
     }
     result = validate_collection_data(data)
     assert result["valid"] == True
@@ -58,7 +63,7 @@ def test_validate_collection_data_missing_name():
         "description": "A test collection",
         "prompt_ids": [],
         "tags": [],
-        "is_public": False
+        "is_public": False,
     }
     result = validate_collection_data(data)
     assert result["valid"] == False
@@ -70,14 +75,8 @@ def test_validate_playbook_data_valid():
     data = {
         "name": "Test Playbook",
         "description": "A test playbook",
-        "steps": [
-            {
-                "name": "Step 1",
-                "type": "prompt",
-                "promptText": "Test prompt"
-            }
-        ],
-        "tags": ["test", "playbook"]
+        "steps": [{"name": "Step 1", "type": "prompt", "promptText": "Test prompt"}],
+        "tags": ["test", "playbook"],
     }
     result = validate_playbook_data(data)
     assert result["valid"] is True, f"Validation failed with errors: {result['errors']}"
@@ -85,11 +84,7 @@ def test_validate_playbook_data_valid():
 
 def test_validate_playbook_data_missing_name():
     """Test playbook validation with missing name."""
-    data = {
-        "description": "A test playbook",
-        "steps": [],
-        "tags": []
-    }
+    data = {"description": "A test playbook", "steps": [], "tags": []}
     result = validate_playbook_data(data)
     assert result["valid"] == False
     assert len(result["errors"]) > 0
@@ -97,11 +92,7 @@ def test_validate_playbook_data_missing_name():
 
 def test_validate_llm_integration_data_valid():
     """Test valid LLM integration data."""
-    data = {
-        "provider": "openai",
-        "apiKey": "test-api-key-1234567890",
-        "enabled": True
-    }
+    data = {"provider": "openai", "apiKey": "test-api-key-1234567890", "enabled": True}
     result = validate_llm_integration_data(data)
     assert result["valid"] == True
     assert len(result["errors"]) == 0
@@ -112,7 +103,7 @@ def test_validate_llm_integration_data_invalid_provider():
     data = {
         "provider": "invalid_provider",
         "apiKey": "test-api-key-1234567890",
-        "enabled": True
+        "enabled": True,
     }
     result = validate_llm_integration_data(data)
     assert result["valid"] == False

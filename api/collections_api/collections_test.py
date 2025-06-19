@@ -96,9 +96,9 @@ class TestCollectionsAPI:
         with patch('api.shared.validation.validate_collection_data') as mock_validate:
             mock_validate.return_value = {
                 'valid': False,
-                'errors': ['Collection name is required', 'Invalid collection type']
+                'errors': ['Collection name is required']
             }
-            
+    
             # Create request
             req = func.HttpRequest(
                 method='POST',
@@ -110,12 +110,12 @@ class TestCollectionsAPI:
             
             # Act
             response = await collections_main(req)
-            
+    
             # Assert
             assert response.status_code == 400
             response_data = json.loads(response.get_body())
             assert 'Validation failed' in response_data['error']
-            assert len(response_data['details']) == 2
+            assert len(response_data['details']) == 1
     
     @pytest.mark.asyncio
     async def test_list_collections_success(self, mock_auth_success, mock_cosmos_client):

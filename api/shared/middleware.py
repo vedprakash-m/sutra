@@ -6,7 +6,7 @@ Provides basic protection against abuse for small team deployment
 import os
 import time
 import logging
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
 from functools import wraps
 from collections import defaultdict, deque
 import azure.functions as func

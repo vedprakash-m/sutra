@@ -291,4 +291,6 @@ def get_llm_manager() -> LLMManager:
 
 def get_llm_client(provider_name: str = "openai") -> LLMProvider:
     """Get an LLM client for the specified provider."""
-    return llm_manager.get_provider(provider_name)
+    if provider_name not in llm_manager.providers:
+        raise ValueError(f"Unknown provider: {provider_name}")
+    return llm_manager.providers[provider_name]

@@ -6,8 +6,12 @@ from enum import Enum
 
 class UserRole(str, Enum):
     """User roles in the system."""
-    USER = "user"
+    MEMBER = "member"
+    CONTRIBUTOR = "contributor"
+    PROMPT_MANAGER = "prompt_manager"
     ADMIN = "admin"
+    # Legacy compatibility
+    USER = "user"
 
 
 class PromptStatus(str, Enum):

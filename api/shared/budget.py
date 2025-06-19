@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 from .models import UsageRecord, LLMProvider
 from .database import get_database_manager
@@ -355,9 +355,12 @@ class BudgetManager:
 
 
 # Global budget manager instance
-budget_manager = BudgetManager()
+_budget_manager = None
 
 
 def get_budget_manager() -> BudgetManager:
     """Get the global budget manager instance."""
-    return budget_manager
+    global _budget_manager
+    if _budget_manager is None:
+        _budget_manager = BudgetManager()
+    return _budget_manager

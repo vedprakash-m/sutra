@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Union
 from azure.cosmos import CosmosClient, exceptions
 from azure.cosmos.database import DatabaseProxy
 from azure.cosmos.container import ContainerProxy
-
+from azure.core.exceptions import AzureError
 
 class DatabaseManager:
     """Manages Cosmos DB connections and operations for the Sutra application."""
@@ -17,8 +17,8 @@ class DatabaseManager:
         
         # Check if we're in development mode or testing
         env = os.getenv('ENVIRONMENT', '').lower()
-        self._development_mode = env in ('development', 'test') or os.getenv('PYTEST_CURRENT_TEST') is not None
-        
+        self._development_mode = env in ('development', 'test')
+
         # Get connection string from environment
         self._connection_string = os.getenv('COSMOS_DB_CONNECTION_STRING')
         if not self._connection_string and not self._development_mode:
@@ -29,36 +29,38 @@ class DatabaseManager:
     @property
     def client(self) -> CosmosClient:
         """Get or create Cosmos DB client."""
-        if self._development_mode:
-            # Return a mock client for development
-            return None
-        
         if self._client is None:
+            if self._development_mode:
+                # In a testing environment, we might not have a connection string.
+                # We can return a mock or a specific test instance if needed.
+                # For now, we prevent creating a client without a connection string.
+                if not self._connection_string:
+                    return None
             self._client = CosmosClient.from_connection_string(self._connection_string)
         return self._client
-    
+
     @property
     def database(self) -> DatabaseProxy:
         """Get or create database proxy."""
-        if self._development_mode:
-            # Return None for development mode
-            return None
-        
         if self._database is None:
-            self._database = self.client.get_database_client(self._database_name)
+            client = self.client
+            if client:
+                self._database = self.client.get_database_client(self._database_name)
+            else:
+                return None
         return self._database
-    
+
     def get_container(self, container_name: str) -> ContainerProxy:
         """Get or create container proxy."""
-        if self._development_mode:
-            # Return None for development mode
-            return None
-        
         if container_name not in self._containers:
-            self._containers[container_name] = self.database.get_container_client(container_name)
-        return self._containers[container_name]
-    
-    async def create_item(self, container_name: str, item: Dict[str, Any], partition_key: str) -> Dict[str, Any]:
+            database = self.database
+            if database:
+                self._containers[container_name] = database.get_container_client(container_name)
+            else:
+                return None
+        return self._containers.get(container_name)
+
+    async def create_item(self, container_name: str, item: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new item in the specified container."""
         if self._development_mode:
             # Return mock response for development

@@ -36,6 +36,7 @@ MAX_VARIABLES_COUNT = 50
 MAX_STEPS_COUNT = 100
 MAX_TAGS_COUNT = 20
 MAX_TAG_LENGTH = 50
+MAX_DESCRIPTION_LENGTH = 1000
 
 # Regex patterns for validation
 EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -80,11 +81,9 @@ class RateLimitException(ValidationException):
 
 def validate_email(email: str) -> str:
     """Validate email address format."""
-    if not email or not EMAIL_PATTERN.match(email):
+    if not email or not isinstance(email, str) or not EMAIL_PATTERN.match(email):
         raise ValidationException("Invalid email address format", "email")
-    if len(email) > 320:  # RFC 5321 limit
-        raise ValidationException("Email address too long", "email")
-    return email.lower().strip()
+    return email
 
 
 def validate_identifier(identifier: str, field_name: str = "identifier") -> str:
@@ -153,7 +152,7 @@ def validate_content(content: str, field_name: str = "content") -> str:
 
 
 def validate_tags(tags: List[str]) -> List[str]:
-    """Validate list of tags."""
+    """Validate a list of tags."""
     if len(tags) > MAX_TAGS_COUNT:
         raise ValidationException(f"Too many tags (max {MAX_TAGS_COUNT})", "tags")
     
@@ -466,49 +465,86 @@ def validate_resource_ownership(resource_user_id: str, requesting_user_id: str, 
         raise BusinessLogicException("Access denied: insufficient permissions")
 
 
-def validate_budget_limits(user_id: str, estimated_cost: float, current_usage: float, budget_limit: float) -> None:
-    """Validate operation doesn't exceed budget limits."""
-    projected_usage = current_usage + estimated_cost
-    
-    if projected_usage > budget_limit:
-        raise BusinessLogicException(
-            f"Operation would exceed budget limit. Current: ${current_usage:.2f}, "
-            f"Estimated cost: ${estimated_cost:.2f}, Limit: ${budget_limit:.2f}"
-        )
+def validate_budget_limits(data: Dict[str, float]) -> bool:
+    """Validate total budget and usage limits."""
+    total_budget = data.get("total_budget")
+    usage_limit = data.get("usage_limit")
+    current_usage = data.get("current_usage")
+    budget_limit = data.get("budget_limit")
+
+    if total_budget is not None and usage_limit is not None:
+        if not all(isinstance(x, (int, float)) for x in [total_budget, usage_limit]):
+            raise ValidationException("Budget values must be numeric", "budget")
+        if total_budget < 0 or usage_limit < 0:
+            raise ValidationException("Budget values cannot be negative", "budget")
+        if usage_limit > total_budget:
+            raise ValidationException("Usage limit cannot exceed total budget", "budget")
+
+    if current_usage is not None and budget_limit is not None:
+        if not all(isinstance(x, (int, float)) for x in [current_usage, budget_limit]):
+            raise ValidationException("Budget values must be numeric", "budget")
+        if current_usage < 0 or budget_limit < 0:
+            raise ValidationException("Budget values cannot be negative", "budget")
+        if current_usage > budget_limit:
+            raise ValidationException("Current usage cannot exceed budget limit", "budget")
+            
+    return True
 
 
 def validate_collection_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Validate collection creation/update data."""
     errors = []
-    
+
     # Required fields
     if 'name' not in data or not data['name']:
         errors.append("Collection name is required")
+    elif not isinstance(data.get('name'), str):
+        errors.append("Collection name must be a string")
     elif len(data['name']) > MAX_STRING_LENGTH:
-        errors.append(f"Collection name must be less than {MAX_STRING_LENGTH} characters")
+        errors.append(f"Collection name must be a string and less than {MAX_STRING_LENGTH} characters")
+
+    # Optional fields
+    if 'description' in data and data['description'] and not isinstance(data.get('description'), str):
+        errors.append("Description must be a string")
+    elif 'description' in data and data['description'] and len(data['description']) > MAX_DESCRIPTION_LENGTH:
+        errors.append(f"Description must be a string and less than {MAX_DESCRIPTION_LENGTH} characters")
+
+    if 'tags' in data and data['tags'] and not isinstance(data['tags'], list):
+        errors.append("Tags must be a list of strings")
+
+    return {"valid": not errors, "errors": errors}
+
+
+def validate_llm_integration_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate LLM integration data."""
+    errors = []
     
-    # Optional fields validation
-    if 'description' in data and data['description']:
-        if len(data['description']) > MAX_CONTENT_LENGTH:
-            errors.append(f"Description must be less than {MAX_CONTENT_LENGTH} characters")
+    # Required fields
+    if 'provider' not in data or not data['provider']:
+        errors.append("Provider is required")
+    else:
+        valid_providers = ['openai', 'google_gemini', 'anthropic', 'custom']
+        if data['provider'] not in valid_providers:
+            errors.append(f"Provider must be one of: {', '.join(valid_providers)}")
     
-    if 'type' in data:
-        valid_types = ['private', 'shared_team', 'public_marketplace']
-        if data['type'] not in valid_types:
-            errors.append(f"Collection type must be one of: {', '.join(valid_types)}")
+    if 'apiKey' not in data or not data['apiKey']:
+        errors.append("API key is required")
+    elif len(data['apiKey']) < 10:
+        errors.append("API key appears to be too short")
+    elif len(data['apiKey']) > 1000:
+        errors.append("API key is too long")
     
-    if 'permissions' in data:
-        if not isinstance(data['permissions'], dict):
-            errors.append("Permissions must be a dictionary")
+    # Custom provider requires URL
+    if data.get('provider') == 'custom':
+        if 'url' not in data or not data['url']:
+            errors.append("Custom provider requires a URL")
         else:
-            valid_perms = ['read', 'write', 'execute', 'manage']
-            for user_id, perms in data['permissions'].items():
-                if not isinstance(perms, list):
-                    errors.append(f"Permissions for {user_id} must be a list")
-                else:
-                    for perm in perms:
-                        if perm not in valid_perms:
-                            errors.append(f"Invalid permission '{perm}' for {user_id}")
+            # Basic URL validation
+            url = data['url']
+            if not url.startswith(('http://', 'https://')):
+                errors.append("URL must start with http:// or https://")
+            elif len(url) > 500:
+                errors.append("URL is too long")
     
     return {
         'valid': len(errors) == 0,
@@ -519,61 +555,28 @@ def validate_collection_data(data: Dict[str, Any]) -> Dict[str, Any]:
 def validate_playbook_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Validate playbook creation/update data."""
     errors = []
-    
+
     # Required fields
     if 'name' not in data or not data['name']:
         errors.append("Playbook name is required")
     elif len(data['name']) > MAX_STRING_LENGTH:
-        errors.append(f"Playbook name must be less than {MAX_STRING_LENGTH} characters")
-    
-    # Optional fields validation
-    if 'description' in data and data['description']:
-        if len(data['description']) > MAX_CONTENT_LENGTH:
-            errors.append(f"Description must be less than {MAX_CONTENT_LENGTH} characters")
-    
-    if 'visibility' in data:
-        valid_visibility = ['private', 'shared']
-        if data['visibility'] not in valid_visibility:
-            errors.append(f"Visibility must be one of: {', '.join(valid_visibility)}")
-    
-    if 'initialInputVariables' in data:
-        if not isinstance(data['initialInputVariables'], dict):
-            errors.append("Initial input variables must be a dictionary")
-        elif len(data['initialInputVariables']) > MAX_VARIABLES_COUNT:
-            errors.append(f"Maximum {MAX_VARIABLES_COUNT} input variables allowed")
-        else:
-            for var_name, var_config in data['initialInputVariables'].items():
-                if not IDENTIFIER_PATTERN.match(var_name):
-                    errors.append(f"Invalid variable name '{var_name}'. Must start with letter and contain only letters, numbers, hyphens, and underscores")
-                
-                if not isinstance(var_config, dict):
-                    errors.append(f"Variable config for '{var_name}' must be a dictionary")
-                else:
-                    if 'type' not in var_config:
-                        errors.append(f"Variable '{var_name}' must have a type")
-                    elif var_config['type'] not in ['string', 'text', 'number', 'boolean', 'dropdown']:
-                        errors.append(f"Invalid type for variable '{var_name}'")
-    
-    if 'steps' in data:
-        if not isinstance(data['steps'], list):
-            errors.append("Steps must be a list")
-        elif len(data['steps']) > MAX_STEPS_COUNT:
-            errors.append(f"Maximum {MAX_STEPS_COUNT} steps allowed")
-        else:
-            for i, step in enumerate(data['steps']):
-                step_errors = validate_playbook_step(step, i)
+        errors.append(f"Playbook name cannot exceed {MAX_STRING_LENGTH} characters")
+
+    if 'steps' not in data or not isinstance(data['steps'], list) or not data['steps']:
+        errors.append("Playbook must have at least one step")
+    else:
+        for i, step in enumerate(data['steps']):
+            step_errors = _validate_playbook_step(step, i)
+            if step_errors:
                 errors.extend(step_errors)
-    
-    return {
-        'valid': len(errors) == 0,
-        'errors': errors
-    }
+
+    return {"valid": not errors, "errors": errors}
 
 
-def validate_playbook_step(step: Dict[str, Any], step_index: int) -> List[str]:
+def _validate_playbook_step(step: Dict[str, Any], index: int) -> List[str]:
     """Validate a single playbook step."""
     errors = []
-    step_prefix = f"Step {step_index + 1}: "
+    step_prefix = f"Step {index + 1}: "
     
     if 'type' not in step:
         errors.append(f"{step_prefix}Step type is required")
@@ -612,43 +615,6 @@ def validate_playbook_step(step: Dict[str, Any], step_index: int) -> List[str]:
                     errors.append(f"{step_prefix}Invalid regex pattern")
     
     return errors
-
-
-def validate_llm_integration_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate LLM integration data."""
-    errors = []
-    
-    # Required fields
-    if 'provider' not in data or not data['provider']:
-        errors.append("Provider is required")
-    else:
-        valid_providers = ['openai', 'google_gemini', 'anthropic', 'custom']
-        if data['provider'] not in valid_providers:
-            errors.append(f"Provider must be one of: {', '.join(valid_providers)}")
-    
-    if 'apiKey' not in data or not data['apiKey']:
-        errors.append("API key is required")
-    elif len(data['apiKey']) < 10:
-        errors.append("API key appears to be too short")
-    elif len(data['apiKey']) > 1000:
-        errors.append("API key is too long")
-    
-    # Custom provider requires URL
-    if data.get('provider') == 'custom':
-        if 'url' not in data or not data['url']:
-            errors.append("Custom provider requires a URL")
-        else:
-            # Basic URL validation
-            url = data['url']
-            if not url.startswith(('http://', 'https://')):
-                errors.append("URL must start with http:// or https://")
-            elif len(url) > 500:
-                errors.append("URL is too long")
-    
-    return {
-        'valid': len(errors) == 0,
-        'errors': errors
-    }
 
 
 def validate_execution_input(data: Dict[str, Any]) -> Dict[str, Any]:

@@ -18,6 +18,7 @@ from functools import wraps
 import azure.functions as func
 from datetime import datetime
 from enum import Enum
+import azure.cosmos.exceptions as cosmos_exceptions
 
 import azure.functions as func
 from pydantic import ValidationError
@@ -35,10 +36,11 @@ logger = logging.getLogger(__name__)
 class SutraAPIError(Exception):
     """Base API error for Sutra platform."""
     
-    def __init__(self, message: str, error_code: str = "SUTRA_API_ERROR", status_code: int = 500):
+    def __init__(self, message: str, error_code: str = "SUTRA_API_ERROR", status_code: int = 500, details: Optional[Dict[str, Any]] = None):
         self.message = message
         self.error_code = error_code
         self.status_code = status_code
+        self.details = details
         super().__init__(message)
 
 
@@ -81,6 +83,18 @@ def handle_api_error(error: Exception) -> func.HttpResponse:
                 mimetype='application/json'
             )
         
+        # Handle Cosmos DB errors
+        if isinstance(error, cosmos_exceptions.CosmosResourceNotFoundError):
+            return func.HttpResponse(
+                json.dumps({
+                    'error': 'not_found',
+                    'message': str(error),
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                }),
+                status_code=404,
+                mimetype='application/json'
+            )
+
         # Handle SutraAPIError
         if isinstance(error, SutraAPIError):
             return func.HttpResponse(

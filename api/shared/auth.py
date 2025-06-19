@@ -112,6 +112,9 @@ class AuthManager:
             raise AuthenticationError("Token has expired")
         except jwt.InvalidTokenError as e:
             raise AuthenticationError(f"Invalid token: {str(e)}")
+        except AuthenticationError:
+            # Re-raise authentication errors as-is
+            raise
         except Exception as e:
             logging.error(f"Token validation error: {e}")
             raise AuthenticationError("Token validation failed")
@@ -215,8 +218,8 @@ def extract_token_from_request(req: func.HttpRequest) -> Optional[str]:
 
 def require_auth(resource: str = None, action: str = "read"):
     """Decorator to require authentication for Azure Function endpoints."""
-    def decorator(func):
-        @wraps(func)
+    def decorator(decorated_func):
+        @wraps(decorated_func)
         async def wrapper(req: func.HttpRequest) -> func.HttpResponse:
             try:
                 # Extract token from request
@@ -245,7 +248,7 @@ def require_auth(resource: str = None, action: str = "read"):
                 req.current_user = user
                 
                 # Call the original function
-                return await func(req)
+                return await decorated_func(req)
                 
             except AuthenticationError as e:
                 return func.HttpResponse(
@@ -339,9 +342,9 @@ def check_user_permissions(user_id: str, resource_type: str, resource_id: str, r
         # This would be implemented with database checks in a full system
         # For MVP, we'll implement basic ownership checks
         
-        from .database import get_cosmos_client
+        from .database import get_database_manager
         
-        client = get_cosmos_client()
+        db_manager = get_database_manager()
         
         # Map resource types to containers
         container_map = {
@@ -354,7 +357,7 @@ def check_user_permissions(user_id: str, resource_type: str, resource_id: str, r
         if not container_name:
             return False
         
-        container = client.get_container(container_name)
+        container = db_manager.get_container(container_name)
         
         # Get the resource
         try:
@@ -380,10 +383,10 @@ def check_user_permissions(user_id: str, resource_type: str, resource_id: str, r
 def get_user_role(user_id: str) -> UserRole:
     """Get the user's role from the database."""
     try:
-        from .database import get_cosmos_client
+        from .database import get_database_manager
         
-        client = get_cosmos_client()
-        container = client.get_container('Users')
+        db_manager = get_database_manager()
+        container = db_manager.get_container('Users')
         
         try:
             user = container.read_item(item=user_id, partition_key=user_id)

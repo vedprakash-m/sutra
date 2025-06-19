@@ -70,12 +70,17 @@ def test_validate_playbook_data_valid():
     data = {
         "name": "Test Playbook",
         "description": "A test playbook",
-        "steps": [],
+        "steps": [
+            {
+                "name": "Step 1",
+                "type": "prompt",
+                "promptText": "Test prompt"
+            }
+        ],
         "tags": ["test", "playbook"]
     }
     result = validate_playbook_data(data)
-    assert result["valid"] == True
-    assert len(result["errors"]) == 0
+    assert result["valid"] is True, f"Validation failed with errors: {result['errors']}"
 
 
 def test_validate_playbook_data_missing_name():

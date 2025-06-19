@@ -9,6 +9,7 @@ __pycache__/
 dist/
 build/
 coverage/
+htmlcov/
 playwright-report/
 test-results/
 
@@ -45,6 +46,11 @@ pnpm-lock.yaml
 
 # Generated files
 .eslintcache
+
+# Python test coverage reports (generated)
+htmlcov/
+.coverage
+coverage.xml
 
 # Azure Functions
 local.settings.json

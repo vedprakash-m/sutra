@@ -13,7 +13,7 @@ describe("PromptCoach", () => {
   });
 
   it("should render without crashing", () => {
-    render(<PromptCoach {...defaultProps} />);
+    render(<PromptCoach {...defaultProps} promptContent="Write an email" />);
     expect(screen.getByText("PromptCoach")).toBeInTheDocument();
   });
 
@@ -166,7 +166,7 @@ describe("PromptCoach", () => {
     );
 
     await waitFor(() => {
-      const applyButtons = screen.getAllByText("Apply");
+      const applyButtons = screen.getAllByTitle("Apply suggestion");
       fireEvent.click(applyButtons[0]);
     });
 
@@ -177,7 +177,7 @@ describe("PromptCoach", () => {
     render(<PromptCoach {...defaultProps} promptContent="Write" />);
 
     await waitFor(() => {
-      expect(screen.getByText("HIGH")).toBeInTheDocument();
+      expect(screen.getAllByText("HIGH")).toHaveLength(2);
     });
   });
 
@@ -292,8 +292,8 @@ describe("PromptCoach", () => {
 
     await waitFor(() => {
       // Should have both high and medium priority suggestions
-      expect(screen.getByText("HIGH")).toBeInTheDocument();
-      expect(screen.getByText("MEDIUM")).toBeInTheDocument();
+      expect(screen.getAllByText("HIGH")).toHaveLength(1);
+      expect(screen.getAllByText("MEDIUM")).toHaveLength(2);
     });
   });
 
@@ -302,7 +302,7 @@ describe("PromptCoach", () => {
       <PromptCoach {...defaultProps} promptContent="" />,
     );
 
-    expect(screen.getByText("No suggestions available")).toBeInTheDocument();
+    expect(screen.getByText("Great prompt structure!")).toBeInTheDocument();
 
     rerender(<PromptCoach {...defaultProps} promptContent="Write an email" />);
 

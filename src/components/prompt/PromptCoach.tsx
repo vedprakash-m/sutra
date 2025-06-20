@@ -205,6 +205,7 @@ export default function PromptCoach({
   if (suggestions.length === 0) {
     return (
       <div
+        data-testid="prompt-coach"
         className={`bg-green-50 border border-green-200 rounded-lg p-4 ${className}`}
       >
         <div className="flex items-center space-x-2">
@@ -221,10 +222,15 @@ export default function PromptCoach({
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg ${className}`}>
+    <div
+      data-testid="prompt-coach"
+      className={`bg-white border border-gray-200 rounded-lg ${className}`}
+    >
       <div
         className="flex items-center justify-between p-3 cursor-pointer border-b border-gray-200"
         onClick={() => setIsExpanded(!isExpanded)}
+        role="button"
+        aria-label={isExpanded ? "Collapse suggestions" : "Expand suggestions"}
       >
         <div className="flex items-center space-x-2">
           <LightBulbIcon className="h-5 w-5 text-blue-600" />
@@ -251,7 +257,7 @@ export default function PromptCoach({
                     </span>
                     <h4 className="font-medium text-sm">{suggestion.title}</h4>
                     <span className="text-xs uppercase font-medium px-2 py-1 rounded bg-white bg-opacity-50">
-                      {suggestion.priority}
+                      {suggestion.priority.toUpperCase()}
                     </span>
                   </div>
                   <p className="text-sm opacity-80 mb-2">

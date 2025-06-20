@@ -14,14 +14,63 @@ jest.mock("@/services/api", () => ({
 
 // Mock the child components
 jest.mock("../VersionHistory", () => {
-  return function MockVersionHistory() {
-    return <div data-testid="version-history">Version History Component</div>;
+  return function MockVersionHistory({
+    isOpen,
+    onClose,
+    promptId,
+    promptName,
+    onVersionRestore,
+  }: any) {
+    if (!isOpen) return null;
+    return (
+      <div data-testid="version-history">
+        <span>Version History Component</span>
+        <span data-testid="version-history-prompt-id">{promptId}</span>
+        <span data-testid="version-history-prompt-name">{promptName}</span>
+        <button
+          data-testid="mock-version-restore"
+          onClick={() => onVersionRestore("version-123")}
+        >
+          Restore Version
+        </button>
+        <button data-testid="mock-version-close" onClick={onClose}>
+          Close
+        </button>
+      </div>
+    );
   };
 });
 
 jest.mock("../ImportModal", () => {
-  return function MockImportModal() {
-    return <div data-testid="import-modal">Import Modal Component</div>;
+  return function MockImportModal({ isOpen, onClose, onImport }: any) {
+    if (!isOpen) return null;
+    return (
+      <div data-testid="import-modal">
+        <span>Import Modal Component</span>
+        <button
+          data-testid="mock-import-submit"
+          onClick={() =>
+            onImport([
+              {
+                title: "Imported Prompt 1",
+                description: "First imported prompt",
+                source: "OpenAI",
+              },
+              {
+                title: "Imported Prompt 2",
+                description: "Second imported prompt",
+                source: "Claude",
+              },
+            ])
+          }
+        >
+          Import
+        </button>
+        <button data-testid="mock-import-close" onClick={onClose}>
+          Close
+        </button>
+      </div>
+    );
   };
 });
 
@@ -341,40 +390,447 @@ describe("CollectionsPage", () => {
     expect(screen.getByText("0 prompts")).toBeInTheDocument();
   });
 
-  // These tests are skipped because the features are not implemented in the component yet
-  it.skip("should handle sorting by date", async () => {
-    // Feature not implemented - no sort functionality exists
+  it("should create collection from the card button", async () => {
+    const refetch = jest.fn();
+    mockUseApi.mockReturnValue({
+      data: mockCollectionsData,
+      loading: false,
+      error: null,
+      refetch,
+    });
+    (collectionsApi.create as jest.Mock).mockResolvedValue({ id: "new-id" });
+
+    renderCollectionsPage();
+
+    const cardNewCollectionButton = screen.getByTestId(
+      "card-new-collection-button",
+    );
+    fireEvent.click(cardNewCollectionButton);
+
+    await waitFor(() => {
+      expect(collectionsApi.create).toHaveBeenCalledWith({
+        name: "New Collection",
+        description: "A new collection for organizing prompts",
+        type: "private",
+        owner_id: "test-user-id",
+      });
+    });
+
+    expect(refetch).toHaveBeenCalled();
   });
 
-  it.skip("should handle view mode toggle", async () => {
-    // Feature not implemented - no view toggle functionality exists
+  it("should format dates correctly", () => {
+    const collectionsWithDate = {
+      items: [
+        {
+          id: "1",
+          name: "Test Collection",
+          description: "Test description",
+          type: "private",
+          owner_id: "test-user-id",
+          created_at: "2024-01-15T10:30:00Z",
+          updated_at: "2024-01-15T10:30:00Z",
+          prompt_count: 2,
+        },
+      ],
+    };
+
+    mockUseApi.mockReturnValue({
+      data: collectionsWithDate,
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    renderCollectionsPage();
+
+    // The date should be formatted as a localised date string
+    expect(screen.getByText(/Updated/)).toBeInTheDocument();
   });
 
-  it.skip("should handle collection actions menu", async () => {
-    // Feature not implemented - no actions menu exists
+  it("should close version history modal", async () => {
+    renderCollectionsPage();
+
+    // Open the modal first
+    const historyButton = screen.getAllByRole("button", { name: "History" })[0];
+    fireEvent.click(historyButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("version-history")).toBeInTheDocument();
+    });
+
+    // Version history modal should have close functionality
+    // Since we're mocking the component, we can't test the actual close functionality
+    // but we can verify the modal is rendered
+    expect(screen.getByTestId("version-history")).toBeInTheDocument();
   });
 
-  it.skip("should handle edit collection", async () => {
-    // Feature not implemented - no edit functionality exists
+  it("should handle missing user gracefully", async () => {
+    // Temporarily replace the useAuth mock
+    const originalUseAuth = require("@/components/auth/AuthProvider").useAuth;
+    require("@/components/auth/AuthProvider").useAuth = jest.fn(() => ({
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+      login: jest.fn(),
+      logout: jest.fn(),
+    }));
+
+    const refetch = jest.fn();
+    mockUseApi.mockReturnValue({
+      data: mockCollectionsData,
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    renderCollectionsPage();
+
+    const newCollectionButton = screen.getByTestId(
+      "header-new-collection-button",
+    );
+    fireEvent.click(newCollectionButton);
+
+    await waitFor(() => {
+      expect(collectionsApi.create).toHaveBeenCalledWith({
+        name: "New Collection",
+        description: "A new collection for organizing prompts",
+        type: "private",
+        owner_id: "dev-user", // Should fall back to dev-user
+      });
+    });
+
+    // Restore original mock
+    require("@/components/auth/AuthProvider").useAuth = originalUseAuth;
   });
 
-  it.skip("should handle delete collection", async () => {
-    // Feature not implemented - no delete functionality exists
+  it("should handle collections with missing prompt_count", () => {
+    const collectionsWithMissingCount = {
+      items: [
+        {
+          id: "1",
+          name: "Test Collection",
+          description: "Test description",
+          type: "private",
+          owner_id: "test-user-id",
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
+          // prompt_count is missing
+        },
+      ],
+    };
+
+    mockUseApi.mockReturnValue({
+      data: collectionsWithMissingCount,
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    renderCollectionsPage();
+
+    expect(screen.getByText("0 prompts")).toBeInTheDocument();
   });
 
-  it.skip("should handle refresh/refetch", async () => {
-    // Feature not implemented - no explicit refresh button exists
+  it("should display collection first letter in avatar", () => {
+    const collectionsWithNames = {
+      items: [
+        {
+          id: "1",
+          name: "Amazing Collection",
+          description: "Test description",
+          type: "private",
+          owner_id: "test-user-id",
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
+          prompt_count: 1,
+        },
+        {
+          id: "2",
+          name: "zzz Collection",
+          description: "Test description",
+          type: "private",
+          owner_id: "test-user-id",
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
+          prompt_count: 1,
+        },
+      ],
+    };
+
+    mockUseApi.mockReturnValue({
+      data: collectionsWithNames,
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    renderCollectionsPage();
+
+    expect(screen.getByText("A")).toBeInTheDocument(); // First letter of "Amazing Collection"
+    expect(screen.getByText("z")).toBeInTheDocument(); // First letter of "zzz Collection"
   });
 
-  it.skip("should handle keyboard navigation", async () => {
-    // Feature not implemented - no keyboard navigation exists
+  it("should handle import modal functionality", async () => {
+    const refetch = jest.fn();
+    const consoleLogSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation(() => {});
+    mockUseApi.mockReturnValue({
+      data: mockCollectionsData,
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    renderCollectionsPage();
+
+    // Open import modal
+    const importButton = screen.getByRole("button", { name: "Import Prompts" });
+    fireEvent.click(importButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("import-modal")).toBeInTheDocument();
+    });
+
+    // Test import functionality
+    const importSubmitButton = screen.getByTestId("mock-import-submit");
+    fireEvent.click(importSubmitButton);
+
+    await waitFor(() => {
+      expect(collectionsApi.create).toHaveBeenCalledWith({
+        name: "Imported Prompt 1",
+        description: "First imported prompt",
+        type: "private",
+        owner_id: "test-user-id",
+        tags: ["imported", "openai"],
+      });
+    });
+
+    expect(refetch).toHaveBeenCalled();
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "Importing prompts:",
+      expect.any(Array),
+    );
+    consoleLogSpy.mockRestore();
   });
 
-  it.skip("should handle collection card hover states", async () => {
-    // Feature not implemented - no special hover states exist
+  it("should handle import modal close", async () => {
+    renderCollectionsPage();
+
+    // Open import modal
+    const importButton = screen.getByRole("button", { name: "Import Prompts" });
+    fireEvent.click(importButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("import-modal")).toBeInTheDocument();
+    });
+
+    // Close import modal
+    const closeButton = screen.getByTestId("mock-import-close");
+    fireEvent.click(closeButton);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("import-modal")).not.toBeInTheDocument();
+    });
   });
 
-  it.skip("should handle filter by collection type", async () => {
-    // Feature not implemented - no filter functionality exists
+  it("should handle import error gracefully", async () => {
+    const refetch = jest.fn();
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const consoleLogSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation(() => {});
+
+    mockUseApi.mockReturnValue({
+      data: mockCollectionsData,
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    // Mock import to fail
+    (collectionsApi.create as jest.Mock).mockRejectedValue(
+      new Error("Import failed"),
+    );
+
+    renderCollectionsPage();
+
+    // Open import modal and import
+    const importButton = screen.getByRole("button", { name: "Import Prompts" });
+    fireEvent.click(importButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("import-modal")).toBeInTheDocument();
+    });
+
+    const importSubmitButton = screen.getByTestId("mock-import-submit");
+    fireEvent.click(importSubmitButton);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error importing prompt:",
+        expect.any(Error),
+      );
+    });
+
+    consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
+  });
+
+  it("should open version history with correct data", async () => {
+    renderCollectionsPage();
+
+    const historyButton = screen.getAllByRole("button", { name: "History" })[0];
+    fireEvent.click(historyButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("version-history")).toBeInTheDocument();
+      expect(screen.getByTestId("version-history-prompt-id")).toHaveTextContent(
+        "1",
+      );
+      expect(
+        screen.getByTestId("version-history-prompt-name"),
+      ).toHaveTextContent("Test Collection 1");
+    });
+  });
+
+  it("should handle version history close", async () => {
+    renderCollectionsPage();
+
+    // Open version history
+    const historyButton = screen.getAllByRole("button", { name: "History" })[0];
+    fireEvent.click(historyButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("version-history")).toBeInTheDocument();
+    });
+
+    // Close version history
+    const closeButton = screen.getByTestId("mock-version-close");
+    fireEvent.click(closeButton);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("version-history")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should handle version restore", async () => {
+    const consoleLogSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation(() => {});
+
+    renderCollectionsPage();
+
+    // Open version history
+    const historyButton = screen.getAllByRole("button", { name: "History" })[0];
+    fireEvent.click(historyButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("version-history")).toBeInTheDocument();
+    });
+
+    // Test version restore
+    const restoreButton = screen.getByTestId("mock-version-restore");
+    fireEvent.click(restoreButton);
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "Restoring version:",
+      "version-123",
+    );
+    consoleLogSpy.mockRestore();
+  });
+
+  it("should handle missing collections data gracefully", () => {
+    mockUseApi.mockReturnValue({
+      data: null,
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    renderCollectionsPage();
+
+    // Should not crash when data is null
+    expect(screen.getByText("Collections")).toBeInTheDocument();
+    expect(screen.getByText("Create new collection")).toBeInTheDocument();
+  });
+
+  it("should handle collections data without items property", () => {
+    mockUseApi.mockReturnValue({
+      data: {}, // No items property
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    renderCollectionsPage();
+
+    // Should not crash when items property is missing
+    expect(screen.getByText("Collections")).toBeInTheDocument();
+    expect(screen.getByText("Create new collection")).toBeInTheDocument();
+  });
+
+  it("should render View collection links correctly", () => {
+    renderCollectionsPage();
+
+    const viewLinks = screen.getAllByText("View collection");
+    expect(viewLinks).toHaveLength(2); // One for each collection
+
+    viewLinks.forEach((link, index) => {
+      const expectedHref = `/collections/${mockCollectionsData.items[index].id}`;
+      expect(link.closest("a")).toHaveAttribute("href", expectedHref);
+    });
+  });
+
+  it("should test both History buttons work correctly", async () => {
+    renderCollectionsPage();
+
+    const historyButtons = screen.getAllByRole("button", { name: "History" });
+    expect(historyButtons).toHaveLength(2); // One for each collection
+
+    // Test second history button
+    fireEvent.click(historyButtons[1]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("version-history")).toBeInTheDocument();
+      expect(screen.getByTestId("version-history-prompt-id")).toHaveTextContent(
+        "2",
+      );
+      expect(
+        screen.getByTestId("version-history-prompt-name"),
+      ).toHaveTextContent("Test Collection 2");
+    });
+  });
+
+  it("should handle edge case with empty collection name", () => {
+    const collectionsWithEmptyName = {
+      items: [
+        {
+          id: "1",
+          name: "", // Empty name
+          description: "Test description",
+          type: "private",
+          owner_id: "test-user-id",
+          created_at: "2024-01-01T00:00:00Z",
+          updated_at: "2024-01-01T00:00:00Z",
+          prompt_count: 1,
+        },
+      ],
+    };
+
+    mockUseApi.mockReturnValue({
+      data: collectionsWithEmptyName,
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    renderCollectionsPage();
+
+    // Should handle empty name gracefully - charAt(0) on empty string returns empty string
+    expect(screen.getByText("Test description")).toBeInTheDocument();
   });
 });

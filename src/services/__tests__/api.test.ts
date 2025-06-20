@@ -216,6 +216,22 @@ describe("ApiService", () => {
       });
       expect(result).toEqual(mockResponse);
     });
+
+    it("should handle PUT without data", async () => {
+      const mockResponse = { success: true };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockResponse),
+      });
+
+      await apiService.put("/test");
+
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/test"), {
+        method: "PUT",
+        headers: expect.any(Object),
+        body: undefined,
+      });
+    });
   });
 
   describe("delete method", () => {
@@ -233,6 +249,233 @@ describe("ApiService", () => {
         headers: expect.any(Object),
       });
       expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe("constructor and initialization", () => {
+    it("should initialize with default baseUrl when no baseUrl provided", () => {
+      // Test that the service initializes properly
+      expect(() => new (apiService.constructor as any)()).not.toThrow();
+    });
+
+    it("should initialize with custom baseUrl", () => {
+      const customBaseUrl = "https://custom-api.example.com";
+      expect(
+        () => new (apiService.constructor as any)(customBaseUrl),
+      ).not.toThrow();
+    });
+
+    it("should handle auth token initialization failure gracefully", () => {
+      // Mock getAuthToken to fail
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockRejectedValue(new Error("Auth failed"));
+
+      expect(() => new (apiService.constructor as any)()).not.toThrow();
+
+      global.fetch = originalFetch;
+    });
+  });
+
+  describe("getAuthToken", () => {
+    it("should return null when auth endpoint fails", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+      // Access private method through reflection
+      const service = apiService as any;
+      const token = await service.getAuthToken();
+
+      expect(token).toBeNull();
+    });
+
+    it("should return null when response is not ok", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      });
+
+      const service = apiService as any;
+      const token = await service.getAuthToken();
+
+      expect(token).toBeNull();
+    });
+
+    it("should return null when no clientPrincipal", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue({}),
+      });
+
+      const service = apiService as any;
+      const token = await service.getAuthToken();
+
+      expect(token).toBeNull();
+    });
+
+    it("should return null when clientPrincipal has no access token", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          clientPrincipal: {},
+        }),
+      });
+
+      const service = apiService as any;
+      const token = await service.getAuthToken();
+
+      expect(token).toBeNull();
+    });
+
+    it("should return access token when available", async () => {
+      const expectedToken = "valid-access-token";
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          clientPrincipal: {
+            accessToken: expectedToken,
+          },
+        }),
+      });
+
+      const service = apiService as any;
+      const token = await service.getAuthToken();
+
+      expect(token).toBe(expectedToken);
+    });
+  });
+
+  describe("put method", () => {
+    it("should make PUT request with data", async () => {
+      const mockResponse = { id: 1, updated: true };
+      const requestData = { name: "updated test" };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockResponse),
+      });
+
+      const result = await apiService.put("/test/1", requestData);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/test/1"),
+        {
+          method: "PUT",
+          headers: expect.any(Object),
+          body: JSON.stringify(requestData),
+        },
+      );
+      expect(result).toEqual(mockResponse);
+    });
+
+    it("should handle PUT without data", async () => {
+      const mockResponse = { success: true };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockResponse),
+      });
+
+      await apiService.put("/test/1");
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/test/1"),
+        {
+          method: "PUT",
+          headers: expect.any(Object),
+          body: undefined,
+        },
+      );
+    });
+  });
+
+  describe("delete method", () => {
+    it("should make DELETE request", async () => {
+      const mockResponse = { success: true };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockResponse),
+      });
+
+      const result = await apiService.delete("/test/1");
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/test/1"),
+        {
+          method: "DELETE",
+          headers: expect.any(Object),
+        },
+      );
+      expect(result).toEqual(mockResponse);
+    });
+  });
+
+  describe("getHeaders", () => {
+    it("should return headers without auth token when token is null", () => {
+      apiService.setToken(null);
+      const service = apiService as any;
+      const headers = service.getHeaders();
+
+      expect(headers).toEqual({
+        "Content-Type": "application/json",
+        "X-Client-Name": "sutra-web",
+        "X-Client-Version": "1.0.0",
+      });
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("should return headers with auth token when token is set", () => {
+      const testToken = "test-auth-token";
+      apiService.setToken(testToken);
+      const service = apiService as any;
+      const headers = service.getHeaders();
+
+      expect(headers).toEqual({
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${testToken}`,
+        "X-Client-Name": "sutra-web",
+        "X-Client-Version": "1.0.0",
+      });
+    });
+  });
+
+  describe("handleResponse", () => {
+    it("should return parsed JSON for successful response", async () => {
+      const mockData = { message: "success" };
+      const mockResponse = {
+        ok: true,
+        json: jest.fn().mockResolvedValue(mockData),
+      } as any;
+
+      const service = apiService as any;
+      const result = await service.handleResponse(mockResponse);
+
+      expect(result).toEqual(mockData);
+      expect(mockResponse.json).toHaveBeenCalled();
+    });
+
+    it("should throw error for failed response with error field", async () => {
+      const mockResponse = {
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue({ error: "Custom error" }),
+      } as any;
+
+      const service = apiService as any;
+
+      await expect(service.handleResponse(mockResponse)).rejects.toThrow(
+        "Custom error",
+      );
+    });
+
+    it("should throw default error when JSON parsing fails", async () => {
+      const mockResponse = {
+        ok: false,
+        status: 500,
+        json: jest.fn().mockRejectedValue(new Error("JSON parse error")),
+      } as any;
+
+      const service = apiService as any;
+
+      await expect(service.handleResponse(mockResponse)).rejects.toThrow(
+        "HTTP error! status: 500",
+      );
     });
   });
 });
@@ -424,5 +667,17 @@ describe("llmApi", () => {
 
     const result = await llmApi.execute("Test prompt", "gpt-4");
     expect(result).toEqual(mockResponse);
+  });
+});
+
+// Test basic module loading
+describe("API Module Loading", () => {
+  it("should load api module successfully", () => {
+    expect(apiService).toBeDefined();
+    expect(collectionsApi).toBeDefined();
+    expect(playbooksApi).toBeDefined();
+    expect(integrationsApi).toBeDefined();
+    expect(adminApi).toBeDefined();
+    expect(llmApi).toBeDefined();
   });
 });

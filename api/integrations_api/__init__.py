@@ -51,7 +51,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             return await list_llm_integrations(user_id)
         elif method == "POST":
             if provider and action == "test":
-                return await test_llm_connection(user_id, provider, req)
+                return await validate_llm_connection(user_id, provider, req)
             else:
                 return await create_llm_integration(user_id, req)
         elif method == "PUT" and provider:
@@ -433,7 +433,7 @@ async def delete_llm_integration(user_id: str, provider: str) -> func.HttpRespon
         raise SutraAPIError(f"Failed to delete LLM integration: {str(e)}", 500)
 
 
-async def test_llm_connection(
+async def validate_llm_connection(
     user_id: str, provider: str, req: func.HttpRequest
 ) -> func.HttpResponse:
     """Test LLM connection."""

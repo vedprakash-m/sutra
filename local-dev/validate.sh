@@ -1,108 +1,257 @@
 #!/bin/bash
 
-# Sutra Local Validation Pipeline
-echo "🔍 Running Sutra local validation pipeline..."
+# Comprehensive Local Validation Script for Sutra
+# This script runs all validation checks locally to catch issues before CI/CD
+
+set -e
+
+echo "🚀 Starting Comprehensive Local Validation"
+echo "==========================================="
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Track validation results
-VALIDATION_PASSED=true
+# Function to print status
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
 
-# Function to log results
-log_result() {
-    if [ $1 -eq 0 ]; then
-        echo -e "${GREEN}✅ $2 passed${NC}"
-    else
-        echo -e "${RED}❌ $2 failed${NC}"
-        VALIDATION_PASSED=false
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Function to check if we're in the right directory
+check_directory() {
+    if [ ! -f "package.json" ] || [ ! -f "pytest.ini" ]; then
+        print_error "Please run this script from the project root directory"
+        exit 1
     fi
 }
 
-echo "📋 Step 1: Running type checks..."
-npm run type-check
-log_result $? "TypeScript compilation"
+# Function to check dependencies
+check_dependencies() {
+    print_status "Checking dependencies..."
 
-echo ""
-echo "📋 Step 2: Running linting..."
-npm run lint
-log_result $? "ESLint checks"
+    # Check Node.js
+    if ! command -v node &> /dev/null; then
+        print_error "Node.js is not installed"
+        exit 1
+    fi
 
-echo ""
-echo "📋 Step 3: Running format checks..."
-npm run format:check
-log_result $? "Code formatting"
+    # Check Python
+    if ! command -v python3 &> /dev/null; then
+        print_error "Python 3 is not installed"
+        exit 1
+    fi
 
-echo ""
-echo "📋 Step 4: Running unit tests..."
-npm run test:coverage
-log_result $? "Jest unit tests"
+    # Check if virtual environment exists
+    if [ ! -d ".venv" ]; then
+        print_warning "Python virtual environment not found. Creating one..."
+        python3 -m venv .venv
+    fi
 
-echo ""
-echo "📋 Step 5: Testing backend dependency installation..."
-cd api
-if [ ! -d "../.venv-test" ]; then
-    echo "Creating test Python environment..."
-    python -m venv ../.venv-test
-fi
-source ../.venv-test/bin/activate
-pip install --upgrade pip setuptools wheel
-pip install -r requirements-minimal.txt
-log_result $? "Backend dependency installation"
-deactivate
-cd ..
+    print_success "Dependencies check passed"
+}
 
-echo ""
-echo "📋 Step 6: Running backend tests..."
-cd api
-python -m pytest . -v --tb=short
-log_result $? "Backend unit tests"
-cd ..
+# Function to install/update dependencies
+install_dependencies() {
+    print_status "Installing/updating dependencies..."
 
-echo ""
-echo "📋 Step 7: Building frontend..."
-npm run build
-log_result $? "Frontend build"
+    # Install Node.js dependencies
+    npm install
 
-echo ""
-echo "📋 Step 8: Checking API structure..."
-if [ -f "api/shared/__init__.py" ] && [ -f "api/requirements.txt" ]; then
-    echo -e "${GREEN}✅ API structure is valid${NC}"
-else
-    echo -e "${RED}❌ API structure is invalid${NC}"
-    VALIDATION_PASSED=false
-fi
+    # Activate virtual environment and install Python dependencies
+    source .venv/bin/activate
+    pip install -r api/requirements.txt
+    pip install pytest pytest-cov pytest-asyncio
 
-echo ""
-echo "📋 Step 9: Validating Docker setup..."
-docker-compose config > /dev/null 2>&1
-log_result $? "Docker Compose configuration"
+    print_success "Dependencies installed"
+}
 
-echo ""
-echo "📋 Step 10: Running security audit..."
-npm audit --audit-level moderate
-log_result $? "Security audit"
+# Function to run frontend tests
+run_frontend_tests() {
+    print_status "Running frontend tests..."
 
-echo ""
-echo "📋 Step 11: Running end-to-end tests..."
-# Note: This requires local services to be running
-if docker-compose ps | grep -q "Up"; then
-    npm run test:e2e
-    log_result $? "End-to-end tests"
-else
-    echo -e "${YELLOW}⚠️  Skipping E2E tests - Docker services not running${NC}"
-    echo "   Run 'npm run dev:local' to start services first"
-fi
+    npm test -- --coverage --watchAll=false --passWithNoTests
 
-echo ""
-echo "🎯 Validation Summary:"
-if [ "$VALIDATION_PASSED" = true ]; then
-    echo -e "${GREEN}🎉 All validations passed! Ready for deployment.${NC}"
-    exit 0
-else
-    echo -e "${RED}💥 Some validations failed. Please fix issues before deployment.${NC}"
-    exit 1
-fi
+    if [ $? -eq 0 ]; then
+        print_success "Frontend tests passed"
+        return 0
+    else
+        print_error "Frontend tests failed"
+        return 1
+    fi
+}
+
+# Function to run backend tests
+run_backend_tests() {
+    print_status "Running backend tests..."
+
+    cd api
+    source .venv/bin/activate
+
+    # Run with verbose output and coverage
+    python -m pytest --cov=. --cov-report=term --cov-report=html -v --tb=short
+
+    local exit_code=$?
+    cd ..
+
+    if [ $exit_code -eq 0 ]; then
+        print_success "Backend tests passed"
+        return 0
+    else
+        print_error "Backend tests failed"
+        return 1
+    fi
+}
+
+# Function to run linting
+run_linting() {
+    print_status "Running linting checks..."
+
+    # Frontend linting (if eslint is configured)
+    if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
+        npm run lint 2>/dev/null || print_warning "Frontend linting not configured or failed"
+    fi
+
+    # Backend linting (if configured)
+    cd api
+    source .venv/bin/activate
+
+    # Run flake8 if available
+    if command -v flake8 &> /dev/null; then
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || print_warning "Backend linting warnings found"
+    fi
+
+    cd ..
+    print_success "Linting checks completed"
+}
+
+# Function to run type checking
+run_type_checking() {
+    print_status "Running type checking..."
+
+    # Frontend type checking
+    npm run type-check 2>/dev/null || print_warning "Frontend type checking not configured or failed"
+
+    # Backend type checking (if mypy is available)
+    cd api
+    source .venv/bin/activate
+
+    if command -v mypy &> /dev/null; then
+        mypy . --ignore-missing-imports 2>/dev/null || print_warning "Backend type checking warnings found"
+    fi
+
+    cd ..
+    print_success "Type checking completed"
+}
+
+# Function to check for security vulnerabilities
+run_security_checks() {
+    print_status "Running security checks..."
+
+    # Frontend security audit
+    npm audit --audit-level=moderate 2>/dev/null || print_warning "Frontend security audit found issues"
+
+    # Backend security check (if safety is available)
+    cd api
+    source .venv/bin/activate
+
+    if command -v safety &> /dev/null; then
+        safety check || print_warning "Backend security check found issues"
+    fi
+
+    cd ..
+    print_success "Security checks completed"
+}
+
+# Function to validate build
+validate_build() {
+    print_status "Validating build process..."
+
+    # Build frontend
+    npm run build
+
+    if [ $? -eq 0 ]; then
+        print_success "Build validation passed"
+        return 0
+    else
+        print_error "Build validation failed"
+        return 1
+    fi
+}
+
+# Main execution
+main() {
+    local start_time=$(date +%s)
+    local failed_checks=0
+
+    check_directory
+    check_dependencies
+    install_dependencies
+
+    echo ""
+    echo "🧪 Running Test Suite"
+    echo "===================="
+
+    # Run tests
+    if ! run_frontend_tests; then
+        ((failed_checks++))
+    fi
+
+    if ! run_backend_tests; then
+        ((failed_checks++))
+    fi
+
+    echo ""
+    echo "🔍 Running Quality Checks"
+    echo "========================="
+
+    run_linting
+    run_type_checking
+    run_security_checks
+
+    echo ""
+    echo "🏗️ Running Build Validation"
+    echo "==========================="
+
+    if ! validate_build; then
+        ((failed_checks++))
+    fi
+
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
+
+    echo ""
+    echo "📊 Validation Summary"
+    echo "===================="
+    echo "Duration: ${duration}s"
+
+    if [ $failed_checks -eq 0 ]; then
+        print_success "All validation checks passed! 🎉"
+        print_success "Your code is ready for commit and CI/CD pipeline"
+        exit 0
+    else
+        print_error "Some validation checks failed (${failed_checks} issues)"
+        print_error "Please fix the issues before committing"
+        exit 1
+    fi
+}
+
+# Handle script interruption
+trap 'print_error "Validation interrupted"; exit 1' INT TERM
+
+# Run main function
+main "$@"

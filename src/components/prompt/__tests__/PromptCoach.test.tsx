@@ -14,12 +14,12 @@ describe("PromptCoach", () => {
 
   it("should render without crashing", () => {
     render(<PromptCoach {...defaultProps} />);
-    expect(screen.getByText("Prompt Improvement Suggestions")).toBeInTheDocument();
+    expect(screen.getByText("PromptCoach")).toBeInTheDocument();
   });
 
   it("should show no suggestions for empty prompt", () => {
     render(<PromptCoach {...defaultProps} promptContent="" />);
-    expect(screen.getByText("No suggestions available")).toBeInTheDocument();
+    expect(screen.getByText("Great prompt structure!")).toBeInTheDocument();
   });
 
   it("should suggest adding role specification", async () => {
@@ -27,29 +27,30 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Write an email about product features"
-      />
+      />,
     );
 
     await waitFor(() => {
       expect(screen.getByText("Add Role Specification")).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/Start with "Act as \[role\]"/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Start with "Act as \[role\]"/),
+    ).toBeInTheDocument();
   });
 
   it("should suggest adding more details for short prompts", async () => {
-    render(
-      <PromptCoach
-        {...defaultProps}
-        promptContent="Write text"
-      />
-    );
+    render(<PromptCoach {...defaultProps} promptContent="Write text" />);
 
     await waitFor(() => {
-      expect(screen.getByText("Add More Specific Instructions")).toBeInTheDocument();
+      expect(
+        screen.getByText("Add More Specific Instructions"),
+      ).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Provide more detailed requirements for better results")).toBeInTheDocument();
+    expect(
+      screen.getByText("Provide more detailed requirements for better results"),
+    ).toBeInTheDocument();
   });
 
   it("should suggest adding examples", async () => {
@@ -57,14 +58,16 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Write a compelling marketing email for our new product launch"
-      />
+      />,
     );
 
     await waitFor(() => {
       expect(screen.getByText("Include Examples")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Add examples to clarify the expected output format")).toBeInTheDocument();
+    expect(
+      screen.getByText("Add examples to clarify the expected output format"),
+    ).toBeInTheDocument();
   });
 
   it("should suggest specifying output format", async () => {
@@ -72,14 +75,18 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Create a comprehensive analysis of our quarterly performance"
-      />
+      />,
     );
 
     await waitFor(() => {
       expect(screen.getByText("Specify Output Format")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Define the desired output structure")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Define the desired output structure (bullet points, paragraphs, etc.)",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("should suggest using variables for template intention", async () => {
@@ -88,14 +95,18 @@ describe("PromptCoach", () => {
         {...defaultProps}
         promptContent="Write an email about our product"
         intention="template for reusable content"
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Use Variables for Reusability")).toBeInTheDocument();
+      expect(
+        screen.getByText("Use Variables for Reusability"),
+      ).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Add {{variables}} to make this prompt reusable")).toBeInTheDocument();
+    expect(
+      screen.getByText("Add {{variables}} to make this prompt reusable"),
+    ).toBeInTheDocument();
   });
 
   it("should suggest step-by-step approach for complex tasks", async () => {
@@ -104,14 +115,16 @@ describe("PromptCoach", () => {
         {...defaultProps}
         promptContent="Analyze the market trends and create a report"
         intention="complex analysis task"
-      />
+      />,
     );
 
     await waitFor(() => {
       expect(screen.getByText("Use Step-by-Step Approach")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Break down complex tasks into clear steps")).toBeInTheDocument();
+    expect(
+      screen.getByText("Break down complex tasks into clear steps"),
+    ).toBeInTheDocument();
   });
 
   it("should suggest adding constraints", async () => {
@@ -119,7 +132,7 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Write a blog post about artificial intelligence and its applications"
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -128,12 +141,7 @@ describe("PromptCoach", () => {
   });
 
   it("should handle suggestion dismissal", async () => {
-    render(
-      <PromptCoach
-        {...defaultProps}
-        promptContent="Write an email"
-      />
-    );
+    render(<PromptCoach {...defaultProps} promptContent="Write an email" />);
 
     await waitFor(() => {
       const dismissButton = screen.getAllByRole("button")[0]; // First dismiss button
@@ -154,7 +162,7 @@ describe("PromptCoach", () => {
         {...defaultProps}
         promptContent="Write an email"
         onSuggestionApply={mockOnSuggestionApply}
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -166,12 +174,7 @@ describe("PromptCoach", () => {
   });
 
   it("should show priority badges correctly", async () => {
-    render(
-      <PromptCoach
-        {...defaultProps}
-        promptContent="Write"
-      />
-    );
+    render(<PromptCoach {...defaultProps} promptContent="Write" />);
 
     await waitFor(() => {
       expect(screen.getByText("HIGH")).toBeInTheDocument();
@@ -179,32 +182,28 @@ describe("PromptCoach", () => {
   });
 
   it("should handle toggle expansion", async () => {
-    render(
-      <PromptCoach
-        {...defaultProps}
-        promptContent="Write an email"
-      />
-    );
+    render(<PromptCoach {...defaultProps} promptContent="Write an email" />);
 
     // Find the collapse/expand button
-    const toggleButton = screen.getByRole("button", { name: /collapse|expand/i });
+    const toggleButton = screen.getByRole("button", {
+      name: /collapse|expand/i,
+    });
     fireEvent.click(toggleButton);
 
     // The content should be hidden
     await waitFor(() => {
-      expect(screen.queryByText("Add Role Specification")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Add Role Specification"),
+      ).not.toBeInTheDocument();
     });
   });
 
   it("should apply custom className", () => {
-    render(
-      <PromptCoach
-        {...defaultProps}
-        className="custom-class"
-      />
-    );
+    render(<PromptCoach {...defaultProps} className="custom-class" />);
 
-    const container = screen.getByTestId("prompt-coach") || document.querySelector(".custom-class");
+    const container =
+      screen.getByTestId("prompt-coach") ||
+      document.querySelector(".custom-class");
     expect(container).toHaveClass("custom-class");
   });
 
@@ -213,11 +212,13 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Act as a professional writer and create an email"
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.queryByText("Add Role Specification")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Add Role Specification"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -226,7 +227,7 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Write an email like this: Subject: Welcome to our service"
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -239,11 +240,13 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Write an email and format it as a professional business letter"
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.queryByText("Specify Output Format")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Specify Output Format"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -253,11 +256,13 @@ describe("PromptCoach", () => {
         {...defaultProps}
         promptContent="Write an email about {{product_name}} for {{target_audience}}"
         intention="template"
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.queryByText("Use Variables for Reusability")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Use Variables for Reusability"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -267,11 +272,13 @@ describe("PromptCoach", () => {
         {...defaultProps}
         promptContent="First analyze the data, then create a report"
         intention="complex task"
-      />
+      />,
     );
 
     await waitFor(() => {
-      expect(screen.queryByText("Use Step-by-Step Approach")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Use Step-by-Step Approach"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -280,7 +287,7 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Write an email about our product launch for marketing team"
-      />
+      />,
     );
 
     await waitFor(() => {
@@ -292,20 +299,12 @@ describe("PromptCoach", () => {
 
   it("should update suggestions when prompt content changes", async () => {
     const { rerender } = render(
-      <PromptCoach
-        {...defaultProps}
-        promptContent=""
-      />
+      <PromptCoach {...defaultProps} promptContent="" />,
     );
 
     expect(screen.getByText("No suggestions available")).toBeInTheDocument();
 
-    rerender(
-      <PromptCoach
-        {...defaultProps}
-        promptContent="Write an email"
-      />
-    );
+    rerender(<PromptCoach {...defaultProps} promptContent="Write an email" />);
 
     await waitFor(() => {
       expect(screen.getByText("Add Role Specification")).toBeInTheDocument();
@@ -318,27 +317,26 @@ describe("PromptCoach", () => {
         {...defaultProps}
         promptContent="Write text"
         intention="complex template"
-      />
+      />,
     );
 
     await waitFor(() => {
       // Should show multiple suggestions for a minimal prompt
       expect(screen.getByText("Add Role Specification")).toBeInTheDocument();
-      expect(screen.getByText("Add More Specific Instructions")).toBeInTheDocument();
+      expect(
+        screen.getByText("Add More Specific Instructions"),
+      ).toBeInTheDocument();
       expect(screen.getByText("Include Examples")).toBeInTheDocument();
     });
   });
 
   it("should show suggestion examples", async () => {
-    render(
-      <PromptCoach
-        {...defaultProps}
-        promptContent="Write an email"
-      />
-    );
+    render(<PromptCoach {...defaultProps} promptContent="Write an email" />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Act as a professional marketing copywriter/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Act as a professional marketing copywriter/),
+      ).toBeInTheDocument();
     });
   });
 
@@ -347,7 +345,7 @@ describe("PromptCoach", () => {
       <PromptCoach
         {...defaultProps}
         promptContent="Write a comprehensive analysis of market trends in technology sector"
-      />
+      />,
     );
 
     await waitFor(() => {

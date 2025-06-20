@@ -14,7 +14,7 @@ const renderPlaybookRunner = (playbookId = "test-playbook-id") => {
   return render(
     <MemoryRouter>
       <PlaybookRunner />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 };
 
@@ -28,17 +28,21 @@ describe("PlaybookRunner", () => {
     render(
       <MemoryRouter>
         <PlaybookRunner />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
-    expect(screen.getByText("Loading playbook execution...")).toBeInTheDocument();
+    expect(
+      screen.getByText("Loading playbook execution..."),
+    ).toBeInTheDocument();
   });
 
   it("should render playbook execution with mock data", async () => {
     renderPlaybookRunner();
 
     await waitFor(() => {
-      expect(screen.getByText("Customer Support Resolution Flow")).toBeInTheDocument();
+      expect(
+        screen.getByText("Customer Support Resolution Flow"),
+      ).toBeInTheDocument();
     });
 
     expect(screen.getByText("Step 2 of 4 • 1 completed")).toBeInTheDocument();
@@ -54,7 +58,9 @@ describe("PlaybookRunner", () => {
 
     // Check for step names
     expect(screen.getByText("Generate Initial Response")).toBeInTheDocument();
-    expect(screen.getByText("Manual Review - Response Quality")).toBeInTheDocument();
+    expect(
+      screen.getByText("Manual Review - Response Quality"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Generate Follow-up Email")).toBeInTheDocument();
     expect(screen.getByText("Final Review")).toBeInTheDocument();
   });
@@ -135,9 +141,13 @@ describe("PlaybookRunner", () => {
       expect(screen.getByText("Manual Review Required")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Manual Review - Response Quality")).toBeInTheDocument();
+    expect(
+      screen.getByText("Manual Review - Response Quality"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Previous Step Output:")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Add your review comments...")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Add your review comments..."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Approve")).toBeInTheDocument();
     expect(screen.getByText("Reject")).toBeInTheDocument();
   });
@@ -146,8 +156,12 @@ describe("PlaybookRunner", () => {
     renderPlaybookRunner();
 
     await waitFor(() => {
-      const reviewTextarea = screen.getByPlaceholderText("Add your review comments...");
-      fireEvent.change(reviewTextarea, { target: { value: "Looks good to me" } });
+      const reviewTextarea = screen.getByPlaceholderText(
+        "Add your review comments...",
+      );
+      fireEvent.change(reviewTextarea, {
+        target: { value: "Looks good to me" },
+      });
     });
 
     const approveButton = screen.getByText("Approve");
@@ -155,7 +169,9 @@ describe("PlaybookRunner", () => {
 
     // After approval, review input should be cleared
     await waitFor(() => {
-      const reviewTextarea = screen.getByPlaceholderText("Add your review comments...");
+      const reviewTextarea = screen.getByPlaceholderText(
+        "Add your review comments...",
+      );
       expect(reviewTextarea).toHaveValue("");
     });
   });
@@ -164,8 +180,12 @@ describe("PlaybookRunner", () => {
     renderPlaybookRunner();
 
     await waitFor(() => {
-      const reviewTextarea = screen.getByPlaceholderText("Add your review comments...");
-      fireEvent.change(reviewTextarea, { target: { value: "Needs improvement" } });
+      const reviewTextarea = screen.getByPlaceholderText(
+        "Add your review comments...",
+      );
+      fireEvent.change(reviewTextarea, {
+        target: { value: "Needs improvement" },
+      });
     });
 
     const rejectButton = screen.getByText("Reject");
@@ -173,7 +193,9 @@ describe("PlaybookRunner", () => {
 
     // After rejection, review input should be cleared
     await waitFor(() => {
-      const reviewTextarea = screen.getByPlaceholderText("Add your review comments...");
+      const reviewTextarea = screen.getByPlaceholderText(
+        "Add your review comments...",
+      );
       expect(reviewTextarea).toHaveValue("");
     });
   });
@@ -182,8 +204,8 @@ describe("PlaybookRunner", () => {
     renderPlaybookRunner();
 
     await waitFor(() => {
-      const progressBar = document.querySelector('.bg-indigo-600');
-      expect(progressBar).toHaveStyle('width: 25%'); // 1 completed out of 4 total steps
+      const progressBar = document.querySelector(".bg-indigo-600");
+      expect(progressBar).toHaveStyle("width: 25%"); // 1 completed out of 4 total steps
     });
   });
 
@@ -206,12 +228,13 @@ describe("PlaybookRunner", () => {
   });
 
   it("should handle eye icon click for step details", async () => {
-    const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    const consoleSpy = jest.spyOn(console, "log").mockImplementation();
     renderPlaybookRunner();
 
     await waitFor(() => {
-      const eyeButton = document.querySelector('[data-testid="eye-button"]') || 
-                      document.querySelector('svg[data-testid="EyeIcon"]')?.parentElement;
+      const eyeButton =
+        document.querySelector('[data-testid="eye-button"]') ||
+        document.querySelector('svg[data-testid="EyeIcon"]')?.parentElement;
       if (eyeButton) {
         fireEvent.click(eyeButton);
         expect(consoleSpy).toHaveBeenCalledWith("Show step details:", "step1");
@@ -235,8 +258,8 @@ describe("PlaybookRunner", () => {
 
     await waitFor(() => {
       // The current step (index 1) should have ring styling
-      const steps = document.querySelectorAll('.border.rounded-lg');
-      expect(steps[1]).toHaveClass('ring-2', 'ring-indigo-500');
+      const steps = document.querySelectorAll(".border.rounded-lg");
+      expect(steps[1]).toHaveClass("ring-2", "ring-indigo-500");
     });
   });
 
@@ -244,11 +267,11 @@ describe("PlaybookRunner", () => {
     renderPlaybookRunner();
 
     await waitFor(() => {
-      const steps = document.querySelectorAll('.border.rounded-lg');
+      const steps = document.querySelectorAll(".border.rounded-lg");
       // First step (completed) should have green background
-      expect(steps[0]).toHaveClass('bg-green-50', 'border-green-200');
+      expect(steps[0]).toHaveClass("bg-green-50", "border-green-200");
       // Second step (paused) should have yellow background
-      expect(steps[1]).toHaveClass('bg-yellow-50', 'border-yellow-200');
+      expect(steps[1]).toHaveClass("bg-yellow-50", "border-yellow-200");
     });
   });
 
@@ -265,8 +288,12 @@ describe("PlaybookRunner", () => {
     renderPlaybookRunner();
 
     await waitFor(() => {
-      const reviewTextarea = screen.getByPlaceholderText("Add your review comments...");
-      fireEvent.change(reviewTextarea, { target: { value: "Test review comment" } });
+      const reviewTextarea = screen.getByPlaceholderText(
+        "Add your review comments...",
+      );
+      fireEvent.change(reviewTextarea, {
+        target: { value: "Test review comment" },
+      });
       expect(reviewTextarea).toHaveValue("Test review comment");
     });
   });

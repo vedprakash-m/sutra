@@ -38,7 +38,7 @@ def sample_integration_data():
     return {
         "apiKey": "test_key_123",
         "provider": "openai",
-        "url": "https://api.openai.com/v1"
+        "url": "https://api.openai.com/v1",
     }
 
 
@@ -55,13 +55,16 @@ class TestIntegrationsAPI:
     async def test_main_unauthorized(self, mock_request):
         """Test main endpoint without authorization."""
         mock_request.headers = {}
-        
+
         # Mock auth module
         with patch("api.integrations_api.verify_jwt_token") as mock_auth:
-            mock_auth.return_value = {"valid": False, "message": "No authorization token"}
-            
+            mock_auth.return_value = {
+                "valid": False,
+                "message": "No authorization token",
+            }
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 401
             response_data = json.loads(response.get_body())
             assert "error" in response_data
@@ -69,18 +72,19 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     async def test_main_get_request(self, mock_request, valid_user_id):
         """Test main endpoint with GET request."""
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, \
-             patch("api.integrations_api.get_user_id_from_token") as mock_get_user, \
-             patch("api.integrations_api.list_llm_integrations") as mock_list:
-            
+        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
+            "api.integrations_api.get_user_id_from_token"
+        ) as mock_get_user, patch(
+            "api.integrations_api.list_llm_integrations"
+        ) as mock_list:
             mock_auth.return_value = {"valid": True}
             mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_list.return_value = mock_response
-            
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 200
             mock_list.assert_called_once_with(valid_user_id)
 
@@ -88,19 +92,20 @@ class TestIntegrationsAPI:
     async def test_main_post_request(self, mock_request, valid_user_id):
         """Test main endpoint with POST request."""
         mock_request.method = "POST"
-        
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, \
-             patch("api.integrations_api.get_user_id_from_token") as mock_get_user, \
-             patch("api.integrations_api.create_llm_integration") as mock_create:
-            
+
+        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
+            "api.integrations_api.get_user_id_from_token"
+        ) as mock_get_user, patch(
+            "api.integrations_api.create_llm_integration"
+        ) as mock_create:
             mock_auth.return_value = {"valid": True}
             mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 201
             mock_create.return_value = mock_response
-            
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 201
             mock_create.assert_called_once_with(valid_user_id, mock_request)
 
@@ -109,19 +114,20 @@ class TestIntegrationsAPI:
         """Test main endpoint with POST request for test connection."""
         mock_request.method = "POST"
         mock_request.route_params = {"provider": "openai", "action": "test"}
-        
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, \
-             patch("api.integrations_api.get_user_id_from_token") as mock_get_user, \
-             patch("api.integrations_api.validate_llm_connection") as mock_test:
-            
+
+        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
+            "api.integrations_api.get_user_id_from_token"
+        ) as mock_get_user, patch(
+            "api.integrations_api.validate_llm_connection"
+        ) as mock_test:
             mock_auth.return_value = {"valid": True}
             mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_test.return_value = mock_response
-            
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 200
             mock_test.assert_called_once_with(valid_user_id, "openai", mock_request)
 
@@ -130,19 +136,20 @@ class TestIntegrationsAPI:
         """Test main endpoint with PUT request."""
         mock_request.method = "PUT"
         mock_request.route_params = {"provider": "openai"}
-        
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, \
-             patch("api.integrations_api.get_user_id_from_token") as mock_get_user, \
-             patch("api.integrations_api.update_llm_integration") as mock_update:
-            
+
+        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
+            "api.integrations_api.get_user_id_from_token"
+        ) as mock_get_user, patch(
+            "api.integrations_api.update_llm_integration"
+        ) as mock_update:
             mock_auth.return_value = {"valid": True}
             mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_update.return_value = mock_response
-            
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 200
             mock_update.assert_called_once_with(valid_user_id, "openai", mock_request)
 
@@ -151,19 +158,20 @@ class TestIntegrationsAPI:
         """Test main endpoint with DELETE request."""
         mock_request.method = "DELETE"
         mock_request.route_params = {"provider": "openai"}
-        
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, \
-             patch("api.integrations_api.get_user_id_from_token") as mock_get_user, \
-             patch("api.integrations_api.delete_llm_integration") as mock_delete:
-            
+
+        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
+            "api.integrations_api.get_user_id_from_token"
+        ) as mock_get_user, patch(
+            "api.integrations_api.delete_llm_integration"
+        ) as mock_delete:
             mock_auth.return_value = {"valid": True}
             mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_delete.return_value = mock_response
-            
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 200
             mock_delete.assert_called_once_with(valid_user_id, "openai")
 
@@ -171,65 +179,72 @@ class TestIntegrationsAPI:
     async def test_main_method_not_allowed(self, mock_request, valid_user_id):
         """Test main endpoint with unsupported method."""
         mock_request.method = "PATCH"
-        
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, \
-             patch("api.integrations_api.get_user_id_from_token") as mock_get_user:
+
+        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
+            "api.integrations_api.get_user_id_from_token"
+        ) as mock_get_user:
             mock_auth.return_value = {"valid": True}
             mock_get_user.return_value = valid_user_id
-            
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 405
             response_data = json.loads(response.get_body())
             assert "error" in response_data
 
     @pytest.mark.asyncio
     @patch("api.integrations_api.get_database_manager")
-    async def test_list_llm_integrations_success(self, mock_get_db_manager, valid_user_id):
+    async def test_list_llm_integrations_success(
+        self, mock_get_db_manager, valid_user_id
+    ):
         """Test successful listing of LLM integrations."""
         mock_db_manager = Mock()
         mock_get_db_manager.return_value = mock_db_manager
-        
+
         # Mock user data with integrations - note the correct structure
-        mock_user_data = [{
-            "id": valid_user_id,
-            "llmApiKeys": {
-                "openai": {
-                    "keyRef": "kv-ref-openai-12345",
-                    "url": "https://api.openai.com/v1",
-                    "enabled": True,
-                    "lastTested": "2024-01-01T00:00:00Z",
-                    "status": "active"
+        mock_user_data = [
+            {
+                "id": valid_user_id,
+                "llmApiKeys": {
+                    "openai": {
+                        "keyRef": "kv-ref-openai-12345",
+                        "url": "https://api.openai.com/v1",
+                        "enabled": True,
+                        "lastTested": "2024-01-01T00:00:00Z",
+                        "status": "active",
+                    },
+                    "anthropic": "kv-ref-anthropic-67890",
                 },
-                "anthropic": "kv-ref-anthropic-67890"
             }
-        }]
+        ]
         mock_db_manager.query_items = AsyncMock(return_value=mock_user_data)
-        
+
         response = await list_llm_integrations(valid_user_id)
-        
+
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        
+
         # Check that integrations are properly returned
         assert "integrations" in response_data
         assert "openai" in response_data["integrations"]
         assert "anthropic" in response_data["integrations"]
-        
+
         # Check that keyRef is masked
         assert response_data["integrations"]["openai"]["keyRef"] == "***masked***"
         assert response_data["integrations"]["anthropic"]["keyRef"] == "***masked***"
 
     @pytest.mark.asyncio
     @patch("api.integrations_api.get_database_manager")
-    async def test_list_llm_integrations_user_not_found(self, mock_get_db_manager, valid_user_id):
+    async def test_list_llm_integrations_user_not_found(
+        self, mock_get_db_manager, valid_user_id
+    ):
         """Test listing integrations when user not found."""
         mock_db_manager = Mock()
         mock_get_db_manager.return_value = mock_db_manager
         mock_db_manager.query_items = AsyncMock(return_value=[])
-        
+
         response = await list_llm_integrations(valid_user_id)
-        
+
         assert response.status_code == 404
         response_data = json.loads(response.get_body())
         assert "error" in response_data
@@ -238,29 +253,34 @@ class TestIntegrationsAPI:
     @patch("api.integrations_api.validate_llm_api_key")
     @patch("api.integrations_api.get_database_manager")
     @patch("api.integrations_api.validate_llm_integration_data")
-    async def test_create_llm_integration_success(self, mock_validate, mock_get_db_manager, mock_validate_api_key, mock_request, sample_integration_data, valid_user_id):
+    async def test_create_llm_integration_success(
+        self,
+        mock_validate,
+        mock_get_db_manager,
+        mock_validate_api_key,
+        mock_request,
+        sample_integration_data,
+        valid_user_id,
+    ):
         """Test successful creation of LLM integration."""
         mock_request.get_json.return_value = sample_integration_data
         mock_validate.return_value = {"valid": True, "errors": []}
         mock_validate_api_key.return_value = {"valid": True}
-        
+
         mock_db_manager = Mock()
         mock_get_db_manager.return_value = mock_db_manager
-        
+
         # Create a mock container
         mock_container = Mock()
         mock_db_manager.get_container.return_value = mock_container
-        
+
         # Mock existing user data
-        mock_user_data = [{
-            "id": valid_user_id,
-            "llmApiKeys": {}
-        }]
+        mock_user_data = [{"id": valid_user_id, "llmApiKeys": {}}]
         mock_container.query_items.return_value = mock_user_data
         mock_container.replace_item.return_value = {"id": valid_user_id}
-        
+
         response = await create_llm_integration(valid_user_id, mock_request)
-        
+
         assert response.status_code == 201
         response_data = json.loads(response.get_body())
         assert "message" in response_data
@@ -268,15 +288,20 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     @patch("api.integrations_api.get_database_manager")
     @patch("api.integrations_api.validate_llm_integration_data")
-    async def test_create_llm_integration_validation_error(self, mock_validate, mock_get_db_manager, mock_request, valid_user_id):
+    async def test_create_llm_integration_validation_error(
+        self, mock_validate, mock_get_db_manager, mock_request, valid_user_id
+    ):
         """Test creation with validation error."""
         mock_request.get_json.return_value = {"invalid": "data"}
-        
+
         # Mock validation error - return proper format
-        mock_validate.return_value = {"valid": False, "errors": ["Provider is required"]}
-        
+        mock_validate.return_value = {
+            "valid": False,
+            "errors": ["Provider is required"],
+        }
+
         response = await create_llm_integration(valid_user_id, mock_request)
-        
+
         assert response.status_code == 400
         response_data = json.loads(response.get_body())
         assert "error" in response_data
@@ -284,110 +309,124 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     @patch("api.integrations_api.validate_llm_api_key")
     @patch("api.integrations_api.get_database_manager")
-    async def test_update_llm_integration_success(self, mock_get_db_manager, mock_validate_api_key, mock_request, sample_integration_data, valid_user_id):
+    async def test_update_llm_integration_success(
+        self,
+        mock_get_db_manager,
+        mock_validate_api_key,
+        mock_request,
+        sample_integration_data,
+        valid_user_id,
+    ):
         """Test successful update of LLM integration."""
         mock_request.get_json.return_value = sample_integration_data
         mock_validate_api_key.return_value = {"valid": True}
-        
+
         mock_db_manager = Mock()
         mock_get_db_manager.return_value = mock_db_manager
-        
+
         # Create a mock container
         mock_container = Mock()
         mock_db_manager.get_container.return_value = mock_container
-        
+
         # Mock existing user data with integration
-        mock_user_data = [{
-            "id": valid_user_id,
-            "llmApiKeys": {
-                "openai": {
-                    "keyRef": "old_key_ref",
-                    "url": "https://api.openai.com/v1"
-                }
+        mock_user_data = [
+            {
+                "id": valid_user_id,
+                "llmApiKeys": {
+                    "openai": {
+                        "keyRef": "old_key_ref",
+                        "url": "https://api.openai.com/v1",
+                    }
+                },
             }
-        }]
+        ]
         mock_container.query_items.return_value = mock_user_data
         mock_container.replace_item.return_value = {"id": valid_user_id}
-        
+
         response = await update_llm_integration(valid_user_id, "openai", mock_request)
-        
+
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
         assert "message" in response_data
 
     @pytest.mark.asyncio
     @patch("api.integrations_api.get_database_manager")
-    async def test_delete_llm_integration_success(self, mock_get_db_manager, valid_user_id):
+    async def test_delete_llm_integration_success(
+        self, mock_get_db_manager, valid_user_id
+    ):
         """Test successful deletion of LLM integration."""
         mock_db_manager = Mock()
         mock_get_db_manager.return_value = mock_db_manager
-        
+
         # Create a mock container
         mock_container = Mock()
         mock_db_manager.get_container.return_value = mock_container
-        
+
         # Mock existing user data with integration
-        mock_user_data = [{
-            "id": valid_user_id,
-            "llmApiKeys": {
-                "openai": {
-                    "keyRef": "test_key_ref",
-                    "url": "https://api.openai.com/v1"
-                }
+        mock_user_data = [
+            {
+                "id": valid_user_id,
+                "llmApiKeys": {
+                    "openai": {
+                        "keyRef": "test_key_ref",
+                        "url": "https://api.openai.com/v1",
+                    }
+                },
             }
-        }]
+        ]
         mock_container.query_items.return_value = mock_user_data
         mock_container.replace_item.return_value = {"id": valid_user_id}
-        
+
         response = await delete_llm_integration(valid_user_id, "openai")
-        
+
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
         assert "message" in response_data
 
     @pytest.mark.asyncio
     @patch("api.integrations_api.get_database_manager")
-    async def test_delete_llm_integration_not_found(self, mock_get_db_manager, valid_user_id):
+    async def test_delete_llm_integration_not_found(
+        self, mock_get_db_manager, valid_user_id
+    ):
         """Test deletion of non-existent LLM integration."""
         mock_db_manager = Mock()
         mock_get_db_manager.return_value = mock_db_manager
-        
+
         # Create a mock container
         mock_container = Mock()
         mock_db_manager.get_container.return_value = mock_container
-        
+
         # Mock user data without the integration
-        mock_user_data = [{
-            "id": valid_user_id,
-            "llmApiKeys": {}
-        }]
+        mock_user_data = [{"id": valid_user_id, "llmApiKeys": {}}]
         mock_container.query_items.return_value = mock_user_data
-        
+
         response = await delete_llm_integration(valid_user_id, "nonexistent")
-        
+
         assert response.status_code == 404
         response_data = json.loads(response.get_body())
         assert "error" in response_data
 
     @pytest.mark.asyncio
     @patch("api.integrations_api.validate_llm_api_key")
-    async def test_test_llm_connection_success(self, mock_validate_api_key, mock_request, valid_user_id):
+    async def test_test_llm_connection_success(
+        self, mock_validate_api_key, mock_request, valid_user_id
+    ):
         """Test successful LLM connection test."""
         # Mock request data
         mock_request.get_json.return_value = {
             "apiKey": "test_key_123",
-            "url": "https://api.openai.com/v1"
+            "url": "https://api.openai.com/v1",
         }
-        
+
         # Mock successful validation
         mock_validate_api_key.return_value = {
             "valid": True,
             "model": "gpt-4",
-            "response_time_ms": 150
+            "response_time_ms": 150,
         }
-        
+
         response = await validate_llm_connection(valid_user_id, "openai", mock_request)
-        
+
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
         assert response_data["valid"] is True
@@ -395,22 +434,24 @@ class TestIntegrationsAPI:
 
     @pytest.mark.asyncio
     @patch("api.integrations_api.validate_llm_api_key")
-    async def test_test_llm_connection_invalid_api_key(self, mock_validate_api_key, mock_request, valid_user_id):
+    async def test_test_llm_connection_invalid_api_key(
+        self, mock_validate_api_key, mock_request, valid_user_id
+    ):
         """Test connection test with invalid API key."""
         # Mock request data
         mock_request.get_json.return_value = {
             "apiKey": "invalid_key",
-            "url": "https://api.openai.com/v1"
+            "url": "https://api.openai.com/v1",
         }
-        
+
         # Mock validation failure
         mock_validate_api_key.return_value = {
             "valid": False,
-            "error": "Invalid API key"
+            "error": "Invalid API key",
         }
-        
+
         response = await validate_llm_connection(valid_user_id, "openai", mock_request)
-        
+
         assert response.status_code == 400
         response_data = json.loads(response.get_body())
         assert response_data["valid"] is False
@@ -421,9 +462,9 @@ class TestIntegrationsAPI:
         """Test main endpoint exception handling."""
         with patch("api.integrations_api.verify_jwt_token") as mock_auth:
             mock_auth.side_effect = Exception("Test exception")
-            
+
             response = await main(mock_request)
-            
+
             assert response.status_code == 500
             response_data = json.loads(response.get_body())
             assert "error" in response_data

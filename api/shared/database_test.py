@@ -277,9 +277,11 @@ class TestDatabaseManagerProductionOperations:
 
             # Test successful creation - the partition_key bug was fixed
             result = await db_manager.create_item("test_container", item)
-            
+
             assert result == expected_result
-            mock_container.create_item.assert_called_once_with(body=item, partition_key=None)
+            mock_container.create_item.assert_called_once_with(
+                body=item, partition_key=None
+            )
 
     @pytest.mark.asyncio
     @patch("api.shared.database.CosmosClient.from_connection_string")

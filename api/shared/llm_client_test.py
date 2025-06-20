@@ -52,7 +52,7 @@ class TestLLMProvider:
         result = await provider.initialize(mock_kv_client)
 
         assert result is True
-        assert provider.api_key == "test-api-key"
+        assert provider.api_key == "test-api-key"  # pragma: allowlist secret
         assert provider.budget_limit == 100.0
         assert provider.priority == 2
         assert provider.enabled is True

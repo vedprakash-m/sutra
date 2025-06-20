@@ -67,6 +67,7 @@ export default function CollectionsPage() {
           <button
             type="button"
             onClick={handleCreateCollection}
+            data-testid="header-new-collection-button"
             className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             New Collection
@@ -189,6 +190,7 @@ export default function CollectionsPage() {
                   <button
                     type="button"
                     onClick={handleCreateCollection}
+                    data-testid="card-new-collection-button"
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
                   >
                     New Collection

@@ -328,6 +328,10 @@ describe("ImportModal", () => {
   it("should handle file upload with invalid file type", async () => {
     render(<ImportModal {...defaultProps} />);
 
+    // Switch to file upload
+    const fileUploadButton = screen.getByText("Upload File");
+    fireEvent.click(fileUploadButton);
+
     const fileInput = screen.getByTestId("file-input");
     const invalidFile = new File(["invalid content"], "test.pdf", {
       type: "application/pdf",
@@ -336,12 +340,18 @@ describe("ImportModal", () => {
     fireEvent.change(fileInput, { target: { files: [invalidFile] } });
 
     await waitFor(() => {
-      expect(screen.getByText(/Please select a valid file/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Please select a valid file/),
+      ).toBeInTheDocument();
     });
   });
 
   it("should handle large file upload", async () => {
     render(<ImportModal {...defaultProps} />);
+
+    // Switch to file upload
+    const fileUploadButton = screen.getByText("Upload File");
+    fireEvent.click(fileUploadButton);
 
     const fileInput = screen.getByTestId("file-input");
     // Create a file larger than the limit (assuming 10MB limit)
@@ -350,7 +360,7 @@ describe("ImportModal", () => {
       type: "application/json",
     });
 
-    Object.defineProperty(largeFile, 'size', { value: 11 * 1024 * 1024 });
+    Object.defineProperty(largeFile, "size", { value: 11 * 1024 * 1024 });
 
     fireEvent.change(fileInput, { target: { files: [largeFile] } });
 
@@ -361,6 +371,10 @@ describe("ImportModal", () => {
 
   it("should handle malformed JSON file", async () => {
     render(<ImportModal {...defaultProps} />);
+
+    // Switch to file upload
+    const fileUploadButton = screen.getByText("Upload File");
+    fireEvent.click(fileUploadButton);
 
     const fileInput = screen.getByTestId("file-input");
     const malformedFile = new File(["{invalid json"], "malformed.json", {
@@ -376,6 +390,10 @@ describe("ImportModal", () => {
 
   it("should handle CSV file with missing headers", async () => {
     render(<ImportModal {...defaultProps} />);
+
+    // Switch to file upload
+    const fileUploadButton = screen.getByText("Upload File");
+    fireEvent.click(fileUploadButton);
 
     const fileInput = screen.getByTestId("file-input");
     const csvContent = "value1,value2,value3\ndata1,data2,data3";
@@ -467,8 +485,10 @@ describe("ImportModal", () => {
   });
 
   it("should handle import error", async () => {
-    const mockOnImportError = jest.fn().mockRejectedValue(new Error("Import failed"));
-    
+    const mockOnImportError = jest
+      .fn()
+      .mockRejectedValue(new Error("Import failed"));
+
     render(<ImportModal {...defaultProps} onImport={mockOnImportError} />);
 
     const textArea = screen.getByPlaceholderText(
@@ -494,8 +514,10 @@ describe("ImportModal", () => {
   it("should validate collection name input", async () => {
     render(<ImportModal {...defaultProps} />);
 
-    const newCollectionNameInput = screen.getByPlaceholderText("Enter collection name");
-    
+    const newCollectionNameInput = screen.getByPlaceholderText(
+      "Enter collection name",
+    );
+
     // Test empty name
     fireEvent.change(newCollectionNameInput, { target: { value: "" } });
     fireEvent.blur(newCollectionNameInput);
@@ -503,17 +525,21 @@ describe("ImportModal", () => {
     expect(screen.getByText(/Collection name is required/)).toBeInTheDocument();
 
     // Test valid name
-    fireEvent.change(newCollectionNameInput, { target: { value: "Valid Name" } });
+    fireEvent.change(newCollectionNameInput, {
+      target: { value: "Valid Name" },
+    });
     fireEvent.blur(newCollectionNameInput);
 
-    expect(screen.queryByText(/Collection name is required/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Collection name is required/),
+    ).not.toBeInTheDocument();
   });
 
   it("should handle keyboard navigation", () => {
     render(<ImportModal {...defaultProps} />);
 
     const modal = screen.getByTestId("dialog");
-    
+
     // Test Escape key
     fireEvent.keyDown(modal, { key: "Escape" });
     expect(mockOnClose).toHaveBeenCalled();
@@ -532,7 +558,9 @@ describe("ImportModal", () => {
     const textTab = screen.getByText("Paste Text");
     fireEvent.click(textTab);
 
-    expect(screen.getByPlaceholderText(/Paste multiple prompts/)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/Paste multiple prompts/),
+    ).toBeInTheDocument();
   });
 
   it("should handle prompt content preview toggle", async () => {
@@ -542,7 +570,10 @@ describe("ImportModal", () => {
       "Paste multiple prompts separated by --- or empty lines...",
     );
     fireEvent.change(textArea, {
-      target: { value: "# Test\nThis is a long prompt content that should be expandable" },
+      target: {
+        value:
+          "# Test\nThis is a long prompt content that should be expandable",
+      },
     });
 
     const previewButton = screen.getByText("Preview Import");
@@ -559,6 +590,10 @@ describe("ImportModal", () => {
 
   it("should handle format detection for different file types", async () => {
     render(<ImportModal {...defaultProps} />);
+
+    // Switch to file upload
+    const fileUploadButton = screen.getByText("Upload File");
+    fireEvent.click(fileUploadButton);
 
     // Test JSON file
     const fileInput = screen.getByTestId("file-input");

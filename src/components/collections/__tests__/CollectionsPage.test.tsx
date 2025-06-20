@@ -159,7 +159,9 @@ describe("CollectionsPage", () => {
     renderCollectionsPage();
 
     expect(
-      screen.getByText("No collections found. Create your first collection to get started!"),
+      screen.getByText(
+        "No collections found. Create your first collection to get started!",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -197,9 +199,9 @@ describe("CollectionsPage", () => {
 
     renderCollectionsPage();
 
-    const newCollectionButton = screen.getByRole("button", {
-      name: "New Collection",
-    });
+    const newCollectionButton = screen.getByTestId(
+      "header-new-collection-button",
+    );
     fireEvent.click(newCollectionButton);
 
     await waitFor(() => {
@@ -216,7 +218,9 @@ describe("CollectionsPage", () => {
 
   it("should handle failed collection creation", async () => {
     const refetch = jest.fn();
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     mockUseApi.mockReturnValue({
       data: mockCollectionsData,
       loading: false,
@@ -228,9 +232,9 @@ describe("CollectionsPage", () => {
 
     renderCollectionsPage();
 
-    const newCollectionButton = screen.getByRole("button", {
-      name: "New Collection",
-    });
+    const newCollectionButton = screen.getByTestId(
+      "header-new-collection-button",
+    );
     fireEvent.click(newCollectionButton);
 
     await waitFor(() => {
@@ -238,7 +242,10 @@ describe("CollectionsPage", () => {
     });
 
     expect(refetch).not.toHaveBeenCalled();
-    expect(consoleErrorSpy).toHaveBeenCalledWith("Error creating collection:", creationError);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error creating collection:",
+      creationError,
+    );
     consoleErrorSpy.mockRestore();
   });
 
@@ -353,10 +360,11 @@ describe("CollectionsPage", () => {
     await waitFor(() => {
       // Look for view toggle buttons (grid/list view)
       const viewButtons = screen.getAllByRole("button");
-      const viewToggle = viewButtons.find((btn) =>
-        btn.getAttribute("aria-label")?.includes("view") ||
-        btn.textContent?.includes("Grid") ||
-        btn.textContent?.includes("List")
+      const viewToggle = viewButtons.find(
+        (btn) =>
+          btn.getAttribute("aria-label")?.includes("view") ||
+          btn.textContent?.includes("Grid") ||
+          btn.textContent?.includes("List"),
       );
 
       if (viewToggle) {
@@ -374,9 +382,10 @@ describe("CollectionsPage", () => {
     await waitFor(() => {
       // Find dropdown or menu buttons
       const menuButtons = screen.getAllByRole("button");
-      const actionButton = menuButtons.find((btn) =>
-        btn.getAttribute("aria-label")?.includes("menu") ||
-        btn.getAttribute("aria-label")?.includes("actions")
+      const actionButton = menuButtons.find(
+        (btn) =>
+          btn.getAttribute("aria-label")?.includes("menu") ||
+          btn.getAttribute("aria-label")?.includes("actions"),
       );
 
       if (actionButton) {
@@ -434,9 +443,10 @@ describe("CollectionsPage", () => {
 
     await waitFor(() => {
       const refreshButtons = screen.getAllByRole("button");
-      const refreshButton = refreshButtons.find((btn) =>
-        btn.getAttribute("aria-label")?.includes("refresh") ||
-        btn.textContent?.includes("Refresh")
+      const refreshButton = refreshButtons.find(
+        (btn) =>
+          btn.getAttribute("aria-label")?.includes("refresh") ||
+          btn.textContent?.includes("Refresh"),
       );
 
       if (refreshButton) {
@@ -462,7 +472,9 @@ describe("CollectionsPage", () => {
     renderCollectionsPage();
 
     await waitFor(() => {
-      const collectionCard = screen.getByText("Test Collection 1").closest("div");
+      const collectionCard = screen
+        .getByText("Test Collection 1")
+        .closest("div");
       if (collectionCard) {
         fireEvent.mouseEnter(collectionCard);
         fireEvent.mouseLeave(collectionCard);
@@ -478,9 +490,10 @@ describe("CollectionsPage", () => {
     await waitFor(() => {
       // Look for filter buttons
       const filterButtons = screen.getAllByRole("button");
-      const typeFilter = filterButtons.find((btn) =>
-        btn.textContent?.includes("Filter") ||
-        btn.textContent?.includes("Type")
+      const typeFilter = filterButtons.find(
+        (btn) =>
+          btn.textContent?.includes("Filter") ||
+          btn.textContent?.includes("Type"),
       );
 
       if (typeFilter) {

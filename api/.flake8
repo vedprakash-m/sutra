@@ -7,13 +7,13 @@ max-complexity = 10
 select = E9,F63,F7,F82
 
 # Ignore specific patterns for Azure Functions
-ignore = 
+ignore =
     F401,
     E203,
     W503
 
 # Exclude directories
-exclude = 
+exclude =
     .git,
     __pycache__,
     .venv,

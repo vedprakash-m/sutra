@@ -566,8 +566,8 @@ validate_docker_builds() {
 
                 # Check if health check uses curl
                 if echo "$healthcheck_command" | grep -q "curl"; then
-                    # Verify curl is installed in Dockerfile
-                    if ! grep -q "curl" api/Dockerfile.dev; then
+                    # Verify curl is installed in Dockerfile (check apt-get install section)
+                    if ! grep -A 10 "apt-get install" api/Dockerfile.dev | grep -q "curl"; then
                         print_error "Docker health check uses 'curl' but curl is not installed in Dockerfile.dev"
                         print_error "Add 'curl' to the apt-get install command in api/Dockerfile.dev"
                         print_error "This will cause health check failures and container dependency issues"

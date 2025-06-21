@@ -61,7 +61,7 @@ EOF
     echo ""
     print_status "Testing validation with missing curl dependency..."
 
-    # Run the health check validation
+    # Test the health check validation logic directly
     if [ -f "docker-compose.yml" ]; then
         # Look for healthcheck in the functions-api service section
         if sed -n '/^  functions-api:/,/^  [a-z]/p' docker-compose.yml | grep -q "healthcheck:"; then
@@ -70,12 +70,13 @@ EOF
 
             # Check if health check uses curl
             if echo "$healthcheck_command" | grep -q "curl"; then
-                # Verify curl is installed in Dockerfile
-                if ! grep -q "curl" api/Dockerfile.dev; then
-                    print_success "Validation correctly detected missing curl dependency!"
-                    print_error "Docker health check uses 'curl' but curl is not installed in Dockerfile.dev"
-                    print_error "Add 'curl' to the apt-get install command in api/Dockerfile.dev"
-                    print_error "This will cause health check failures and container dependency issues"
+                # Verify curl is installed in Dockerfile (check apt-get install section)
+                if ! grep -A 10 "apt-get install" api/Dockerfile.dev | grep -q "curl"; then
+                    print_success "✅ Validation correctly detected missing curl dependency!"
+                    print_warning "Expected error messages (showing validation is working):"
+                    print_error "  → Docker health check uses 'curl' but curl is not installed in Dockerfile.dev"
+                    print_error "  → Add 'curl' to the apt-get install command in api/Dockerfile.dev"
+                    print_error "  → This will cause health check failures and container dependency issues"
 
                     # Restore the backup
                     mv api/Dockerfile.dev.backup api/Dockerfile.dev
@@ -85,7 +86,7 @@ EOF
         fi
     fi
 
-    print_error "Validation should have failed but didn't!"
+    print_error "❌ Validation should have failed but didn't!"
     # Restore the backup
     mv api/Dockerfile.dev.backup api/Dockerfile.dev
     return 1
@@ -97,14 +98,24 @@ main() {
     echo "=================================================="
 
     if test_health_check_validation; then
-        print_success "Health check curl dependency validation works correctly!"
+        print_success "✅ Health check curl dependency validation works correctly!"
         echo ""
         echo "Summary:"
         echo "- ✅ Validation detects missing curl dependency for health checks"
         echo "- ✅ Provides clear error message with fix guidance"
         echo "- ✅ Prevents health check failures in CI/CD"
+        echo "- ✅ Now testing that current setup has curl properly installed..."
+
+        # Test that current setup passes validation
+        print_status "Verifying current setup passes validation..."
+        if grep -A 10 "apt-get install" api/Dockerfile.dev | grep -q "curl"; then
+            print_success "✅ Current Dockerfile.dev correctly includes curl"
+        else
+            print_error "❌ Current Dockerfile.dev missing curl"
+            exit 1
+        fi
     else
-        print_error "Health check curl dependency validation failed"
+        print_error "❌ Health check curl dependency validation failed"
         exit 1
     fi
 }

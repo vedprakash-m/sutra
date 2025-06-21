@@ -173,14 +173,13 @@ run_security_checks() {
     # Install safety if not available
     if ! command -v safety &> /dev/null; then
         print_status "Installing safety scanner..."
-        pip install safety
+        # Use older Safety CLI version that doesn't require authentication
+        pip install "safety<3.0.0"
     fi
 
-    # Test with screen output format (no interactive prompt)
-    print_status "Running safety scan in screen mode..."
-    # Use development stage to avoid authentication prompt in CI/CD
-    # This matches the safety scan behavior in a CI/CD environment
-    if SAFETY_STAGE=development safety scan --output screen --stage development --disable-optional-telemetry; then
+    # Test with the older safety check command that doesn't require auth
+    print_status "Running safety check..."
+    if safety check --file requirements.txt; then
         print_success "Backend security scan passed"
     else
         print_error "Backend security scan failed - this will cause CI/CD failure"
@@ -188,7 +187,35 @@ run_security_checks() {
         return 1
     fi
 
+    # Simulate fresh CI/CD environment by testing without authentication
+    print_status "Testing security scan in CI/CD simulation mode..."
+
+    # Temporarily move authentication if it exists
+    local auth_backup=""
+    if [ -d "$HOME/.safety" ]; then
+        auth_backup="$HOME/.safety.backup.$$"
+        mv "$HOME/.safety" "$auth_backup" 2>/dev/null || true
+    fi
+
+    # Test safety check without authentication (simulates CI/CD)
+    local exit_code=0
+    if ! safety check --file requirements.txt >/dev/null 2>&1; then
+        print_error "Security scan would fail in CI/CD (no authentication)"
+        exit_code=1
+    else
+        print_success "Security scan works without authentication"
+    fi
+
+    # Restore authentication if it was backed up
+    if [ -n "$auth_backup" ] && [ -d "$auth_backup" ]; then
+        mv "$auth_backup" "$HOME/.safety" 2>/dev/null || true
+    fi
+
     cd ..
+
+    if [ $exit_code -ne 0 ]; then
+        return 1
+    fi
     print_success "Security checks completed"
 }
 

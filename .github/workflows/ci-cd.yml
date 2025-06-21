@@ -209,9 +209,9 @@ jobs:
       - name: Python security check
         run: |
           cd api
-          pip install safety
-          # Use development stage to avoid authentication prompts in CI/CD
-          SAFETY_STAGE=development safety scan --output screen --stage development --disable-optional-telemetry
+          # Use older Safety CLI version that doesn't require authentication
+          pip install "safety<3.0.0"
+          safety check --file requirements.txt
 
   # Integration tests (E2E) - Only after all unit tests pass
   e2e-tests:

@@ -176,11 +176,14 @@ run_security_checks() {
         pip install safety
     fi
 
-    # Use the new scan command instead of deprecated check
-    if safety scan --json > /dev/null 2>&1; then
+    # Test with screen output format (no interactive prompt)
+    print_status "Running safety scan in screen mode..."
+    if safety scan --output screen; then
         print_success "Backend security scan passed"
     else
-        print_warning "Backend security scan found vulnerabilities"
+        print_error "Backend security scan failed - this will cause CI/CD failure"
+        cd ..
+        return 1
     fi
 
     cd ..
@@ -209,14 +212,19 @@ run_infrastructure_validation() {
 
     # Check if infrastructure validation script exists
     if [ -f "scripts/validate-infrastructure.sh" ]; then
-        # Run in dry-run mode (no Azure CLI required)
-        bash scripts/validate-infrastructure.sh --dry-run
+        # Test script syntax first
+        if ! bash -n scripts/validate-infrastructure.sh; then
+            print_error "Infrastructure validation script has syntax errors"
+            return 1
+        fi
 
-        if [ $? -eq 0 ]; then
+        # Run in dry-run mode (no Azure CLI required)
+        print_status "Running infrastructure validation in dry-run mode..."
+        if bash scripts/validate-infrastructure.sh --dry-run; then
             print_success "Infrastructure validation passed"
             return 0
         else
-            print_warning "Infrastructure validation found issues"
+            print_error "Infrastructure validation failed - this will fail in CI/CD"
             return 1
         fi
     else

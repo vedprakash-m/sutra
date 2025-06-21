@@ -210,7 +210,8 @@ jobs:
         run: |
           cd api
           pip install safety
-          safety scan --json
+          # Use non-interactive mode for CI/CD with proper output format
+          safety scan --output screen
 
   # Integration tests (E2E) - Only after all unit tests pass
   e2e-tests:

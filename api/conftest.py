@@ -156,13 +156,13 @@ def setup_test_environment():
     """Setup test environment variables and configurations."""
     import os
 
-    # Set test environment variables
+    # Set test environment variables (only if not already set)
     test_env_vars = {
         "FUNCTIONS_WORKER_RUNTIME": "python",
         "KEY_VAULT_URI": "https://test-keyvault.vault.azure.net/",
         "COSMOS_DB_CONNECTION_STRING": "test-cosmos-connection",
-        "SUTRA_ENVIRONMENT": "test",
-        "SUTRA_MAX_REQUESTS_PER_MINUTE": "1000",
+        # Don't set SUTRA_ENVIRONMENT and SUTRA_MAX_REQUESTS_PER_MINUTE here
+        # to allow individual tests to control these values
     }
 
     # Store original values to restore later

@@ -160,9 +160,31 @@ run_test "Frontend unit tests" "npm run test -- --watchAll=false --coverage=fals
 
 cd api
 
-# Backend unit tests (significant improvement: 2 failing out of 282 tests)
-log_info "Running backend unit tests (2/282 tests fail due to environment variables)"
-run_test "Backend unit tests" "python3 -m pytest -v --tb=short"
+# Backend unit tests - Match CI/CD environment exactly
+log_info "Running backend unit tests (matching CI/CD environment)"
+
+# Set environment variables to match CI exactly (clean environment)
+export FUNCTIONS_WORKER_RUNTIME="python"
+export KEY_VAULT_URI="https://test-keyvault.vault.azure.net/"
+export COSMOS_DB_CONNECTION_STRING="test-cosmos-connection"
+unset SUTRA_ENVIRONMENT
+unset SUTRA_MAX_REQUESTS_PER_MINUTE
+
+echo "Running tests with clean environment (matching CI)..."
+if python3 -m pytest -v --tb=short --exitfirst > /tmp/backend_tests.log 2>&1; then
+    log_success "Backend unit tests passed (matching CI environment)"
+else
+    log_error "Backend unit tests failed - EXACTLY as CI would fail!"
+    echo ""
+    echo "This matches CI/CD failure pattern - tests failing due to environment config:"
+    echo ""
+    # Show the actual failures
+    grep -A 3 -B 1 "FAILED\|assert.*==" /tmp/backend_tests.log | head -20
+    echo ""
+    echo "🔧 These failures match the CI pattern and need to be fixed"
+    echo ""
+    return 1
+fi
 
 cd ..
 

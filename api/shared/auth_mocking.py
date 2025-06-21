@@ -256,7 +256,10 @@ class StandardAuthMocks:
     def patch_auth_failure(module_name: str):
         """Standard authentication failure patching for a specific module."""
         return [
-            patch(f"{module_name}.verify_jwt_token", side_effect=Exception("Auth failed")),
+            patch(f"{module_name}.verify_jwt_token", return_value={
+                "valid": False,
+                "message": "Authentication failed"
+            }),
             patch(f"{module_name}.get_user_id_from_token", return_value=None),
         ]
 

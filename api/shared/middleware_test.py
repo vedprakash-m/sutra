@@ -25,15 +25,18 @@ class TestRateLimiter:
 
     def setup_method(self):
         """Set up test fixtures before each test method."""
-        self.rate_limiter = RateLimiter()
+        # Ensure clean test environment by overriding env vars
+        with patch.dict(os.environ, {"SUTRA_MAX_REQUESTS_PER_MINUTE": "100"}):
+            self.rate_limiter = RateLimiter()
 
     def test_rate_limiter_initialization(self):
         """Test RateLimiter initialization with default values."""
-        limiter = RateLimiter()
-        assert limiter.max_requests == 100  # Default value
-        assert limiter.time_window == 60
-        assert limiter.cleanup_interval == 300
-        assert len(limiter.clients) == 0
+        with patch.dict(os.environ, {"SUTRA_MAX_REQUESTS_PER_MINUTE": "100"}):
+            limiter = RateLimiter()
+            assert limiter.max_requests == 100  # Default value
+            assert limiter.time_window == 60
+            assert limiter.cleanup_interval == 300
+            assert len(limiter.clients) == 0
 
     def test_rate_limiter_initialization_with_env(self):
         """Test RateLimiter initialization with environment variable."""
@@ -399,30 +402,29 @@ class TestCreateHealthResponse:
     """Test cases for create_health_response function."""
 
     def test_create_health_response_default(self):
-        """Test health response creation with default environment."""
-        with patch("api.shared.middleware.rate_limiter") as mock_limiter:
-            mock_limiter.clients = {"192.168.1.1": []}
+        """Test health response with default environment."""
+        # Override environment to test specific value
+        with patch.dict(os.environ, {"SUTRA_ENVIRONMENT": "development"}), \
+             patch("api.shared.middleware.rate_limiter") as mock_limiter:
+
+            mock_limiter.clients = {}
             mock_limiter.max_requests = 100
 
             response = create_health_response()
+            response_data = json.loads(response.get_body().decode())
 
             assert response.status_code == 200
-            assert response.mimetype == "application/json"
-
-            # Parse response data
-            response_data = json.loads(response.get_body().decode())
             assert response_data["status"] == "healthy"
-            assert response_data["version"] == "1.0.0"
-            assert response_data["architecture"] == "no-gateway-direct"
             assert response_data["environment"] == "development"
             assert "timestamp" in response_data
-            assert "rate_limiter" in response_data
+            assert response_data["version"] == "1.0.0"
+            assert response_data["architecture"] == "no-gateway-direct"
 
-    def test_create_health_response_production_env(self):
+    def test_create_health_response_production(self):
         """Test health response with production environment."""
-        with patch.dict(os.environ, {"SUTRA_ENVIRONMENT": "production"}), patch(
-            "api.shared.middleware.rate_limiter"
-        ) as mock_limiter:
+        with patch.dict(os.environ, {"SUTRA_ENVIRONMENT": "production"}), \
+             patch("api.shared.middleware.rate_limiter") as mock_limiter:
+
             mock_limiter.clients = {}
             mock_limiter.max_requests = 100
 

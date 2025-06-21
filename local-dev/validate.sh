@@ -56,6 +56,39 @@ check_dependencies() {
         exit 1
     fi
 
+    # Check Docker (critical for E2E tests)
+    if ! command -v docker &> /dev/null; then
+        print_error "Docker is not installed (required for E2E tests)"
+        print_error "Please install Docker Desktop"
+        exit 1
+    fi
+
+    # Check if Docker daemon is running
+    if ! docker info &> /dev/null; then
+        print_error "Docker daemon is not running"
+        print_error "Please start Docker Desktop"
+        exit 1
+    fi
+
+    # Check for Docker Compose (critical gap that CI/CD missed)
+    local docker_compose_available=false
+    if command -v docker-compose &> /dev/null; then
+        print_success "docker-compose (legacy) available: $(docker-compose --version)"
+        docker_compose_available=true
+    fi
+
+    if docker compose version &> /dev/null 2>&1; then
+        print_success "docker compose (modern) available: $(docker compose version)"
+        docker_compose_available=true
+    fi
+
+    if [ "$docker_compose_available" = false ]; then
+        print_error "Neither 'docker-compose' nor 'docker compose' is available"
+        print_error "This will cause CI/CD E2E tests to fail"
+        print_error "Please install Docker Compose"
+        exit 1
+    fi
+
     # Check if virtual environment exists
     if [ ! -d ".venv" ]; then
         print_warning "Python virtual environment not found. Creating one..."
@@ -262,6 +295,79 @@ run_infrastructure_validation() {
     fi
 }
 
+# Function to validate E2E setup (simulate CI/CD environment)
+validate_e2e_setup() {
+    print_status "Validating E2E testing setup (CI/CD simulation)..."
+
+    # Test that package.json scripts exist and are valid
+    if ! grep -q '"e2e:setup"' package.json; then
+        print_error "e2e:setup script not found in package.json"
+        return 1
+    fi
+
+    if ! grep -q '"e2e:cleanup"' package.json; then
+        print_error "e2e:cleanup script not found in package.json"
+        return 1
+    fi
+
+    # Check that E2E scripts exist and are executable
+    if [ ! -f "scripts/e2e-setup.sh" ] || [ ! -x "scripts/e2e-setup.sh" ]; then
+        print_error "scripts/e2e-setup.sh not found or not executable"
+        return 1
+    fi
+
+    if [ ! -f "scripts/e2e-cleanup.sh" ] || [ ! -x "scripts/e2e-cleanup.sh" ]; then
+        print_error "scripts/e2e-cleanup.sh not found or not executable"
+        return 1
+    fi
+
+    # Validate docker-compose.yml exists and is valid
+    if [ ! -f "docker-compose.yml" ]; then
+        print_error "docker-compose.yml not found"
+        return 1
+    fi
+
+    # Test docker-compose configuration validity using modern command first
+    local config_valid=false
+    if docker compose version &> /dev/null 2>&1; then
+        if docker compose config >/dev/null 2>&1; then
+            config_valid=true
+            print_success "docker-compose.yml is valid (verified with modern docker compose)"
+        fi
+    fi
+
+    # Fallback to legacy command if modern failed
+    if [ "$config_valid" = false ] && command -v docker-compose &> /dev/null; then
+        if docker-compose config >/dev/null 2>&1; then
+            config_valid=true
+            print_success "docker-compose.yml is valid (verified with legacy docker-compose)"
+        fi
+    fi
+
+    if [ "$config_valid" = false ]; then
+        print_error "docker-compose.yml configuration is invalid"
+        return 1
+    fi
+
+    # Test that our E2E scripts can handle the current environment
+    print_status "Testing E2E script compatibility..."
+
+    # Test e2e-setup.sh dry run (validate syntax)
+    if ! bash -n scripts/e2e-setup.sh; then
+        print_error "scripts/e2e-setup.sh has syntax errors"
+        return 1
+    fi
+
+    # Test e2e-cleanup.sh dry run (validate syntax)
+    if ! bash -n scripts/e2e-cleanup.sh; then
+        print_error "scripts/e2e-cleanup.sh has syntax errors"
+        return 1
+    fi
+
+    print_success "E2E setup validation passed"
+    return 0
+}
+
 # Function to validate GitHub Actions for deprecated actions
 validate_github_actions() {
     print_status "Validating GitHub Actions for deprecated actions..."
@@ -334,6 +440,10 @@ main() {
     echo "⚙️ Running CI/CD Validation"
     echo "==========================="
 
+    if ! validate_e2e_setup; then
+        ((failed_checks++))
+    fi
+
     if ! validate_github_actions; then
         ((failed_checks++))
     fi
@@ -359,6 +469,14 @@ main() {
     echo "============================"
 
     if ! validate_github_actions; then
+        ((failed_checks++))
+    fi
+
+    echo ""
+    echo "✅ Validating E2E Setup"
+    echo "======================"
+
+    if ! validate_e2e_setup; then
         ((failed_checks++))
     fi
 

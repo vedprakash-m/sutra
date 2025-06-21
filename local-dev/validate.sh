@@ -507,6 +507,56 @@ validate_docker_builds() {
         fi
     fi
 
+    # Check Azure Functions Dockerfile issues
+    print_status "Validating Azure Functions container setup..."
+
+    if [ -f "api/Dockerfile.dev" ]; then
+        # Check for incorrect manual CMD usage in Azure Functions container
+        if grep -q 'CMD.*\["func"' api/Dockerfile.dev; then
+            print_error "Azure Functions Dockerfile.dev uses manual 'func' CMD"
+            print_error "This will cause 'func: executable file not found' errors"
+            print_error "Azure Functions base images have built-in startup commands"
+            print_error "Remove the CMD line and let the base image handle startup"
+            return 1
+        fi
+
+        # Check for missing AzureWebJobsScriptRoot environment variable
+        if ! grep -q "AzureWebJobsScriptRoot" api/Dockerfile.dev; then
+            print_error "Azure Functions Dockerfile.dev missing AzureWebJobsScriptRoot environment variable"
+            print_error "This is required for proper Azure Functions operation"
+            return 1
+        fi
+
+        # Check if files are copied to the correct location
+        if ! grep -q "COPY.*/home/site/wwwroot" api/Dockerfile.dev; then
+            print_error "Azure Functions Dockerfile.dev not copying files to /home/site/wwwroot"
+            print_error "This is the required location for Azure Functions"
+            return 1
+        fi
+
+        # Check for host.json presence (required for Azure Functions)
+        if [ ! -f "api/host.json" ]; then
+            print_error "api/host.json not found but required for Azure Functions"
+            return 1
+        fi
+
+        # Validate host.json format
+        if ! python3 -m json.tool api/host.json >/dev/null 2>&1; then
+            print_error "api/host.json is not valid JSON"
+            return 1
+        fi
+
+        # Check for at least one function definition
+        local function_count=$(find api -name "function.json" | wc -l)
+        if [ "$function_count" -eq 0 ]; then
+            print_error "No function.json files found in api/ directory"
+            print_error "Azure Functions requires at least one function definition"
+            return 1
+        fi
+
+        print_success "Azure Functions container validation passed (found $function_count functions)"
+    fi
+
     print_success "Docker build validation passed"
     return 0
 }

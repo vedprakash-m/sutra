@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Enhanced Local Validation - Match GitHub CI/CD exactly
-# This script provides comprehensive pre-commit validation
+# This script provides comprehensive pre-commit validation including E2E
 # MUST be run before every commit to prevent CI/CD failures
 
 set -e
@@ -19,6 +19,14 @@ START_TIME=$(date +%s)
 echo -e "${BLUE}🚀 Sutra Enhanced Local Validation${NC}"
 echo -e "${BLUE}====================================${NC}"
 echo ""
+
+# Parse command line arguments
+SKIP_E2E=false
+if [[ "$1" == "--skip-e2e" ]]; then
+    SKIP_E2E=true
+    echo -e "${YELLOW}⚠️  Skipping E2E validation (--skip-e2e flag used)${NC}"
+    echo ""
+fi
 
 # Helper functions
 log_success() { echo -e "${GREEN}✅ $1${NC}"; }

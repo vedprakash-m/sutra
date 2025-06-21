@@ -6,6 +6,13 @@ from datetime import datetime
 
 import azure.functions as func
 from . import main as collections_main
+from api.shared.auth_mocking import (
+    MockAuthContext,
+    AuthMockingHelper,
+    StandardAuthMocks,
+    mock_auth_success,
+    mock_auth_failure
+)
 
 
 class TestCollectionsAPI:
@@ -13,20 +20,23 @@ class TestCollectionsAPI:
 
     @pytest.fixture
     def mock_auth_success(self):
-        """Mock successful authentication."""
-        with patch("api.collections_api.verify_jwt_token") as mock_verify, patch(
-            "api.collections_api.get_user_id_from_token"
-        ) as mock_user_id:
-            mock_verify.return_value = {"valid": True}
-            mock_user_id.return_value = "test-user-123"
-            yield
+        """Standardized authentication success fixture."""
+        patches = StandardAuthMocks.patch_auth_success("api.collections_api")
+        for p in patches:
+            p.start()
+        yield
+        for p in patches:
+            p.stop()
 
     @pytest.fixture
     def mock_auth_failure(self):
-        """Mock failed authentication."""
-        with patch("api.collections_api.verify_jwt_token") as mock_verify:
-            mock_verify.return_value = {"valid": False, "message": "Invalid token"}
-            yield
+        """Standardized authentication failure fixture."""
+        patches = StandardAuthMocks.patch_auth_failure("api.collections_api")
+        for p in patches:
+            p.start()
+        yield
+        for p in patches:
+            p.stop()
 
     @pytest.fixture
     def mock_cosmos_client(self):

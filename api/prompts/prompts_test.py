@@ -408,9 +408,23 @@ class TestPromptsAPI:
     @pytest.mark.asyncio
     @patch.dict(os.environ, {"KEY_VAULT_URI": "https://mock-vault.vault.azure.net/"})
     @patch("api.shared.auth.AuthManager.kv_client", new_callable=PropertyMock)
-    async def test_handle_update_prompt_missing_id(self, mock_kv_client, mock_request):
+    @patch("api.shared.auth.AuthManager.get_auth_config")
+    @patch("api.shared.auth.AuthManager.validate_token")
+    @patch("api.shared.auth.AuthManager.get_user_from_token")
+    @patch("api.shared.auth.AuthManager.check_permission")
+    @patch("api.prompts.get_database_manager")
+    async def test_handle_update_prompt_missing_id(
+        self, mock_get_db, mock_check_permission, mock_get_user_from_token, mock_validate_token, mock_get_config, mock_kv_client, mock_request, mock_user, mock_db_manager
+    ):
         """Test prompt update without prompt ID."""
+        # Setup comprehensive authentication mocks
         mock_kv_client.return_value = Mock()
+        mock_get_config.return_value = {"tenant_id": "test", "client_id": "test", "policy": "test"}
+        mock_validate_token.return_value = {"sub": "test", "email": "test@example.com"}
+        mock_get_user_from_token.return_value = mock_user
+        mock_check_permission.return_value = True
+        mock_get_db.return_value = mock_db_manager
+
         mock_request.route_params = {}
 
         response = await handle_update_prompt(mock_request)
@@ -422,9 +436,23 @@ class TestPromptsAPI:
     @pytest.mark.asyncio
     @patch.dict(os.environ, {"KEY_VAULT_URI": "https://mock-vault.vault.azure.net/"})
     @patch("api.shared.auth.AuthManager.kv_client", new_callable=PropertyMock)
-    async def test_handle_delete_prompt_missing_id(self, mock_kv_client, mock_request):
+    @patch("api.shared.auth.AuthManager.get_auth_config")
+    @patch("api.shared.auth.AuthManager.validate_token")
+    @patch("api.shared.auth.AuthManager.get_user_from_token")
+    @patch("api.shared.auth.AuthManager.check_permission")
+    @patch("api.prompts.get_database_manager")
+    async def test_handle_delete_prompt_missing_id(
+        self, mock_get_db, mock_check_permission, mock_get_user_from_token, mock_validate_token, mock_get_config, mock_kv_client, mock_request, mock_user, mock_db_manager
+    ):
         """Test prompt deletion without prompt ID."""
+        # Setup comprehensive authentication mocks
         mock_kv_client.return_value = Mock()
+        mock_get_config.return_value = {"tenant_id": "test", "client_id": "test", "policy": "test"}
+        mock_validate_token.return_value = {"sub": "test", "email": "test@example.com"}
+        mock_get_user_from_token.return_value = mock_user
+        mock_check_permission.return_value = True
+        mock_get_db.return_value = mock_db_manager
+
         mock_request.route_params = {}
 
         response = await handle_delete_prompt(mock_request)

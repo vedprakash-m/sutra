@@ -133,20 +133,86 @@ run_frontend_tests() {
 run_backend_tests() {
     print_status "Running backend tests..."
 
-    cd api
-    source .venv/bin/activate
+    cd api || { print_error "Cannot enter api directory"; return 1; }
 
-    # Run with verbose output and coverage
-    python -m pytest --cov=. --cov-report=term --cov-report=html -v --tb=short
+    # Check Python version compatibility
+    python3 --version | grep -E "Python 3\.(8|9|10|11|12)" >/dev/null
+    if [ $? -ne 0 ]; then
+        print_error "Python 3.8+ required for backend tests"
+        cd ..
+        return 1
+    fi
+
+    # Install test dependencies if needed
+    if [ ! -d "venv" ] && [ ! -d ".venv" ]; then
+        print_warning "Virtual environment not found, tests may fail"
+    fi
+
+    # Run pytest with coverage
+    print_status "Running pytest with coverage..."
+    python3 -m pytest --cov=. --cov-report=term-missing --cov-report=xml -v --tb=short
 
     local exit_code=$?
-    cd ..
+    if [ $exit_code -ne 0 ]; then
+        print_error "Backend tests failed (exit code: $exit_code)"
 
-    if [ $exit_code -eq 0 ]; then
-        print_success "Backend tests passed"
+        # Additional debugging for authentication mocking issues
+        print_status "Checking for authentication mocking issues..."
+        if ! validate_auth_mocking; then
+            print_error "Authentication mocking validation failed"
+        fi
+
+        cd ..
+        return 1
+    fi
+
+    cd ..
+    print_success "Backend tests passed"
+    return 0
+}
+
+# Validate authentication mocking in tests to prevent CI/CD failures
+validate_auth_mocking() {
+    print_status "Validating authentication mocking patterns..."
+
+    # Check for tests that might expect early validation but get auth errors
+    local auth_mock_issues=0
+
+    # Look for tests expecting 400 responses but with incomplete auth mocking
+    while IFS= read -r file; do
+        if grep -l "assert.*status_code.*400" "$file" >/dev/null 2>&1; then
+            # Check if this test has comprehensive auth mocking
+            if ! grep -l "AuthManager.get_auth_config\|AuthManager.validate_token\|AuthManager.get_user_from_token" "$file" >/dev/null 2>&1; then
+                print_warning "Test file $file expects 400 status but may have incomplete auth mocking"
+                print_warning "This could cause CI/CD failures when auth runs before validation"
+                ((auth_mock_issues++))
+            fi
+        fi
+    done < <(find . -name "*test*.py" -type f)
+
+    # Check for missing auth decorator bypass in critical tests
+    if grep -r "require_auth.*lambda.*func.*func" . >/dev/null 2>&1; then
+        print_warning "Found old auth bypassing pattern that may not work in CI/CD"
+        print_warning "Consider using comprehensive @patch decorators instead"
+        ((auth_mock_issues++))
+    fi
+
+    # Check for tests missing Key Vault mocking
+    while IFS= read -r file; do
+        if grep -l "AuthManager" "$file" >/dev/null 2>&1; then
+            if ! grep -l "kv_client.*PropertyMock\|KEY_VAULT_URI.*mock" "$file" >/dev/null 2>&1; then
+                print_warning "Test file $file uses AuthManager but may be missing Key Vault mocking"
+                ((auth_mock_issues++))
+            fi
+        fi
+    done < <(find . -name "*test*.py" -type f)
+
+    if [ $auth_mock_issues -eq 0 ]; then
+        print_success "Authentication mocking patterns validated"
         return 0
     else
-        print_error "Backend tests failed"
+        print_error "Found $auth_mock_issues potential authentication mocking issues"
+        print_error "These could cause tests to pass locally but fail in CI/CD"
         return 1
     fi
 }

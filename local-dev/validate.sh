@@ -178,7 +178,9 @@ run_security_checks() {
 
     # Test with screen output format (no interactive prompt)
     print_status "Running safety scan in screen mode..."
-    if safety scan --output screen; then
+    # Use development stage to avoid authentication prompt in CI/CD
+    # This matches the safety scan behavior in a CI/CD environment
+    if SAFETY_STAGE=development safety scan --output screen --stage development --disable-optional-telemetry; then
         print_success "Backend security scan passed"
     else
         print_error "Backend security scan failed - this will cause CI/CD failure"
@@ -233,6 +235,44 @@ run_infrastructure_validation() {
     fi
 }
 
+# Function to validate GitHub Actions for deprecated actions
+validate_github_actions() {
+    print_status "Validating GitHub Actions for deprecated actions..."
+
+    # Check for deprecated actions
+    local deprecated_found=false
+
+    # Check for deprecated upload-artifact v3
+    if grep -r "actions/upload-artifact@v3" .github/workflows/ >/dev/null 2>&1; then
+        print_error "Found deprecated actions/upload-artifact@v3 - must use v4"
+        deprecated_found=true
+    fi
+
+    # Check for deprecated download-artifact v3
+    if grep -r "actions/download-artifact@v3" .github/workflows/ >/dev/null 2>&1; then
+        print_error "Found deprecated actions/download-artifact@v3 - must use v4"
+        deprecated_found=true
+    fi
+
+    # Check for deprecated setup-node v3
+    if grep -r "actions/setup-node@v3" .github/workflows/ >/dev/null 2>&1; then
+        print_warning "Found actions/setup-node@v3 - consider upgrading to v4"
+    fi
+
+    # Check for deprecated checkout v3
+    if grep -r "actions/checkout@v3" .github/workflows/ >/dev/null 2>&1; then
+        print_warning "Found actions/checkout@v3 - consider upgrading to v4"
+    fi
+
+    if [ "$deprecated_found" = true ]; then
+        print_error "Deprecated GitHub Actions found - this will cause CI/CD failure"
+        return 1
+    else
+        print_success "No deprecated GitHub Actions found"
+        return 0
+    fi
+}
+
 # Main execution
 main() {
     local start_time=$(date +%s)
@@ -264,6 +304,14 @@ main() {
     run_security_checks
 
     echo ""
+    echo "⚙️ Running CI/CD Validation"
+    echo "==========================="
+
+    if ! validate_github_actions; then
+        ((failed_checks++))
+    fi
+
+    echo ""
     echo "🏗️ Running Build Validation"
     echo "==========================="
 
@@ -276,6 +324,14 @@ main() {
     echo "===================================="
 
     if ! run_infrastructure_validation; then
+        ((failed_checks++))
+    fi
+
+    echo ""
+    echo "🔧 Validating GitHub Actions"
+    echo "============================"
+
+    if ! validate_github_actions; then
         ((failed_checks++))
     fi
 

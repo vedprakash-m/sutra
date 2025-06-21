@@ -210,8 +210,8 @@ jobs:
         run: |
           cd api
           pip install safety
-          # Use non-interactive mode for CI/CD with proper output format
-          safety scan --output screen
+          # Use development stage to avoid authentication prompts in CI/CD
+          SAFETY_STAGE=development safety scan --output screen --stage development --disable-optional-telemetry
 
   # Integration tests (E2E) - Only after all unit tests pass
   e2e-tests:
@@ -267,7 +267,7 @@ jobs:
           npx playwright test --reporter=github
 
       - name: Upload E2E test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report

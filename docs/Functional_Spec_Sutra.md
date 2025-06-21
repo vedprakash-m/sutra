@@ -1,10 +1,10 @@
-# Functional Specification: Sutra - AI Operations Platform
+# Functional Specification: Sutra - Multi-LLM Prompt Studio
 
 Ved Mishra - June 2025 - Version: 1.0
 
 ## 1. Introduction
 
-This document details the functional specifications for the Minimum Viable Product (MVP) of Sutra, an AI Operations Platform. It focuses on comprehensively describing the user experience, interactions, and system behaviors for core functionalities, translating the PRD into actionable design and development requirements.
+This document details the functional specifications for the Minimum Viable Product (MVP) of Sutra, a Multi-LLM Prompt Studio. It focuses on comprehensively describing the user experience, interactions, and system behaviors for core functionalities, translating the PRD into actionable design and development requirements.
 
 **Sutra: Weaving your AI solutions.**
 The platform aims to streamline prompt engineering, enable multi-LLM optimization, and facilitate AI workflow orchestration, ensuring consistent and high-quality AI outputs.

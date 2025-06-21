@@ -51,8 +51,8 @@ cd ..
 echo "🔧 Creating frontend environment file..."
 if [ ! -f ".env.local" ]; then
     cat > .env.local << EOL
-VITE_API_BASE_URL=http://localhost:7071/api
-VITE_APP_TITLE=Sutra - AI Operations Platform
+VITE_API_BASE_URL=http://localhost:7071
+VITE_APP_TITLE=Sutra - Multi-LLM Prompt Studio
 VITE_APP_VERSION=1.0.0
 EOL
     echo "✅ Created .env.local"

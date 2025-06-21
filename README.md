@@ -1,6 +1,6 @@
-# Sutra - AI Operations Platform
+# Sutra - Multi-LLM Prompt Studio
 
-> **Production-Ready AI Workflow Orchestration for Teams**
+> **Production-Ready Prompt Engineering Workspace for Teams**
 
 <div align="center">
 
@@ -13,15 +13,15 @@
 
 **Weaving your AI solutions together**
 
-[✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation)
+[✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation) • [🤝 Contributing](#contributing)
 
 </div>
 
 ---
 
-## 🎯 Overview
+## 🎯 **Overview**
 
-Sutra is a **production-ready AI operations platform** designed to streamline prompt engineering, enable multi-LLM optimization, and facilitate AI workflow orchestration. Built for teams that need **consistent, high-quality AI outputs** with enterprise-grade reliability.
+Sutra is a **production-ready multi-LLM prompt studio** designed to streamline prompt engineering, enable multi-LLM optimization, and facilitate AI workflow orchestration. Built for teams that need **consistent, high-quality AI outputs** across different models and use cases.
 
 ### **🏆 Project Status: Production-Ready Beta**
 
@@ -120,7 +120,7 @@ graph TB
 - **💰 Cost Efficient**: Weekend/holiday shutdown saves 70-80% monthly costs
 - **⚡ High Performance**: <2s page loads, <5s LLM responses
 - **🔒 Secure by Design**: Zero trust architecture with Azure security
-- **📈 Scalable**: Serverless compute scales automatically with demand
+- **�� Scalable**: Serverless compute scales automatically with demand
 - **🚀 Fast Recovery**: 10-minute restoration from shutdown with zero data loss
 
 ---

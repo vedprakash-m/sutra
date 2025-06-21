@@ -1,7 +1,8 @@
 {
   "name": "sutra",
   "version": "1.0.0",
-  "description": "AI Operations Platform - Weaving your AI solutions",
+  "description": "Multi-LLM Prompt Studio - Weaving your AI solutions",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",

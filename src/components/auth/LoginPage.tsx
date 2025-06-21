@@ -23,8 +23,8 @@ export default function LoginPage() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to Sutra
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            AI Operations Platform - Development Mode
+          <p className="text-gray-600 mb-8">
+            Multi-LLM Prompt Studio - Development Mode
           </p>
         </div>
         <div className="mt-8 space-y-6">

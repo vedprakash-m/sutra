@@ -1,12 +1,8 @@
-# Task List: Sutra AI Operations Platform MVP
+# Task List: Sutra Multi-LLM Prompt Studio MVP
 
-## Project Overview
+**Last Updated:** June 20, 2024
 
-Building Sutra, an AI Operations Platform that enables systematic prompt engineering, multi-LLM opt- [ ] 2.5 Create CI/CD pipelines for persistent and compute resource groups
-
-- [ ] 2.6 Do- [ ] 12.4 Document manual procedures for cost-optimized resource lifecycle management
-- [ ] 12.5 Complete admin documentation for resource group management
-- [ ] 12.6 Create operational runbooks for manual cost optimization proceduresent manual operations procedures for cost-saving resource managementization, and AI workflow orchestration. This task list covers the MVP (Phase 1) implementation using Azure serverless architecture.
+Building Sutra, a Multi-LLM Prompt Studio that enables systematic prompt engineering, multi-LLM optimization, and AI workflow orchestration for consistent, high-quality AI outputs. This task list covers the MVP (Phase 1) implementation using Azure serverless architecture.
 
 **Key MVP Features:**
 

@@ -1,4 +1,4 @@
-# Technical Specification: Sutra - AI Operations Platform
+# Technical Specification: Sutra - Multi-LLM Prompt Studio
 
 Ved Mishra - June 2025 - Version: 1.0
 

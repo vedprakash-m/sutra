@@ -10,7 +10,7 @@
 
 ## 🚀 **PROJECT OVERVIEW**
 
-**Sutra: AI Operations Platform** - Streamlining prompt engineering, multi-LLM optimization, and AI workflow orchestration for consistent, high-quality AI outputs.
+**Sutra: Multi-LLM Prompt Studio** - Streamlining prompt engineering, multi-LLM optimization, and AI workflow orchestration for consistent, high-quality AI outputs.
 
 ### **Architecture Stack**
 

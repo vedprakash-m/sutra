@@ -23,7 +23,7 @@ describe("LoginPage", () => {
 
     expect(screen.getByText("Sign in to Sutra")).toBeInTheDocument();
     expect(
-      screen.getByText("AI Operations Platform - Development Mode"),
+      screen.getByText("Multi-LLM Prompt Studio - Development Mode"),
     ).toBeInTheDocument();
   });
 

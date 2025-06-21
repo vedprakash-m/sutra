@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0
 **Last Updated:** 2025-01-27
-**Authority:** This document serves as the single source of truth for all UX/UI decisions in the Sutra AI Operations Platform
+**Authority:** This document serves as the single source of truth for all UX/UI decisions in the Sutra Multi-LLM Prompt Studio
 
 ## 1. Executive Summary
 
@@ -228,7 +228,7 @@ Problem Recognition → Demo Request → Trial Setup → Team Integration → Pr
 │ • Technical    │ │ Issue: Billing discrepancy   │ │ Premium Plan │
 │ • Refunds      │ │                             │ │ Since: 2023  │
 │                │ │ Template: Billing Inquiry   │ │ Satisfaction │
-│ �� Standard    │ │ Tone: Empathetic            │ │ Score: 4.8/5 │
+│ 🎯 Standard    │ │ Tone: Empathetic            │ │ Score: 4.8/5 │
 │ • Welcome      │ │ ┌─────────────────────────┐ │ │              │
 │ • Follow-up    │ │ │ Generated Response      │ │ │ 📋 History   │
 │ • Escalation   │ │ │ Hi Sarah, I understand  │ │ │ 3 prev cases │
@@ -328,7 +328,7 @@ Read specs   Code demo   Full access    CI/CD setup       Scale usage
 │ Sutra Developer Console                          API Status: ✅   │
 ├─────────────────────────────────────────────────────────────────┤
 │ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐     │
-│ │ 📝 Prompt IDE   │ │ �� Test Results │ │ 📊 Analytics    │     │
+│ │ 📝 Prompt IDE   │ │ 🔄 Test Results │ │ 📊 Analytics    │     │
 │ │                 │ │                 │ │                 │     │
 │ │ ```javascript   │ │ Model: GPT-4o   │ │ 📈 Usage Trends │     │
 │ │ const prompt =  │ │ Status: ✅ Pass │ │ Requests/Day    │     │

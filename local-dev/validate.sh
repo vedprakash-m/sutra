@@ -406,6 +406,111 @@ validate_github_actions() {
     fi
 }
 
+# Function to validate Docker builds (simulate CI/CD environment)
+validate_docker_builds() {
+    print_status "Validating Docker builds (CI/CD simulation)..."
+
+    # Check if Dockerfile.e2e exists
+    if [ ! -f "Dockerfile.e2e" ]; then
+        print_error "Dockerfile.e2e not found"
+        return 1
+    fi
+
+    # Validate Dockerfile syntax
+    if ! docker build --no-cache --target frontend -f Dockerfile.e2e . --dry-run >/dev/null 2>&1; then
+        print_warning "Docker build dry-run not supported, attempting limited validation"
+    fi
+
+    # Check for common Docker build issues
+    print_status "Checking for common Docker build issues..."
+
+    # Check if package.json build script dependencies are available
+    local build_script=$(grep -A1 '"build":' package.json | tail -1 | sed 's/.*"build": "\(.*\)".*/\1/')
+
+    if echo "$build_script" | grep -q "tsc"; then
+        print_status "Build script uses tsc, checking TypeScript dependency..."
+
+        # Check if typescript is in devDependencies
+        if ! grep -A20 '"devDependencies"' package.json | grep -q '"typescript"'; then
+            print_error "TypeScript not found in devDependencies but required by build script"
+            return 1
+        fi
+
+        # Check Dockerfile for proper dependency installation
+        if grep -q "npm ci --only=production" Dockerfile.e2e; then
+            print_error "Dockerfile.e2e uses --only=production but build requires devDependencies (like tsc)"
+            print_error "This will cause 'tsc: not found' errors in CI/CD"
+            return 1
+        fi
+    fi
+
+    # Check if vite is used in build
+    if echo "$build_script" | grep -q "vite"; then
+        if ! grep -A20 '"devDependencies"' package.json | grep -q '"vite"'; then
+            print_error "Vite not found in devDependencies but required by build script"
+            return 1
+        fi
+    fi
+
+    # Validate that all files referenced in Dockerfile exist
+    print_status "Validating Dockerfile file references..."
+
+    local dockerfile_errors=false
+
+    # Check for package files
+    if ! [ -f "package.json" ]; then
+        print_error "package.json referenced in Dockerfile but not found"
+        dockerfile_errors=true
+    fi
+
+    if ! [ -f "tsconfig.json" ] && ! [ -f "tsconfig.base.json" ]; then
+        print_warning "No tsconfig.json found but referenced in Dockerfile"
+    fi
+
+    if ! [ -f "vite.config.ts" ]; then
+        print_error "vite.config.ts referenced in Dockerfile but not found"
+        dockerfile_errors=true
+    fi
+
+    if ! [ -d "src" ]; then
+        print_error "src/ directory referenced in Dockerfile but not found"
+        dockerfile_errors=true
+    fi
+
+    if ! [ -d "public" ]; then
+        print_error "public/ directory referenced in Dockerfile but not found"
+        dockerfile_errors=true
+    fi
+
+    if ! [ -f "index.html" ]; then
+        print_error "index.html referenced in Dockerfile but not found"
+        dockerfile_errors=true
+    fi
+
+    if [ "$dockerfile_errors" = true ]; then
+        return 1
+    fi
+
+    # Test docker-compose build without actually building (config validation)
+    print_status "Testing docker-compose build configuration..."
+
+    # Try modern docker compose first
+    if docker compose version &> /dev/null 2>&1; then
+        if ! docker compose config >/dev/null 2>&1; then
+            print_error "docker-compose.yml build configuration is invalid"
+            return 1
+        fi
+    elif command -v docker-compose &> /dev/null; then
+        if ! docker-compose config >/dev/null 2>&1; then
+            print_error "docker-compose.yml build configuration is invalid"
+            return 1
+        fi
+    fi
+
+    print_success "Docker build validation passed"
+    return 0
+}
+
 # Main execution
 main() {
     local start_time=$(date +%s)
@@ -477,6 +582,14 @@ main() {
     echo "======================"
 
     if ! validate_e2e_setup; then
+        ((failed_checks++))
+    fi
+
+    echo ""
+    echo "🐳 Validating Docker Builds"
+    echo "=========================="
+
+    if ! validate_docker_builds; then
         ((failed_checks++))
     fi
 

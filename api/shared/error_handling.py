@@ -206,7 +206,7 @@ class ErrorDetail:
         self.message = message
         self.field = field
         self.details = details or {}
-        self.timestamp = datetime.utcnow().isoformat()
+        self.timestamp = datetime.now(timezone.utc).isoformat()
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
@@ -555,7 +555,7 @@ class ErrorMonitor:
             "severity": error_severity.value,
             "code": error_code,
             "message": error_message,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "user_id": user_id,
             "request_id": request_id,
             "context": additional_context or {},
@@ -565,7 +565,7 @@ class ErrorMonitor:
         if error_severity == ErrorSeverity.CRITICAL:
             logger.critical("Critical error occurred", extra=error_data)
         elif error_severity == ErrorSeverity.HIGH:
-            logger.error("High severity error occurred", extra=error_data)
+            logger.warning("High severity error occurred", extra=error_data)
         elif error_severity == ErrorSeverity.MEDIUM:
             logger.warning("Medium severity error occurred", extra=error_data)
         else:
@@ -591,6 +591,7 @@ class ErrorMonitor:
             ErrorCategory.AUTHENTICATION,
             ErrorCategory.AUTHORIZATION,
             ErrorCategory.VALIDATION,
+            ErrorCategory.EXTERNAL_SERVICE,
         ]:
             return True
 
@@ -637,9 +638,9 @@ class ErrorRecovery:
     def get_retry_delay(attempt_count: int) -> float:
         """Get retry delay in seconds with exponential backoff."""
         base_delay = 1.0
-        max_delay = 30.0
+        max_delay = 60.0
 
-        delay = min(base_delay * (2**attempt_count), max_delay)
+        delay = min(base_delay * (2**(attempt_count-1)), max_delay)
         return delay
 
     @staticmethod
@@ -649,9 +650,14 @@ class ErrorRecovery:
         """Get fallback response for certain error types."""
         if error_category == ErrorCategory.EXTERNAL_SERVICE:
             return {
-                "status": "partial_success",
-                "message": "Some external services are temporarily unavailable",
-                "available_features": ["prompts", "collections"],
+                "message": "External service temporarily unavailable",
+                "fallback": True,
+            }
+
+        if error_category == ErrorCategory.DATABASE:
+            return {
+                "message": "Data temporarily unavailable",
+                "fallback": True,
             }
 
         return None
@@ -663,8 +669,14 @@ class ErrorRecovery:
 
 
 def extract_request_id(req: func.HttpRequest) -> Optional[str]:
-    """Extract request ID from HTTP request headers."""
-    return req.headers.get("X-Request-ID") or req.headers.get("x-request-id")
+    """Extract request ID from HTTP request headers or query parameters."""
+    # First check headers (preferred)
+    request_id = req.headers.get("X-Request-ID") or req.headers.get("x-request-id")
+    if request_id:
+        return request_id
+
+    # Fallback to query parameters
+    return req.params.get("request_id")
 
 
 def add_correlation_id(
@@ -672,18 +684,32 @@ def add_correlation_id(
 ) -> Dict[str, Any]:
     """Add correlation ID to response for tracking."""
     if request_id:
-        response_dict["correlation_id"] = request_id
+        response_dict["request_id"] = request_id
     return response_dict
 
 
 def is_retriable_error(exc: Exception) -> bool:
     """Check if an exception represents a retriable error."""
+    error_message = str(exc).lower()
+
+    # Don't retry validation or business logic errors
+    if isinstance(exc, (ValidationException, BusinessLogicException)):
+        return False
+
     # Database connection errors
-    if "connection" in str(exc).lower():
+    if "connection" in error_message:
         return True
 
     # Timeout errors
-    if "timeout" in str(exc).lower():
+    if "timeout" in error_message:
+        return True
+
+    # Temporary errors
+    if "temporary" in error_message:
+        return True
+
+    # Service unavailable
+    if "service unavailable" in error_message or "unavailable" in error_message:
         return True
 
     # HTTP 5xx errors from external services
@@ -697,11 +723,15 @@ def sanitize_error_message(message: str) -> str:
     """Sanitize error message to remove sensitive information."""
     # Remove potential passwords, tokens, keys
     sensitive_patterns = [
-        r"password[=:]\s*\S+",
-        r"token[=:]\s*\S+",
-        r"key[=:]\s*\S+",
-        r"secret[=:]\s*\S+",
+        r"password[=:\s]*\S+",
+        r"token[=:\s]*\S+",
+        r"key[=:\s]*\S+",
+        r"secret[=:\s]*\S+",
         r"Bearer\s+\S+",
+        r"API_KEY[=:]\S+",
+        r"sk-[a-zA-Z0-9\-]+",  # OpenAI style keys
+        r"eyJ[a-zA-Z0-9\-_.]+",  # JWT tokens
+        r"\b[a-zA-Z0-9]{8,}\b",  # General alphanumeric sequences that could be keys/tokens
     ]
 
     sanitized = message

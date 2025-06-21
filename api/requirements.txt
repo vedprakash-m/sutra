@@ -4,18 +4,19 @@ azure-functions-worker==1.1.9
 
 # Azure Services
 azure-cosmos==4.5.1
-azure-identity==1.15.0
+azure-identity>=1.16.1
 azure-keyvault-secrets==4.7.0
 azure-storage-blob==12.19.0
 
 # Core Dependencies
 pydantic==2.5.2
 httpx==0.25.2
-python-multipart==0.0.6
-python-jose[cryptography]==3.3.0
+python-multipart>=0.0.18
+python-jose[cryptography]>=3.4.0
 
 # Web Framework (for local development)
-fastapi==0.104.1
+fastapi>=0.109.1
+starlette>=0.40.0
 uvicorn==0.24.0
 
 # Testing Dependencies
@@ -24,7 +25,11 @@ pytest-asyncio>=0.21.1
 pytest-cov>=4.1.0
 requests>=2.31.0
 python-dotenv>=1.0.0
-pyjwt>=2.8.0
+pyjwt>=2.9.0
+
+# Security updates for transitive dependencies
+jinja2>=3.1.4
+protobuf>=4.25.8
 
 # Code quality tools
 flake8>=6.1.0

@@ -74,7 +74,8 @@ install_dependencies() {
 
     # Activate virtual environment and install Python dependencies
     source .venv/bin/activate
-    pip install -r api/requirements.txt
+    # Use CI requirements to avoid grpcio compilation issues
+    pip install -r api/requirements-ci.txt
     pip install pytest pytest-cov pytest-asyncio
 
     print_success "Dependencies installed"
@@ -165,12 +166,21 @@ run_security_checks() {
     # Frontend security audit
     npm audit --audit-level=moderate 2>/dev/null || print_warning "Frontend security audit found issues"
 
-    # Backend security check (if safety is available)
+    # Backend security check with modern safety scanner
     cd api
     source .venv/bin/activate
 
-    if command -v safety &> /dev/null; then
-        safety check || print_warning "Backend security check found issues"
+    # Install safety if not available
+    if ! command -v safety &> /dev/null; then
+        print_status "Installing safety scanner..."
+        pip install safety
+    fi
+
+    # Use the new scan command instead of deprecated check
+    if safety scan --json > /dev/null 2>&1; then
+        print_success "Backend security scan passed"
+    else
+        print_warning "Backend security scan found vulnerabilities"
     fi
 
     cd ..
@@ -190,6 +200,28 @@ validate_build() {
     else
         print_error "Build validation failed"
         return 1
+    fi
+}
+
+# Function to run infrastructure validation
+run_infrastructure_validation() {
+    print_status "Running infrastructure validation..."
+
+    # Check if infrastructure validation script exists
+    if [ -f "scripts/validate-infrastructure.sh" ]; then
+        # Run in dry-run mode (no Azure CLI required)
+        bash scripts/validate-infrastructure.sh --dry-run
+
+        if [ $? -eq 0 ]; then
+            print_success "Infrastructure validation passed"
+            return 0
+        else
+            print_warning "Infrastructure validation found issues"
+            return 1
+        fi
+    else
+        print_warning "Infrastructure validation script not found"
+        return 0
     fi
 }
 
@@ -228,6 +260,14 @@ main() {
     echo "==========================="
 
     if ! validate_build; then
+        ((failed_checks++))
+    fi
+
+    echo ""
+    echo "🏗️ Running Infrastructure Validation"
+    echo "===================================="
+
+    if ! run_infrastructure_validation; then
         ((failed_checks++))
     fi
 

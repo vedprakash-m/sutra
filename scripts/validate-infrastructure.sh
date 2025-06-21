@@ -8,6 +8,7 @@ set -euo pipefail
 # Configuration
 RESOURCE_GROUP="sutra-rg"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DRY_RUN=false
 
 # Colors for output
 RED='\033[0;31m'
@@ -351,12 +352,71 @@ generate_report() {
     echo "  Static Web App: ${STATIC_URL:-'Not found'}"
 }
 
+# Static validation for dry-run mode (no Azure CLI required)
+test_static_validation_only() {
+    log_info "Running static validation checks (dry-run mode)"
+
+    # Check if infrastructure files exist
+    run_test "Infrastructure files exist" \
+        "test -f infrastructure/persistent.bicep && test -f infrastructure/compute.bicep" \
+        "true"
+
+    # Check deployment scripts syntax
+    run_test "Deployment script syntax" \
+        "bash -n scripts/deploy-infrastructure.sh" \
+        "true"
+
+    # Check for hard-coded values in Bicep templates
+    run_test "No hard-coded resource group names" \
+        "! grep -r 'rg-' infrastructure/ || ! grep -r 'resourceGroup.*=' infrastructure/" \
+        "true"
+
+    # Check naming consistency
+    run_test "Consistent naming patterns" \
+        "grep -q 'param.*Name' infrastructure/persistent.bicep && grep -q 'param.*Name' infrastructure/compute.bicep" \
+        "true"
+
+    # Generate dry-run report
+    log_info "Static validation completed in dry-run mode"
+    echo ""
+    echo "Summary: $TESTS_PASSED/$TESTS_TOTAL tests passed"
+
+    if [[ $TESTS_FAILED -gt 0 ]]; then
+        log_error "$TESTS_FAILED tests failed"
+        exit 1
+    else
+        log_success "All static validation tests passed"
+        exit 0
+    fi
+}
+
 # Main validation function
 main() {
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            *)
+                log_error "Unknown argument: $1"
+                echo "Usage: $0 [--dry-run]"
+                exit 1
+                ;;
+        esac
+    done
+
     log_info "Sutra Direct Access Architecture Validation"
     log_info "========================================"
     log_info "Validating implementation..."
     echo ""
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "Running in DRY-RUN mode - skipping Azure CLI checks"
+        test_static_validation_only
+        return 0
+    fi
 
     # Check prerequisites
     if ! command -v az >/dev/null 2>&1; then

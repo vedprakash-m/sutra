@@ -3,7 +3,8 @@ FROM mcr.microsoft.com/azure-functions/python:4-python3.12
 
 # Set Azure Functions environment variables
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
-    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+    FUNCTIONS_WORKER_RUNTIME=python
 
 # Install system dependencies for potential compilation needs
 RUN apt-get update && apt-get install -y \
@@ -20,3 +21,12 @@ RUN pip install --no-cache-dir -r requirements-minimal.txt
 
 # Copy function code
 COPY . /home/site/wwwroot
+
+# Ensure proper permissions
+RUN chmod -R 755 /home/site/wwwroot
+
+# Expose the Azure Functions port
+EXPOSE 7071
+
+# Start Azure Functions host
+CMD ["func", "start", "--host", "0.0.0.0", "--port", "7071"]

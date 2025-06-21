@@ -27,8 +27,9 @@ services:
           "-k",
         ]
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 15s
+      retries: 10
+      start_period: 60s
 
   # Azure Functions (API)
   functions-api:
@@ -54,10 +55,19 @@ services:
     networks:
       - sutra-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7071/api/health"]
-      interval: 30s
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:7071/api/health",
+          "--max-time",
+          "10",
+        ]
+      interval: 15s
       timeout: 10s
-      retries: 5
+      retries: 20
+      start_period: 120s
 
   # Azurite (Storage Emulator)
   azurite:

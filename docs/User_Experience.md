@@ -8,6 +8,27 @@
 
 Sutra's User Experience is designed around four primary user personas, each with distinct needs and workflows. The platform emphasizes **guided intelligence**, **collaborative efficiency**, and **scalable simplicity** through a unified interface that adapts to user expertise levels while maintaining consistency across all touchpoints.
 
+### 🔐 **CRITICAL: Authentication vs User Personas Distinction**
+
+**Authentication Roles (System Access Control):**
+
+- **User Role**: All personas (Content Creators, Customer Service, Developers, Product Managers) authenticate as "User"
+- **Admin Role**: System administrators with LLM API configuration, budget management, app usage monitoring, and administrative controls
+
+**User Personas (UX Design Guidance):**
+
+- Content Creator / "Prompter", Customer Service Professional, Developer / Prompt Engineer, Product Manager
+- These are UX design personas, NOT authentication roles
+- All personas use the same "User" authentication role but receive personalized experiences based on their usage patterns and preferences
+
+**Admin Role Capabilities:**
+
+- LLM API configuration and management
+- Budget monitoring and usage controls
+- Application usage analytics and reporting
+- User management and administrative oversight
+- System configuration and maintenance controls
+
 ### 1.1 Core Design Philosophy
 
 **🎯 Intuitive Progression:** Users move from simple to complex features naturally, with the interface adapting to their growing expertise.
@@ -716,93 +737,98 @@ My Workspace
 
 ## 5. Critical UX Gaps & Future Enhancements
 
-### 5.1 Immediate Priority Gaps (Phase 2)
+### 5.1 Beta Release Priority Assessment
 
-**🚨 Critical UX Issues**
+**🎯 Essential for Beta Testing**
 
-1. **Mobile Experience Deficiencies**
+1. **Onboarding Experience - Essential Only**
 
-   - **Gap:** Current implementation lacks mobile-optimized UI components
-   - **Impact:** 40%+ user base accessing via mobile cannot use core features effectively
-   - **Solution:** Responsive design system implementation with touch-first interactions
-   - **Timeline:** Phase 2 priority
+   - **Beta Scope:** Basic welcome flow and core feature introduction
+   - **Essential Elements:** Account setup, first prompt creation, save to collection
+   - **Post-Beta:** Interactive tutorials, role-based personalization, success celebrations
+   - **Timeline:** Include in beta release
 
-2. **Onboarding Experience Missing**
+2. **Collaborative Features - Core Functionality**
 
-   - **Gap:** No guided first-time user experience
-   - **Impact:** High drop-off rate in first session (estimated 60%+)
-   - **Solution:** Interactive tutorial system with role-based paths
-   - **Timeline:** Phase 2 priority
+   - **Beta Scope:** Basic prompt sharing, collection sharing, team workspaces
+   - **Essential Elements:** Share prompts, invite team members, basic permissions
+   - **Post-Beta:** Real-time collaborative editing, conflict resolution, advanced workflows
+   - **Timeline:** Core features in beta, advanced features post-beta
 
-3. **Collaborative Features Incomplete**
+3. **Performance Feedback - Basic Metrics**
+   - **Beta Scope:** Simple usage tracking and basic prompt performance indicators
+   - **Essential Elements:** Save/usage counts, basic success metrics, simple analytics
+   - **Post-Beta:** Advanced analytics, optimization suggestions, detailed performance insights
+   - **Timeline:** Basic metrics in beta, advanced analytics post-beta
 
-   - **Gap:** Basic sharing without real-time collaboration
-   - **Impact:** Team productivity limited, no concurrent editing
-   - **Solution:** Real-time collaborative editing with conflict resolution
-   - **Timeline:** Phase 2-3
+**📋 Post-Beta Backlog (After User Testing)**
 
-4. **Performance Feedback Loop**
-   - **Gap:** No systematic prompt performance tracking
-   - **Impact:** Users cannot optimize prompts effectively
-   - **Solution:** Analytics dashboard with improvement suggestions
-   - **Timeline:** Phase 2
+4. **Mobile Experience Comprehensive Optimization**
+   - **Post-Beta Priority:** Complete mobile-first redesign with touch-optimized interactions
+   - **Scope:** Responsive design system, gesture navigation, offline capabilities, PWA
+   - **Timeline:** Major post-beta enhancement based on user feedback
 
-### 5.2 User Experience Enhancement Roadmap
+**🔄 Beta Testing Focus Areas**
 
-**📈 Phase 2: Foundation Enhancement (Months 2-3)**
+- Core desktop experience validation
+- Essential user workflows (create, save, share prompts)
+- Basic team collaboration functionality
+- Fundamental onboarding and user adoption patterns
 
-**🎯 Mobile-First Redesign**
+### 5.2 Beta-Focused Enhancement Roadmap
 
-- Touch-optimized prompt builder interface
-- Swipe gestures for LLM output comparison
-- Bottom sheet navigation for mobile workflows
-- Offline prompt storage and sync
+**🎯 Beta Release Preparation (Current Priority)**
 
-**🚀 Intelligent Onboarding**
+**Essential Onboarding Implementation**
 
-- Role-based onboarding flows (4 persona paths)
-- Interactive product tours with real data
-- Progressive feature revelation
-- Success milestone celebrations
+- Simple welcome flow with core feature introduction
+- Account setup wizard with persona preference (UX personalization, not auth roles)
+- Guided first prompt creation experience
+- Basic collection creation and prompt saving
 
-**�� Performance Analytics**
+**Core Collaboration Features**
 
-- Prompt effectiveness scoring
-- Usage pattern analysis
-- Team performance dashboards
-- ROI calculation tools
+- Basic prompt sharing functionality
+- Team workspace creation with simple invite system
+- Collection sharing with basic permission controls (view/edit)
+- Simple team member management
 
-**📈 Phase 3: Advanced Collaboration (Months 4-5)**
+**Basic Performance Tracking**
 
-**🤝 Real-Time Collaboration**
+- Usage metrics collection (prompts created, saved, shared)
+- Simple success indicators (completion rates, user engagement)
+- Basic analytics dashboard for admin users
+- Foundation for post-beta advanced analytics
 
-- Live prompt editing with conflict resolution
-- Team workspaces with role-based permissions
-- Comment and suggestion system
-- Version control with branch/merge workflows
+**📈 Post-Beta Enhancement Phases**
 
-**🔗 Enterprise Integration**
+**Phase 1: Mobile Experience Optimization (Post-Beta)**
 
-- SSO and enterprise authentication
-- API-first architecture for custom integrations
-- Workflow automation connectors
-- Advanced security and compliance features
+- Complete responsive design system implementation
+- Touch-optimized interfaces with gesture support
+- Progressive Web App (PWA) capabilities
+- Offline functionality for core features
 
-**📈 Phase 4: AI-Enhanced Experience (Months 6+)**
+**Phase 2: Advanced Collaboration (Post-Beta)**
 
-**🧠 Intelligent Assistance**
+- Real-time collaborative editing with conflict resolution
+- Advanced permission systems and role management
+- Comment and suggestion workflows
+- Version control with branching and merging
+
+**Phase 3: Advanced Analytics & Intelligence (Post-Beta)**
 
 - AI-powered prompt optimization suggestions
-- Automated workflow generation
-- Predictive content creation
-- Learning-based personalization
+- Advanced performance analytics and insights
+- Predictive content recommendations
+- Learning-based user experience personalization
 
-**🌍 Platform Ecosystem**
+**Phase 4: Platform Ecosystem (Post-Beta)**
 
-- Browser extension for seamless integration
-- Mobile apps for iOS and Android
-- Third-party marketplace for prompt templates
-- Developer SDK for custom applications
+- Browser extension development
+- Native mobile applications
+- Third-party integrations and marketplace
+- Developer SDK and API expansion
 
 ### 5.3 Technical UX Requirements
 
@@ -833,27 +859,29 @@ My Workspace
 
 ### 6.1 Development Priorities
 
-**🎯 MVP UX Completion (Current Phase)**
+**🎯 Beta Release Preparation (Current Phase)**
 
-1. ✅ Basic authentication and navigation
+1. ✅ Basic authentication and navigation (User/Admin roles only)
 2. ✅ Core prompt builder functionality
 3. ✅ Collections management system
 4. ✅ Playbook creation interface
-5. 🔄 Mobile-responsive components (In Progress)
+5. 🔄 Essential onboarding flow (In Progress)
+6. 🔄 Basic collaboration features (In Progress)
+7. 🔄 Simple performance tracking (In Progress)
 
-**📱 Mobile Experience Priority (Phase 2)**
+**📋 Beta Testing Focus Areas**
 
-1. Touch-optimized input components
-2. Gesture-based navigation
-3. Offline capability for core features
-4. Progressive Web App (PWA) implementation
+1. Core desktop user experience validation
+2. Essential collaboration workflows
+3. Basic user onboarding and adoption
+4. Administrative controls for LLM configuration and budget management
 
-**🎨 Design System Completion (Phase 2)**
+**📱 Post-Beta Priorities**
 
-1. Comprehensive component library
-2. Consistent interaction patterns
-3. Accessibility compliance verification
-4. Performance optimization
+1. Complete mobile experience optimization
+2. Advanced collaboration features
+3. Comprehensive analytics and intelligence
+4. Platform ecosystem development
 
 ### 6.2 User Testing Strategy
 
@@ -895,19 +923,26 @@ This User Experience Guide establishes the definitive framework for all UX/UI de
 
 ### 7.1 Implementation Accountability
 
-**📋 Immediate Action Items (Next 30 Days)**
+**📋 Immediate Action Items (Beta Preparation - Next 30 Days)**
 
-1. **Mobile UX Audit:** Complete assessment of current mobile experience gaps
-2. **Onboarding Design:** Create wireframes and user flows for guided onboarding
-3. **Performance Baseline:** Establish current metrics and improvement targets
-4. **User Research Plan:** Design and execute user interview program
+1. **Essential Onboarding Implementation:** Complete basic welcome flow and guided prompt creation
+2. **Core Collaboration Features:** Implement basic sharing and team workspace functionality
+3. **Performance Baseline:** Establish simple metrics collection for user engagement tracking
+4. **Beta Testing Framework:** Design and prepare user testing protocol for beta validation
 
-**🎯 Success Measurement**
+**🎯 Beta Success Measurement**
 
-- **User Adoption:** 70% of new users complete onboarding successfully
-- **Mobile Engagement:** 50% of sessions occur on mobile devices
-- **Feature Utilization:** 80% of users actively use collaborative features
-- **Satisfaction Score:** Maintain NPS >70 throughout implementation
+- **User Adoption:** 60% of beta users complete essential onboarding successfully
+- **Core Feature Usage:** 70% of beta users create and save at least 3 prompts
+- **Collaboration Engagement:** 40% of beta users participate in team workspaces
+- **Satisfaction Score:** Maintain NPS >60 during beta phase
+
+**📋 Post-Beta Success Metrics**
+
+- **User Adoption:** 70% of new users complete comprehensive onboarding
+- **Mobile Engagement:** 50% of sessions occur on mobile devices (post mobile optimization)
+- **Advanced Feature Utilization:** 80% of users actively use collaborative features
+- **Overall Satisfaction Score:** Maintain NPS >70 throughout post-beta implementation
 
 ### 7.2 Living Document Commitment
 

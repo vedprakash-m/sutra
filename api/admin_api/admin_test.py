@@ -103,7 +103,7 @@ class TestAdminAPI:
                 "id": "user-1",
                 "email": "user1@example.com",
                 "name": "User One",
-                "role": "member",
+                "role": "user",
                 "createdAt": "2025-06-15T09:00:00Z",
                 "llmApiKeys": {
                     "openai": "kv-ref-key",
@@ -114,7 +114,7 @@ class TestAdminAPI:
                 "id": "user-2",
                 "email": "user2@example.com",
                 "name": "User Two",
-                "role": "contributor",
+                "role": "user",
                 "createdAt": "2025-06-15T10:00:00Z",
             },
         ]
@@ -160,11 +160,11 @@ class TestAdminAPI:
             "id": target_user_id,
             "email": "user@example.com",
             "name": "Test User",
-            "role": "member",
+            "role": "user",
             "createdAt": "2025-06-15T09:00:00Z",
         }
 
-        new_role_data = {"role": "contributor"}
+        new_role_data = {"role": "admin"}
 
         # Mock database responses - using AsyncMock for async methods
         from unittest.mock import AsyncMock
@@ -173,7 +173,7 @@ class TestAdminAPI:
         mock_cosmos_client.update_item = AsyncMock(
             return_value={
                 **existing_user,
-                "role": "contributor",
+                "role": "admin",
                 "updatedAt": "2025-06-15T10:00:00Z",
             }
         )
@@ -197,8 +197,8 @@ class TestAdminAPI:
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert response_data["newRole"] == "contributor"
-        assert response_data["oldRole"] == "member"
+        assert response_data["newRole"] == "admin"
+        assert response_data["oldRole"] == "user"
         assert response_data["userId"] == target_user_id
         mock_cosmos_client.update_item.assert_called_once()
 
@@ -231,7 +231,7 @@ class TestAdminAPI:
         assert response.status_code == 400
         response_data = json.loads(response.get_body())
         assert "Invalid role" in response_data["error"]
-        assert "member, contributor, prompt_manager, admin" in response_data["message"]
+        assert "user, admin" in response_data["message"]
 
     @pytest.mark.asyncio
     async def test_get_system_health_success(self, mock_admin_auth, mock_cosmos_client):
@@ -536,7 +536,7 @@ class TestAdminAPI:
         """Test user role update when user doesn't exist."""
         # Arrange
         target_user_id = "nonexistent-user"
-        new_role_data = {"role": "contributor"}
+        new_role_data = {"role": "admin"}
 
         mock_cosmos_client.query_items.return_value = []  # No user found
 

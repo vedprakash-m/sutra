@@ -214,7 +214,7 @@ async def update_user_role(
             )
 
         new_role = body.get("role")
-        valid_roles = ["member", "contributor", "prompt_manager", "admin"]
+        valid_roles = ["user", "admin"]
 
         if new_role not in valid_roles:
             return func.HttpResponse(
@@ -248,7 +248,7 @@ async def update_user_role(
         user_data = items[0]
 
         # Update role
-        old_role = user_data.get("role", "member")
+        old_role = user_data.get("role", "user")
         user_data["role"] = new_role
         user_data["updatedAt"] = (
             datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")

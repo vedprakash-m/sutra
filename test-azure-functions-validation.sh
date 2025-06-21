@@ -79,6 +79,53 @@ test_azure_functions_validation() {
             return 1
         fi
 
+        # Validate health check configuration
+        print_status "Validating Azure Functions health check setup..."
+
+        # Check if docker-compose has health check for functions-api
+        if [ -f "docker-compose.yml" ]; then
+            # Look for healthcheck in the functions-api service section
+            if sed -n '/^  functions-api:/,/^  [a-z]/p' docker-compose.yml | grep -q "healthcheck:"; then
+                # Health check is configured, validate dependencies
+                local healthcheck_command=$(sed -n '/^  functions-api:/,/^  [a-z]/p' docker-compose.yml | grep -A 2 "test:" | head -1)
+
+                # Check if health check uses curl
+                if echo "$healthcheck_command" | grep -q "curl"; then
+                    # Verify curl is installed in Dockerfile
+                    if ! grep -q "curl" api/Dockerfile.dev; then
+                        print_error "Docker health check uses 'curl' but curl is not installed in Dockerfile.dev"
+                        print_error "Add 'curl' to the apt-get install command in api/Dockerfile.dev"
+                        print_error "This will cause health check failures and container dependency issues"
+                        return 1
+                    fi
+                fi
+
+                # Check if health endpoint exists
+                if echo "$healthcheck_command" | grep -q "/api/health"; then
+                    if [ ! -f "api/health/__init__.py" ]; then
+                        print_error "Health check endpoint /api/health configured but api/health/__init__.py not found"
+                        return 1
+                    fi
+
+                    if [ ! -f "api/health/function.json" ]; then
+                        print_error "Health check endpoint /api/health configured but api/health/function.json not found"
+                        return 1
+                    fi
+
+                    # Validate health function.json configuration
+                    if ! grep -q '"route": "health"' api/health/function.json; then
+                        print_error "Health function not configured with correct route in function.json"
+                        return 1
+                    fi
+                fi
+
+                print_success "Health check configuration validated"
+            else
+                print_warning "No health check configured for functions-api service"
+                print_warning "Consider adding health check for better container orchestration"
+            fi
+        fi
+
         print_success "Azure Functions container validation passed (found $function_count functions)"
     else
         print_warning "api/Dockerfile.dev not found, skipping Azure Functions validation"
@@ -94,12 +141,12 @@ test_with_problem() {
     # Create a backup of the current Dockerfile
     cp api/Dockerfile.dev api/Dockerfile.dev.backup
 
-    # Create a problematic version (with manual CMD)
+    # Create a problematic version (with manual CMD and missing curl)
     cat > api/Dockerfile.dev << 'EOF'
 # Development container for Azure Functions
 FROM mcr.microsoft.com/azure-functions/python:4-python3.12
 
-# Install system dependencies for potential compilation needs
+# Install system dependencies for potential compilation needs (MISSING curl)
 RUN apt-get update && apt-get install -y \
     build-essential \
     pkg-config \

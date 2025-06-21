@@ -505,6 +505,544 @@ class TestPlaybooksAPI:
             assert len(response_data["steps"]) == 1
             mock_cosmos_client.get_playbooks_container().replace_item.assert_called_once()
 
+    # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
+
+    @pytest.mark.asyncio
+    async def test_get_playbook_success(self, mock_auth_success, mock_cosmos_client):
+        """Test successful playbook retrieval."""
+        # Arrange
+        playbook_id = "test-playbook-123"
+        playbook = {
+            "id": playbook_id,
+            "name": "Test Playbook",
+            "creatorId": "test-user-123",
+            "description": "A test playbook",
+            "steps": [{"stepId": "step1", "type": "prompt"}],
+        }
+
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = [
+            playbook
+        ]
+
+        # Create request
+        req = func.HttpRequest(
+            method="GET",
+            url=f"http://localhost/api/playbooks/{playbook_id}",
+            body=b"",
+            headers={},
+            route_params={"id": playbook_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 200
+        response_data = json.loads(response.get_body())
+        assert response_data["id"] == playbook_id
+        assert response_data["name"] == "Test Playbook"
+        assert len(response_data["steps"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_get_playbook_not_found(self, mock_auth_success, mock_cosmos_client):
+        """Test playbook retrieval when playbook doesn't exist."""
+        # Arrange
+        playbook_id = "non-existent-playbook"
+
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = []
+
+        # Create request
+        req = func.HttpRequest(
+            method="GET",
+            url=f"http://localhost/api/playbooks/{playbook_id}",
+            body=b"",
+            headers={},
+            route_params={"id": playbook_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 404
+        response_data = json.loads(response.get_body())
+        assert "Playbook not found" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_delete_playbook_success(self, mock_auth_success, mock_cosmos_client):
+        """Test successful playbook deletion."""
+        # Arrange
+        playbook_id = "test-playbook-123"
+        playbook = {
+            "id": playbook_id,
+            "name": "Test Playbook",
+            "creatorId": "test-user-123",
+        }
+
+        # Mock database responses
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = [
+            playbook
+        ]
+        mock_cosmos_client.get_executions_container().query_items.return_value = [
+            0
+        ]  # No active executions
+
+        # Create request
+        req = func.HttpRequest(
+            method="DELETE",
+            url=f"http://localhost/api/playbooks/{playbook_id}",
+            body=b"",
+            headers={},
+            route_params={"id": playbook_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 200
+        response_data = json.loads(response.get_body())
+        assert "deleted successfully" in response_data["message"]
+        mock_cosmos_client.get_playbooks_container().delete_item.assert_called_once_with(
+            item=playbook_id, partition_key=playbook_id
+        )
+
+    @pytest.mark.asyncio
+    async def test_delete_playbook_not_found(self, mock_auth_success, mock_cosmos_client):
+        """Test playbook deletion when playbook doesn't exist."""
+        # Arrange
+        playbook_id = "non-existent-playbook"
+
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = []
+
+        # Create request
+        req = func.HttpRequest(
+            method="DELETE",
+            url=f"http://localhost/api/playbooks/{playbook_id}",
+            body=b"",
+            headers={},
+            route_params={"id": playbook_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 404
+        response_data = json.loads(response.get_body())
+        assert "Playbook not found" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_update_playbook_not_found(self, mock_auth_success, mock_cosmos_client):
+        """Test playbook update when playbook doesn't exist."""
+        # Arrange
+        playbook_id = "non-existent-playbook"
+        update_data = {"name": "Updated Name"}
+
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = []
+
+        # Create request
+        req = func.HttpRequest(
+            method="PUT",
+            url=f"http://localhost/api/playbooks/{playbook_id}",
+            body=json.dumps(update_data).encode(),
+            headers={"Content-Type": "application/json"},
+            route_params={"id": playbook_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 404
+        response_data = json.loads(response.get_body())
+        assert "Playbook not found" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_update_playbook_invalid_json(self, mock_auth_success, mock_cosmos_client):
+        """Test playbook update with invalid JSON."""
+        # Arrange
+        playbook_id = "test-playbook-123"
+
+        # Create request with invalid JSON
+        req = func.HttpRequest(
+            method="PUT",
+            url=f"http://localhost/api/playbooks/{playbook_id}",
+            body=b"{invalid json}",
+            headers={"Content-Type": "application/json"},
+            route_params={"id": playbook_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 400
+        response_data = json.loads(response.get_body())
+        assert "Invalid JSON" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_update_playbook_validation_error(self, mock_auth_success, mock_cosmos_client):
+        """Test playbook update with validation errors."""
+        # Arrange
+        playbook_id = "test-playbook-123"
+        existing_playbook = {
+            "id": playbook_id,
+            "name": "Old Name",
+            "creatorId": "test-user-123",
+            "steps": [],
+        }
+
+        update_data = {"name": ""}  # Invalid empty name
+
+        mock_cosmos_client.get_playbooks_container().query_items.return_value = [
+            existing_playbook
+        ]
+
+        # Mock validation failure
+        with patch("api.shared.validation.validate_playbook_data") as mock_validate:
+            mock_validate.return_value = {
+                "valid": False,
+                "errors": ["Playbook name is required"],
+            }
+
+            # Create request
+            req = func.HttpRequest(
+                method="PUT",
+                url=f"http://localhost/api/playbooks/{playbook_id}",
+                body=json.dumps(update_data).encode(),
+                headers={"Content-Type": "application/json"},
+                route_params={"id": playbook_id},
+            )
+
+            # Act
+            response = await playbooks_main(req)
+
+            # Assert
+            assert response.status_code == 400
+            response_data = json.loads(response.get_body())
+            assert "Validation failed" in response_data["error"]
+            assert len(response_data["details"]) >= 1  # Could be multiple validation errors
+
+    @pytest.mark.asyncio
+    async def test_method_not_allowed(self, mock_auth_success):
+        """Test unsupported HTTP method."""
+        # Create request with unsupported method
+        req = func.HttpRequest(
+            method="PATCH",  # Not supported
+            url="http://localhost/api/playbooks",
+            body=b"",
+            headers={},
+            route_params={},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 405
+        response_data = json.loads(response.get_body())
+        assert "Method not allowed" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_continue_execution_not_found(self, mock_auth_success, mock_cosmos_client):
+        """Test execution continuation when execution doesn't exist."""
+        # Arrange
+        execution_id = "non-existent-execution"
+
+        mock_cosmos_client.get_executions_container().query_items.return_value = []
+
+        # Create request
+        req = func.HttpRequest(
+            method="POST",
+            url=f"http://localhost/api/playbooks/executions/{execution_id}/continue",
+            body=json.dumps({}).encode(),
+            headers={"Content-Type": "application/json"},
+            route_params={"execution_id": execution_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 404
+        response_data = json.loads(response.get_body())
+        assert "Execution not found" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_get_execution_status_not_found(self, mock_auth_success, mock_cosmos_client):
+        """Test execution status retrieval when execution doesn't exist."""
+        # Arrange
+        execution_id = "non-existent-execution"
+
+        mock_cosmos_client.get_executions_container().query_items.return_value = []
+
+        # Create request
+        req = func.HttpRequest(
+            method="GET",
+            url=f"http://localhost/api/playbooks/executions/{execution_id}",
+            body=b"",
+            headers={},
+            route_params={"execution_id": execution_id},
+        )
+
+        # Act
+        response = await playbooks_main(req)
+
+        # Assert
+        assert response.status_code == 404
+        response_data = json.loads(response.get_body())
+        assert "Execution not found" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_execute_playbook_steps_prompt_step(self):
+        """Test execution of playbook with prompt step."""
+        from api.playbooks_api import execute_playbook_steps
+
+        # Arrange
+        execution_id = "test-execution-123"
+        playbook = {
+            "id": "playbook-123",
+            "steps": [
+                {
+                    "stepId": "step1",
+                    "type": "prompt",
+                    "name": "Test Prompt Step",
+                    "promptText": "Test prompt",
+                    "config": {"llm": "gpt-4"},
+                    "variableMappings": {"output_var": "response"},
+                }
+            ],
+        }
+        initial_inputs = {"input_var": "test_value"}
+
+        # Mock database operations
+        with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
+            mock_container = Mock()
+            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+
+            # Mock execution data
+            mock_execution = {
+                "id": execution_id,
+                "status": "running",
+                "stepLogs": [],
+            }
+            mock_container.read_item.return_value = mock_execution
+            mock_container.replace_item.return_value = mock_execution
+
+            # Act
+            await execute_playbook_steps(execution_id, playbook, initial_inputs)
+
+            # Assert
+            # Verify database operations were called
+            mock_container.read_item.assert_called_with(
+                item=execution_id, partition_key=execution_id
+            )
+            assert mock_container.replace_item.call_count >= 1
+
+    @pytest.mark.asyncio
+    async def test_execute_playbook_steps_manual_review_step(self):
+        """Test execution of playbook with manual review step."""
+        from api.playbooks_api import execute_playbook_steps
+
+        # Arrange
+        execution_id = "test-execution-123"
+        playbook = {
+            "id": "playbook-123",
+            "steps": [
+                {
+                    "stepId": "review_step",
+                    "type": "manual_review",
+                    "name": "Manual Review Step",
+                }
+            ],
+        }
+        initial_inputs = {}
+
+        # Mock database operations
+        with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
+            mock_container = Mock()
+            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+
+            # Mock execution data
+            mock_execution = {
+                "id": execution_id,
+                "status": "running",
+                "stepLogs": [],
+            }
+            mock_container.read_item.return_value = mock_execution
+            mock_container.replace_item.return_value = mock_execution
+
+            # Act
+            await execute_playbook_steps(execution_id, playbook, initial_inputs)
+
+            # Assert - Should pause for manual review
+            # Verify execution was updated to paused status
+            update_calls = mock_container.replace_item.call_args_list
+            paused_call = None
+            for call in update_calls:
+                execution_data = call[1]['body']
+                if execution_data.get('status') == 'paused_for_review':
+                    paused_call = call
+                    break
+
+            assert paused_call is not None, "Execution should be paused for manual review"
+
+    @pytest.mark.asyncio
+    async def test_execute_playbook_steps_step_failure(self):
+        """Test execution with step failure handling."""
+        from api.playbooks_api import execute_playbook_steps
+
+        # Arrange
+        execution_id = "test-execution-123"
+        playbook = {
+            "id": "playbook-123",
+            "steps": [
+                {
+                    "stepId": "failing_step",
+                    "type": "prompt",
+                    "name": "Failing Step",
+                }
+            ],
+        }
+        initial_inputs = {}
+
+        # Mock database operations with failure
+        with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
+            mock_container = Mock()
+            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+
+            # Mock execution data
+            mock_execution = {
+                "id": execution_id,
+                "status": "running",
+                "stepLogs": [],
+            }
+            mock_container.read_item.return_value = mock_execution
+
+            # Mock a failure during step execution by making replace_item raise exception on second call
+            call_count = 0
+            def side_effect(*args, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 2:  # Fail on second update (during step execution)
+                    raise Exception("Step execution failed")
+                return mock_execution
+
+            mock_container.replace_item.side_effect = side_effect
+
+            # Act
+            await execute_playbook_steps(execution_id, playbook, initial_inputs)
+
+            # Assert - Should handle the failure gracefully
+            assert mock_container.replace_item.call_count >= 1
+
+    @pytest.mark.asyncio
+    async def test_execute_playbook_steps_completion(self):
+        """Test execution completion."""
+        from api.playbooks_api import execute_playbook_steps
+
+        # Arrange
+        execution_id = "test-execution-123"
+        playbook = {
+            "id": "playbook-123",
+            "steps": [
+                {
+                    "stepId": "final_step",
+                    "type": "prompt",
+                    "name": "Final Step",
+                    "promptText": "Final prompt",
+                }
+            ],
+        }
+        initial_inputs = {}
+
+        # Mock database operations
+        with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
+            mock_container = Mock()
+            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+
+            # Mock execution data
+            mock_execution = {
+                "id": execution_id,
+                "status": "running",
+                "stepLogs": [],
+            }
+            mock_container.read_item.return_value = mock_execution
+            mock_container.replace_item.return_value = mock_execution
+
+            # Act
+            await execute_playbook_steps(execution_id, playbook, initial_inputs)
+
+            # Assert - Should complete execution
+            final_call = mock_container.replace_item.call_args_list[-1]
+            final_execution = final_call[1]['body']
+            assert final_execution['status'] == 'completed'
+            assert 'endTime' in final_execution
+
+    @pytest.mark.asyncio
+    async def test_resume_playbook_execution(self):
+        """Test resuming playbook execution after manual review."""
+        from api.playbooks_api import resume_playbook_execution
+
+        # Arrange
+        execution_id = "test-execution-123"
+        playbook = {
+            "id": "playbook-123",
+            "steps": [
+                {
+                    "stepId": "step1",
+                    "type": "prompt",
+                    "name": "Resume Step",
+                }
+            ],
+        }
+        execution = {
+            "id": execution_id,
+            "status": "paused_for_review",
+            "stepLogs": [
+                {
+                    "stepId": "previous_step",
+                    "status": "completed",
+                }
+            ],
+            "initialInputs": {"var": "value"},
+        }
+
+        # Mock the execute_playbook_steps function
+        with patch("api.playbooks_api.execute_playbook_steps") as mock_execute:
+            # Act
+            await resume_playbook_execution(execution_id, playbook, execution)
+
+            # Assert
+            mock_execute.assert_called_once_with(
+                execution_id, playbook, execution["initialInputs"]
+            )
+
+    @pytest.mark.asyncio
+    async def test_execute_playbook_steps_database_failure_recovery(self):
+        """Test execution with database failure and recovery."""
+        from api.playbooks_api import execute_playbook_steps
+
+        # Arrange
+        execution_id = "test-execution-123"
+        playbook = {"id": "playbook-123", "steps": []}
+        initial_inputs = {}
+
+        # Mock database failure
+        with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
+            mock_container = Mock()
+            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+
+            # Mock read_item to fail
+            mock_container.read_item.side_effect = Exception("Database connection failed")
+
+            # Act - should handle the exception gracefully
+            await execute_playbook_steps(execution_id, playbook, initial_inputs)
+
+            # Assert - should attempt to read the execution
+            assert mock_container.read_item.call_count >= 1
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

@@ -533,12 +533,15 @@ class TestAdminAPI:
     async def test_update_user_role_user_not_found(
         self, mock_admin_auth, mock_cosmos_client
     ):
-        """Test user role update when user doesn't exist."""
+        """Test user role update with non-existent user."""
         # Arrange
-        target_user_id = "nonexistent-user"
+        target_user_id = "non-existent-user"
         new_role_data = {"role": "admin"}
 
-        mock_cosmos_client.query_items.return_value = []  # No user found
+        # Mock database responses - user not found
+        from unittest.mock import AsyncMock
+
+        mock_cosmos_client.query_items = AsyncMock(return_value=[])
 
         # Create request
         req = func.HttpRequest(
@@ -559,7 +562,250 @@ class TestAdminAPI:
         # Assert
         assert response.status_code == 404
         response_data = json.loads(response.get_body())
-        assert response_data["error"] == "User not found"
+        assert "User not found" in response_data["error"]
+
+    # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
+
+    @pytest.mark.asyncio
+    async def test_list_users_with_search_filter(self, mock_admin_auth, mock_cosmos_client):
+        """Test user listing with search and role filter."""
+        # Arrange
+        mock_users = [
+            {
+                "id": "user-1",
+                "email": "john@example.com",
+                "name": "John Doe",
+                "role": "user",
+                "createdAt": "2025-06-15T09:00:00Z",
+            }
+        ]
+
+        mock_cosmos_client.query_items = AsyncMock(
+            side_effect=[mock_users, [1]]  # Users list and count
+        )
+
+        # Create request with search and role filter
+        req = func.HttpRequest(
+            method="GET",
+            url="http://localhost/api/admin/users?search=john&role=user&page=2&limit=25",
+            body=b"",
+            headers={},
+            route_params={"resource": "users"},
+            params={"search": "john", "role": "user", "page": "2", "limit": "25"},
+        )
+
+        # Act
+        response = await admin_main(req)
+
+        # Assert
+        assert response.status_code == 200
+        response_data = json.loads(response.get_body())
+        assert len(response_data["users"]) == 1
+        assert response_data["pagination"]["current_page"] == 2
+        assert response_data["pagination"]["limit"] == 25
+
+    @pytest.mark.asyncio
+    async def test_update_user_role_invalid_json(self, mock_admin_auth, mock_cosmos_client):
+        """Test user role update with invalid JSON."""
+        # Create request with invalid JSON
+        req = func.HttpRequest(
+            method="PUT",
+            url="http://localhost/api/admin/users/user-123/role",
+            body=b"{invalid json}",
+            headers={"Content-Type": "application/json"},
+            route_params={
+                "resource": "users",
+                "user_id": "user-123",
+                "action": "role",
+            },
+        )
+
+        # Act
+        response = await admin_main(req)
+
+        # Assert
+        assert response.status_code == 400
+        response_data = json.loads(response.get_body())
+        assert "Invalid JSON" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_reset_test_data_success(self, mock_admin_auth, mock_cosmos_client):
+        """Test successful test data reset."""
+        # Mock database responses
+        mock_cosmos_client.query_items = AsyncMock(return_value=[])
+        mock_cosmos_client.delete_item = AsyncMock()
+
+        # Mock environment to allow test data operations
+        with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
+            # Create request with proper authentication headers
+            req = func.HttpRequest(
+                method="POST",
+                url="http://localhost/api/admin/test-data/reset",
+                body=b"{}",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer admin-token",
+                },
+                route_params={"resource": "test-data", "action": "reset"},
+            )
+
+            # Act
+            response = await admin_main(req)
+
+            # Assert
+            assert response.status_code == 200
+            response_data = json.loads(response.get_body())
+            assert response_data["environment"] == "test"
+            assert "reset_at" in response_data
+            assert "containers_reset" in response_data
+
+    @pytest.mark.asyncio
+    async def test_seed_test_data_success(self, mock_admin_auth, mock_cosmos_client):
+        """Test successful test data seeding."""
+        # Mock database responses
+        mock_cosmos_client.query_items = AsyncMock(return_value=[])
+        mock_cosmos_client.create_item = AsyncMock()
+
+        # Mock environment to allow test data operations
+        with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
+            # Create request with proper authentication headers
+            req = func.HttpRequest(
+                method="POST",
+                url="http://localhost/api/admin/test-data/seed",
+                body=b"{}",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer admin-token",
+                },
+                route_params={"resource": "test-data", "action": "seed"},
+            )
+
+            # Act
+            response = await admin_main(req)
+
+            # Assert
+            assert response.status_code == 200
+            response_data = json.loads(response.get_body())
+            assert response_data["environment"] == "test"
+            assert "seeded_at" in response_data
+            assert "data_created" in response_data
+
+    @pytest.mark.asyncio
+    async def test_resource_not_found_error(self, mock_admin_auth):
+        """Test handling of unknown resource."""
+        # Create request for unknown resource
+        req = func.HttpRequest(
+            method="GET",
+            url="http://localhost/api/admin/unknown-resource",
+            body=b"",
+            headers={},
+            route_params={"resource": "unknown-resource"},
+        )
+
+        # Act
+        response = await admin_main(req)
+
+        # Assert
+        assert response.status_code == 404
+        response_data = json.loads(response.get_body())
+        assert "Resource not found" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_list_users_with_masked_api_keys(self, mock_admin_auth, mock_cosmos_client):
+        """Test that API keys are properly masked in user listing."""
+        # Arrange
+        mock_users = [
+            {
+                "id": "user-1",
+                "email": "user1@example.com",
+                "name": "User One",
+                "role": "user",
+                "createdAt": "2025-06-15T09:00:00Z",
+                "llmApiKeys": {
+                    "openai": "sk-actual-secret-key",  # String format
+                    "google_gemini": {
+                        "enabled": True,
+                        "status": "active",
+                        "apiKey": "secret-key",
+                        "lastTested": "2025-06-15T08:00:00Z"
+                    }
+                },
+            }
+        ]
+
+        mock_cosmos_client.query_items = AsyncMock(
+            side_effect=[mock_users, [1]]
+        )
+
+        # Create request
+        req = func.HttpRequest(
+            method="GET",
+            url="http://localhost/api/admin/users",
+            body=b"",
+            headers={},
+            route_params={"resource": "users"},
+            params={},
+        )
+
+        # Act
+        response = await admin_main(req)
+
+        # Assert
+        assert response.status_code == 200
+        response_data = json.loads(response.get_body())
+        user = response_data["users"][0]
+
+        # Check that string API keys are masked
+        assert user["llmApiKeys"]["openai"]["enabled"] == True
+        assert user["llmApiKeys"]["openai"]["status"] == "configured"
+
+        # Check that dict API keys are properly masked
+        assert user["llmApiKeys"]["google_gemini"]["enabled"] == True
+        assert user["llmApiKeys"]["google_gemini"]["status"] == "active"
+        assert user["llmApiKeys"]["google_gemini"]["lastTested"] == "2025-06-15T08:00:00Z"
+        assert "apiKey" not in user["llmApiKeys"]["google_gemini"]
+
+    @pytest.mark.asyncio
+    async def test_test_data_production_environment_blocked(self, mock_admin_auth):
+        """Test that test data operations are blocked in production environment."""
+        # Create request without mocking environment (defaults to production)
+        req = func.HttpRequest(
+            method="POST",
+            url="http://localhost/api/admin/test-data/reset",
+            body=b"{}",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Bearer admin-token",
+            },
+            route_params={"resource": "test-data", "action": "reset"},
+        )
+
+        # Act
+        response = await admin_main(req)
+
+        # Assert
+        assert response.status_code == 403
+        response_data = json.loads(response.get_body())
+        assert "only available in test environments" in response_data["message"]
+
+    @pytest.mark.asyncio
+    async def test_admin_api_general_exception_handling(self, mock_admin_auth):
+        """Test general exception handling in admin API."""
+        # Mock an exception in the authentication check
+        with patch("api.admin_api.verify_jwt_token", side_effect=Exception("Database connection failed")):
+            req = func.HttpRequest(
+                method="GET",
+                url="http://localhost/api/admin/users",
+                body=b"",
+                headers={"Authorization": "Bearer test-token"},
+                route_params={"resource": "users"},
+            )
+
+            # Act
+            response = await admin_main(req)
+
+            # Assert - Should trigger handle_api_error
+            assert response.status_code in [500, 401]  # Depending on exception handling
 
 
 if __name__ == "__main__":

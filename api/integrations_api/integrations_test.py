@@ -468,3 +468,213 @@ class TestIntegrationsAPI:
             assert response.status_code == 500
             response_data = json.loads(response.get_body())
             assert "error" in response_data
+
+    # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_openai_success(self):
+        """Test successful OpenAI API key validation."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock successful OpenAI API response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"data": [{"id": "gpt-3.5-turbo"}]}
+
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("openai", "sk-test-key")
+
+            # Assert
+            assert result["valid"] == True
+            assert result["model"] == "gpt-3.5-turbo"
+            assert "response_time_ms" in result
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_google_gemini_success(self):
+        """Test successful Google Gemini API key validation."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock successful Google Gemini API response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 200
+
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("google_gemini", "test-api-key")
+
+            # Assert
+            assert result["valid"] == True
+            assert result["model"] == "gemini-1.5-pro"
+            assert "response_time_ms" in result
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_anthropic_success(self):
+        """Test successful Anthropic API key validation."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock successful Anthropic API response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 200
+
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("anthropic", "test-api-key")
+
+            # Assert
+            assert result["valid"] == True
+            assert result["model"] == "claude-3-haiku"
+            assert "response_time_ms" in result
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_custom_success(self):
+        """Test successful custom API validation."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock successful custom API response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 200
+
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("custom", "test-api-key", "https://custom-api.com")
+
+            # Assert
+            assert result["valid"] == True
+            assert result["model"] == "custom"
+            assert "response_time_ms" in result
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_openai_failure(self):
+        """Test failed OpenAI API key validation."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock failed OpenAI API response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 401
+            mock_response.text = "Invalid API key"
+
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("openai", "invalid-key")
+
+            # Assert
+            assert result["valid"] == False
+            assert "OpenAI API error: 401" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_google_gemini_failure(self):
+        """Test failed Google Gemini API key validation."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock failed Google Gemini API response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 403
+            mock_response.text = "API key invalid"
+
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("google_gemini", "invalid-key")
+
+            # Assert
+            assert result["valid"] == False
+            assert "Google Gemini API error: 403" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_anthropic_failure(self):
+        """Test failed Anthropic API key validation."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock failed Anthropic API response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 401
+            mock_response.text = "Unauthorized"
+
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("anthropic", "invalid-key")
+
+            # Assert
+            assert result["valid"] == False
+            assert "Anthropic API error: 401" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_timeout(self):
+        """Test API key validation with timeout."""
+        from api.integrations_api import validate_llm_api_key
+        import asyncio
+
+        # Mock timeout error
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.get = AsyncMock(side_effect=asyncio.TimeoutError())
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("openai", "test-key")
+
+            # Assert
+            assert result["valid"] == False
+            assert "Connection timeout" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_unsupported_provider(self):
+        """Test API key validation for unsupported provider."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Act
+        result = await validate_llm_api_key("unsupported_provider", "test-key")
+
+        # Assert
+        assert result["valid"] == False
+        assert "Unsupported provider" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_validate_llm_api_key_connection_error(self):
+        """Test API key validation with connection error."""
+        from api.integrations_api import validate_llm_api_key
+
+        # Mock connection error
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_context = AsyncMock()
+            mock_context.__aenter__.return_value.get = AsyncMock(side_effect=Exception("Connection failed"))
+            mock_client.return_value = mock_context
+
+            # Act
+            result = await validate_llm_api_key("openai", "test-key")
+
+            # Assert
+            assert result["valid"] == False
+            assert "Connection error" in result["error"]
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])

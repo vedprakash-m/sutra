@@ -441,6 +441,170 @@ class TestCollectionsAPI:
         response_data = json.loads(response.get_body())
         assert response_data["error"] == "Unauthorized"
 
+    # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
+
+    @pytest.mark.asyncio
+    async def test_method_not_allowed(self, mock_auth_success):
+        """Test unsupported HTTP method returns 405."""
+        # Create request with unsupported method
+        req = func.HttpRequest(
+            method="PATCH",  # Not supported
+            url="http://localhost/api/collections",
+            body=b"",
+            headers={},
+            route_params={},
+        )
+
+        # Act
+        response = await collections_main(req)
+
+        # Assert
+        assert response.status_code == 405
+        response_data = json.loads(response.get_body())
+        assert "Method not allowed" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_create_collection_invalid_json(self, mock_auth_success):
+        """Test collection creation with invalid JSON."""
+        # Create request with invalid JSON
+        req = func.HttpRequest(
+            method="POST",
+            url="http://localhost/api/collections",
+            body=b"{invalid json}",
+            headers={"Content-Type": "application/json"},
+            route_params={},
+        )
+
+        # Act
+        response = await collections_main(req)
+
+        # Assert
+        assert response.status_code == 400
+        response_data = json.loads(response.get_body())
+        assert "Invalid JSON" in response_data["error"]
+
+    @pytest.mark.asyncio
+    async def test_list_collections_with_filters(
+        self, mock_auth_success, mock_cosmos_client
+    ):
+        """Test collection listing with search and type filters."""
+        # Arrange
+        mock_collections = [
+            {
+                "id": "collection-1",
+                "name": "Test Collection",
+                "ownerId": "test-user-123",
+                "type": "public",
+                "description": "Public test collection",
+            }
+        ]
+
+        mock_cosmos_client.query_items.side_effect = [
+            mock_collections,  # Items
+            [1],  # Count
+        ]
+
+        # Create request with search and type filters
+        req = func.HttpRequest(
+            method="GET",
+            url="http://localhost/api/collections?search=test&type=public&teamId=team-123",
+            body=b"",
+            headers={},
+            route_params={},
+            params={"search": "test", "type": "public", "teamId": "team-123"},
+        )
+
+        # Act
+        response = await collections_main(req)
+
+        # Assert
+        assert response.status_code == 200
+        response_data = json.loads(response.get_body())
+        assert len(response_data["collections"]) == 1
+
+    @pytest.mark.asyncio
+    async def test_list_collections_mock_data_handling(
+        self, mock_auth_success, mock_cosmos_client
+    ):
+        """Test collection listing with mock data in development mode."""
+        # Arrange
+        mock_collections = [
+            {
+                "id": "collection-1",
+                "name": "Mock Collection",
+                "_mock": True,  # Mock data indicator
+            }
+        ]
+
+        # Mock development mode response with _mock indicator
+        mock_cosmos_client.query_items.side_effect = [
+            mock_collections,  # Items
+            [{"_mock": True, "count": 2}],  # Count with mock indicator
+        ]
+
+        # Create request
+        req = func.HttpRequest(
+            method="GET",
+            url="http://localhost/api/collections",
+            body=b"",
+            headers={},
+            route_params={},
+            params={},
+        )
+
+        # Act
+        response = await collections_main(req)
+
+        # Assert
+        assert response.status_code == 200
+        response_data = json.loads(response.get_body())
+        assert response_data["pagination"]["total_count"] == 2  # Mock count
+
+    @pytest.mark.asyncio
+    async def test_create_collection_validation_exception(
+        self, mock_auth_success, mock_cosmos_client
+    ):
+        """Test collection creation with Pydantic validation exception."""
+        # Arrange
+        collection_data = {
+            "name": "Test Collection",
+            "description": "Valid description",
+        }
+
+        # Mock validation success but Pydantic validation failure
+        with patch("api.shared.validation.validate_collection_data") as mock_validate, \
+             patch("api.collections_api.Collection") as mock_collection:
+
+            mock_validate.return_value = {"valid": True, "errors": []}
+
+            # Import ValidationError from pydantic
+            from pydantic import ValidationError
+            mock_collection.side_effect = ValidationError.from_exception_data("Collection", [
+                {
+                    "type": "missing",
+                    "loc": ("name",),
+                    "msg": "Field required",
+                    "input": {},
+                }
+            ])
+
+            # Create request
+            req = func.HttpRequest(
+                method="POST",
+                url="http://localhost/api/collections",
+                body=json.dumps(collection_data).encode(),
+                headers={"Content-Type": "application/json"},
+                route_params={},
+            )
+
+            # Act
+            response = await collections_main(req)
+
+            # Assert - ValidationError causes 500 due to exception handling
+            assert response.status_code == 500
+            response_data = json.loads(response.get_body())
+            assert "Failed to create collection" in response_data["message"]
+
 
 if __name__ == "__main__":
     pytest.main([__file__])

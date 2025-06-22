@@ -141,7 +141,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = () => {
     // Try Static Web Apps login first
-    if (window.location.hostname.includes("azurestaticapps.net")) {
+    if (
+      window.location.hostname &&
+      window.location.hostname.includes("azurestaticapps.net")
+    ) {
       window.location.href = "/.auth/login/aad";
     } else {
       // Fallback: simulate login for demo
@@ -160,7 +163,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = () => {
     // Try Static Web Apps logout first
-    if (window.location.hostname.includes("azurestaticapps.net")) {
+    if (
+      window.location.hostname &&
+      window.location.hostname.includes("azurestaticapps.net")
+    ) {
       // Clear local state first
       setUser(null);
       setToken(null);

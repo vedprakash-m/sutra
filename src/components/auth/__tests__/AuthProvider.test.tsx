@@ -29,7 +29,10 @@ describe("AuthProvider", () => {
     mockFetch.mockClear();
     // Mock window.location for redirects
     delete (window as any).location;
-    (window as any).location = { href: "" };
+    (window as any).location = {
+      href: "",
+      hostname: "localhost", // Mock hostname to prevent undefined errors
+    };
   });
 
   it("renders children and provides auth context", () => {
@@ -149,6 +152,9 @@ describe("AuthProvider", () => {
   });
 
   it("redirects to login when login button is clicked", () => {
+    // Mock Azure Static Web Apps hostname to trigger redirect behavior
+    (window as any).location.hostname = "app.azurestaticapps.net";
+
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ clientPrincipal: null }),
@@ -165,6 +171,9 @@ describe("AuthProvider", () => {
   });
 
   it("redirects to logout when logout button is clicked", async () => {
+    // Mock Azure Static Web Apps hostname to trigger redirect behavior
+    (window as any).location.hostname = "app.azurestaticapps.net";
+
     const mockUser = {
       identityProvider: "aad",
       userId: "test-user-id",

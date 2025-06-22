@@ -422,7 +422,7 @@ class TestCreateHealthResponse:
 
     def test_create_health_response_production(self):
         """Test health response with production environment."""
-        with patch.dict(os.environ, {"SUTRA_ENVIRONMENT": "production"}), \
+        with patch.dict(os.environ, {"ENVIRONMENT": "production"}), \
              patch("api.shared.middleware.rate_limiter") as mock_limiter:
 
             mock_limiter.clients = {}

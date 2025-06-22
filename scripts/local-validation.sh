@@ -175,6 +175,7 @@ log_info "Running backend unit tests (matching CI/CD environment)"
 export FUNCTIONS_WORKER_RUNTIME="python"
 export KEY_VAULT_URI="https://test-keyvault.vault.azure.net/"
 export COSMOS_DB_CONNECTION_STRING="test-cosmos-connection"
+export ENVIRONMENT="production"  # Set to production to match CI expectation
 unset SUTRA_ENVIRONMENT
 unset SUTRA_MAX_REQUESTS_PER_MINUTE
 

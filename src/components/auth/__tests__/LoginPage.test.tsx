@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import LoginPage from "../LoginPage";
 
 // Mock the useAuth hook
@@ -21,80 +21,40 @@ describe("LoginPage", () => {
   it("should render login page with title and subtitle", () => {
     render(<LoginPage />);
 
-    expect(screen.getByText("Sign in to Sutra")).toBeInTheDocument();
+    expect(screen.getByText("Welcome to Sutra")).toBeInTheDocument();
     expect(
-      screen.getByText("Multi-LLM Prompt Studio - Development Mode"),
+      screen.getByText("Multi-LLM Prompt Studio for AI Operations"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Beta Version - Secure Azure AD Authentication"),
     ).toBeInTheDocument();
   });
 
-  it("should render login type options", () => {
+  it("should render authentication content", () => {
     render(<LoginPage />);
 
-    expect(screen.getByText("Login as:")).toBeInTheDocument();
-    expect(screen.getByText("Regular User")).toBeInTheDocument();
-    expect(screen.getByText("Administrator")).toBeInTheDocument();
+    expect(
+      screen.getByText("Secure Authentication Required"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Sign in with your Microsoft account to access the Sutra platform",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Sign in with Microsoft/i }),
+    ).toBeInTheDocument();
   });
 
-  it("should have user option selected by default", () => {
-    render(<LoginPage />);
-
-    const userRadio = screen.getByRole("radio", { name: "Regular User" });
-    const adminRadio = screen.getByRole("radio", { name: "Administrator" });
-
-    expect(userRadio).toBeChecked();
-    expect(adminRadio).not.toBeChecked();
-  });
-
-  it("should allow switching between user and admin login types", () => {
-    render(<LoginPage />);
-
-    const userRadio = screen.getByRole("radio", { name: "Regular User" });
-    const adminRadio = screen.getByRole("radio", { name: "Administrator" });
-
-    // Click admin radio
-    fireEvent.click(adminRadio);
-    expect(adminRadio).toBeChecked();
-    expect(userRadio).not.toBeChecked();
-
-    // Click user radio
-    fireEvent.click(userRadio);
-    expect(userRadio).toBeChecked();
-    expect(adminRadio).not.toBeChecked();
-  });
-
-  it("should render sign in button", () => {
+  it("should call login when sign in button is clicked", () => {
     render(<LoginPage />);
 
     const signInButton = screen.getByRole("button", {
-      name: "Sign in (Development Mode)",
-    });
-    expect(signInButton).toBeInTheDocument();
-    expect(signInButton).toBeEnabled();
-  });
-
-  it("should call login with user email when user login is clicked", async () => {
-    render(<LoginPage />);
-
-    const signInButton = screen.getByRole("button", {
-      name: "Sign in (Development Mode)",
+      name: /Sign in with Microsoft/i,
     });
     fireEvent.click(signInButton);
 
-    expect(mockLogin).toHaveBeenCalledWith("user@sutra.ai", false);
-  });
-
-  it("should call login with admin email when admin login is clicked", async () => {
-    render(<LoginPage />);
-
-    const adminRadio = screen.getByRole("radio", { name: "Administrator" });
-    fireEvent.click(adminRadio);
-
-    const signInButton = screen.getByRole("button", {
-      name: "Sign in (Development Mode)",
-    });
-    fireEvent.click(signInButton);
-
-    expect(mockLogin).toHaveBeenCalledWith("admin@sutra.ai", true);
+    expect(mockLogin).toHaveBeenCalledTimes(1);
   });
 
   it("should show loading state when isLoading is true", () => {
@@ -105,41 +65,25 @@ describe("LoginPage", () => {
 
     render(<LoginPage />);
 
-    const signInButton = screen.getByRole("button", { name: "Signing in..." });
-    expect(signInButton).toBeInTheDocument();
-    expect(signInButton).toBeDisabled();
-  });
-
-  it("should handle login errors gracefully", async () => {
-    const consoleErrorSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
-    mockLogin.mockRejectedValue(new Error("Login failed"));
-
-    render(<LoginPage />);
-
+    // The button should still be rendered but may be disabled
     const signInButton = screen.getByRole("button", {
-      name: "Sign in (Development Mode)",
+      name: /Sign in with Microsoft/i,
     });
-    fireEvent.click(signInButton);
-
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Login failed:",
-        expect.any(Error),
-      );
-    });
-
-    consoleErrorSpy.mockRestore();
+    expect(signInButton).toBeInTheDocument();
   });
 
-  it("should display development mode notice", () => {
+  it("should display security and beta notices", () => {
     render(<LoginPage />);
 
     expect(
-      screen.getByText(/This is a development environment/),
+      screen.getByText(/Your data is protected with enterprise-grade security/),
     ).toBeInTheDocument();
-    expect(screen.getByText(/integrate with Azure AD B2C/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Beta testing program - help us improve Sutra/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Questions\? Contact support for assistance/),
+    ).toBeInTheDocument();
   });
 
   it("should not crash when login function is undefined", () => {

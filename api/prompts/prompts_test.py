@@ -14,6 +14,25 @@ import os
 from unittest.mock import Mock, AsyncMock, patch, PropertyMock, MagicMock
 import azure.functions as func
 from datetime import datetime, timezone
+
+"""
+Comprehensive test file for Prompts API.
+
+This test suite provides complete coverage for all prompts API endpoints with
+proper authentication mocking and comprehensive scenario testing.
+
+Target Coverage: 75%+ (from current 35%)
+"""
+
+import pytest
+import json
+import uuid
+import os
+from unittest.mock import Mock, AsyncMock, patch, PropertyMock, MagicMock
+import azure.functions as func
+from datetime import datetime, timezone
+
+# Import modules
 from api.prompts import (
     main,
     handle_get_prompts,
@@ -32,9 +51,69 @@ from ..shared.models import (
 )
 from ..shared.error_handling import ValidationException, BusinessLogicException
 
+# Mock the auth decorator at module level to prevent 401 errors
+@pytest.fixture(autouse=True)
+def mock_auth_globally():
+    """Auto-use fixture to mock authentication globally for all tests."""
+    # Mock both the decorator and the function calls it makes
+    with patch("api.prompts.require_auth") as mock_require_auth, \
+         patch("shared.auth.require_auth") as mock_shared_auth, \
+         patch("api.prompts.get_current_user") as mock_get_user, \
+         patch("shared.auth.get_current_user") as mock_shared_get_user:
+
+        # Mock the require_auth decorator to pass through the function
+        def pass_through_decorator(*args, **kwargs):
+            def decorator(func):
+                return func
+            return decorator
+
+        mock_require_auth.side_effect = pass_through_decorator
+        mock_shared_auth.side_effect = pass_through_decorator
+
+        # Mock the get_current_user function to return a test user
+        test_user = User(
+            id="test-user-id",
+            email="test@example.com",
+            name="Test User",
+            roles=["user"],
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        mock_get_user.return_value = test_user
+        mock_shared_get_user.return_value = test_user
+
+        yield {
+            'require_auth': mock_require_auth,
+            'get_user': mock_get_user
+        }
+
 
 class TestPromptsAPI:
     """Comprehensive test suite for Prompts API with proper authentication mocking."""
+
+    @pytest.fixture
+    def mock_auth(self):
+        """Mock authentication for prompts API."""
+        with patch("api.prompts.require_auth") as mock_require_auth, \
+             patch("api.prompts.get_current_user") as mock_get_user:
+            # Mock the require_auth decorator to pass through the function
+            def pass_through_decorator(*args, **kwargs):
+                def decorator(func):
+                    return func
+                return decorator
+            mock_require_auth.side_effect = pass_through_decorator
+
+            # Mock get_current_user to return a test user
+            mock_user = User(
+                id="test-user-123",
+                email="test@example.com",
+                name="Test User",
+                roles=[UserRole.USER],
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
+            mock_get_user.return_value = mock_user
+            yield mock_user
 
     @pytest.fixture
     def mock_request(self):

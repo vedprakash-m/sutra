@@ -280,6 +280,43 @@ else
     echo -e "${BLUE}🔗 Stage 7: E2E Environment Check (Essential for CI/CD)${NC}"
     echo "--------------------------------------------------------"
 
+    # CRITICAL: Check required E2E files exist before Docker validation
+    echo "Checking required E2E files..."
+    MISSING_E2E_FILES=false
+
+    if [ ! -f "Dockerfile.e2e" ]; then
+        log_error "Missing Dockerfile.e2e - CI/CD will fail!"
+        MISSING_E2E_FILES=true
+    else
+        log_success "Dockerfile.e2e exists"
+    fi
+
+    if [ ! -f "nginx.conf" ]; then
+        log_error "Missing nginx.conf - E2E Docker build will fail!"
+        MISSING_E2E_FILES=true
+    else
+        log_success "nginx.conf exists"
+    fi
+
+    if [ ! -f "docker-compose.yml" ]; then
+        log_error "Missing docker-compose.yml - E2E tests will fail!"
+        MISSING_E2E_FILES=true
+    else
+        log_success "docker-compose.yml exists"
+    fi
+
+    # If missing E2E files, fail immediately
+    if [ "$MISSING_E2E_FILES" = true ]; then
+        log_error "Missing critical E2E files - CI/CD will fail!"
+        echo ""
+        echo "🔧 REQUIRED ACTIONS:"
+        echo "   1. Ensure Dockerfile.e2e exists in project root"
+        echo "   2. Ensure nginx.conf exists in project root"
+        echo "   3. Ensure docker-compose.yml exists in project root"
+        echo ""
+        ((ISSUES_FOUND++))
+    fi
+
     # Critical: Check if Docker is available for E2E tests
     if docker info > /dev/null 2>&1; then
         # Check if E2E environment can start (quick validation)
@@ -292,21 +329,28 @@ else
         if docker compose config > /dev/null 2>&1; then
             log_success "Docker Compose configuration valid"
 
-            # Quick container build test (dry run)
-            if docker compose build --dry-run > /tmp/e2e_build_check.log 2>&1; then
-                log_success "E2E container build configuration valid"
+            # ENHANCED: Actually test if Docker can parse Dockerfile.e2e (not just dry-run)
+            echo "Validating Dockerfile.e2e can be parsed by Docker..."
+            if docker build -f Dockerfile.e2e -t sutra-frontend-test . --no-cache --progress=plain > /tmp/e2e_dockerfile_check.log 2>&1; then
+                log_success "Dockerfile.e2e builds successfully"
+                # Clean up test image
+                docker rmi sutra-frontend-test > /dev/null 2>&1 || true
             else
-                log_error "E2E container build would fail - CI/CD will fail!"
-                echo "Build errors:"
-                cat /tmp/e2e_build_check.log | tail -10
+                log_error "Dockerfile.e2e build fails - CI/CD will fail!"
+                echo "Dockerfile.e2e build errors:"
+                cat /tmp/e2e_dockerfile_check.log | tail -15
+                ((ISSUES_FOUND++))
             fi
         else
             log_error "Docker Compose configuration invalid - CI/CD will fail!"
             docker compose config 2>&1 | head -10
+            ((ISSUES_FOUND++))
         fi
     else
-        log_warning "Docker not available - cannot validate E2E setup"
-        log_warning "CI/CD may fail due to container issues"
+        log_warning "Docker not available - cannot validate E2E Docker builds"
+        if [ "$MISSING_E2E_FILES" = false ]; then
+            log_info "E2E files exist, but Docker validation skipped"
+        fi
         echo ""
         echo "🔧 To fully validate E2E setup:"
         echo "   1. Start Docker Desktop"
@@ -334,28 +378,34 @@ if command -v safety &> /dev/null || pip install safety > /dev/null 2>&1; then
     if safety check > /tmp/safety_output.log 2>&1; then
         log_success "Python security check passed"
     else
-        # Check if failures are only due to known acceptable risks
+        # Check if failures are only due to known acceptable vulnerabilities in dev dependencies
+        # These are known issues in ecdsa and python-jose that are dev/test dependencies only
+        SAFETY_EXIT_CODE=$?
+
         if grep -E "(ecdsa|python-jose)" /tmp/safety_output.log > /dev/null; then
-            log_warning "Python security check found known acceptable vulnerabilities"
+            log_warning "Python security check found known vulnerabilities in dev dependencies"
             echo "Found vulnerabilities in ecdsa and python-jose (dev dependencies only)"
-            echo "These are acceptable for development but should be monitored for production"
+            echo "These packages are used only in development/testing and are acceptable risks"
 
-            # Check if there are OTHER vulnerabilities that are critical
-            if grep -v -E "(ecdsa|python-jose)" /tmp/safety_output.log | grep -E "(CVE|ADVISORY)" > /tmp/safety_critical.log 2>/dev/null; then
-                if [ -s /tmp/safety_critical.log ]; then
-                    log_error "CRITICAL: Other security vulnerabilities found beyond known ones"
-                    echo "Critical vulnerabilities:"
-                    cat /tmp/safety_critical.log | head -10
-                    return 1
-                fi
+            # Count total vulnerabilities vs known ones - count only "Vulnerability found" lines
+            TOTAL_VULNS=$(grep -c "-> Vulnerability found" /tmp/safety_output.log || echo "0")
+            ECDSA_VULNS=$(grep -c "-> Vulnerability found in ecdsa" /tmp/safety_output.log || echo "0")
+            JOSE_VULNS=$(grep -c "-> Vulnerability found in python-jose" /tmp/safety_output.log || echo "0")
+            KNOWN_VULNS=$((ECDSA_VULNS + JOSE_VULNS))
+
+            if [ "$TOTAL_VULNS" -eq "$KNOWN_VULNS" ]; then
+                log_success "All vulnerabilities are in acceptable dev dependencies"
+            else
+                log_error "CRITICAL: Found vulnerabilities beyond acceptable dev dependencies"
+                echo "Total vulnerabilities: $TOTAL_VULNS, Known acceptable: $KNOWN_VULNS"
+                echo "Review the security report above for critical issues"
+                ((ISSUES_FOUND++))
             fi
-
-            log_success "Python security check passed (known dev-only vulnerabilities ignored)"
         else
-            log_error "Python security check failed with unknown vulnerabilities"
-            echo "Safety output:"
-            cat /tmp/safety_output.log | head -20
-            return 1
+            log_error "Python security vulnerabilities found"
+            echo "Security vulnerabilities found (first 10 lines):"
+            head -10 /tmp/safety_output.log
+            ((ISSUES_FOUND++))
         fi
     fi
 else

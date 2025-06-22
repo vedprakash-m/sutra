@@ -404,7 +404,7 @@ class TestCreateHealthResponse:
     def test_create_health_response_default(self):
         """Test health response with default environment."""
         # Override environment to test specific value
-        with patch.dict(os.environ, {"SUTRA_ENVIRONMENT": "development"}), \
+        with patch.dict(os.environ, {"ENVIRONMENT": "development"}), \
              patch("api.shared.middleware.rate_limiter") as mock_limiter:
 
             mock_limiter.clients = {}

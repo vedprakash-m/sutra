@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "post", "put", "delete"],
-      "route": "integrations/{*route:regex(.*)?}"
+      "route": "integrations/{*route:regex(.*)}"
     },
     {
       "type": "http",

@@ -1,19 +1,19 @@
 # Sutra - Multi-LLM Prompt Studio
 
-> **Production-Ready Prompt Engineering Workspace for Teams**
+> **Production-Deployed Enterprise AI Platform**
 
 <div align="center">
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/vedprakashmishra/sutra)
+[![Production Status](https://img.shields.io/badge/status-production-success.svg)](https://zealous-flower-04bbe021e.2.azurestaticapps.net)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Azure](https://img.shields.io/badge/cloud-azure-0078d4.svg)](https://azure.microsoft.com)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-3178c6.svg)](https://www.typescriptlang.org)
-[![Python](https://img.shields.io/badge/python-3.12+-3776ab.svg)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.11+-3776ab.svg)](https://www.python.org)
 [![Test Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](#testing--quality)
 
 **Weaving your AI solutions together**
 
-[✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation) • [🤝 Contributing](#contributing)
+[🌐 Live Demo](https://zealous-flower-04bbe021e.2.azurestaticapps.net) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation)
 
 </div>
 
@@ -21,15 +21,23 @@
 
 ## 🎯 **Overview**
 
-Sutra is a **production-ready multi-LLM prompt studio** designed to streamline prompt engineering, enable multi-LLM optimization, and facilitate AI workflow orchestration. Built for teams that need **consistent, high-quality AI outputs** across different models and use cases.
+Sutra is a **production-deployed multi-LLM prompt studio** that streamlines prompt engineering, enables multi-LLM optimization, and facilitates AI workflow orchestration. Built for teams that need **consistent, high-quality AI outputs** across different models and use cases.
 
-### **🏆 Project Status: Production-Ready Beta**
+### **🏆 Project Status: Live Production Environment**
 
-- ✅ **100% Test Pass Rate** (676 tests passing)
-- ✅ **92%+ Test Coverage** (Frontend & Backend)
-- ✅ **8-minute CI/CD** feedback cycle (50% improvement)
+- ✅ **Live Production Deployment** on Azure Static Web Apps
+- ✅ **828 Tests Passing** (100% success rate)
+- ✅ **92%+ Test Coverage** (Backend: 92%, Frontend: 92.39%)
+- ✅ **Microsoft Entra External ID** authentication integrated
 - ✅ **Zero High-Severity** security vulnerabilities
-- ✅ **Production Architecture** with Azure best practices
+- ✅ **Enterprise-Grade** Azure infrastructure
+
+### **🌐 Production Environment**
+
+- **Live Application**: https://zealous-flower-04bbe021e.2.azurestaticapps.net
+- **API Health**: Available via Azure Functions backend
+- **Authentication**: Microsoft Entra External ID (vedid.onmicrosoft.com)
+- **Infrastructure**: East US 2 region on Azure
 
 ### 🎪 Perfect For
 
@@ -65,11 +73,12 @@ Sutra is a **production-ready multi-LLM prompt studio** designed to streamline p
 - **Data Flow**: Extract variables from LLM outputs for next steps
 - **Execution Tracking**: Real-time logs for debugging and optimization
 
-### 🛡️ **Enterprise Controls**
+### 🛡️ **Enterprise Authentication & Security**
 
-- **Authentication**: Azure AD B2C with User/Admin role separation
-- **Budget Management**: Usage monitoring and spending controls
-- **Audit Trails**: Complete tracking of all changes and executions
+- **Microsoft Entra External ID**: Modern identity platform with social login support
+- **Cost Optimized**: 95% reduction in authentication costs ($1.00 → $0.05 per MAU)
+- **Role-Based Access**: User/Admin permissions with audit trails
+- **Azure Key Vault**: Enterprise-grade secret management and encryption
 - **Security**: Zero high-severity vulnerabilities, regular security scans
 
 ---
@@ -107,30 +116,102 @@ graph TB
 
 ### **Technology Stack**
 
-| Layer        | Technology                                  | Purpose                   |
-| ------------ | ------------------------------------------- | ------------------------- |
-| **Frontend** | React 18 + TypeScript, Tailwind CSS, Vite   | Modern, responsive UI     |
-| **Backend**  | Azure Functions (Python 3.12), REST APIs    | Serverless compute        |
-| **Data**     | Cosmos DB (Serverless), Azure Blob Storage  | Scalable persistence      |
-| **Security** | Azure AD B2C, Key Vault, JWT Authentication | Enterprise-grade security |
-| **DevOps**   | GitHub Actions, Playwright E2E, Docker      | Automated CI/CD           |
+| Layer        | Technology                                 | Purpose                   |
+| ------------ | ------------------------------------------ | ------------------------- |
+| **Frontend** | React 18 + TypeScript, Tailwind CSS, Vite  | Modern, responsive UI     |
+| **Backend**  | Azure Functions (Python 3.11+), REST APIs  | Serverless compute        |
+| **Data**     | Cosmos DB (Serverless), Azure Blob Storage | Scalable persistence      |
+| **Security** | Entra External ID, Key Vault, JWT Auth     | Enterprise-grade security |
+| **DevOps**   | GitHub Actions, Playwright E2E, Docker     | Automated CI/CD           |
 
 ### **🎯 Architecture Benefits**
 
 - **💰 Cost Efficient**: Weekend/holiday shutdown saves 70-80% monthly costs
 - **⚡ High Performance**: <2s page loads, <5s LLM responses
 - **🔒 Secure by Design**: Zero trust architecture with Azure security
-- **�� Scalable**: Serverless compute scales automatically with demand
 - **🚀 Fast Recovery**: 10-minute restoration from shutdown with zero data loss
 
----
+### **🔐 Azure Secret Management System**
+
+Sutra includes a comprehensive **Azure-specific secret management system** that combines enterprise-grade security with developer-friendly workflows.
+
+#### Features
+
+- **🏛️ Azure Key Vault Integration**: Enterprise-grade secret storage with Azure Key Vault
+- **🔄 Hybrid Local/Cloud Management**: Seamless bridge between local development and cloud secrets
+- **🛡️ Git Safety**: Automatic protection against accidental secret commits
+- **📝 Developer-Friendly**: Simple command interface for all secret operations
+- **🔍 Secret Comparison**: Compare and sync differences between local and Azure
+- **✨ Auto-Detection**: Automatically detects Azure project structure and resources
+
+#### Quick Start
+
+```bash
+# 1. Setup Azure integration
+./secrets setup
+
+# 2. Edit secrets (creates from template)
+cp Confidential/.env.template Confidential/.env
+# Add your real API keys and secrets
+
+# 3. Sync secrets to Azure Key Vault
+./secrets azure
+
+# 4. Create local development environment
+./secrets dev
+```
+
+#### Commands
+
+| Command              | Description                                              |
+| -------------------- | -------------------------------------------------------- |
+| `./secrets setup`    | Configure Azure CLI and Key Vault access                 |
+| `./secrets dev`      | Create local development .env (bridge from Confidential) |
+| `./secrets azure`    | Sync secrets to Azure Key Vault                          |
+| `./secrets check`    | Compare local vs Azure Key Vault secrets                 |
+| `./secrets update`   | Update changed secrets in Azure Key Vault                |
+| `./secrets validate` | Validate current secret configuration                    |
+| `./secrets status`   | Show current secret management status                    |
+
+#### Security Features
+
+- **🔒 Confidential Directory**: Git-ignored directory for sensitive secrets
+- **🔑 Azure Key Vault**: Enterprise-grade encryption and access control
+- **🚫 Automatic Git Protection**: Prevents accidental commits of sensitive data
+- **🔄 Sync State Management**: Tracks which secrets are synced vs local
+- **🏢 Enterprise Compliance**: Meets enterprise security standards
+
+#### Architecture
+
+```
+project-root/
+├── .env                           # Local development (auto-generated)
+├── secrets                        # Universal command interface
+├── Confidential/                  # Secure secret management (git-ignored)
+│   ├── .env.template             # Azure-specific template
+│   ├── .env                      # Real secrets (LOCAL ONLY)
+│   ├── setup_azure_integration.sh   # Azure CLI setup
+│   ├── sync_secrets_to_azure.sh     # Upload to Key Vault
+│   ├── sync_to_local_env.sh         # Bridge to development
+│   └── check_and_update_secrets.sh  # Compare & sync
+└── .gitignore                    # Enhanced security protection
+```
+
+#### Integration with Azure Resources
+
+The system automatically integrates with your deployed Azure infrastructure:
+
+- **Azure Key Vault**: `sutra-kv` - Central secret storage
+- **Azure Functions**: `sutra-api-*` - Backend services with Key Vault references
+- **Azure Cosmos DB**: `sutra-db` - Database connection strings
+- **Azure Storage**: `sutrasa99` - Blob storage access keys
 
 ## 🚀 Quick Start
 
 ### **Prerequisites**
 
 - **Node.js** 18+ and **npm**
-- **Python** 3.12+ and **pip**
+- **Python** 3.11+ and **pip**
 - **Docker** & **Docker Compose**
 - **Azure CLI** (for deployment)
 
@@ -183,7 +264,7 @@ VITE_ENVIRONMENT=development
 | **Test Suite** | **Coverage**   | **Tests**     | **Status** |
 | -------------- | -------------- | ------------- | ---------- |
 | **Frontend**   | 92.39%         | 351/351       | ✅ Perfect |
-| **Backend**    | 89%            | 325/325       | ✅ Perfect |
+| **Backend**    | 92%            | 477/477       | ✅ Perfect |
 | **E2E**        | Full workflows | 25+ scenarios | ✅ Perfect |
 
 ### **🔧 Quick Validation**
@@ -242,7 +323,7 @@ sutra/
 
 ---
 
-## 🚀 Deployment
+## �� Deployment
 
 ### **Infrastructure as Code (Bicep)**
 
@@ -332,12 +413,13 @@ npm run ci:local:full
 
 ## 📈 Roadmap
 
-### **🎯 Current Phase: Beta Testing**
+### **🎯 Current Phase: Production Operations**
 
-- ✅ Core functionality (Prompts, Collections, Playbooks)
-- ✅ Team collaboration features
-- ✅ Essential onboarding experience
-- 🔄 User testing and feedback collection
+- ✅ **Live Production Environment** with Microsoft Entra External ID
+- ✅ **Core functionality** (Prompts, Collections, Playbooks)
+- ✅ **Team collaboration** features with role-based access
+- ✅ **Enterprise authentication** and security
+- 🔄 **User onboarding optimization** and performance monitoring
 
 ### **📱 Phase 1: Mobile Optimization** (Post-Beta)
 

@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "post", "put", "delete"],
-      "route": "playbooks/{*route:regex(.*)?}"
+      "route": "playbooks/{*route:regex(.*)}"
     },
     {
       "type": "http",

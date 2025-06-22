@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "post", "put", "delete"],
-      "route": "llm-execute/{*route:regex(.*)?}"
+      "route": "llm-execute/{*route:regex(.*)}"
     },
     {
       "type": "http",

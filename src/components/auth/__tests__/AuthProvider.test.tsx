@@ -1,77 +1,218 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AuthProvider, useAuth } from "../AuthProvider";
-import { BrowserRouter } from "react-router-dom";
-import { act } from "react";
 
-// Test component that uses the auth context
+// Mock fetch for Static Web Apps auth endpoint
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
+
+// Helper component to test auth context
 function TestComponent() {
-  const { user, isAuthenticated, isAdmin, login, logout } = useAuth();
+  const { user, isAuthenticated, login, logout, isAdmin } = useAuth();
 
   return (
     <div>
       <div data-testid="auth-status">
-        {isAuthenticated ? "authenticated" : "not-authenticated"}
+        {isAuthenticated ? "authenticated" : "not authenticated"}
       </div>
       <div data-testid="user-info">
-        {user ? `User: ${user.name}` : "No user"}
+        {user ? `${user.name} (${user.email})` : "No user"}
       </div>
-      <div data-testid="admin-status">{isAdmin ? "admin" : "not-admin"}</div>
-      <button onClick={() => login("test@example.com")}>Login</button>
+      <div data-testid="admin-status">{isAdmin ? "admin" : "not admin"}</div>
+      <button onClick={login}>Login</button>
       <button onClick={logout}>Logout</button>
     </div>
   );
 }
 
 describe("AuthProvider", () => {
-  const renderWithAuth = () => {
-    return render(
-      <BrowserRouter>
-        <AuthProvider>
-          <TestComponent />
-        </AuthProvider>
-      </BrowserRouter>,
-    );
-  };
-
-  it("should provide initial unauthenticated state", () => {
-    renderWithAuth();
-
-    expect(screen.getByTestId("auth-status")).toHaveTextContent(
-      "not-authenticated",
-    );
-    expect(screen.getByTestId("user-info")).toHaveTextContent("No user");
-    expect(screen.getByTestId("admin-status")).toHaveTextContent("not-admin");
+  beforeEach(() => {
+    mockFetch.mockClear();
+    // Mock window.location for redirects
+    delete (window as any).location;
+    (window as any).location = { href: "" };
   });
 
-  it("should handle login", async () => {
-    renderWithAuth();
-
-    const loginButton = screen.getByText("Login");
-
-    await act(async () => {
-      loginButton.click();
+  it("renders children and provides auth context", () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ clientPrincipal: null }),
     });
 
-    // Wait for any async state updates to complete
-    await waitFor(() => {
-      expect(screen.getByTestId("auth-status")).toBeInTheDocument();
-    });
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+
+    expect(screen.getByTestId("auth-status")).toBeInTheDocument();
   });
 
-  it("should handle logout", async () => {
-    renderWithAuth();
-
-    const logoutButton = screen.getByText("Logout");
-
-    await act(async () => {
-      logoutButton.click();
+  it("handles unauthenticated state", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ clientPrincipal: null }),
     });
 
-    // Wait for logout to complete and verify state
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+
     await waitFor(() => {
       expect(screen.getByTestId("auth-status")).toHaveTextContent(
-        "not-authenticated",
+        "not authenticated",
       );
+      expect(screen.getByTestId("user-info")).toHaveTextContent("No user");
+      expect(screen.getByTestId("admin-status")).toHaveTextContent("not admin");
+    });
+  });
+
+  it("handles authenticated user state", async () => {
+    const mockUser = {
+      identityProvider: "aad",
+      userId: "test-user-id",
+      userDetails: "test@example.com",
+      userRoles: ["user"],
+      claims: [
+        {
+          typ: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+          val: "test@example.com",
+        },
+        {
+          typ: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+          val: "Test User",
+        },
+      ],
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ clientPrincipal: mockUser }),
+    });
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("auth-status")).toHaveTextContent(
+        "authenticated",
+      );
+      expect(screen.getByTestId("user-info")).toHaveTextContent(
+        "Test User (test@example.com)",
+      );
+      expect(screen.getByTestId("admin-status")).toHaveTextContent("not admin");
+    });
+  });
+
+  it("handles admin user state", async () => {
+    const mockAdminUser = {
+      identityProvider: "aad",
+      userId: "admin-user-id",
+      userDetails: "admin@example.com",
+      userRoles: ["admin", "user"],
+      claims: [
+        {
+          typ: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+          val: "admin@example.com",
+        },
+        {
+          typ: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+          val: "Admin User",
+        },
+      ],
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ clientPrincipal: mockAdminUser }),
+    });
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("auth-status")).toHaveTextContent(
+        "authenticated",
+      );
+      expect(screen.getByTestId("user-info")).toHaveTextContent(
+        "Admin User (admin@example.com)",
+      );
+      expect(screen.getByTestId("admin-status")).toHaveTextContent("admin");
+    });
+  });
+
+  it("redirects to login when login button is clicked", () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ clientPrincipal: null }),
+    });
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+
+    fireEvent.click(screen.getByText("Login"));
+    expect(window.location.href).toBe("/.auth/login/aad");
+  });
+
+  it("redirects to logout when logout button is clicked", async () => {
+    const mockUser = {
+      identityProvider: "aad",
+      userId: "test-user-id",
+      userDetails: "test@example.com",
+      userRoles: ["user"],
+      claims: [
+        {
+          typ: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+          val: "test@example.com",
+        },
+      ],
+    };
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ clientPrincipal: mockUser }),
+    });
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("auth-status")).toHaveTextContent(
+        "authenticated",
+      );
+    });
+
+    fireEvent.click(screen.getByText("Logout"));
+    expect(window.location.href).toBe("/.auth/logout");
+  });
+
+  it("handles fetch errors gracefully", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("auth-status")).toHaveTextContent(
+        "not authenticated",
+      );
+      expect(screen.getByTestId("user-info")).toHaveTextContent("No user");
     });
   });
 });

@@ -92,7 +92,7 @@ resource functionAppServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
 }
 
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
-  name: 'sutra-api'
+  name: 'sutra-api-${uniqueString(resourceGroup().id)}'
   location: location
   tags: tags
   kind: 'functionapp,linux'
@@ -124,7 +124,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'WEBSITE_CONTENTSHARE'
-          value: toLower('sutra-api')
+          value: toLower('sutra-api-${uniqueString(resourceGroup().id)}')
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -166,7 +166,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       cors: {
         allowedOrigins: [
           // Static Web App will be added dynamically
-          'https://sutra-web.azurestaticapps.net'
+          'https://sutra-web-${uniqueString(resourceGroup().id)}.azurestaticapps.net'
           'https://localhost:5173' // Development
           'https://localhost:3000' // Development alternative
           empty(customDomain) ? '' : 'https://${customDomain}'
@@ -214,7 +214,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
 // =============================================================================
 
 resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
-  name: 'sutra-web'
+  name: 'sutra-web-${uniqueString(resourceGroup().id)}'
   location: 'West US 2' // Static Web Apps have limited regions
   tags: tags
   sku: {
@@ -257,20 +257,12 @@ resource functionAppDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@20
       {
         categoryGroup: 'allLogs'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
     ]
     metrics: [
       {
         category: 'AllMetrics'
         enabled: true
-        retentionPolicy: {
-          enabled: true
-          days: 30
-        }
       }
     ]
   }
@@ -341,28 +333,8 @@ resource highLatencyAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
 
 // =============================================================================
 // KEY VAULT ACCESS POLICIES
+// Note: Key Vault is in sutra-db-rg, access policy will be set separately
 // =============================================================================
-
-// Grant Function App access to Key Vault
-resource keyVaultAccessPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = {
-  name: 'sutra-kv/add'
-  properties: {
-    accessPolicies: [
-      {
-        tenantId: subscription().tenantId
-        objectId: functionApp.identity.principalId
-        permissions: {
-          keys: []
-          secrets: [
-            'get'
-            'list'
-          ]
-          certificates: []
-        }
-      }
-    ]
-  }
-}
 
 // =============================================================================
 // OUTPUTS

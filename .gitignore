@@ -3,6 +3,10 @@ node_modules/
 dist/
 build/
 
+# Development deployment scripts (use CI/CD instead)
+scripts/deploy-*.sh
+scripts/*-deploy.sh
+
 # ============================================================================
 # CONFIDENTIAL FOLDER - CRITICAL SECURITY REQUIREMENT
 # ============================================================================

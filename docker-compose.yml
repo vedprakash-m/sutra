@@ -2,6 +2,7 @@ services:
   # Cosmos DB Emulator
   cosmos-emulator:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    platform: linux/amd64
     container_name: sutra-cosmos-emulator
     environment:
       - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
@@ -36,13 +37,16 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile.dev
+    platform: linux/amd64
     container_name: sutra-functions-api
     environment:
       - AzureWebJobsStorage=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
       - FUNCTIONS_WORKER_RUNTIME=python
       - COSMOS_DB_ENDPOINT=https://cosmos-emulator:8081
-      - COSMOS_DB_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+      - COSMOS_DB_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGzyPMbIZnqyMsEcaGQy67XIw/Jw==
       - ENVIRONMENT=test
+      - AzureWebJobsScriptRoot=/home/site/wwwroot
+      - AzureFunctionsJobHost__Logging__Console__IsEnabled=true
     ports:
       - "7071:7071"
     volumes:
@@ -58,16 +62,14 @@ services:
       test:
         [
           "CMD",
-          "curl",
-          "-f",
-          "http://localhost:7071/api/health",
-          "--max-time",
-          "10",
+          "sh",
+          "-c",
+          "curl -f http://localhost:7071/api/health --max-time 5 || exit 1",
         ]
-      interval: 15s
-      timeout: 10s
-      retries: 20
-      start_period: 120s
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
 
   # Azurite (Storage Emulator)
   azurite:

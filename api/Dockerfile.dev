@@ -4,6 +4,11 @@ FROM mcr.microsoft.com/azure-functions/python:4-python3.11
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
+# Set environment variables needed for Azure Functions
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
+    FUNCTIONS_WORKER_RUNTIME=python
+
 # Copy requirements first for better caching
 COPY requirements-minimal.txt /tmp/
 RUN pip install --no-cache-dir -r /tmp/requirements-minimal.txt
@@ -11,4 +16,7 @@ RUN pip install --no-cache-dir -r /tmp/requirements-minimal.txt
 # Copy the function code
 COPY . /home/site/wwwroot
 
-# The base image already has func installed and handles startup automatically
+# Set working directory
+WORKDIR /home/site/wwwroot
+
+# The base image handles startup automatically

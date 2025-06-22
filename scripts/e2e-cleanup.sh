@@ -29,4 +29,13 @@ run_docker_compose() {
 # Stop and remove services
 run_docker_compose "down"
 
+# Restore original configuration
+echo "🔧 Restoring original configuration..."
+if [ -f "api/local.settings.json.backup" ]; then
+    mv api/local.settings.json.backup api/local.settings.json
+    echo "✅ Original configuration restored"
+else
+    echo "ℹ️  No backup found, keeping current configuration"
+fi
+
 echo "✅ E2E services cleaned up successfully"

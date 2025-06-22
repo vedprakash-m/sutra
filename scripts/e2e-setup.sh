@@ -7,6 +7,16 @@ set -e
 
 echo "🐳 Starting E2E services..."
 
+# Setup E2E-specific configuration
+echo "📝 Setting up E2E configuration..."
+if [ -f "api/local.settings.json.e2e" ]; then
+    cp api/local.settings.json api/local.settings.json.backup 2>/dev/null || true
+    cp api/local.settings.json.e2e api/local.settings.json
+    echo "✅ E2E configuration applied"
+else
+    echo "⚠️  Warning: api/local.settings.json.e2e not found, using existing config"
+fi
+
 # Function to run docker compose with fallback
 run_docker_compose() {
     local cmd="$1"

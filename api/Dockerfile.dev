@@ -7,7 +7,9 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # Set environment variables needed for Azure Functions
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
-    FUNCTIONS_WORKER_RUNTIME=python
+    FUNCTIONS_WORKER_RUNTIME=python \
+    WEBSITES_INCLUDE_CLOUD_CERTS=true \
+    AZURE_FUNCTIONS_ENVIRONMENT=Development
 
 # Copy requirements first for better caching
 COPY requirements-minimal.txt /tmp/

@@ -1,5 +1,12 @@
 import azure.functions as func
 import json
+
+import sys
+import os
+
+# Add the root directory to Python path for proper imports
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
@@ -7,11 +14,11 @@ import uuid
 import httpx
 import asyncio
 
-from ..shared.auth import verify_jwt_token, get_user_id_from_token
-from ..shared.database import get_database_manager
-from ..shared.models import ValidationError
-from ..shared.validation import validate_llm_integration_data
-from ..shared.error_handling import handle_api_error, SutraAPIError
+from shared.auth import verify_jwt_token, get_user_id_from_token
+from shared.database import get_database_manager
+from shared.models import ValidationError
+from shared.validation import validate_llm_integration_data
+from shared.error_handling import handle_api_error, SutraAPIError
 
 # Initialize logging
 logger = logging.getLogger(__name__)

@@ -6,7 +6,12 @@ Provides system health status with enhanced security
 import azure.functions as func
 import logging
 import os
-from ..shared.middleware import enhanced_security_middleware, create_health_response
+import sys
+
+# Add the root directory to Python path for proper imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from shared.middleware import enhanced_security_middleware, create_health_response
 
 # Initialize logging
 logger = logging.getLogger(__name__)

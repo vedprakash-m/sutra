@@ -1,14 +1,21 @@
 import azure.functions as func
 import json
+
+import sys
+import os
+
+# Add the root directory to Python path for proper imports
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from ..shared.auth import verify_jwt_token, get_user_id_from_token, check_admin_role
-from ..shared.database import get_database_manager
-from ..shared.models import ValidationError
-from ..shared.error_handling import handle_api_error, SutraAPIError
+from shared.auth import verify_jwt_token, get_user_id_from_token, check_admin_role
+from shared.database import get_database_manager
+from shared.models import ValidationError
+from shared.error_handling import handle_api_error, SutraAPIError
 
 # Initialize logging
 logger = logging.getLogger(__name__)

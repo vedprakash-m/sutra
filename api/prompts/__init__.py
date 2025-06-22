@@ -1,28 +1,35 @@
 import json
 import logging
+
+import sys
+import os
+
+# Add the root directory to Python path for proper imports
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import azure.functions as func
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from ..shared.auth import require_auth, get_current_user
-from ..shared.database import get_database_manager
-from ..shared.models import (
+from shared.auth import require_auth, get_current_user
+from shared.database import get_database_manager
+from shared.models import (
     PromptTemplate,
     PromptStatus,
     CreatePromptRequest,
     UpdatePromptRequest,
     ErrorResponse,
 )
-from ..shared.validation import PromptTemplateValidator
-from ..shared.error_handling import (
+from shared.validation import PromptTemplateValidator
+from shared.error_handling import (
     ValidationException,
     BusinessLogicException,
     ErrorHandler,
     handle_api_errors,
     extract_request_id,
 )
-from ..shared.validation import (
+from shared.validation import (
     validate_pagination_params,
     validate_search_query,
     validate_resource_ownership,

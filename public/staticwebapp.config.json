@@ -6,7 +6,7 @@
     "identityProviders": {
       "azureActiveDirectory": {
         "registration": {
-          "openIdIssuer": "https://vedid.onmicrosoft.com.b2clogin.com/vedid.onmicrosoft.com/B2C_1_signupsignin/v2.0",
+          "openIdIssuer": "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0",
           "clientIdSettingName": "VED_EXTERNAL_ID_CLIENT_ID",
           "clientSecretSettingName": "VED_EXTERNAL_ID_CLIENT_SECRET"
         }

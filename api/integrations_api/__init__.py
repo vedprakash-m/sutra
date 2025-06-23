@@ -14,7 +14,7 @@ import uuid
 import httpx
 import asyncio
 
-from shared.auth import verify_jwt_token, get_user_id_from_token
+from shared.auth_static_web_apps import require_auth, get_current_user
 from shared.database import get_database_manager
 from shared.models import ValidationError
 from shared.validation import validate_llm_integration_data

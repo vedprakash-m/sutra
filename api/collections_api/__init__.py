@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from shared.auth import verify_jwt_token, get_user_id_from_token
+from shared.auth_static_web_apps import require_auth, get_current_user
 from shared.database import get_database_manager
 from shared.models import Collection, ValidationError
 from shared.validation import validate_collection_data
@@ -22,6 +22,7 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
+@require_auth(resource="collections", action="read")
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Collections API endpoint for managing prompt collections.
@@ -35,18 +36,9 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - GET /api/collections/{id}/prompts - Get prompts in collection
     """
     try:
-        # Verify authentication
-        auth_result = verify_jwt_token(req)
-        if not auth_result["valid"]:
-            return func.HttpResponse(
-                json.dumps(
-                    {"error": "Unauthorized", "message": auth_result["message"]}
-                ),
-                status_code=401,
-                mimetype="application/json",
-            )
-
-        user_id = get_user_id_from_token(req)
+        # Get authenticated user from request context
+        user = req.current_user
+        user_id = user.id
         method = req.method
         route_params = req.route_params
         collection_id = route_params.get("id")

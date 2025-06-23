@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from shared.auth import require_auth, get_current_user
+from shared.auth_static_web_apps import require_auth, get_current_user
 from shared.database import get_database_manager
 from shared.models import (
     PromptTemplate,

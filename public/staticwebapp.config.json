@@ -16,12 +16,19 @@
   },
   "routes": [
     {
-      "route": "/login",
-      "allowedRoles": ["anonymous", "authenticated"]
+      "route": "/.auth/*",
+      "allowedRoles": ["anonymous"]
     },
     {
-      "route": "/logout",
-      "allowedRoles": ["anonymous", "authenticated"]
+      "route": "/assets/*",
+      "allowedRoles": ["anonymous"],
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/favicon.ico",
+      "allowedRoles": ["anonymous"]
     },
     {
       "route": "/admin/*",
@@ -32,14 +39,12 @@
       "allowedRoles": ["admin"]
     },
     {
-      "route": "/assets/*",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable"
-      }
+      "route": "/api/*",
+      "allowedRoles": ["authenticated"]
     },
     {
       "route": "/*",
-      "allowedRoles": ["anonymous", "authenticated"],
+      "allowedRoles": ["authenticated"],
       "rewrite": "/index.html"
     }
   ],

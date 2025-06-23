@@ -32,3 +32,14 @@ window.IntersectionObserver = mockIntersectionObserver;
 window.IntersectionObserver.prototype.disconnect = jest.fn();
 window.IntersectionObserver.prototype.observe = jest.fn();
 window.IntersectionObserver.prototype.unobserve = jest.fn();
+
+// Mock fetch for all tests
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(""),
+    headers: new Headers(),
+  }),
+) as jest.Mock;

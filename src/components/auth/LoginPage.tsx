@@ -5,9 +5,17 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [selectedRole, setSelectedRole] = useState<"user" | "admin">("user");
 
+  // Check if we're in development mode
+  const isDevelopment =
+    process.env.NODE_ENV === "development" ||
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+
   const handleLogin = () => {
-    // Store role preference for demo mode
-    localStorage.setItem("sutra_demo_role", selectedRole);
+    if (isDevelopment) {
+      // Store role preference for development mode only
+      localStorage.setItem("sutra_demo_role", selectedRole);
+    }
     login();
   };
 
@@ -44,43 +52,47 @@ export default function LoginPage() {
               </h3>
 
               <p className="text-sm text-gray-600">
-                Sign in with your Microsoft account to access the Sutra platform
+                {isDevelopment
+                  ? "Development Mode: Sign in with demo credentials or Microsoft account"
+                  : "Sign in with your Microsoft account to access the Sutra platform"}
               </p>
 
-              {/* Development Mode Role Selection */}
-              <div className="space-y-3">
-                <p className="text-xs text-gray-500">
-                  Development Mode - Select Role:
-                </p>
-                <div className="flex space-x-4 justify-center">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="user"
-                      checked={selectedRole === "user"}
-                      onChange={(e) =>
-                        setSelectedRole(e.target.value as "user" | "admin")
-                      }
-                      className="mr-2"
-                    />
-                    <span className="text-sm">Regular User</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="admin"
-                      checked={selectedRole === "admin"}
-                      onChange={(e) =>
-                        setSelectedRole(e.target.value as "user" | "admin")
-                      }
-                      className="mr-2"
-                    />
-                    <span className="text-sm">Admin User</span>
-                  </label>
+              {/* Development Mode Role Selection - Only show in development */}
+              {isDevelopment && (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500">
+                    Development Mode - Select Role:
+                  </p>
+                  <div className="flex space-x-4 justify-center">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="user"
+                        checked={selectedRole === "user"}
+                        onChange={(e) =>
+                          setSelectedRole(e.target.value as "user" | "admin")
+                        }
+                        className="mr-2"
+                      />
+                      <span className="text-sm">Regular User</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="role"
+                        value="admin"
+                        checked={selectedRole === "admin"}
+                        onChange={(e) =>
+                          setSelectedRole(e.target.value as "user" | "admin")
+                        }
+                        className="mr-2"
+                      />
+                      <span className="text-sm">Admin User</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <button
                 onClick={handleLogin}
@@ -93,7 +105,9 @@ export default function LoginPage() {
                 >
                   <path d="M12 0C5.383 0 0 5.383 0 12s5.383 12 12 12 12-5.383 12-12S18.617 0 12 0zm5.5 16.5h-11v-1h11v1zm0-2h-11v-1h11v1zm0-2h-11v-1h11v1zm0-2h-11v-1h11v1z" />
                 </svg>
-                Sign in (Development Mode)
+                {isDevelopment
+                  ? "Sign in (Development Mode)"
+                  : "Sign in with Microsoft"}
               </button>
             </div>
           </div>

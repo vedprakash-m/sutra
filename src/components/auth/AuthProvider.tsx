@@ -102,14 +102,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
 
-        // Fallback: Check localStorage for demo user (don't auto-create)
-        const storedUser = localStorage.getItem("sutra_demo_user");
-        if (storedUser) {
-          const demoUser = JSON.parse(storedUser);
-          setUser(demoUser);
-          setToken("demo-token");
+        // Only allow demo mode in development environments
+        if (
+          process.env.NODE_ENV === "development" ||
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1"
+        ) {
+          // Fallback: Check localStorage for demo user (development only)
+          const storedUser = localStorage.getItem("sutra_demo_user");
+          if (storedUser) {
+            const demoUser = JSON.parse(storedUser);
+            setUser(demoUser);
+            setToken("demo-token");
+          }
         }
-        // If no stored user, user remains null and will see login page
+        // In production, if no authenticated user, user remains null and will see login page
       } catch (error) {
         console.error("Failed to check auth status:", error);
         // On error, user remains null and will see login page
@@ -122,14 +129,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = () => {
-    // Try Static Web Apps login first
+    // Check if we're in a production Azure Static Web Apps environment
     if (
       window.location.hostname &&
-      window.location.hostname.includes("azurestaticapps.net")
+      (window.location.hostname.includes("azurestaticapps.net") ||
+        process.env.NODE_ENV === "production")
     ) {
+      // Force Azure AD login in production
       window.location.href = "/.auth/login/aad";
-    } else {
-      // Fallback: simulate login for demo based on localStorage preference
+    } else if (
+      process.env.NODE_ENV === "development" ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
+    ) {
+      // Only allow demo mode in development environments
       const storedRole = localStorage.getItem("sutra_demo_role") || "user";
       const demoUser: User = {
         id: storedRole === "admin" ? "demo-admin-001" : "demo-user-001",
@@ -141,23 +154,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       localStorage.setItem("sutra_demo_user", JSON.stringify(demoUser));
       setUser(demoUser);
       setToken("demo-token");
+    } else {
+      // Fallback to Azure AD for any other production scenario
+      window.location.href = "/.auth/login/aad";
     }
   };
 
   const logout = () => {
-    // Try Static Web Apps logout first
+    // Check if we're in a production Azure Static Web Apps environment
     if (
       window.location.hostname &&
-      window.location.hostname.includes("azurestaticapps.net")
+      (window.location.hostname.includes("azurestaticapps.net") ||
+        process.env.NODE_ENV === "production")
     ) {
       // Clear local state first
       setUser(null);
       setToken(null);
       localStorage.removeItem("sutra_demo_user");
-      // Then redirect to logout
+      // Then redirect to Azure AD logout
       window.location.href = "/.auth/logout";
     } else {
-      // Fallback: clear demo user
+      // Development mode: clear demo user
       setUser(null);
       setToken(null);
       localStorage.removeItem("sutra_demo_user");

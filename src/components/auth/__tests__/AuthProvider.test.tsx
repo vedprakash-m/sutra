@@ -161,15 +161,14 @@ describe("AuthProvider", () => {
     // Mock Azure Static Web Apps hostname to trigger redirect behavior
     (window as any).location.hostname = "app.azurestaticapps.net";
 
-    // Mock /.auth/me endpoint to return no user
+    // Mock window.alert to avoid JSDOM error
+    const mockAlert = jest.fn();
+    global.alert = mockAlert;
+
+    // Mock /.auth/me endpoint to return no user during AuthProvider initialization
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ clientPrincipal: null }),
-    });
-
-    // Mock /.auth/providers endpoint to fail, triggering fallback
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
     });
 
     render(
@@ -177,6 +176,37 @@ describe("AuthProvider", () => {
         <TestComponent />
       </AuthProvider>,
     );
+
+    // Wait for initial auth check to complete
+    await waitFor(() => {
+      expect(screen.getByTestId("auth-status")).toHaveTextContent(
+        "not authenticated",
+      );
+    });
+
+    // Reset fetch mock for login flow
+    mockFetch.mockClear();
+
+    // Mock the login flow:
+    // 1. /.auth/me check (successful)
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+    });
+
+    // 2. /.auth/providers check (fails, so fallback to direct provider attempts)
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+    });
+
+    // 3. HEAD request to /.auth/login/azureActiveDirectory (fails)
+    mockFetch.mockResolvedValueOnce({
+      status: 404,
+    });
+
+    // 4. HEAD request to /.auth/login/aad (succeeds)
+    mockFetch.mockResolvedValueOnce({
+      status: 200,
+    });
 
     const loginButton = screen.getByText("Login");
     await act(async () => {

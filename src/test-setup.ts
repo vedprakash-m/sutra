@@ -1,4 +1,8 @@
 import "@testing-library/jest-dom";
+import { configure } from "@testing-library/react";
+
+// Configure Testing Library to use React's act instead of ReactDOMTestUtils.act
+configure({ asyncUtilTimeout: 2000 });
 
 // Mock environment variables for Jest tests
 process.env.VITE_API_URL = "http://localhost:7071/api";
@@ -43,3 +47,6 @@ global.fetch = jest.fn(() =>
     headers: new Headers(),
   }),
 ) as jest.Mock;
+
+// Mock window.alert to prevent JSDOM errors
+global.alert = jest.fn();

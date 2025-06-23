@@ -401,12 +401,15 @@ jobs:
             az functionapp config set --python-version "3.12" --name sutra-api-hvyqgbrvnx4ii --resource-group sutra-rg || echo "Could not update Python version"
           fi
 
-          # Clean up any problematic directories first
+          # Clean up any problematic directories first (with better error handling)
           echo "🧹 Cleaning up potential deployment conflicts..."
-          rm -rf .python_packages
-          rm -rf __pycache__
-          find . -name "*.pyc" -delete
-          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          rm -rf .python_packages || echo "No .python_packages to remove"
+          rm -rf __pycache__ || echo "No __pycache__ to remove"
+          find . -name "*.pyc" -delete 2>/dev/null || echo "No .pyc files to clean"
+          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || echo "No __pycache__ directories to clean"
+
+          # Ensure we have write permissions in current directory
+          chmod -R u+w . || echo "Could not change permissions, proceeding anyway"
 
           # Install Python dependencies for deployment
           pip install --upgrade pip setuptools wheel
@@ -421,17 +424,26 @@ jobs:
 
             # Strategy 2: Fallback to local build with explicit exclusions
             echo "📦 Preparing local build..."
-            # Create a .funcignore file to exclude problematic directories
-            echo ".git*" > .funcignore
-            echo ".vscode" >> .funcignore
-            echo "__pycache__" >> .funcignore
-            echo ".pytest_cache" >> .funcignore
-            echo "*.pyc" >> .funcignore
-            echo "*.pyo" >> .funcignore
-            echo ".python_packages" >> .funcignore
-            echo ".coverage" >> .funcignore
-            echo "htmlcov" >> .funcignore
-            echo ".env" >> .funcignore
+            # Create a .funcignore file to exclude problematic directories (with proper permissions)
+            {
+              echo ".git*"
+              echo ".vscode"
+              echo "__pycache__"
+              echo ".pytest_cache"
+              echo "*.pyc"
+              echo "*.pyo"
+              echo ".python_packages"
+              echo ".coverage"
+              echo "htmlcov"
+              echo ".env"
+              echo "tests/"
+              echo ".github/"
+              echo "node_modules/"
+              echo "coverage/"
+              echo "conftest.py"
+              echo "coverage.xml"
+              echo "*.log"
+            } > .funcignore || echo "Could not create .funcignore, proceeding without it"
 
             if func azure functionapp publish sutra-api-hvyqgbrvnx4ii --python --verbose; then
               echo "✅ Local build deployment successful"

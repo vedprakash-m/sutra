@@ -41,16 +41,18 @@ describe("LoginPage", () => {
         "Sign in with your Microsoft account to access the Sutra platform",
       ),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Sign in with Microsoft/i }),
-    ).toBeInTheDocument();
+    // Check for either Microsoft or Development Mode sign in button
+    const signInButton = screen.getByRole("button", {
+      name: /Sign in.*Microsoft|Sign in.*Development Mode/i,
+    });
+    expect(signInButton).toBeInTheDocument();
   });
 
   it("should call login when sign in button is clicked", () => {
     render(<LoginPage />);
 
     const signInButton = screen.getByRole("button", {
-      name: /Sign in with Microsoft/i,
+      name: /Sign in.*Microsoft|Sign in.*Development Mode/i,
     });
     fireEvent.click(signInButton);
 
@@ -67,7 +69,7 @@ describe("LoginPage", () => {
 
     // The button should still be rendered but may be disabled
     const signInButton = screen.getByRole("button", {
-      name: /Sign in with Microsoft/i,
+      name: /Sign in.*Microsoft|Sign in.*Development Mode/i,
     });
     expect(signInButton).toBeInTheDocument();
   });

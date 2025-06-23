@@ -425,35 +425,83 @@ jobs:
         run: |
           cd api
 
+          # Clean up any problematic directories first
+          echo "🧹 Cleaning up potential deployment conflicts..."
+          rm -rf .python_packages
+          rm -rf __pycache__
+          find . -name "*.pyc" -delete
+          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
           # Install Python dependencies for deployment
           pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
 
           # Strategy 1: Try remote build first (preferred)
           echo "🚀 Attempting remote build deployment..."
-          if func azure functionapp publish sutra-api-hvyqgbrvnx4ii --python --build remote; then
+          if func azure functionapp publish sutra-api-hvyqgbrvnx4ii --python --build remote --verbose; then
             echo "✅ Remote build deployment successful"
           else
-            echo "⚠️ Remote build failed, trying local build strategy..."
+            echo "⚠️ Remote build failed due to permission issues, trying local build strategy..."
 
-            # Strategy 2: Fallback to local build
-            if func azure functionapp publish sutra-api-hvyqgbrvnx4ii --python; then
+            # Strategy 2: Fallback to local build with explicit exclusions
+            echo "📦 Preparing local build..."
+            # Create a .funcignore file to exclude problematic directories
+            echo ".git*" > .funcignore
+            echo ".vscode" >> .funcignore
+            echo "__pycache__" >> .funcignore
+            echo ".pytest_cache" >> .funcignore
+            echo "*.pyc" >> .funcignore
+            echo "*.pyo" >> .funcignore
+            echo ".python_packages" >> .funcignore
+            echo ".coverage" >> .funcignore
+            echo "htmlcov" >> .funcignore
+            echo ".env" >> .funcignore
+
+            if func azure functionapp publish sutra-api-hvyqgbrvnx4ii --python --verbose; then
               echo "✅ Local build deployment successful"
             else
-              echo "⚠️ Both remote and local builds failed, trying zip deployment..."
+              echo "⚠️ Both remote and local builds failed, trying zip deployment strategy..."
 
-              # Strategy 3: Fallback to zip deployment
-              zip -r ../function-app.zip .
+              # Strategy 3: Manual zip deployment with clean structure
+              echo "📁 Creating clean deployment package..."
+
+              # Create a clean temporary directory for deployment
+              mkdir -p ../clean-api
+
+              # Copy only necessary files (exclude problematic directories)
+              rsync -av --exclude='.python_packages' \
+                       --exclude='__pycache__' \
+                       --exclude='.pytest_cache' \
+                       --exclude='*.pyc' \
+                       --exclude='.coverage' \
+                       --exclude='htmlcov' \
+                       --exclude='.env' \
+                       ./ ../clean-api/
+
+              cd ../clean-api
+              zip -r ../function-app.zip . -x "*.pyc" "*/__pycache__/*" ".python_packages/*"
+
+              cd ../api
               az functionapp deployment source config-zip \
                 --resource-group sutra-rg \
                 --name sutra-api-hvyqgbrvnx4ii \
-                --src ../function-app.zip && echo "✅ Zip deployment successful" || {
+                --src ../function-app.zip \
+                --timeout 600 && echo "✅ Zip deployment successful" || {
                   echo "❌ All deployment strategies failed"
                   echo "📋 Available strategies attempted:"
                   echo "   1. Remote build (func publish --build remote)"
                   echo "   2. Local build (func publish)"
-                  echo "   3. Zip deployment (az functionapp deployment)"
-                  echo "💡 Manual intervention may be required"
+                  echo "   3. Clean zip deployment (az functionapp deployment)"
+                  echo ""
+                  echo "🔍 Common causes and solutions:"
+                  echo "   - Permission issues with .python_packages directory (cleaned)"
+                  echo "   - Python version mismatch (using 3.12 in pipeline, check function app settings)"
+                  echo "   - Function Core Tools compatibility (using v4)"
+                  echo ""
+                  echo "💡 Manual intervention steps:"
+                  echo "   1. Check function app Python version: az functionapp config show --name sutra-api-hvyqgbrvnx4ii --resource-group sutra-rg"
+                  echo "   2. Update Python version if needed: az functionapp config set --python-version 3.12 --name sutra-api-hvyqgbrvnx4ii --resource-group sutra-rg"
+                  echo "   3. Deploy via Azure Portal or VS Code Azure Functions extension"
                   exit 1
                 }
             fi

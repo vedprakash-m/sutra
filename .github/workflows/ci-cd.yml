@@ -328,7 +328,7 @@ jobs:
         run: |
           # Check if resources exist and are healthy
           az group show --name sutra-rg --output table || echo "Resource group not found"
-          az functionapp show --name sutra-api-hvyqgbrvnx4ii --resource-group sutra-rg --query "state" || echo "Function app not found"
+          # Static Web Apps will handle the API deployment, so we don't need to check function app
 
       - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit

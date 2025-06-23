@@ -10,6 +10,34 @@ process.env.VITE_AUTH_DOMAIN = "test-domain";
 process.env.VITE_AUTH_CLIENT_ID = "test-client-id";
 process.env.NODE_ENV = "test";
 
+// Suppress specific console warnings in tests
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+console.error = (...args: any[]) => {
+  // Suppress React Router future flag warnings in tests
+  if (
+    typeof args[0] === "string" &&
+    (args[0].includes("React Router Future Flag Warning") ||
+      args[0].includes("ReactDOMTestUtils.act` is deprecated"))
+  ) {
+    return;
+  }
+  originalConsoleError.apply(console, args);
+};
+
+console.warn = (...args: any[]) => {
+  // Suppress React Router deprecation warnings in tests
+  if (
+    typeof args[0] === "string" &&
+    (args[0].includes("React Router Future Flag Warning") ||
+      args[0].includes("ReactDOMTestUtils"))
+  ) {
+    return;
+  }
+  originalConsoleWarn.apply(console, args);
+};
+
 // Mock window.matchMedia for responsive components
 Object.defineProperty(window, "matchMedia", {
   writable: true,

@@ -54,4 +54,6 @@ export default {
   // Cache for faster subsequent runs
   cache: true,
   cacheDirectory: "<rootDir>/.jest-cache",
+  // In CI, be more strict about warnings
+  verbose: process.env.CI === "true",
 };

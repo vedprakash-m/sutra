@@ -6,6 +6,13 @@
 
 set -e
 
+# Check for --strict flag to match CI/CD behavior exactly
+STRICT_MODE=false
+if [[ "$1" == "--strict" ]]; then
+    STRICT_MODE=true
+    echo "Running in STRICT MODE to match CI/CD behavior"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

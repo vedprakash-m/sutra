@@ -13,7 +13,13 @@ jest.mock("@/components/auth/AuthProvider", () => ({
 // Helper function to render NavBar with router
 const renderNavBar = (path = "/") => {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter
+      initialEntries={[path]}
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <NavBar />
     </MemoryRouter>,
   );

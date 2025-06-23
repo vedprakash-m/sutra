@@ -18,9 +18,20 @@ export default function LoginPage() {
       login();
     } else {
       // Production: Try to determine the correct authentication provider
-      // Check what providers are available and redirect accordingly
       try {
-        // First, try to get the authentication providers
+        // First check if auth system is available
+        const authTestResponse = await fetch("/.auth/me");
+
+        if (!authTestResponse.ok) {
+          // Authentication system is not configured
+          alert(
+            "Authentication system is not properly configured.\n\n" +
+              "Please contact the administrator to enable authentication in Azure Static Web Apps.",
+          );
+          return;
+        }
+
+        // Try to get available providers
         const authProvidersResponse = await fetch("/.auth/providers");
         if (authProvidersResponse.ok) {
           const providers = await authProvidersResponse.json();
@@ -40,20 +51,41 @@ export default function LoginPage() {
           }
         }
 
-        // Fallback: Try common Microsoft provider names
-        const commonProviders = [
+        // Try different provider names based on configuration
+        const providerNames = [
+          "azureActiveDirectory", // From staticwebapp.config.json
           "aad",
-          "microsoftIdProvider",
           "microsoft",
           "azuread",
         ];
 
-        // Try the first one (aad is most common)
-        window.location.href = `/.auth/login/${commonProviders[0]}`;
+        // Try each provider name
+        for (const providerName of providerNames) {
+          try {
+            const testResponse = await fetch(`/.auth/login/${providerName}`, {
+              method: "HEAD",
+            });
+
+            if (testResponse.status !== 404) {
+              window.location.href = `/.auth/login/${providerName}`;
+              return;
+            }
+          } catch (e) {
+            continue;
+          }
+        }
+
+        // If all fail, show error
+        alert(
+          "Unable to access Microsoft authentication.\n\n" +
+            "The authentication system may not be properly configured.\n" +
+            "Please contact support.",
+        );
       } catch (error) {
         console.error("Error determining auth provider:", error);
-        // Final fallback to standard Azure AD
-        window.location.href = "/.auth/login/aad";
+        alert(
+          "Authentication error. Please check your connection and try again.",
+        );
       }
     }
   };

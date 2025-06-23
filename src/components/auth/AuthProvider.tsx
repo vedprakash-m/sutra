@@ -159,7 +159,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       // Production: Redirect to Azure Static Web Apps authentication endpoint
       try {
-        // First, try to get the authentication providers
+        // First check if auth system is available by testing /.auth/me
+        const authTestResponse = await fetch("/.auth/me");
+
+        if (!authTestResponse.ok) {
+          // Authentication system is not configured - show helpful error
+          alert(
+            "Authentication system is not properly configured in Azure Static Web Apps.\n\n" +
+              "Please contact the administrator to:\n" +
+              "1. Enable authentication in Azure Portal\n" +
+              "2. Configure Microsoft Entra External ID\n" +
+              "3. Set up the required environment variables",
+          );
+          return;
+        }
+
+        // Try to get available providers
         const authProvidersResponse = await fetch("/.auth/providers");
         if (authProvidersResponse.ok) {
           const providers = await authProvidersResponse.json();
@@ -179,12 +194,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
 
-        // Fallback: Try standard Azure AD provider name
-        window.location.href = "/.auth/login/aad";
+        // Try different provider names based on the config
+        const providerNames = [
+          "azureActiveDirectory", // From staticwebapp.config.json
+          "aad",
+          "microsoft",
+          "azuread",
+        ];
+
+        // Try each provider name until one works
+        for (const providerName of providerNames) {
+          try {
+            // Test if this provider endpoint exists
+            const testResponse = await fetch(`/.auth/login/${providerName}`, {
+              method: "HEAD",
+            });
+
+            if (testResponse.status !== 404) {
+              window.location.href = `/.auth/login/${providerName}`;
+              return;
+            }
+          } catch (e) {
+            // Continue to next provider
+            continue;
+          }
+        }
+
+        // If all providers fail, show error message
+        alert(
+          "Unable to access authentication system.\n\n" +
+            "The Azure Static Web Apps authentication may not be properly configured.\n" +
+            "Please contact support or try again later.",
+        );
       } catch (error) {
         console.error("Error determining auth provider:", error);
-        // Final fallback to standard Azure AD
-        window.location.href = "/.auth/login/aad";
+        alert(
+          "Authentication system error.\n\n" +
+            "Please check your internet connection and try again.\n" +
+            "If the problem persists, contact support.",
+        );
       }
     }
   };

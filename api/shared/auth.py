@@ -50,28 +50,39 @@ class AuthManager:
             try:
                 kv_client = self.kv_client
 
-                # Get Azure AD B2C configuration
-                tenant_id = kv_client.get_secret("auth-tenant-id").value
-                client_id = kv_client.get_secret("auth-client-id").value
-                policy = kv_client.get_secret("auth-policy").value
+                # Get Entra External ID configuration
+                client_id = kv_client.get_secret("VED-EXTERNAL-ID-CLIENT-ID").value
+                client_secret = kv_client.get_secret("VED-EXTERNAL-ID-CLIENT-SECRET").value
+                domain = kv_client.get_secret("VED-EXTERNAL-ID-DOMAIN").value
+
+                # Extract tenant from domain if it's a full domain
+                if domain.endswith(".onmicrosoft.com"):
+                    tenant_id = domain.replace(".onmicrosoft.com", "")
+                else:
+                    tenant_id = domain
 
                 self._auth_config = {
                     "tenant_id": tenant_id,
                     "client_id": client_id,
-                    "policy": policy,
-                    "issuer": f"https://{tenant_id}.b2clogin.com/{tenant_id}/{policy}/v2.0/",
-                    "jwks_uri": f"https://{tenant_id}.b2clogin.com/{tenant_id}/{policy}/discovery/v2.0/keys",
+                    "client_secret": client_secret,
+                    "domain": domain,
+                    "issuer": f"https://{domain}.b2clogin.com/{tenant_id}/B2C_1_signupsignin/v2.0/",
+                    "jwks_uri": f"https://{domain}.b2clogin.com/{tenant_id}/B2C_1_signupsignin/discovery/v2.0/keys",
                 }
 
             except Exception as e:
-                logging.error(f"Failed to get auth config: {e}")
-                # Fall back to mock configuration for development
+                logging.error(f"Failed to get auth config from Key Vault: {e}")
+                # Fall back to environment variables for development
+                client_id = os.getenv("VED_EXTERNAL_ID_CLIENT_ID", "mock-client")
+                domain = os.getenv("VED_EXTERNAL_ID_DOMAIN", "mock-domain")
+
                 self._auth_config = {
-                    "tenant_id": "mock-tenant",
-                    "client_id": "mock-client",
-                    "policy": "mock-policy",
-                    "issuer": "mock-issuer",
-                    "jwks_uri": "mock-jwks",
+                    "tenant_id": domain.replace(".onmicrosoft.com", "") if domain.endswith(".onmicrosoft.com") else domain,
+                    "client_id": client_id,
+                    "client_secret": os.getenv("VED_EXTERNAL_ID_CLIENT_SECRET", "mock-secret"),
+                    "domain": domain,
+                    "issuer": f"https://{domain}.b2clogin.com/{domain}/B2C_1_signupsignin/v2.0/",
+                    "jwks_uri": f"https://{domain}.b2clogin.com/{domain}/B2C_1_signupsignin/discovery/v2.0/keys",
                 }
 
         return self._auth_config
@@ -494,6 +505,20 @@ def require_permission(resource_type: str, permission: str):
 def verify_jwt_token(req: func.HttpRequest) -> Dict[str, Any]:
     """Verify JWT token from request and return validation result."""
     try:
+        # Check if authentication is disabled for development
+        auth_disabled = os.getenv("SUTRA_DISABLE_AUTH", "false").lower() == "true"
+        if auth_disabled:
+            return {
+                "valid": True,
+                "message": "Authentication disabled for development",
+                "claims": {
+                    "sub": "dev-user-id",
+                    "email": "dev@sutra.ai",
+                    "name": "Development User",
+                    "roles": ["user"],
+                },
+            }
+
         token = extract_token_from_request(req)
         if not token:
             return {"valid": False, "message": "No token provided"}

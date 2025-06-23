@@ -36,14 +36,17 @@ describe("LoginPage", () => {
     expect(
       screen.getByText("Secure Authentication Required"),
     ).toBeInTheDocument();
+
+    // In test environment (NODE_ENV=test), expect development mode text
     expect(
       screen.getByText(
-        "Sign in with your Microsoft account to access the Sutra platform",
+        "Development Mode: Sign in with demo credentials or Microsoft account",
       ),
     ).toBeInTheDocument();
-    // Check for either Microsoft or Development Mode sign in button
+
+    // Check for development mode sign in button
     const signInButton = screen.getByRole("button", {
-      name: /Sign in.*Microsoft|Sign in.*Development Mode/i,
+      name: /Sign in.*Development Mode/i,
     });
     expect(signInButton).toBeInTheDocument();
   });
@@ -95,5 +98,52 @@ describe("LoginPage", () => {
     });
 
     expect(() => render(<LoginPage />)).not.toThrow();
+  });
+
+  it("should render authentication content in production mode", () => {
+    // Mock production environment
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+
+    // Mock window.location for production hostname
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: {
+        ...originalLocation,
+        hostname: "zealous-flower-04bbe021e.2.azurestaticapps.net",
+      },
+    });
+
+    render(<LoginPage />);
+
+    expect(
+      screen.getByText("Secure Authentication Required"),
+    ).toBeInTheDocument();
+
+    // In production mode, expect production text
+    expect(
+      screen.getByText(
+        "Sign in with your Microsoft account to access the Sutra platform",
+      ),
+    ).toBeInTheDocument();
+
+    // Check for Microsoft sign in button (no development mode)
+    const signInButton = screen.getByRole("button", {
+      name: /Sign in with Microsoft/i,
+    });
+    expect(signInButton).toBeInTheDocument();
+
+    // Should not have demo mode role selection
+    expect(
+      screen.queryByText("Development Mode - Select Role:"),
+    ).not.toBeInTheDocument();
+
+    // Restore environment
+    process.env.NODE_ENV = originalEnv;
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: originalLocation,
+    });
   });
 });

@@ -65,6 +65,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (response.ok) {
           const authInfo: StaticWebAppsUser = await response.json();
+          console.log("Azure Static Web Apps auth info:", authInfo);
 
           if (authInfo.clientPrincipal) {
             const principal = authInfo.clientPrincipal;
@@ -99,7 +100,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setToken("static-web-apps-token");
             setIsLoading(false);
             return;
+          } else {
+            console.log("No clientPrincipal found in auth response");
           }
+        } else {
+          console.log(
+            "Auth endpoint response not ok:",
+            response.status,
+            response.statusText,
+          );
         }
 
         // Only allow demo mode in development environments

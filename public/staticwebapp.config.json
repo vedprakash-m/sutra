@@ -39,12 +39,16 @@
       "allowedRoles": ["admin"]
     },
     {
+      "route": "/api/getroles",
+      "allowedRoles": ["authenticated"]
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["authenticated"]
     },
     {
       "route": "/*",
-      "allowedRoles": ["authenticated"],
+      "allowedRoles": ["anonymous"],
       "rewrite": "/index.html"
     }
   ],

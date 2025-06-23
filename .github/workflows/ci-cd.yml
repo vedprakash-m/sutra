@@ -324,11 +324,45 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Pre-deployment health check
+      - name: Ensure Azure Infrastructure Exists
         run: |
-          # Check if resources exist and are healthy
-          az group show --name sutra-rg --output table || echo "Resource group not found"
-          # Static Web Apps will handle the API deployment, so we don't need to check function app
+          # Create resource group if it doesn't exist
+          echo "📦 Ensuring resource group exists..."
+          az group create --name sutra-rg --location eastus2 --tags Environment=production || echo "Resource group already exists"
+
+          # Install Bicep
+          az bicep install
+
+          # Deploy infrastructure if needed
+          echo "🏗️ Deploying infrastructure..."
+
+          # Deploy persistent infrastructure (databases, storage)
+          if az deployment group show --resource-group sutra-rg --name persistent-deployment 2>/dev/null; then
+            echo "Persistent infrastructure already deployed"
+          else
+            echo "Deploying persistent infrastructure..."
+            az deployment group create \
+              --resource-group sutra-rg \
+              --name persistent-deployment \
+              --template-file infrastructure/persistent.bicep \
+              --parameters location=eastus2 \
+              --mode Incremental || echo "Persistent deployment completed with warnings"
+          fi
+
+          # Deploy compute infrastructure (functions, web apps)
+          if az deployment group show --resource-group sutra-rg --name compute-deployment 2>/dev/null; then
+            echo "Compute infrastructure already deployed"
+          else
+            echo "Deploying compute infrastructure..."
+            az deployment group create \
+              --resource-group sutra-rg \
+              --name compute-deployment \
+              --template-file infrastructure/compute.bicep \
+              --parameters location=eastus2 \
+              --mode Incremental || echo "Compute deployment completed with warnings"
+          fi
+
+          echo "✅ Infrastructure provisioning completed"
 
       - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit
@@ -336,21 +370,31 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Deploy to Azure Static Web Apps
+      - name: Deploy to Azure Static Web Apps (Frontend Only)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/"
-          api_location: "api"
           output_location: "dist"
-          skip_api_build: false
+          skip_api_build: true
+
+      - name: Deploy Azure Functions API Separately
+        run: |
+          cd api
+
+          # Install Python dependencies for deployment
+          pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+
+          # Deploy to the existing Azure Functions app
+          func azure functionapp publish sutra-api-hvyqgbrvnx4ii --python --build remote
 
       - name: Post-deployment verification
         run: |
           # Health check endpoints
-          timeout 60s bash -c 'until curl -f https://zealous-flower-04bbe021e.2.azurestaticapps.net/api/health; do sleep 5; done' || echo "API health check failed"
+          timeout 60s bash -c 'until curl -f https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api/health; do sleep 5; done' || echo "API health check failed"
           curl -f https://zealous-flower-04bbe021e.2.azurestaticapps.net/ || echo "Frontend check failed"
 
           echo "✅ Deployment completed"

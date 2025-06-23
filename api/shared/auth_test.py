@@ -76,18 +76,18 @@ class TestAuthManager:
         mock_client_instance = Mock()
         mock_secret_client.return_value = mock_client_instance
 
-        # Mock secrets
-        tenant_secret = Mock()
-        tenant_secret.value = "test-tenant"
-        client_secret = Mock()
-        client_secret.value = "test-client"
-        policy_secret = Mock()
-        policy_secret.value = "test-policy"
+        # Mock secrets for Entra External ID
+        client_id_secret = Mock()
+        client_id_secret.value = "test-client-id"
+        client_secret_secret = Mock()
+        client_secret_secret.value = "test-client-secret"
+        domain_secret = Mock()
+        domain_secret.value = "test-domain.onmicrosoft.com"
 
         mock_client_instance.get_secret.side_effect = [
-            tenant_secret,
-            client_secret,
-            policy_secret,
+            client_id_secret,
+            client_secret_secret,
+            domain_secret,
         ]
 
         with patch.dict(
@@ -96,11 +96,14 @@ class TestAuthManager:
             auth_manager = AuthManager()
             config = await auth_manager.get_auth_config()
 
-            assert config["tenant_id"] == "test-tenant"
-            assert config["client_id"] == "test-client"
-            assert config["policy"] == "test-policy"
+            assert config["tenant_id"] == "test-domain"
+            assert config["client_id"] == "test-client-id"
+            assert config["client_secret"] == "test-client-secret"
+            assert config["domain"] == "test-domain.onmicrosoft.com"
             assert "issuer" in config
             assert "jwks_uri" in config
+            assert config["issuer"] == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/v2.0/"
+            assert config["jwks_uri"] == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/discovery/v2.0/keys"
 
     @pytest.mark.asyncio
     @patch("api.shared.auth.SecretClient")
@@ -117,8 +120,10 @@ class TestAuthManager:
             auth_manager = AuthManager()
             config = await auth_manager.get_auth_config()
 
-            assert config["tenant_id"] == "mock-tenant"
+            assert config["tenant_id"] == "mock-domain"  # Falls back to domain default
             assert config["client_id"] == "mock-client"
+            assert config["client_secret"] == "mock-secret"
+            assert config["domain"] == "mock-domain"
 
     @pytest.mark.asyncio
     async def test_validate_token_mock_token(self):

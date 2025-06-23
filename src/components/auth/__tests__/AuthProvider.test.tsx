@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import { AuthProvider, useAuth } from "../AuthProvider";
 
 // Mock fetch for Static Web Apps auth endpoint
@@ -151,13 +157,19 @@ describe("AuthProvider", () => {
     });
   });
 
-  it("redirects to login when login button is clicked", () => {
+  it("redirects to login when login button is clicked", async () => {
     // Mock Azure Static Web Apps hostname to trigger redirect behavior
     (window as any).location.hostname = "app.azurestaticapps.net";
 
+    // Mock /.auth/me endpoint to return no user
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ clientPrincipal: null }),
+    });
+
+    // Mock /.auth/providers endpoint to fail, triggering fallback
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
     });
 
     render(
@@ -166,7 +178,11 @@ describe("AuthProvider", () => {
       </AuthProvider>,
     );
 
-    fireEvent.click(screen.getByText("Login"));
+    const loginButton = screen.getByText("Login");
+    await act(async () => {
+      fireEvent.click(loginButton);
+    });
+
     expect(window.location.href).toBe("/.auth/login/aad");
   });
 

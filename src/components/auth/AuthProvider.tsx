@@ -17,7 +17,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: () => void;
+  login: () => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
   token: string | null;
@@ -137,21 +137,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuthStatus();
   }, []);
 
-  const login = () => {
-    // Check if we're in a production Azure Static Web Apps environment
+  const login = async () => {
+    // Check if we're in a development environment
     if (
-      window.location.hostname &&
-      (window.location.hostname.includes("azurestaticapps.net") ||
-        process.env.NODE_ENV === "production")
-    ) {
-      // Force Azure AD login in production
-      window.location.href = "/.auth/login/aad";
-    } else if (
       process.env.NODE_ENV === "development" ||
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1"
     ) {
-      // Only allow demo mode in development environments
+      // Development mode: use demo authentication
       const storedRole = localStorage.getItem("sutra_demo_role") || "user";
       const demoUser: User = {
         id: storedRole === "admin" ? "demo-admin-001" : "demo-user-001",
@@ -164,8 +157,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(demoUser);
       setToken("demo-token");
     } else {
-      // Fallback to Azure AD for any other production scenario
-      window.location.href = "/.auth/login/aad";
+      // Production: Redirect to Azure Static Web Apps authentication endpoint
+      try {
+        // First, try to get the authentication providers
+        const authProvidersResponse = await fetch("/.auth/providers");
+        if (authProvidersResponse.ok) {
+          const providers = await authProvidersResponse.json();
+          console.log("Available auth providers:", providers);
+
+          // Look for Microsoft/Azure AD provider
+          const microsoftProvider = providers.find(
+            (p: any) =>
+              p.name?.toLowerCase().includes("microsoft") ||
+              p.name?.toLowerCase().includes("aad") ||
+              p.name?.toLowerCase().includes("azure"),
+          );
+
+          if (microsoftProvider) {
+            window.location.href = `/.auth/login/${microsoftProvider.name}`;
+            return;
+          }
+        }
+
+        // Fallback: Try standard Azure AD provider name
+        window.location.href = "/.auth/login/aad";
+      } catch (error) {
+        console.error("Error determining auth provider:", error);
+        // Final fallback to standard Azure AD
+        window.location.href = "/.auth/login/aad";
+      }
     }
   };
 

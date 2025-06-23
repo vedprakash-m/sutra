@@ -11,12 +11,51 @@ export default function LoginPage() {
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1";
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (isDevelopment) {
       // Store role preference for development mode only
       localStorage.setItem("sutra_demo_role", selectedRole);
+      login();
+    } else {
+      // Production: Try to determine the correct authentication provider
+      // Check what providers are available and redirect accordingly
+      try {
+        // First, try to get the authentication providers
+        const authProvidersResponse = await fetch("/.auth/providers");
+        if (authProvidersResponse.ok) {
+          const providers = await authProvidersResponse.json();
+          console.log("Available auth providers:", providers);
+
+          // Look for Microsoft/Azure AD provider
+          const microsoftProvider = providers.find(
+            (p: any) =>
+              p.name?.toLowerCase().includes("microsoft") ||
+              p.name?.toLowerCase().includes("aad") ||
+              p.name?.toLowerCase().includes("azure"),
+          );
+
+          if (microsoftProvider) {
+            window.location.href = `/.auth/login/${microsoftProvider.name}`;
+            return;
+          }
+        }
+
+        // Fallback: Try common Microsoft provider names
+        const commonProviders = [
+          "aad",
+          "microsoftIdProvider",
+          "microsoft",
+          "azuread",
+        ];
+
+        // Try the first one (aad is most common)
+        window.location.href = `/.auth/login/${commonProviders[0]}`;
+      } catch (error) {
+        console.error("Error determining auth provider:", error);
+        // Final fallback to standard Azure AD
+        window.location.href = "/.auth/login/aad";
+      }
     }
-    login();
   };
 
   return (

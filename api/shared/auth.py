@@ -145,8 +145,8 @@ class AuthManager:
             "family_name", ""
         )
 
-        # Determine user roles
-        roles = [UserRole.USER]  # Default role
+        # Determine user role (single role, not array)
+        role = UserRole.USER  # Default role
 
         # Check for admin role
         token_roles = claims.get("roles", [])
@@ -154,17 +154,17 @@ class AuthManager:
             token_roles = [token_roles]
 
         if "admin" in token_roles or "Administrator" in token_roles:
-            roles.append(UserRole.ADMIN)
+            role = UserRole.ADMIN
 
         # For development, make certain users admin
         if email in ["dev@sutra.ai", "admin@sutra.ai"]:
-            roles.append(UserRole.ADMIN)
+            role = UserRole.ADMIN
 
         return User(
             id=user_id,
             email=email,
             name=name.strip(),
-            roles=roles,
+            role=role,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -172,7 +172,7 @@ class AuthManager:
     async def check_permission(self, user: User, resource: str, action: str) -> bool:
         """Check if user has permission for the specified action on resource."""
         # Admin users have all permissions
-        if UserRole.ADMIN in user.roles:
+        if user.role == UserRole.ADMIN:
             return True
 
         # Define permission rules
@@ -215,7 +215,7 @@ class AuthManager:
         resource_permissions = permissions.get(resource, {})
         allowed_roles = resource_permissions.get(action, [])
 
-        return any(role in user.roles for role in allowed_roles)
+        return user.role in allowed_roles
 
 
 # Global auth manager instance
@@ -317,7 +317,7 @@ def check_admin_role(req: func.HttpRequest) -> bool:
         environment = os.getenv("ENVIRONMENT", "").lower()
         if environment == "development":
             auth_header = req.headers.get("Authorization", "")
-            if "mock-admin-token" in auth_header or "admin" in auth_header.lower():
+            if "admin" in auth_header.lower():
                 return True
 
         # Get user ID from token
@@ -325,9 +325,7 @@ def check_admin_role(req: func.HttpRequest) -> bool:
         if not user_id:
             return False
 
-        # In a full implementation, this would check the user's role in the database
-        # For MVP, we'll check for admin claim in the JWT token
-
+        # Check for admin role in JWT token using simplified role model
         auth_header = req.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             return False
@@ -338,22 +336,17 @@ def check_admin_role(req: func.HttpRequest) -> bool:
             # Decode without verification for role checking (verification done earlier)
             payload = jwt.decode(token, options={"verify_signature": False})
 
-            # Check for admin role in various possible claims
-            roles = []
+            # Check for admin role using simplified model (single role field)
+            role = payload.get("role")
+            if role and role.lower() == "admin":
+                return True
 
-            # Check different possible role claims
-            if "roles" in payload:
-                roles.extend(payload["roles"])
-            if "role" in payload:
-                roles.append(payload["role"])
-            if "extension_Role" in payload:  # Azure AD B2C custom claims
-                roles.append(payload["extension_Role"])
-            if "custom_role" in payload:
-                roles.append(payload["custom_role"])
+            # Also check legacy Azure AD roles array for backward compatibility
+            roles = payload.get("roles", [])
+            if isinstance(roles, list):
+                return "admin" in [r.lower() for r in roles]
 
-            # Check if any role indicates admin
-            admin_roles = ["admin", "administrator", "system_admin", "super_admin"]
-            return any(role.lower() in admin_roles for role in roles)
+            return False
 
         except Exception:
             return False
@@ -420,22 +413,20 @@ def get_user_role(user_id: str) -> UserRole:
 
         try:
             user = container.read_item(item=user_id, partition_key=user_id)
-            role_str = user.get("role", "member")
+            role_str = user.get("role", "user")
 
-            # Map string to enum
+            # Map string to enum - only user and admin roles
             role_map = {
-                "member": UserRole.MEMBER,
-                "contributor": UserRole.CONTRIBUTOR,
-                "prompt_manager": UserRole.PROMPT_MANAGER,
+                "user": UserRole.USER,
                 "admin": UserRole.ADMIN,
             }
 
-            return role_map.get(role_str, UserRole.MEMBER)
+            return role_map.get(role_str, UserRole.USER)
         except:
-            return UserRole.MEMBER
+            return UserRole.USER
 
     except Exception:
-        return UserRole.MEMBER
+        return UserRole.USER
 
 
 def require_admin_role(func):
@@ -505,19 +496,22 @@ def require_permission(resource_type: str, permission: str):
 def verify_jwt_token(req: func.HttpRequest) -> Dict[str, Any]:
     """Verify JWT token from request and return validation result."""
     try:
-        # Check if authentication is disabled for development
-        auth_disabled = os.getenv("SUTRA_DISABLE_AUTH", "false").lower() == "true"
-        if auth_disabled:
-            return {
-                "valid": True,
-                "message": "Authentication disabled for development",
-                "claims": {
-                    "sub": "dev-user-id",
-                    "email": "dev@sutra.ai",
-                    "name": "Development User",
-                    "roles": ["user"],
-                },
-            }
+        # Safe development mode - only in local development environment
+        environment = os.getenv("ENVIRONMENT", "").lower()
+        if environment == "development":
+            auth_header = req.headers.get("Authorization", "")
+            if auth_header.startswith("Bearer dev-") or auth_header.startswith("Bearer demo-"):
+                role = "admin" if "admin" in auth_header else "user"
+                return {
+                    "valid": True,
+                    "message": "Development mode authentication",
+                    "claims": {
+                        "sub": f"dev-{role}-id",
+                        "email": f"dev-{role}@sutra.ai",
+                        "name": f"Development {role.title()}",
+                        "role": role,
+                    },
+                }
 
         token = extract_token_from_request(req)
         if not token:

@@ -18,12 +18,12 @@ class MockAuthManager:
     def __init__(self, user_id: str = "test-user-123",
                  email: str = "test@sutra.ai",
                  name: str = "Test User",
-                 roles: List[UserRole] = None):
+                 role: UserRole = None):
         """Initialize mock auth manager with default test user."""
         self.user_id = user_id
         self.email = email
         self.name = name
-        self.roles = roles or [UserRole.USER]
+        self.role = role or UserRole.USER
         self._auth_config = {
             "tenant_id": "test-tenant",
             "client_id": "test-client",
@@ -46,7 +46,7 @@ class MockAuthManager:
             "sub": self.user_id,
             "email": self.email,
             "name": self.name,
-            "roles": [role.value for role in self.roles],
+            "roles": [self.role.value],
             "iat": datetime.now(timezone.utc).timestamp(),
             "exp": (datetime.now(timezone.utc).timestamp() + 3600),
         }
@@ -57,7 +57,7 @@ class MockAuthManager:
             id=self.user_id,
             email=self.email,
             name=self.name,
-            roles=self.roles,
+            role=self.role,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -65,7 +65,7 @@ class MockAuthManager:
     async def check_permission(self, user: User, resource: str, action: str) -> bool:
         """Mock permission check."""
         # Admin users have all permissions
-        if UserRole.ADMIN in user.roles:
+        if user.role == UserRole.ADMIN:
             return True
 
         # Regular users have basic permissions
@@ -94,7 +94,7 @@ class AuthMockingHelper:
             id="admin-user-123",
             email="admin@sutra.ai",
             name="Admin User",
-            roles=[UserRole.USER, UserRole.ADMIN],
+            role=UserRole.ADMIN,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -106,7 +106,7 @@ class AuthMockingHelper:
             id=user_id,
             email=f"user{user_id}@sutra.ai",
             name=f"User {user_id}",
-            roles=[UserRole.USER],
+            role=UserRole.USER,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )

@@ -5,14 +5,10 @@ from enum import Enum
 
 
 class UserRole(str, Enum):
-    """User roles in the system."""
+    """User roles in the system - simplified to match UX specification."""
 
-    MEMBER = "member"
-    CONTRIBUTOR = "contributor"
-    PROMPT_MANAGER = "prompt_manager"
-    ADMIN = "admin"
-    # Legacy compatibility
-    USER = "user"
+    USER = "user"      # Standard user role for all personas (Content Creator, Developer, PM, CS)
+    ADMIN = "admin"    # System administrator role for LLM config, budgets, user management
 
 
 class PromptStatus(str, Enum):
@@ -52,7 +48,7 @@ class User(BaseModel):
     id: str
     email: str
     name: str
-    roles: List[UserRole] = [UserRole.USER]
+    role: UserRole = UserRole.USER  # Single role, not array
     created_at: datetime
     updated_at: datetime
 

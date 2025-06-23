@@ -109,7 +109,7 @@ class TestPromptsAPI:
                 id="test-user-123",
                 email="test@example.com",
                 name="Test User",
-                roles=[UserRole.USER],
+                role=UserRole.USER,
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc)
             )
@@ -136,7 +136,7 @@ class TestPromptsAPI:
             id=user_id,
             email="test@example.com",
             name="Test User",
-            roles=[UserRole.USER],
+            role=UserRole.USER,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )

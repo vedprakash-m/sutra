@@ -541,7 +541,7 @@ class TestBusinessLogicValidators:
     def test_validate_user_permissions_admin_required_has_admin(self):
         """Test user permission validation when admin required and user has admin."""
         user = Mock(spec=User)
-        user.roles = [UserRole.ADMIN, UserRole.USER]
+        user.role = UserRole.ADMIN
 
         # Should not raise exception
         validate_user_permissions(user, UserRole.ADMIN)
@@ -549,7 +549,7 @@ class TestBusinessLogicValidators:
     def test_validate_user_permissions_admin_required_no_admin(self):
         """Test user permission validation when admin required but user doesn't have admin."""
         user = Mock(spec=User)
-        user.roles = [UserRole.USER]
+        user.role = UserRole.USER
 
         with pytest.raises(BusinessLogicException, match="Admin privileges required"):
             validate_user_permissions(user, UserRole.ADMIN)
@@ -557,7 +557,7 @@ class TestBusinessLogicValidators:
     def test_validate_user_permissions_user_role(self):
         """Test user permission validation for user role."""
         user = Mock(spec=User)
-        user.roles = [UserRole.USER]
+        user.role = UserRole.USER
 
         # Should not raise exception
         validate_user_permissions(user, UserRole.USER)

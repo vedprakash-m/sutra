@@ -10,7 +10,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  roles: string[];
+  role: string; // Single role: "user" or "admin"
 }
 
 interface AuthContextType {
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState<string | null>(null);
 
   const isAuthenticated = !!user;
-  const isAdmin = user?.roles.includes("admin") ?? false;
+  const isAdmin = user?.role === "admin";
 
   // Initialize auth state from Static Web Apps or fallback
   useEffect(() => {
@@ -83,11 +83,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
               )?.val || email;
 
+            // Determine user role from Azure AD roles
+            const userRole = principal.userRoles?.includes("admin")
+              ? "admin"
+              : "user";
+
             const authUser: User = {
               id: principal.userId,
               email: email,
               name: name,
-              roles: principal.userRoles || ["user"], // Default to 'user' role
+              role: userRole, // Single role based on Azure AD
             };
 
             setUser(authUser);
@@ -97,40 +102,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
 
-        // Fallback: Check localStorage for demo user or create one
+        // Fallback: Check localStorage for demo user (don't auto-create)
         const storedUser = localStorage.getItem("sutra_demo_user");
         if (storedUser) {
           const demoUser = JSON.parse(storedUser);
           setUser(demoUser);
           setToken("demo-token");
-        } else {
-          // For demo purposes, create a demo user automatically
-          // In production, you'd want proper authentication
-          const demoUser: User = {
-            id: "demo-user-001",
-            email: "demo@sutra.app",
-            name: "Demo User",
-            roles: ["user", "admin"], // Grant admin for demo
-          };
-
-          localStorage.setItem("sutra_demo_user", JSON.stringify(demoUser));
-          setUser(demoUser);
-          setToken("demo-token");
         }
+        // If no stored user, user remains null and will see login page
       } catch (error) {
         console.error("Failed to check auth status:", error);
-
-        // Fallback to demo user even on error
-        const demoUser: User = {
-          id: "demo-user-001",
-          email: "demo@sutra.app",
-          name: "Demo User",
-          roles: ["user", "admin"],
-        };
-
-        localStorage.setItem("sutra_demo_user", JSON.stringify(demoUser));
-        setUser(demoUser);
-        setToken("demo-token");
+        // On error, user remains null and will see login page
       } finally {
         setIsLoading(false);
       }
@@ -147,12 +129,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ) {
       window.location.href = "/.auth/login/aad";
     } else {
-      // Fallback: simulate login for demo
+      // Fallback: simulate login for demo based on localStorage preference
+      const storedRole = localStorage.getItem("sutra_demo_role") || "user";
       const demoUser: User = {
-        id: "demo-user-001",
-        email: "demo@sutra.app",
-        name: "Demo User",
-        roles: ["user", "admin"],
+        id: storedRole === "admin" ? "demo-admin-001" : "demo-user-001",
+        email: storedRole === "admin" ? "admin@sutra.app" : "demo@sutra.app",
+        name: storedRole === "admin" ? "Demo Admin" : "Demo User",
+        role: storedRole, // Single role, not array
       };
 
       localStorage.setItem("sutra_demo_user", JSON.stringify(demoUser));

@@ -76,7 +76,7 @@ describe("AuthProvider", () => {
       identityProvider: "aad",
       userId: "test-user-id",
       userDetails: "test@example.com",
-      userRoles: ["user"],
+      userRoles: ["user"], // Azure AD still uses array
       claims: [
         {
           typ: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
@@ -116,7 +116,7 @@ describe("AuthProvider", () => {
       identityProvider: "aad",
       userId: "admin-user-id",
       userDetails: "admin@example.com",
-      userRoles: ["admin", "user"],
+      userRoles: ["admin"], // Admin role in Azure AD userRoles
       claims: [
         {
           typ: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",

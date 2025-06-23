@@ -543,7 +543,7 @@ class RateLimitValidator:
 
 def validate_user_permissions(user: User, required_role: UserRole) -> None:
     """Validate user has required permissions."""
-    if required_role == UserRole.ADMIN and UserRole.ADMIN not in user.roles:
+    if required_role == UserRole.ADMIN and user.role != UserRole.ADMIN:
         raise BusinessLogicException("Admin privileges required for this operation")
 
 

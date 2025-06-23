@@ -59,7 +59,7 @@ def mock_admin_auth_success():
         user_id="admin-user-123",
         email="admin@sutra.ai",
         name="Admin User",
-        roles=[UserRole.USER, UserRole.ADMIN]
+        role=UserRole.ADMIN
     )
 
     with patch("api.shared.auth.get_auth_manager") as mock_get_auth, \

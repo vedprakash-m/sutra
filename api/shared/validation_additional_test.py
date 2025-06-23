@@ -184,7 +184,7 @@ class TestPermissionValidation:
     def test_validate_user_permissions_valid(self):
         """Test user permission validation with valid role."""
         user = Mock(spec=User)
-        user.roles = [UserRole.ADMIN]
+        user.role = UserRole.ADMIN
 
         # Should not raise an exception
         validate_user_permissions(user, UserRole.ADMIN)
@@ -195,7 +195,7 @@ class TestPermissionValidation:
     def test_validate_user_permissions_insufficient(self):
         """Test user permission validation with insufficient role."""
         user = Mock(spec=User)
-        user.roles = [UserRole.USER]
+        user.role = UserRole.USER
 
         with pytest.raises(BusinessLogicException, match="Admin privileges required"):
             validate_user_permissions(user, UserRole.ADMIN)

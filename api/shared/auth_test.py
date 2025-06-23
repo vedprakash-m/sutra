@@ -212,7 +212,7 @@ class TestAuthManager:
         assert isinstance(user, User)
         assert user.id == "mock-user-id"
         assert user.email == "dev@sutra.ai"
-        assert UserRole.USER in user.roles
+        assert user.role == UserRole.ADMIN  # dev@sutra.ai is automatically admin in development
 
     @pytest.mark.asyncio
     async def test_get_user_from_token_admin(self):
@@ -230,7 +230,7 @@ class TestAuthManager:
             }
 
             user = await auth_manager.get_user_from_token("admin-token")
-            assert UserRole.ADMIN in user.roles
+            assert user.role == UserRole.ADMIN
 
     @pytest.mark.asyncio
     async def test_check_permission_admin(self):
@@ -240,7 +240,7 @@ class TestAuthManager:
             id="admin-123",
             email="admin@test.com",
             name="Admin User",
-            roles=[UserRole.ADMIN],
+            role=UserRole.ADMIN,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -257,7 +257,7 @@ class TestAuthManager:
             id="user-123",
             email="user@test.com",
             name="Regular User",
-            roles=[UserRole.USER],
+            role=UserRole.USER,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -493,7 +493,7 @@ class TestAuthDecorators:
         # Mock the auth manager with a non-admin user
         mock_auth_manager = Mock()
         mock_user = Mock()
-        mock_user.role = UserRole.MEMBER
+        mock_user.role = UserRole.USER
         mock_auth_manager.get_user_from_token = AsyncMock(return_value=mock_user)
         mock_auth_manager.check_permission = AsyncMock(return_value=False)
         mock_get_auth_manager.return_value = mock_auth_manager
@@ -516,7 +516,7 @@ class TestAuthDecorators:
             id="user-123",
             email="user@test.com",
             name="Test User",
-            roles=[UserRole.USER],
+            role=UserRole.USER,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -598,4 +598,4 @@ class TestPermissionChecks:
         mock_get_db_manager.return_value = mock_db_manager
 
         role = get_user_role("user-123")
-        assert role == UserRole.MEMBER
+        assert role == UserRole.USER

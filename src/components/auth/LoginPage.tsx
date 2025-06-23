@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { useAuth } from "./AuthProvider";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<"user" | "admin">("user");
+
+  const handleLogin = () => {
+    // Store role preference for demo mode
+    localStorage.setItem("sutra_demo_role", selectedRole);
+    login();
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -39,8 +47,43 @@ export default function LoginPage() {
                 Sign in with your Microsoft account to access the Sutra platform
               </p>
 
+              {/* Development Mode Role Selection */}
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">
+                  Development Mode - Select Role:
+                </p>
+                <div className="flex space-x-4 justify-center">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="user"
+                      checked={selectedRole === "user"}
+                      onChange={(e) =>
+                        setSelectedRole(e.target.value as "user" | "admin")
+                      }
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Regular User</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="admin"
+                      checked={selectedRole === "admin"}
+                      onChange={(e) =>
+                        setSelectedRole(e.target.value as "user" | "admin")
+                      }
+                      className="mr-2"
+                    />
+                    <span className="text-sm">Admin User</span>
+                  </label>
+                </div>
+              </div>
+
               <button
-                onClick={login}
+                onClick={handleLogin}
                 className="w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
               >
                 <svg
@@ -50,7 +93,7 @@ export default function LoginPage() {
                 >
                   <path d="M12 0C5.383 0 0 5.383 0 12s5.383 12 12 12 12-5.383 12-12S18.617 0 12 0zm5.5 16.5h-11v-1h11v1zm0-2h-11v-1h11v1zm0-2h-11v-1h11v1zm0-2h-11v-1h11v1z" />
                 </svg>
-                Sign in with Microsoft
+                Sign in (Development Mode)
               </button>
             </div>
           </div>

@@ -158,6 +158,12 @@ def require_auth(resource: str = None, action: str = "read"):
         @wraps(func_to_decorate)
         async def wrapper(req: func.HttpRequest) -> func.HttpResponse:
             try:
+                # Skip authentication in testing mode
+                if TESTING_MODE:
+                    # Create a mock user for testing
+                    req.current_user = create_mock_user("test-user-123", "user")
+                    return await func_to_decorate(req)
+
                 # Get user from Azure Static Web Apps headers
                 auth_mgr = get_auth_manager()
                 user = auth_mgr.get_user_from_headers(req)
@@ -288,3 +294,17 @@ def get_user_id_from_token(req: func.HttpRequest) -> Optional[str]:
         return user.id if user else None
     except Exception:
         return None
+
+
+# Testing support - environment variable to disable decorators during testing
+TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
+
+def create_mock_user(user_id: str = "test-user-123", role: str = "user"):
+    """Create a mock user object for testing."""
+    class MockUser:
+        def __init__(self, user_id: str, role: str):
+            self.id = user_id
+            self.role = role
+            self.email = f"{user_id}@test.com"
+
+    return MockUser(user_id, role)

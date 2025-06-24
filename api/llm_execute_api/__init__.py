@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional
 import asyncio
 import httpx
 
-from shared.auth_static_web_apps import require_auth, get_current_user
+from shared.auth_static_web_apps import require_auth, get_current_user, verify_jwt_token, get_user_id_from_token, check_admin_role
 from shared.database import get_database_manager
 from shared.llm_client import get_llm_client, LLMProvider
 from shared.error_handling import handle_api_error, SutraAPIError

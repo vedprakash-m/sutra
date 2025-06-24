@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional
 import uuid
 import asyncio
 
-from shared.auth_static_web_apps import require_auth, get_current_user
+from shared.auth_static_web_apps import require_auth, get_current_user, verify_jwt_token, get_user_id_from_token, check_admin_role
 from shared.database import get_database_manager
 from shared.models import Playbook, PlaybookExecution, ValidationError
 from shared.validation import validate_playbook_data

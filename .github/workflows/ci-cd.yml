@@ -120,7 +120,7 @@ jobs:
       - name: Run backend unit tests
         run: |
           cd api
-          python -m pytest --cov=. --cov-report=xml --cov-report=term-missing -v
+          TESTING_MODE=true python -m pytest --cov=. --cov-report=xml --cov-report=term-missing -v
 
       - name: Upload backend coverage
         uses: codecov/codecov-action@v3

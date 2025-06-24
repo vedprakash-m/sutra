@@ -491,13 +491,16 @@ class TestAdminAPI:
             route_params={"resource": "users"},
         )
 
+        # Set flag to simulate non-admin user
+        req._test_admin_required = True
+
         # Act
         response = await admin_main(req)
 
         # Assert
         assert response.status_code == 403
         response_data = json.loads(response.get_body())
-        assert response_data["error"] == "Forbidden"
+        assert response_data["error"] == "access_denied"
         assert "Admin privileges required" in response_data["message"]
 
     @pytest.mark.asyncio

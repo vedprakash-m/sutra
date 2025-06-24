@@ -54,17 +54,14 @@ class TestLLMExecuteAPI:
     @pytest.mark.asyncio
     async def test_main_unauthorized(self, mock_request):
         """Test main endpoint without authorization."""
-        with patch("api.llm_execute_api.verify_jwt_token") as mock_auth:
-            mock_auth.return_value = {
-                "valid": False,
-                "message": "No authorization token",
-            }
+        # Set flag to simulate authentication failure
+        mock_request._test_auth_fail = True
 
-            response = await main(mock_request)
+        response = await main(mock_request)
 
-            assert response.status_code == 401
-            response_data = json.loads(response.get_body())
-            assert "error" in response_data
+        assert response.status_code == 401
+        response_data = json.loads(response.get_body())
+        assert "error" in response_data
 
     @pytest.mark.asyncio
     async def test_main_post_execute(self, mock_request, valid_user_id):

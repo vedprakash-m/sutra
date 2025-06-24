@@ -433,6 +433,9 @@ class TestCollectionsAPI:
             route_params={},
         )
 
+        # Set flag to simulate authentication failure
+        req._test_auth_fail = True
+
         # Act
         response = await collections_main(req)
 

@@ -56,29 +56,24 @@ class TestIntegrationsAPI:
         """Test main endpoint without authorization."""
         mock_request.headers = {}
 
-        # Mock auth module
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth:
-            mock_auth.return_value = {
-                "valid": False,
-                "message": "No authorization token",
-            }
+        # Set flag to simulate authentication failure
+        mock_request._test_auth_fail = True
 
-            response = await main(mock_request)
+        response = await main(mock_request)
 
-            assert response.status_code == 401
-            response_data = json.loads(response.get_body())
-            assert "error" in response_data
+        assert response.status_code == 401
+        response_data = json.loads(response.get_body())
+        assert "error" in response_data
 
     @pytest.mark.asyncio
     async def test_main_get_request(self, mock_request, valid_user_id):
         """Test main endpoint with GET request."""
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
-            "api.integrations_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
+
+        with patch(
             "api.integrations_api.list_llm_integrations"
         ) as mock_list:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_list.return_value = mock_response

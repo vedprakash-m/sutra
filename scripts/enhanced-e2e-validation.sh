@@ -103,9 +103,22 @@ export TESTING_MODE=true
 
 # First, just try to collect tests without running them
 if ! TESTING_MODE=true /Users/vedprakashmishra/sutra/.venv/bin/python -m pytest --collect-only -q > /tmp/test_collection.log 2>&1; then
-    echo "❌ Test collection failed - checking for authentication mocking issues..."
-    cat /tmp/test_collection.log | grep -E "(AttributeError|verify_jwt_token|get_user_id_from_token|check_admin_role)" || true
-    echo
+    echo "❌ Test collection failed - checking for critical issues..."
+
+    # Check for annotations errors
+    if grep -q "__annotations__ must be set to a dict object" /tmp/test_collection.log; then
+        echo "❌ CRITICAL: __annotations__ errors found (decorator issues)"
+        grep "__annotations__" /tmp/test_collection.log
+        exit 1
+    fi
+
+    # Check for await expression errors
+    if grep -q "object function can't be used in 'await' expression" /tmp/test_collection.log; then
+        echo "❌ CRITICAL: async function errors found (decorator issues)"
+        grep "await.*expression" /tmp/test_collection.log
+        exit 1
+    fi
+
     echo "🔍 Detailed error log:"
     cat /tmp/test_collection.log
     exit 1
@@ -113,8 +126,34 @@ fi
 echo "✅ All tests can be collected successfully"
 echo
 
-# Step 7: Sample Test Run
-echo "🎯 Step 7: Sample Test Execution"
+# Step 7: **NEW** - Critical Error Pattern Testing
+echo "🎯 Step 7: Critical Error Pattern Testing"
+echo "------------------------------------------"
+echo "Running specific tests that commonly fail with CI/CD patterns..."
+
+# Test a few endpoints that were failing with status code issues
+critical_tests=(
+    "admin_api/admin_test.py::TestAdminAPI::test_non_admin_access_forbidden"
+    "collections_api/collections_test.py::TestCollectionsAPI::test_unauthorized_access"
+    "integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_unauthorized"
+    "llm_execute_api/llm_execute_test.py::TestLLMExecuteAPI::test_main_unauthorized"
+    "playbooks_api/playbooks_test.py::TestPlaybooksAPI::test_create_playbook_success"
+)
+
+for test in "${critical_tests[@]}"; do
+    echo "  Testing: $test"
+    if ! TESTING_MODE=true /Users/vedprakashmishra/sutra/.venv/bin/python -m pytest "$test" -v --tb=short -q --disable-warnings; then
+        echo "❌ Critical test failed: $test"
+        echo "🔍 Running with detailed output:"
+        TESTING_MODE=true /Users/vedprakashmishra/sutra/.venv/bin/python -m pytest "$test" -v --tb=long || true
+        exit 1
+    fi
+done
+echo "✅ All critical tests pass"
+echo
+
+# Step 8: Sample Test Run (renamed from Step 7)
+echo "🎯 Step 8: Sample Test Execution"
 echo "--------------------------------"
 echo "Running a small subset of tests to validate auth mocking..."
 
@@ -134,7 +173,8 @@ fi
 echo "✅ Auth decorator test passes"
 echo
 
-# Step 8: Authentication Function Testing
+# Step 9: Authentication Function Testing (renamed from Step 8)
+echo "🔐 Step 9: Authentication System Testing"
 echo "🔐 Step 8: Authentication System Testing"
 echo "----------------------------------------"
 /Users/vedprakashmishra/sutra/.venv/bin/python -c "

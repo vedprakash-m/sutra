@@ -15,6 +15,8 @@ The "Authentication system not properly configured" error was caused by multiple
 ### 1. App Registration Configuration
 
 - **App ID**: `61084964-08b8-49ea-b624-4859c4dc37de`
+- **Sign-in Audience**: `AzureADandPersonalMicrosoftAccount` ✅ (supports personal Microsoft accounts)
+- **Access Token Version**: `2` ✅ (required for personal accounts)
 - **Redirect URIs**:
   - `https://zealous-flower-04bbe021e.2.azurestaticapps.net/.auth/login/aad/callback`
   - `https://zealous-flower-04bbe021e.2.azurestaticapps.net/.auth/login/azureActiveDirectory/callback`
@@ -24,6 +26,7 @@ The "Authentication system not properly configured" error was caused by multiple
 ### 2. Static Web App Configuration
 
 - **Resource**: `sutra-web-hvyqgbrvnx4ii` in `sutra-rg`
+- **OpenID Issuer**: `https://login.microsoftonline.com/common/v2.0` ✅ (supports personal accounts)
 - **VED_EXTERNAL_ID_CLIENT_ID**: `61084964-08b8-49ea-b624-4859c4dc37de` ✅
 - **VED_EXTERNAL_ID_CLIENT_SECRET**: `[REDACTED - Stored in Azure Key Vault]` ✅
 - **WEBSITE_AUTH_ENABLED**: `true` ✅

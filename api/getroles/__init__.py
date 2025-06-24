@@ -59,8 +59,21 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 user_role = user_doc.get("role", "user")
                 logger.info(f"Found existing user {user_id} with role: {user_role}")
             except:
-                # User doesn't exist, create new user with default role
-                user_role = "admin" if user_name and "admin" in user_name.lower() else "user"
+                # User doesn't exist - implement approval system
+                # Check if this is the first user (make them admin) or require approval
+
+                # Check if any admin users exist
+                query = "SELECT * FROM c WHERE c.role = 'admin'"
+                admin_users = list(container.query_items(query=query, enable_cross_partition_query=True))
+
+                if not admin_users:
+                    # No admin users exist, make this user an admin (first user)
+                    user_role = "admin"
+                    logger.info(f"No admin users found, making {user_id} the first admin")
+                else:
+                    # Admin users exist, new users need approval
+                    user_role = "pending_approval"
+                    logger.info(f"Admin users exist, new user {user_id} requires approval")
 
                 user_doc = {
                     "id": user_id,
@@ -71,14 +84,18 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     "createdAt": datetime.now().isoformat(),
                     "lastLoginAt": datetime.now().isoformat(),
                     "updatedAt": datetime.now().isoformat(),
-                    "type": "user"
+                    "type": "user",
+                    "approvalStatus": "pending" if user_role == "pending_approval" else "approved"
                 }
 
                 container.create_item(user_doc)
                 logger.info(f"Created new user {user_id} with role: {user_role}")
 
             # Return roles array as expected by Azure Static Web Apps
-            roles = [user_role]
+            if user_role == "pending_approval":
+                roles = ["anonymous"]  # Restrict access for pending users
+            else:
+                roles = [user_role]
 
             # Add any additional roles based on business logic
             if user_role == "admin":

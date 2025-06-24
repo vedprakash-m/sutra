@@ -16,7 +16,7 @@ fi
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
+YIGHLLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
@@ -477,6 +477,55 @@ else
 fi
 
 echo ""
+
+# Enhanced failure analysis - categorize failures to help fix them
+echo "Analyzing failure patterns to identify CI/CD gaps..."
+
+# Count different types of failures
+AUTH_FAILURES=$(grep -c "assert 401" /tmp/backend_tests.log || echo "0")
+VALIDATION_FAILURES=$(grep -c "assert 400" /tmp/backend_tests.log || echo "0")
+NOT_FOUND_FAILURES=$(grep -c "assert 404" /tmp/backend_tests.log || echo "0")
+MOCK_FAILURES=$(grep -c "_mock.*True" /tmp/backend_tests.log || echo "0")
+DATABASE_FAILURES=$(grep -c "DatabaseManager\|cosmos" /tmp/backend_tests.log || echo "0")
+
+echo ""
+echo "📊 Failure Pattern Analysis:"
+echo "  Authentication failures (401): $AUTH_FAILURES"
+echo "  Validation failures (400): $VALIDATION_FAILURES"
+echo "  Not found failures (404): $NOT_FOUND_FAILURES"
+echo "  Mock-related failures: $MOCK_FAILURES"
+echo "  Database-related failures: $DATABASE_FAILURES"
+echo ""
+
+if [ $AUTH_FAILURES -gt 0 ]; then
+    echo "🔧 AUTHENTICATION ISSUES DETECTED:"
+    echo "   Tests are failing with 401 errors, indicating missing authentication headers"
+    echo "   This suggests tests are using func.HttpRequest instead of create_auth_request helpers"
+    echo "   Pattern: Tests need to be updated to use proper authentication mocking"
+    echo ""
+fi
+
+if [ $MOCK_FAILURES -gt 0 ]; then
+    echo "🔧 MOCK ENVIRONMENT ISSUES DETECTED:"
+    echo "   Tests are returning mock data with '_mock': True markers"
+    echo "   This suggests production vs test environment detection issues"
+    echo "   Pattern: Mock setup not matching production CI environment"
+    echo ""
+fi
+
+if [ $DATABASE_FAILURES -gt 0 ]; then
+    echo "🔧 DATABASE MOCKING ISSUES DETECTED:"
+    echo "   Tests are failing on database operations or configurations"
+    echo "   This could be development_mode vs production mode differences"
+    echo "   Pattern: Database initialization or mocking inconsistencies"
+    echo ""
+fi
+
+echo "💡 SOLUTION PRIORITIES:"
+echo "   1. Fix authentication patterns (use create_auth_request helpers)"
+echo "   2. Standardize environment variable setup across test files"
+echo "   3. Review mock vs production environment detection logic"
+echo "   4. Ensure database manager initialization matches CI exactly"
 
 # Final Summary
 END_TIME=$(date +%s)

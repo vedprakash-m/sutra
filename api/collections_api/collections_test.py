@@ -428,12 +428,12 @@ class TestCollectionsAPI:
     async def test_unauthorized_access(self, mock_auth_failure):
         """Test unauthorized access to collections API."""
         # Create request
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/collections",
-            body=b"",
-            headers={},
             route_params={},
+            user_id="test-user-123",
+            role="user"
         )
 
         # Set flag to simulate authentication failure
@@ -473,12 +473,12 @@ class TestCollectionsAPI:
     async def test_create_collection_invalid_json(self, mock_auth_success):
         """Test collection creation with invalid JSON."""
         # Create request with invalid JSON
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="POST",
             url="http://localhost/api/collections",
-            body=b"{invalid json}",
-            headers={"Content-Type": "application/json"},
             route_params={},
+            user_id="test-user-123",
+            role="user"
         )
 
         # Act
@@ -511,13 +511,13 @@ class TestCollectionsAPI:
         ]
 
         # Create request with search and type filters
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/collections?search=test&type=public&teamId=team-123",
-            body=b"",
-            headers={},
             route_params={},
             params={"search": "test", "type": "public", "teamId": "team-123"},
+            user_id="test-user-123",
+            role="user"
         )
 
         # Act
@@ -549,13 +549,13 @@ class TestCollectionsAPI:
         ]
 
         # Create request
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/collections",
-            body=b"",
-            headers={},
             route_params={},
             params={},
+            user_id="test-user-123",
+            role="user"
         )
 
         # Act

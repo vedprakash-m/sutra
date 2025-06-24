@@ -142,13 +142,13 @@ class TestPlaybooksAPI:
         ]
 
         # Create request
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/playbooks?page=1&limit=20",
-            body=b"",
-            headers={},
             route_params={},
             params={"page": "1", "limit": "20"},
+            user_id="test-user-123",
+            role="user"
         )
 
         # Act

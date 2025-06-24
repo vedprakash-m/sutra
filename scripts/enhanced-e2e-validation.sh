@@ -150,6 +150,33 @@ for test in "${critical_tests[@]}"; do
     fi
 done
 echo "✅ All critical tests pass"
+
+# Step 7.1: **NEW** - User ID Mocking Pattern Testing
+echo "🎯 Step 7.1: User ID Mocking Pattern Testing"
+echo "---------------------------------------------"
+echo "Testing user ID mocking patterns that commonly fail..."
+
+# Test specific user ID dependent tests
+user_id_tests=(
+    "integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_get_request"
+    "integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_post_request"
+    "integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_delete_request"
+    "llm_execute_api/llm_execute_test.py::TestLLMExecuteAPI::test_main_post_execute"
+    "llm_execute_api/llm_execute_test.py::TestLLMExecuteAPI::test_main_get_providers"
+    "llm_execute_api/llm_execute_test.py::TestLLMExecuteAPI::test_main_exception_handling"
+)
+
+for test in "${user_id_tests[@]}"; do
+    echo "  Testing: $test"
+    if ! TESTING_MODE=true /Users/vedprakashmishra/sutra/.venv/bin/python -m pytest "$test" -v --tb=line -q --disable-warnings; then
+        echo "❌ User ID mocking test failed: $test"
+        echo "🔍 This likely indicates tests need _test_user_id flag updates"
+        echo "🔍 Running with detailed output:"
+        TESTING_MODE=true /Users/vedprakashmishra/sutra/.venv/bin/python -m pytest "$test" -v --tb=short || true
+        exit 1
+    fi
+done
+echo "✅ All user ID mocking tests pass"
 echo
 
 # Step 8: Sample Test Run (renamed from Step 7)
@@ -175,7 +202,6 @@ echo
 
 # Step 9: Authentication Function Testing (renamed from Step 8)
 echo "🔐 Step 9: Authentication System Testing"
-echo "🔐 Step 8: Authentication System Testing"
 echo "----------------------------------------"
 /Users/vedprakashmishra/sutra/.venv/bin/python -c "
 import sys

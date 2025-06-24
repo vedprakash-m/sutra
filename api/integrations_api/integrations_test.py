@@ -87,14 +87,12 @@ class TestIntegrationsAPI:
     async def test_main_post_request(self, mock_request, valid_user_id):
         """Test main endpoint with POST request."""
         mock_request.method = "POST"
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
 
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
-            "api.integrations_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        with patch(
             "api.integrations_api.create_llm_integration"
         ) as mock_create:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 201
             mock_create.return_value = mock_response
@@ -109,14 +107,12 @@ class TestIntegrationsAPI:
         """Test main endpoint with POST request for test connection."""
         mock_request.method = "POST"
         mock_request.route_params = {"provider": "openai", "action": "test"}
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
 
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
-            "api.integrations_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        with patch(
             "api.integrations_api.validate_llm_connection"
         ) as mock_test:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_test.return_value = mock_response
@@ -131,14 +127,12 @@ class TestIntegrationsAPI:
         """Test main endpoint with PUT request."""
         mock_request.method = "PUT"
         mock_request.route_params = {"provider": "openai"}
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
 
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
-            "api.integrations_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        with patch(
             "api.integrations_api.update_llm_integration"
         ) as mock_update:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_update.return_value = mock_response
@@ -153,14 +147,12 @@ class TestIntegrationsAPI:
         """Test main endpoint with DELETE request."""
         mock_request.method = "DELETE"
         mock_request.route_params = {"provider": "openai"}
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
 
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
-            "api.integrations_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        with patch(
             "api.integrations_api.delete_llm_integration"
         ) as mock_delete:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_delete.return_value = mock_response

@@ -66,13 +66,12 @@ class TestLLMExecuteAPI:
     @pytest.mark.asyncio
     async def test_main_post_execute(self, mock_request, valid_user_id):
         """Test main endpoint with POST request for execution."""
-        with patch("api.llm_execute_api.verify_jwt_token") as mock_auth, patch(
-            "api.llm_execute_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
+
+        with patch(
             "api.llm_execute_api.execute_llm_prompt"
         ) as mock_execute:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_execute.return_value = mock_response
@@ -86,14 +85,12 @@ class TestLLMExecuteAPI:
     async def test_main_post_compare(self, mock_request, valid_user_id):
         """Test main endpoint with POST request for comparison."""
         mock_request.route_params = {"action": "compare"}
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
 
-        with patch("api.llm_execute_api.verify_jwt_token") as mock_auth, patch(
-            "api.llm_execute_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        with patch(
             "api.llm_execute_api.compare_llm_outputs"
         ) as mock_compare:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_compare.return_value = mock_response
@@ -108,14 +105,12 @@ class TestLLMExecuteAPI:
         """Test main endpoint with GET request for providers."""
         mock_request.method = "GET"
         mock_request.route_params = {"action": "providers"}
+        # Set the user ID for testing mode
+        mock_request._test_user_id = valid_user_id
 
-        with patch("api.llm_execute_api.verify_jwt_token") as mock_auth, patch(
-            "api.llm_execute_api.get_user_id_from_token"
-        ) as mock_get_user, patch(
+        with patch(
             "api.llm_execute_api.get_available_providers"
         ) as mock_providers:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
             mock_response = Mock()
             mock_response.status_code = 200
             mock_providers.return_value = mock_response
@@ -370,8 +365,12 @@ class TestLLMExecuteAPI:
     @pytest.mark.asyncio
     async def test_main_exception_handling(self, mock_request):
         """Test main endpoint exception handling."""
-        with patch("api.llm_execute_api.verify_jwt_token") as mock_auth:
-            mock_auth.side_effect = Exception("Test exception")
+        # Set the user ID for testing mode
+        mock_request._test_user_id = "test-user-123"
+
+        # Simulate an exception in the main logic rather than auth
+        with patch("api.llm_execute_api.execute_llm_prompt") as mock_execute:
+            mock_execute.side_effect = Exception("Test exception")
 
             response = await main(mock_request)
 

@@ -197,17 +197,18 @@ class TestAdminAPI:
         target_user_id = "user-123"
         invalid_role_data = {"role": "invalid_role"}
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="PUT",
             url=f"http://localhost/api/admin/users/{target_user_id}/role",
-            body=json.dumps(invalid_role_data).encode(),
-            headers={"Content-Type": "application/json"},
+            body=invalid_role_data,
             route_params={
                 "resource": "users",
                 "user_id": target_user_id,
                 "action": "role",
             },
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -226,13 +227,13 @@ class TestAdminAPI:
         # Mock successful database query
         mock_cosmos_client.query_items.return_value = [1]  # Successful query
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/system/health",
-            body=b"",
-            headers={},
             route_params={"resource": "system", "action": "health"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -269,13 +270,13 @@ class TestAdminAPI:
         playbooks_container_mock = mock_cosmos_client.get_playbooks_container()
         playbooks_container_mock.query_items.return_value = [8]  # Playbook count
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/system/stats",
-            body=b"",
-            headers={},
             route_params={"resource": "system", "action": "stats"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -310,12 +311,13 @@ class TestAdminAPI:
         }
 
         # Create request
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="POST",
             url="http://localhost/api/admin/system/maintenance",
-            body=json.dumps(maintenance_data).encode(),
-            headers={"Content-Type": "application/json"},
+            body=maintenance_data,
             route_params={"resource": "system", "action": "maintenance"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -354,12 +356,13 @@ class TestAdminAPI:
         mock_cosmos_client.read_item.return_value = llm_settings
 
         # Create request
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/llm/settings",
-            body=b"",
-            headers={},
+
             route_params={"resource": "llm", "action": "settings"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -407,12 +410,13 @@ class TestAdminAPI:
         }
 
         # Create request
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="PUT",
             url="http://localhost/api/admin/llm/settings",
-            body=json.dumps(update_data).encode(),
-            headers={"Content-Type": "application/json"},
+            body=update_data,
             route_params={"resource": "llm", "action": "settings"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -442,14 +446,14 @@ class TestAdminAPI:
             8
         ]  # Active users
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/usage?period=day",
-            body=b"",
-            headers={},
             route_params={"resource": "usage"},
             params={"period": "day"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -501,12 +505,13 @@ class TestAdminAPI:
         )
 
         # Create request
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/system/health",
-            body=b"",
-            headers={},
+
             route_params={"resource": "system", "action": "health"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -532,17 +537,18 @@ class TestAdminAPI:
 
         mock_cosmos_client.query_items = AsyncMock(return_value=[])
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="PUT",
             url=f"http://localhost/api/admin/users/{target_user_id}/role",
-            body=json.dumps(new_role_data).encode(),
-            headers={"Content-Type": "application/json"},
+            body=new_role_data,
             route_params={
                 "resource": "users",
                 "user_id": target_user_id,
                 "action": "role",
             },
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -573,14 +579,14 @@ class TestAdminAPI:
             side_effect=[mock_users, [1]]  # Users list and count
         )
 
-        # Create request with search and role filter
-        req = func.HttpRequest(
+        # Create authenticated request using helper with search and role filter
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/users?search=john&role=user&page=2&limit=25",
-            body=b"",
-            headers={},
             route_params={"resource": "users"},
             params={"search": "john", "role": "user", "page": "2", "limit": "25"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -597,16 +603,17 @@ class TestAdminAPI:
     async def test_update_user_role_invalid_json(self, mock_admin_auth, mock_cosmos_client):
         """Test user role update with invalid JSON."""
         # Create request with invalid JSON
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="PUT",
             url="http://localhost/api/admin/users/user-123/role",
-            body=b"{invalid json}",
-            headers={"Content-Type": "application/json"},
+
             route_params={
                 "resource": "users",
                 "user_id": "user-123",
                 "action": "role",
             },
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -626,16 +633,14 @@ class TestAdminAPI:
 
         # Mock environment to allow test data operations
         with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
-            # Create request with proper authentication headers
-            req = func.HttpRequest(
+            # Create authenticated request using helper
+            req = self.create_auth_request(
                 method="POST",
                 url="http://localhost/api/admin/test-data/reset",
-                body=b"{}",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer admin-token",
-                },
+                body={},
                 route_params={"resource": "test-data", "action": "reset"},
+                user_id="admin-user-123",
+                role="admin"
             )
 
             # Act
@@ -657,16 +662,14 @@ class TestAdminAPI:
 
         # Mock environment to allow test data operations
         with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
-            # Create request with proper authentication headers
-            req = func.HttpRequest(
+            # Create authenticated request using helper
+            req = self.create_auth_request(
                 method="POST",
                 url="http://localhost/api/admin/test-data/seed",
-                body=b"{}",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer admin-token",
-                },
+                body={},
                 route_params={"resource": "test-data", "action": "seed"},
+                user_id="admin-user-123",
+                role="admin"
             )
 
             # Act
@@ -683,12 +686,13 @@ class TestAdminAPI:
     async def test_resource_not_found_error(self, mock_admin_auth):
         """Test handling of unknown resource."""
         # Create request for unknown resource
-        req = func.HttpRequest(
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/unknown-resource",
-            body=b"",
-            headers={},
+
             route_params={"resource": "unknown-resource"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -726,14 +730,13 @@ class TestAdminAPI:
             side_effect=[mock_users, [1]]
         )
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/users",
-            body=b"",
-            headers={},
             route_params={"resource": "users"},
-            params={},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -757,16 +760,14 @@ class TestAdminAPI:
     @pytest.mark.asyncio
     async def test_test_data_production_environment_blocked(self, mock_admin_auth):
         """Test that test data operations are blocked in production environment."""
-        # Create request without mocking environment (defaults to production)
-        req = func.HttpRequest(
+        # Create authenticated request using helper (defaults to production environment)
+        req = self.create_auth_request(
             method="POST",
             url="http://localhost/api/admin/test-data/reset",
-            body=b"{}",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": "Bearer admin-token",
-            },
+            body={},
             route_params={"resource": "test-data", "action": "reset"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -782,13 +783,14 @@ class TestAdminAPI:
         """Test general exception handling in admin API."""
         # Mock an exception in the authentication check
         with patch("api.admin_api.verify_jwt_token", side_effect=Exception("Database connection failed")):
-            req = func.HttpRequest(
-                method="GET",
-                url="http://localhost/api/admin/users",
-                body=b"",
-                headers={"Authorization": "Bearer test-token"},
-                route_params={"resource": "users"},
-            )
+            req = self.create_auth_request(
+            method="GET",
+            url="http://localhost/api/admin/users",
+
+            route_params={"resource": "users"},
+            user_id="admin-user-123",
+            role="admin"
+        )
 
             # Act
             response = await admin_main(req)

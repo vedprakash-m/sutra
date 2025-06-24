@@ -23,6 +23,7 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
+@require_auth
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Playbooks API endpoint for managing AI workflow playbooks.
@@ -38,18 +39,8 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - POST /api/playbooks/executions/{execution_id}/continue - Continue paused execution
     """
     try:
-        # Verify authentication
-        auth_result = verify_jwt_token(req)
-        if not auth_result["valid"]:
-            return func.HttpResponse(
-                json.dumps(
-                    {"error": "Unauthorized", "message": auth_result["message"]}
-                ),
-                status_code=401,
-                mimetype="application/json",
-            )
-
-        user_id = get_user_id_from_token(req)
+        # Get authenticated user from request context
+        user_id = req.current_user.id
         method = req.method
         route_params = req.route_params
         playbook_id = route_params.get("id")

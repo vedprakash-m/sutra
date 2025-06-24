@@ -22,6 +22,7 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
+@require_auth
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     LLM Execution API endpoint for Multi-LLM optimization and comparison.
@@ -32,18 +33,8 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - GET /api/llm/providers - Get available LLM providers
     """
     try:
-        # Verify authentication
-        auth_result = verify_jwt_token(req)
-        if not auth_result["valid"]:
-            return func.HttpResponse(
-                json.dumps(
-                    {"error": "Unauthorized", "message": auth_result["message"]}
-                ),
-                status_code=401,
-                mimetype="application/json",
-            )
-
-        user_id = get_user_id_from_token(req)
+        # Get authenticated user from request context
+        user_id = req.current_user.id
         method = req.method
         route_params = req.route_params
         action = route_params.get("action")

@@ -21,6 +21,7 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
+@require_admin
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Admin API endpoint for system administration and management.
@@ -36,28 +37,8 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - GET /api/admin/usage - Get usage statistics and monitoring
     """
     try:
-        # Verify authentication
-        auth_result = verify_jwt_token(req)
-        if not auth_result["valid"]:
-            return func.HttpResponse(
-                json.dumps(
-                    {"error": "Unauthorized", "message": auth_result["message"]}
-                ),
-                status_code=401,
-                mimetype="application/json",
-            )
-
-        user_id = get_user_id_from_token(req)
-
-        # Check admin privileges
-        if not check_admin_role(req):
-            return func.HttpResponse(
-                json.dumps(
-                    {"error": "Forbidden", "message": "Admin privileges required"}
-                ),
-                status_code=403,
-                mimetype="application/json",
-            )
+        # Get authenticated user from request context
+        user_id = req.current_user.id
 
         method = req.method
         route_params = req.route_params

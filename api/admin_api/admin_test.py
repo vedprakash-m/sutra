@@ -1,5 +1,6 @@
 import pytest
 import json
+import base64
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
 
@@ -10,31 +11,41 @@ from api.admin_api import main as admin_main
 class TestAdminAPI:
     """Test suite for Admin API endpoints."""
 
-    @pytest.fixture
-    def mock_admin_auth(self):
-        """Mock successful admin authentication."""
-        with patch("api.admin_api.verify_jwt_token") as mock_verify, patch(
-            "api.admin_api.get_user_id_from_token"
-        ) as mock_user_id, patch("api.admin_api.check_admin_role") as mock_admin:
-            mock_verify.return_value = {"valid": True}
-            mock_user_id.return_value = "admin-user-123"
-            mock_admin.return_value = True
-            yield
-
-    @pytest.fixture
-    def mock_non_admin_auth(self):
-        """Mock successful authentication but non-admin user."""
-        with patch("api.admin_api.verify_jwt_token") as mock_verify, patch(
-            "api.admin_api.get_user_id_from_token"
-        ) as mock_user_id, patch("api.admin_api.check_admin_role") as mock_admin:
-            mock_verify.return_value = {"valid": True}
-            mock_user_id.return_value = "regular-user-123"
-            mock_admin.return_value = False
-            yield
+    def create_auth_request(self, method="GET", body=None, route_params=None, params=None, 
+                           user_id="admin-user-123", role="admin", url="http://localhost/api/admin"):
+        """Helper to create authenticated requests for Azure Static Web Apps."""
+        # Create user principal data
+        principal_data = {
+            "identityProvider": "azureActiveDirectory", 
+            "userId": user_id,
+            "userDetails": "Test Admin",
+            "userRoles": [role],
+            "claims": []
+        }
+        
+        # Encode as base64
+        principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
+        
+        # Create headers
+        headers = {
+            "x-ms-client-principal": principal_b64,
+            "x-ms-client-principal-id": user_id,
+            "x-ms-client-principal-name": "Test Admin", 
+            "x-ms-client-principal-idp": "azureActiveDirectory"
+        }
+        
+        return func.HttpRequest(
+            method=method,
+            url=url,
+            body=json.dumps(body).encode('utf-8') if body else b"",
+            headers=headers,
+            route_params=route_params or {},
+            params=params or {}
+        )
 
     @pytest.fixture
     def mock_cosmos_client(self):
-        """Mock database manager."""
+        """Mock database manager with proper container structure."""
         with patch("api.admin_api.get_database_manager") as mock_db_manager:
             mock_manager = Mock()
             # Make database methods async
@@ -45,57 +56,31 @@ class TestAdminAPI:
             mock_manager.delete_item = AsyncMock()
             mock_manager.read_item = AsyncMock()
 
-            # Mock separate container instances for each container type
-            users_container = Mock()
-            users_container.query_items = Mock()
-            users_container.read_item = Mock()
-            users_container.replace_item = Mock()
-
-            prompts_container = Mock()
-            prompts_container.query_items = Mock()
-            prompts_container.read_item = Mock()
-            prompts_container.replace_item = Mock()
-
-            collections_container = Mock()
-            collections_container.query_items = Mock()
-            collections_container.read_item = Mock()
-            collections_container.replace_item = Mock()
-
-            playbooks_container = Mock()
-            playbooks_container.query_items = Mock()
-            playbooks_container.read_item = Mock()
-            playbooks_container.replace_item = Mock()
-
-            config_container = Mock()
-            config_container.query_items = Mock()
-            config_container.read_item = Mock()  # Sync, not async
-            config_container.replace_item = Mock()  # Sync, not async
-            config_container.create_item = Mock()  # Sync, not async
-
-            executions_container = Mock()
-            executions_container.query_items = Mock()
-            executions_container.read_item = Mock()
-            executions_container.replace_item = Mock()
-
-            mock_manager.get_users_container = Mock(return_value=users_container)
-            mock_manager.get_prompts_container = Mock(return_value=prompts_container)
-            mock_manager.get_collections_container = Mock(
-                return_value=collections_container
-            )
-            mock_manager.get_playbooks_container = Mock(
-                return_value=playbooks_container
-            )
-            mock_manager.get_settings_container = Mock(return_value=config_container)
-            mock_manager.get_config_container = Mock(return_value=config_container)
-            mock_manager.get_executions_container = Mock(
-                return_value=executions_container
-            )
+            # Mock container access method
+            containers = {}
+            container_names = ["Users", "Prompts", "Collections", "Playbooks", "Executions", "SystemConfig", "AuditLog", "usage", "config"]
+            
+            for name in container_names:
+                container = Mock()
+                container.query_items = Mock()
+                container.create_item = Mock()
+                container.read_item = Mock()
+                container.upsert_item = Mock()
+                container.replace_item = Mock()
+                container.delete_item = Mock()
+                containers[name] = container
+            
+            mock_manager.get_container = Mock(side_effect=lambda name: containers.get(name))
+            
+            # For backwards compatibility with old method names
+            for name in container_names:
+                setattr(mock_manager, f"get_{name.lower()}_container", Mock(return_value=containers[name]))
 
             mock_db_manager.return_value = mock_manager
             yield mock_manager
 
     @pytest.mark.asyncio
-    async def test_list_users_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_list_users_success(self, mock_cosmos_client):
         """Test successful user listing by admin."""
         # Arrange
         mock_users = [
@@ -126,14 +111,14 @@ class TestAdminAPI:
             side_effect=[mock_users, [2]]  # Users list  # Count
         )
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/users?page=1&limit=50",
-            body=b"",
-            headers={},
             route_params={"resource": "users"},
             params={"page": "1", "limit": "50"},
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -178,17 +163,18 @@ class TestAdminAPI:
             }
         )
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="PUT",
             url=f"http://localhost/api/admin/users/{target_user_id}/role",
-            body=json.dumps(new_role_data).encode(),
-            headers={"Content-Type": "application/json"},
+            body=new_role_data,
             route_params={
                 "resource": "users",
                 "user_id": target_user_id,
                 "action": "role",
             },
+            user_id="admin-user-123",
+            role="admin"
         )
 
         # Act
@@ -482,16 +468,16 @@ class TestAdminAPI:
     @pytest.mark.asyncio
     async def test_non_admin_access_forbidden(self, mock_non_admin_auth):
         """Test that non-admin users cannot access admin endpoints."""
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper with non-admin user
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/admin/users",
-            body=b"",
-            headers={},
             route_params={"resource": "users"},
+            user_id="non-admin-user-123",
+            role="user"
         )
 
-        # Set flag to simulate non-admin user
+        # Set flag to simulate non-admin user (for TESTING_MODE)
         req._test_admin_required = True
 
         # Act
@@ -501,7 +487,7 @@ class TestAdminAPI:
         assert response.status_code == 403
         response_data = json.loads(response.get_body())
         assert response_data["error"] == "access_denied"
-        assert "Admin privileges required" in response_data["message"]
+        assert "Insufficient permissions" in response_data["message"]
 
     @pytest.mark.asyncio
     async def test_get_system_health_database_failure(

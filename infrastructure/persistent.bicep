@@ -65,10 +65,10 @@ resource cosmosDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023
 // Core collections for the application
 resource promptsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
   parent: cosmosDatabase
-  name: 'prompts'
+  name: 'Prompts'
   properties: {
     resource: {
-      id: 'prompts'
+      id: 'Prompts'
       partitionKey: {
         paths: ['/userId']
         kind: 'Hash'
@@ -80,10 +80,10 @@ resource promptsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/co
 
 resource collectionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
   parent: cosmosDatabase
-  name: 'collections'
+  name: 'Collections'
   properties: {
     resource: {
-      id: 'collections'
+      id: 'Collections'
       partitionKey: {
         paths: ['/userId']
         kind: 'Hash'
@@ -95,15 +95,75 @@ resource collectionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabase
 
 resource playbooksContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
   parent: cosmosDatabase
-  name: 'playbooks'
+  name: 'Playbooks'
   properties: {
     resource: {
-      id: 'playbooks'
+      id: 'Playbooks'
       partitionKey: {
         paths: ['/userId']
         kind: 'Hash'
       }
       defaultTtl: -1
+    }
+  }
+}
+
+resource usersContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'Users'
+  properties: {
+    resource: {
+      id: 'Users'
+      partitionKey: {
+        paths: ['/id']
+        kind: 'Hash'
+      }
+      defaultTtl: -1
+    }
+  }
+}
+
+resource executionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'Executions'
+  properties: {
+    resource: {
+      id: 'Executions'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      defaultTtl: -1
+    }
+  }
+}
+
+resource systemConfigContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'SystemConfig'
+  properties: {
+    resource: {
+      id: 'SystemConfig'
+      partitionKey: {
+        paths: ['/type']
+        kind: 'Hash'
+      }
+      defaultTtl: -1
+    }
+  }
+}
+
+resource auditLogContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'AuditLog'
+  properties: {
+    resource: {
+      id: 'AuditLog'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      defaultTtl: 7776000 // 90 days retention for audit logs
     }
   }
 }

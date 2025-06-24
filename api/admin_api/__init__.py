@@ -123,7 +123,7 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
 
         # Execute query
         items = await db_manager.query_items(
-            container_name="users", query=query, parameters=query_params
+            container_name="Users", query=query, parameters=query_params
         )
 
         # Mask sensitive data
@@ -157,7 +157,7 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
                 count_params.append({"name": "@role", "value": role_filter})
 
         total_count_result = await db_manager.query_items(
-            container_name="users", query=count_query, parameters=count_params
+            container_name="Users", query=count_query, parameters=count_params
         )
         total_count = total_count_result[0] if total_count_result else 0
 
@@ -223,7 +223,7 @@ async def update_user_role(
         parameters = [{"name": "@user_id", "value": target_user_id}]
 
         items = await db_manager.query_items(
-            container_name="users", query=query, parameters=parameters
+            container_name="Users", query=query, parameters=parameters
         )
 
         if not items:
@@ -244,7 +244,7 @@ async def update_user_role(
 
         # Save to database
         updated_user = await db_manager.update_item(
-            container_name="users", item=user_data, partition_key=user_data["id"]
+            container_name="Users", item=user_data, partition_key=user_data["id"]
         )
 
         logger.info(
@@ -278,7 +278,7 @@ async def get_system_health() -> func.HttpResponse:
         try:
             # Simple query to test database
             await db_manager.query_items(
-                container_name="users", query="SELECT VALUE COUNT(1) FROM c"
+                container_name="Users", query="SELECT VALUE COUNT(1) FROM c"
             )
             db_status = "healthy"
         except Exception as e:
@@ -327,7 +327,7 @@ async def get_system_stats() -> func.HttpResponse:
         db_manager = get_database_manager()
 
         # Get user count
-        users_container = db_manager.get_users_container()
+        users_container = db_manager.get_container("Users")
         user_count = list(
             users_container.query_items(
                 query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
@@ -335,7 +335,7 @@ async def get_system_stats() -> func.HttpResponse:
         )[0]
 
         # Get prompt count
-        prompts_container = db_manager.get_prompts_container()
+        prompts_container = db_manager.get_container("Prompts")
         prompt_count = list(
             prompts_container.query_items(
                 query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
@@ -343,7 +343,7 @@ async def get_system_stats() -> func.HttpResponse:
         )[0]
 
         # Get collection count
-        collections_container = db_manager.get_collections_container()
+        collections_container = db_manager.get_container("Collections")
         collection_count = list(
             collections_container.query_items(
                 query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
@@ -351,7 +351,7 @@ async def get_system_stats() -> func.HttpResponse:
         )[0]
 
         # Get playbook count
-        playbooks_container = db_manager.get_playbooks_container()
+        playbooks_container = db_manager.get_container("Playbooks")
         playbook_count = list(
             playbooks_container.query_items(
                 query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
@@ -427,7 +427,7 @@ async def set_maintenance_mode(
 
         # Store maintenance mode status (in production, this would be in a dedicated config store)
         db_manager = get_database_manager()
-        config_container = db_manager.get_config_container()
+        config_container = db_manager.get_container("config")
 
         config_data = {
             "id": "maintenance_mode",
@@ -532,7 +532,7 @@ async def update_llm_settings(
             )
 
         db_manager = get_database_manager()
-        config_container = db_manager.get_config_container()
+        config_container = db_manager.get_container("config")
 
         # Get existing settings
         try:
@@ -598,8 +598,8 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
         start_iso = start_date.isoformat() + "Z"
 
         # Get execution stats
-        executions_container = db_manager.get_executions_container()
-
+        executions_container = db_manager.get_container("Executions")
+        
         total_executions = list(
             executions_container.query_items(
                 query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date",
@@ -625,7 +625,7 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
         )[0]
 
         # Get active users
-        users_container = db_manager.get_users_container()
+        users_container = db_manager.get_container("Users")
         active_users = list(
             users_container.query_items(
                 query="SELECT VALUE COUNT(1) FROM c WHERE c.updatedAt >= @start_date",

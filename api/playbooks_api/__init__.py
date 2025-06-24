@@ -294,7 +294,7 @@ async def get_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
     """Get a specific playbook by ID."""
     try:
         db_manager = get_database_manager()
-        container = db_manager.get_playbooks_container()
+        container = db_manager.get_container("Playbooks")
 
         # Query for the playbook
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
@@ -345,7 +345,7 @@ async def update_playbook(
             )
 
         db_manager = get_database_manager()
-        container = db_manager.get_playbooks_container()
+        container = db_manager.get_container("Playbooks")
 
         # Get existing playbook
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
@@ -422,7 +422,7 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
     """Delete a playbook."""
     try:
         db_manager = get_database_manager()
-        container = db_manager.get_playbooks_container()
+        container = db_manager.get_container("Playbooks")
 
         # Check if playbook exists and belongs to user
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
@@ -445,7 +445,7 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
             )
 
         # Check if playbook has active executions
-        executions_container = db_manager.get_executions_container()
+        executions_container = db_manager.get_container("Executions")
         exec_query = "SELECT VALUE COUNT(1) FROM c WHERE c.playbookId = @playbook_id AND c.status IN ('running', 'paused_for_review')"
         exec_params = [{"name": "@playbook_id", "value": playbook_id}]
 
@@ -503,7 +503,7 @@ async def run_playbook(
         db_manager = get_database_manager()
 
         # Get playbook
-        playbooks_container = db_manager.get_playbooks_container()
+        playbooks_container = db_manager.get_container("Playbooks")
         query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
         parameters = [
             {"name": "@playbook_id", "value": playbook_id},
@@ -559,7 +559,7 @@ async def run_playbook(
         }
 
         # Save execution record
-        executions_container = db_manager.get_executions_container()
+        executions_container = db_manager.get_container("Executions")
         created_execution = executions_container.create_item(execution_data)
 
         # Start async execution (simplified for MVP)
@@ -593,7 +593,7 @@ async def get_execution_status(user_id: str, execution_id: str) -> func.HttpResp
     """Get real-time status and logs of a playbook execution."""
     try:
         db_manager = get_database_manager()
-        container = db_manager.get_executions_container()
+        container = db_manager.get_container("Executions")
 
         # Query for the execution
         query = "SELECT * FROM c WHERE c.id = @execution_id AND c.userId = @user_id"
@@ -644,7 +644,7 @@ async def continue_execution(
             )
 
         db_manager = get_database_manager()
-        container = db_manager.get_executions_container()
+        container = db_manager.get_container("Executions")
 
         # Get execution
         query = "SELECT * FROM c WHERE c.id = @execution_id AND c.userId = @user_id"
@@ -703,7 +703,7 @@ async def continue_execution(
         updated_execution = container.replace_item(item=execution["id"], body=execution)
 
         # Resume execution
-        playbooks_container = db_manager.get_playbooks_container()
+        playbooks_container = db_manager.get_container("Playbooks")
         playbook_query = "SELECT * FROM c WHERE c.id = @playbook_id"
         playbook_params = [{"name": "@playbook_id", "value": execution["playbookId"]}]
 
@@ -742,7 +742,7 @@ async def execute_playbook_steps(
         # In production, this would use Azure Durable Functions or Service Bus
 
         db_manager = get_database_manager()
-        container = db_manager.get_executions_container()
+        container = db_manager.get_container("Executions")
 
         # Get current execution
         execution = container.read_item(item=execution_id, partition_key=execution_id)

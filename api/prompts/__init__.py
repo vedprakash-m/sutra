@@ -75,7 +75,7 @@ async def handle_get_prompts(
     if prompt_id:
         # Get single prompt
         prompt = await db_manager.read_item(
-            container_name="prompts", item_id=prompt_id, partition_key=user.id
+            container_name="Prompts", item_id=prompt_id, partition_key=user.id
         )
 
         if not prompt:
@@ -136,7 +136,7 @@ async def handle_get_prompts(
         query += f" ORDER BY c.updated_at DESC OFFSET {skip} LIMIT {limit}"
 
         prompts = await db_manager.query_items(
-            container_name="prompts", query=query, parameters=parameters
+            container_name="Prompts", query=query, parameters=parameters
         )
 
         return func.HttpResponse(
@@ -200,7 +200,7 @@ async def handle_create_prompt(
 
         # Save to database
         created_prompt = await db_manager.create_item(
-            container_name="prompts", item=prompt.dict(), partition_key=user.id
+            container_name="Prompts", item=prompt.dict(), partition_key=user.id
         )
 
         logging.info(f"Created prompt {prompt_id} for user {user.id}")
@@ -256,7 +256,7 @@ async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
 
         # Get existing prompt
         existing_prompt = await db_manager.read_item(
-            container_name="prompts", item_id=prompt_id, partition_key=user.id
+            container_name="Prompts", item_id=prompt_id, partition_key=user.id
         )
 
         if not existing_prompt:
@@ -295,7 +295,7 @@ async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
 
         # Save updated prompt
         updated_prompt = await db_manager.update_item(
-            container_name="prompts",
+            container_name="Prompts",
             item_id=prompt_id,
             item=existing_prompt,
             partition_key=user.id,
@@ -338,7 +338,7 @@ async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
 
         # Check if prompt exists and belongs to user
         existing_prompt = await db_manager.read_item(
-            container_name="prompts", item_id=prompt_id, partition_key=user.id
+            container_name="Prompts", item_id=prompt_id, partition_key=user.id
         )
 
         if not existing_prompt:
@@ -350,7 +350,7 @@ async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
 
         # Delete the prompt
         success = await db_manager.delete_item(
-            container_name="prompts", item_id=prompt_id, partition_key=user.id
+            container_name="Prompts", item_id=prompt_id, partition_key=user.id
         )
 
         if success:

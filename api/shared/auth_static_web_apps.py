@@ -7,6 +7,7 @@ import os
 import logging
 import base64
 import json
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from functools import wraps
 import azure.functions as func
@@ -63,7 +64,8 @@ class StaticWebAppsAuthManager:
                         email=user_name,  # In Entra External ID, userDetails is often email
                         name=user_name,
                         role=role,
-                        identity_provider=identity_provider
+                        created_at=datetime.now(timezone.utc),
+                        updated_at=datetime.now(timezone.utc)
                     )
 
                 except (ValueError, json.JSONDecodeError) as e:
@@ -83,7 +85,8 @@ class StaticWebAppsAuthManager:
                     email=user_name or f"{user_id}@unknown.com",
                     name=user_name or "Unknown User",
                     role=role,
-                    identity_provider=identity_provider
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
                 )
 
             return None
@@ -353,10 +356,11 @@ TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
 
 def create_mock_user(user_id: str = "test-user-123", role: str = "user"):
     """Create a mock user object for testing."""
-    class MockUser:
-        def __init__(self, user_id: str, role: str):
-            self.id = user_id
-            self.role = role
-            self.email = f"{user_id}@test.com"
-
-    return MockUser(user_id, role)
+    return User(
+        id=user_id,
+        email=f"{user_id}@test.com",
+        name=f"Test User {user_id}",
+        role=UserRole(role),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
+    )

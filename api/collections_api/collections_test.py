@@ -1,42 +1,50 @@
 import pytest
 import json
 import asyncio
+import base64
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 
 import azure.functions as func
 from . import main as collections_main
-from api.shared.auth_mocking import (
-    MockAuthContext,
-    AuthMockingHelper,
-    StandardAuthMocks,
-    mock_auth_success,
-    mock_auth_failure
-)
 
 
 class TestCollectionsAPI:
     """Test suite for Collections API endpoints."""
 
-    @pytest.fixture
-    def mock_auth_success(self):
-        """Standardized authentication success fixture."""
-        patches = StandardAuthMocks.patch_auth_success("api.collections_api")
-        for p in patches:
-            p.start()
-        yield
-        for p in patches:
-            p.stop()
-
-    @pytest.fixture
-    def mock_auth_failure(self):
-        """Standardized authentication failure fixture."""
-        patches = StandardAuthMocks.patch_auth_failure("api.collections_api")
-        for p in patches:
-            p.start()
-        yield
-        for p in patches:
-            p.stop()
+    def create_auth_request(self, method="GET", body=None, route_params=None, params=None, 
+                           user_id="test-user-123", role="user", url="http://localhost/api/collections"):
+        """Helper to create authenticated requests for Azure Static Web Apps."""
+        # Create user principal data
+        principal_data = {
+            "identityProvider": "azureActiveDirectory", 
+            "userId": user_id,
+            "userDetails": "Test User",
+            "userRoles": [role],
+            "claims": []
+        }
+        
+        # Encode as base64
+        principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
+        
+        # Create headers
+        headers = {
+            "x-ms-client-principal": principal_b64,
+            "x-ms-client-principal-id": user_id,
+            "x-ms-client-principal-name": "Test User", 
+            "x-ms-client-principal-idp": "azureActiveDirectory"
+        }
+        if method in ["POST", "PUT"] and body:
+            headers["Content-Type"] = "application/json"
+        
+        return func.HttpRequest(
+            method=method,
+            url=url,
+            body=json.dumps(body).encode('utf-8') if body else b"",
+            headers=headers,
+            route_params=route_params or {},
+            params=params or {}
+        )
 
     @pytest.fixture
     def mock_cosmos_client(self):
@@ -54,9 +62,7 @@ class TestCollectionsAPI:
             yield mock_manager
 
     @pytest.mark.asyncio
-    async def test_create_collection_success(
-        self, mock_auth_success, mock_cosmos_client
-    ):
+    async def test_create_collection_success(self, mock_cosmos_client):
         """Test successful collection creation."""
         # Arrange
         collection_data = {
@@ -77,13 +83,13 @@ class TestCollectionsAPI:
         with patch("api.shared.validation.validate_collection_data") as mock_validate:
             mock_validate.return_value = {"valid": True, "errors": []}
 
-            # Create request
-            req = func.HttpRequest(
+            # Create authenticated request using helper
+            req = self.create_auth_request(
                 method="POST",
                 url="http://localhost/api/collections",
-                body=json.dumps(collection_data).encode(),
-                headers={"Content-Type": "application/json"},
-                route_params={},
+                body=collection_data,
+                user_id="test-user-123",
+                role="user"
             )
 
             # Act
@@ -133,9 +139,7 @@ class TestCollectionsAPI:
             assert len(response_data["details"]) == 1
 
     @pytest.mark.asyncio
-    async def test_list_collections_success(
-        self, mock_auth_success, mock_cosmos_client
-    ):
+    async def test_list_collections_success(self, mock_cosmos_client):
         """Test successful collection listing."""
         # Arrange
         mock_collections = [
@@ -161,14 +165,13 @@ class TestCollectionsAPI:
             [2],  # Second call for count
         ]
 
-        # Create request
-        req = func.HttpRequest(
+        # Create authenticated request using helper
+        req = self.create_auth_request(
             method="GET",
             url="http://localhost/api/collections?page=1&limit=20",
-            body=b"",
-            headers={},
-            route_params={},
             params={"page": "1", "limit": "20"},
+            user_id="test-user-123",
+            role="user"
         )
 
         # Act

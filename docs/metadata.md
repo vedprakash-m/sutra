@@ -2,7 +2,7 @@
 
 ## Project Status: **🚀 PRODUCTION DEPLOYED - ACTIVE**
 
-**Last Updated:** June 22, 2025
+**Last Updated:** June 23, 2025
 **Current Phase:** 🚀 LIVE PRODUCTION WITH MICROSOFT ENTRA EXTERNAL ID
 **Overall Health:** 🟢 EXCEPTIONAL (Production Active)
 
@@ -42,13 +42,22 @@
 - **App Registration**: `sutra-web-app`
 - **Client ID**: `61084964-08b8-49ea-b624-4859c4dc37de`
 - **Integration**: Static Web Apps native authentication
-- **Security**: Azure Key Vault secret management
+- **Security Model**: Header-based validation (no MSAL in backend)
+- **Session Management**: Azure platform handles token validation
+- **CSRF Protection**: Built-in Azure Static Web Apps security
+
+**Authentication Flow:**
+
+```
+User → Static Web App → Entra External ID → Token Validation →
+Session Creation → Role Assignment (/api/getroles) → API Access
+```
 
 **Migration Achievement:**
 
 - Successfully migrated from Azure AD B2C to Entra External ID
 - Cost optimization: $1.00 → $0.05 per MAU (95% cost reduction)
-- Enhanced security and modern identity platform
+- Enhanced security with modern identity platform
 - Social login support (Google, Facebook, GitHub, Apple)
 
 ### **🏗️ Infrastructure Architecture**
@@ -63,6 +72,13 @@
 | Cosmos DB            | Persistent | NoSQL Database | Serverless mode         |
 | Key Vault            | Persistent | Secrets        | Always-on, minimal cost |
 | Storage Account      | Persistent | File Storage   | Always-on, minimal cost |
+
+**Infrastructure as Code:**
+
+- **Primary Template**: `infrastructure/compute.bicep`
+- **Persistent Services**: `infrastructure/persistent.bicep`
+- **Parameters**: Environment-specific JSON files
+- **Deployment**: Automated via GitHub Actions
 
 **Cost Benefits:**
 
@@ -103,6 +119,7 @@
 - **Authentication Flow**: ✅ Entra External ID operational
 - **API Security**: ✅ Rate limiting and validation
 - **Data Encryption**: ✅ At rest and in transit
+- **Header-based Auth**: ✅ No sensitive tokens in backend
 
 ---
 
@@ -161,11 +178,19 @@ npm run test:e2e          # Playwright E2E tests
 npm run ci:local          # Complete validation pipeline
 ```
 
+### **Authentication Development**
+
+- **Static Web Apps Headers**: Pre-validated user information
+- **Role Assignment**: `/api/getroles` endpoint for permission management
+- **No MSAL Required**: Azure platform handles token validation
+- **Session Management**: Automatic via Static Web Apps
+
 ### **Deployment Commands**
 
 ```bash
 # Infrastructure deployment
 ./scripts/deploy-infrastructure.sh  # Bicep template deployment
+./scripts/deploy-authentication.sh  # Authentication configuration
 npm run validate:infra              # Infrastructure validation
 ./scripts/validate-ci-cd.sh         # CI/CD pipeline validation
 ```
@@ -180,6 +205,19 @@ npm run validate:infra              # Infrastructure validation
 - **Production**: Azure Key Vault as single source of truth
 - **Sync States**: 🟢 Actual Value, 🔄 Synced, 🔴 Empty
 - **Git Protection**: Confidential/ folder excluded from commits
+
+### **Environment Variables**
+
+**Authentication Configuration:**
+
+- `VED_EXTERNAL_ID_CLIENT_ID`: 61084964-08b8-49ea-b624-4859c4dc37de
+- `VED_EXTERNAL_ID_DOMAIN`: vedid.onmicrosoft.com
+- `VED_EXTERNAL_ID_CLIENT_SECRET`: (Azure Key Vault managed)
+
+**Service Endpoints:**
+
+- `AZURE_FUNCTIONS_URL`: https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net
+- `AZURE_STATIC_WEB_APP_URL`: https://zealous-flower-04bbe021e.2.azurestaticapps.net
 
 ### **Secret Management Commands**
 
@@ -221,6 +259,8 @@ sutra/
 │   ├── integrations_api/        # LLM provider integrations
 │   ├── llm_execute_api/         # Prompt execution engine
 │   ├── playbooks_api/           # Workflow automation
+│   ├── getroles/                # Role assignment endpoint
+│   ├── user_management/         # User profile management
 │   └── shared/                  # Common utilities and models
 ├── src/                         # React frontend application
 │   ├── components/              # Reusable UI components
@@ -228,10 +268,14 @@ sutra/
 │   ├── hooks/                   # Custom React hooks
 │   └── utils/                   # Frontend utilities
 ├── infrastructure/              # Azure Bicep IaC templates
-│   ├── main.bicep              # Main infrastructure template
-│   ├── modules/                # Reusable infrastructure modules
+│   ├── compute.bicep           # Main compute infrastructure
+│   ├── persistent.bicep        # Persistent services
 │   └── parameters.*.json       # Environment-specific parameters
 ├── scripts/                     # Automation and deployment scripts
+│   ├── deploy-infrastructure.sh # Infrastructure deployment
+│   ├── deploy-authentication.sh # Authentication setup
+│   ├── local-validation.sh     # Local development validation
+│   └── validate-ci-cd.sh       # CI/CD pipeline validation
 ├── tests/e2e/                  # Playwright end-to-end tests
 ├── docs/                       # Technical documentation
 │   ├── Functional_Spec_Sutra.md   # Product requirements

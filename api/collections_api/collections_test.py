@@ -12,31 +12,31 @@ from . import main as collections_main
 class TestCollectionsAPI:
     """Test suite for Collections API endpoints."""
 
-    def create_auth_request(self, method="GET", body=None, route_params=None, params=None, 
+    def create_auth_request(self, method="GET", body=None, route_params=None, params=None,
                            user_id="test-user-123", role="user", url="http://localhost/api/collections"):
         """Helper to create authenticated requests for Azure Static Web Apps."""
         # Create user principal data
         principal_data = {
-            "identityProvider": "azureActiveDirectory", 
+            "identityProvider": "azureActiveDirectory",
             "userId": user_id,
             "userDetails": "Test User",
             "userRoles": [role],
             "claims": []
         }
-        
+
         # Encode as base64
         principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
-        
+
         # Create headers
         headers = {
             "x-ms-client-principal": principal_b64,
             "x-ms-client-principal-id": user_id,
-            "x-ms-client-principal-name": "Test User", 
+            "x-ms-client-principal-name": "Test User",
             "x-ms-client-principal-idp": "azureActiveDirectory"
         }
         if method in ["POST", "PUT"] and body:
             headers["Content-Type"] = "application/json"
-        
+
         return func.HttpRequest(
             method=method,
             url=url,

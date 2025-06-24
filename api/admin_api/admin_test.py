@@ -11,29 +11,29 @@ from api.admin_api import main as admin_main
 class TestAdminAPI:
     """Test suite for Admin API endpoints."""
 
-    def create_auth_request(self, method="GET", body=None, route_params=None, params=None, 
+    def create_auth_request(self, method="GET", body=None, route_params=None, params=None,
                            user_id="admin-user-123", role="admin", url="http://localhost/api/admin"):
         """Helper to create authenticated requests for Azure Static Web Apps."""
         # Create user principal data
         principal_data = {
-            "identityProvider": "azureActiveDirectory", 
+            "identityProvider": "azureActiveDirectory",
             "userId": user_id,
             "userDetails": "Test Admin",
             "userRoles": [role],
             "claims": []
         }
-        
+
         # Encode as base64
         principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
-        
+
         # Create headers
         headers = {
             "x-ms-client-principal": principal_b64,
             "x-ms-client-principal-id": user_id,
-            "x-ms-client-principal-name": "Test Admin", 
+            "x-ms-client-principal-name": "Test Admin",
             "x-ms-client-principal-idp": "azureActiveDirectory"
         }
-        
+
         return func.HttpRequest(
             method=method,
             url=url,
@@ -59,7 +59,7 @@ class TestAdminAPI:
             # Mock container access method
             containers = {}
             container_names = ["Users", "Prompts", "Collections", "Playbooks", "Executions", "SystemConfig", "AuditLog", "usage", "config"]
-            
+
             for name in container_names:
                 container = Mock()
                 container.query_items = Mock()
@@ -69,9 +69,9 @@ class TestAdminAPI:
                 container.replace_item = Mock()
                 container.delete_item = Mock()
                 containers[name] = container
-            
+
             mock_manager.get_container = Mock(side_effect=lambda name: containers.get(name))
-            
+
             # For backwards compatibility with old method names
             for name in container_names:
                 setattr(mock_manager, f"get_{name.lower()}_container", Mock(return_value=containers[name]))

@@ -25,12 +25,12 @@ from shared.models import User, UserRole
 @pytest.fixture
 def mock_static_web_apps_auth():
     """Global fixture for Azure Static Web Apps authentication mocking."""
-    
-    def create_mock_request_with_auth(user_id="test-user-123", role="admin", 
+
+    def create_mock_request_with_auth(user_id="test-user-123", role="admin",
                                       identity_provider="azureActiveDirectory",
                                       user_name="Test User", claims=None, method="GET", body=None):
         """Create a mock request with proper Azure Static Web Apps headers."""
-        
+
         # Create user principal data
         principal_data = {
             "identityProvider": identity_provider,
@@ -39,10 +39,10 @@ def mock_static_web_apps_auth():
             "userRoles": [role] if isinstance(role, str) else role,
             "claims": claims or []
         }
-        
+
         # Encode as base64
         principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
-        
+
         # Create mock request with headers
         mock_request = Mock()
         mock_request.headers = {
@@ -54,9 +54,9 @@ def mock_static_web_apps_auth():
         mock_request.get_json.return_value = body or {}
         mock_request.method = method
         mock_request.get_body.return_value = json.dumps(body or {}).encode('utf-8') if body else b'{}'
-        
+
         return mock_request
-    
+
     return create_mock_request_with_auth
 
 
@@ -66,7 +66,7 @@ def mock_auth_success(mock_static_web_apps_auth):
     return mock_static_web_apps_auth(user_id="auth-user-123", role="user", user_name="Auth User")
 
 
-@pytest.fixture  
+@pytest.fixture
 def mock_admin_auth(mock_static_web_apps_auth):
     """Fixture for admin authenticated requests."""
     return mock_static_web_apps_auth(user_id="admin-user-123", role="admin", user_name="Test Admin")
@@ -100,11 +100,11 @@ def mock_no_auth():
 def mock_cosmos_client():
     """Mock Cosmos DB client with proper container structure."""
     mock_client = Mock()
-    
+
     # Mock containers with proper naming
     containers = {}
     container_names = ["Users", "Prompts", "Collections", "Playbooks", "Executions", "SystemConfig", "AuditLog", "usage", "config"]
-    
+
     for name in container_names:
         container = Mock()
         container.create_item = Mock(return_value={"id": "test-id", "created": True})
@@ -115,7 +115,7 @@ def mock_cosmos_client():
         container.query_items = Mock(return_value=[{"id": "test-id", "data": "test"}])
         container.read_all_items = Mock(return_value=[{"id": "test-id", "data": "test"}])
         containers[name] = container
-    
+
     # Mock database manager methods
     mock_database_manager = Mock()
     mock_database_manager.get_container = Mock(side_effect=lambda name: containers.get(name))
@@ -125,11 +125,11 @@ def mock_cosmos_client():
     mock_database_manager.delete_item = AsyncMock(return_value=True)
     mock_database_manager.query_items = AsyncMock(return_value=[{"id": "test-id", "data": "test"}])
     mock_database_manager.list_items = AsyncMock(return_value=[{"id": "test-id", "data": "test"}])
-    
+
     # Add container-specific access methods for backwards compatibility
     for name in container_names:
         setattr(mock_database_manager, f"get_{name.lower()}_container", Mock(return_value=containers[name]))
-    
+
     return mock_database_manager
 
 
@@ -210,7 +210,7 @@ def create_mock_request(method="GET", body=None, headers=None, user_id=None, rol
     """Helper to create mock requests with authentication."""
     if headers is None:
         headers = {}
-    
+
     if user_id:
         # Add Azure Static Web Apps auth headers
         principal_data = {
@@ -227,11 +227,11 @@ def create_mock_request(method="GET", body=None, headers=None, user_id=None, rol
             "x-ms-client-principal-name": "Test User",
             "x-ms-client-principal-idp": "azureActiveDirectory"
         })
-    
+
     mock_request = Mock()
     mock_request.method = method
     mock_request.headers = headers
     mock_request.get_json.return_value = body or {}
     mock_request.get_body.return_value = json.dumps(body or {}).encode('utf-8') if body else b'{}'
-    
+
     return mock_request

@@ -599,7 +599,7 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
 
         # Get execution stats
         executions_container = db_manager.get_container("Executions")
-        
+
         total_executions = list(
             executions_container.query_items(
                 query="SELECT VALUE COUNT(1) FROM c WHERE c.startTime >= @start_date",

@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime, timezone, timedelta
 from enum import Enum
@@ -551,15 +552,18 @@ class BudgetManager(EnhancedBudgetManager):
                          metadata: Optional[Dict] = None) -> UsageRecord:
         """Track usage and create a usage record."""
         try:
+            now = datetime.now(timezone.utc)
             usage_record = UsageRecord(
+                id=str(uuid.uuid4()),
                 user_id=user_id,
                 provider=provider,
                 operation=operation,
                 cost=cost,
                 tokens_used=tokens_used,
                 execution_time_ms=execution_time_ms,
-                metadata=metadata or {},
-                timestamp=datetime.now(timezone.utc)
+                date=now.strftime("%Y-%m-%d"),
+                timestamp=now,
+                metadata=metadata or {}
             )
 
             # Store in database

@@ -6,7 +6,7 @@ import azure.functions as func
 from azure.functions import HttpRequest, HttpResponse
 
 from ..shared.budget import get_enhanced_budget_manager, BudgetConfig
-from ..shared.auth import verify_auth_token, get_user_info
+from ..shared.auth import get_current_user, require_auth
 from ..shared.models import UserRole
 
 
@@ -24,16 +24,21 @@ async def main(req: HttpRequest) -> HttpResponse:
     """
 
     try:
-        # Verify authentication
-        auth_result = await verify_auth_token(req)
-        if not auth_result["valid"]:
+        # Get current user
+        current_user = await get_current_user(req)
+        if not current_user:
             return HttpResponse(
                 json.dumps({"error": "Unauthorized"}),
                 status_code=401,
                 headers={"Content-Type": "application/json"}
             )
 
-        user_info = await get_user_info(auth_result["user_id"])
+        user_info = {
+            "user_id": current_user.id,
+            "email": current_user.email,
+            "role": current_user.role.value if hasattr(current_user.role, 'value') else current_user.role,
+            "user_tier": "premium"  # Default for now
+        }
         budget_manager = get_enhanced_budget_manager()
 
         method = req.method
@@ -336,7 +341,7 @@ async def handle_get_analytics(req: HttpRequest, user_info: Dict[str, Any], budg
 async def can_manage_budget(user_info: Dict[str, Any], entity_id: str) -> bool:
     """Check if user can manage budget for the entity."""
     user_id = user_info["user_id"]
-    user_role = user_info.get("role", UserRole.MEMBER)
+    user_role = user_info.get("role", UserRole.USER)
 
     # Admins can manage any budget
     if user_role == UserRole.ADMIN:
@@ -357,7 +362,7 @@ async def can_manage_budget(user_info: Dict[str, Any], entity_id: str) -> bool:
 async def can_view_budget(user_info: Dict[str, Any], entity_id: str) -> bool:
     """Check if user can view budget for the entity."""
     user_id = user_info["user_id"]
-    user_role = user_info.get("role", UserRole.MEMBER)
+    user_role = user_info.get("role", UserRole.USER)
 
     # Admins can view any budget
     if user_role == UserRole.ADMIN:

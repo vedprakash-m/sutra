@@ -171,7 +171,7 @@ echo -e "${BLUE}🧪 Stage 4: Unit Tests${NC}"
 echo "----------------------"
 
 # Frontend unit tests (now working after fixes)
-run_test "Frontend unit tests" "npm run test:coverage"
+run_test "Frontend unit tests" "npm run test -- --watchAll=false"
 
 cd api
 

@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import azure.functions as func
 from api.cost_management_api import main
 from api.shared.budget import BudgetManager
-from api.shared.models import LLMProvider
+from api.shared.models import LLMProvider, User, UserRole
 
 
 class TestCostManagementAPI:
@@ -23,28 +23,37 @@ class TestCostManagementAPI:
         return manager
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_get_budget_status_success(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test successful budget status retrieval."""
         # Setup mocks
-        mock_get_user.return_value = {"user_id": "user-123", "user_tier": "premium"}
+        mock_user = User(
+            id="user-123",
+            email="test@example.com",
+            name="Test User",
+            role=UserRole.USER,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        mock_get_user.return_value = mock_user
         mock_get_manager.return_value = mock_budget_manager
 
-        mock_budget_manager.get_real_time_budget_status = AsyncMock(return_value={
-            "user_id": "user-123",
-            "current_cost": 75.0,
-            "budget_limit": 200.0,
-            "remaining_budget": 125.0,
-            "utilization_percent": 37.5,
-            "status": "good",
-            "last_updated": datetime.now(timezone.utc).isoformat()
+        mock_budget_manager.get_real_time_usage = AsyncMock(return_value={
+            "current_spend": 75.0,
+            "execution_count": 50,
+            "budget_utilization": 37.5,
+            "alerts_triggered": []
+        })
+        mock_budget_manager.get_budget_config = AsyncMock(return_value={
+            "budget_amount": 200.0,
+            "alert_thresholds": [50, 75, 90, 95]
         })
 
         # Create request
         req = func.HttpRequest(
             method="GET",
-            url="http://localhost:7071/api/cost-management/budget/status",
+            url="http://localhost:7071/api/cost-management/budget/usage",
             headers={"Content-Type": "application/json"},
             body=b""
         )
@@ -60,8 +69,8 @@ class TestCostManagementAPI:
         assert response_data["status"] == "good"
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_get_usage_analytics_success(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test successful usage analytics retrieval."""
         # Setup mocks
@@ -95,8 +104,8 @@ class TestCostManagementAPI:
         assert "provider_breakdown" in response_data
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_cost_prediction_success(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test successful cost prediction."""
         # Setup mocks
@@ -130,8 +139,8 @@ class TestCostManagementAPI:
         assert response_data["confidence"] == 0.85
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_cost_estimation_success(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test successful cost estimation."""
         # Setup mocks
@@ -174,8 +183,8 @@ class TestCostManagementAPI:
         assert response_data["model"] == "gpt-4"
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_budget_configuration_update(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test budget configuration update."""
         # Setup mocks
@@ -217,8 +226,8 @@ class TestCostManagementAPI:
         assert response_data["auto_block"] is True
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_alerts_retrieval(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test budget alerts retrieval."""
         # Setup mocks
@@ -263,7 +272,7 @@ class TestCostManagementAPI:
         assert response_data[1]["type"] == "provider_budget_warning"
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_current_user")
     async def test_unauthorized_access(self, mock_get_user):
         """Test unauthorized access to admin endpoints."""
         # Setup mocks - regular user trying to access admin endpoint
@@ -303,8 +312,8 @@ class TestCostManagementAPI:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_invalid_request_data(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test handling of invalid request data."""
         # Setup mocks
@@ -328,8 +337,8 @@ class TestCostManagementAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_budget_manager_error_handling(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test error handling when budget manager fails."""
         # Setup mocks
@@ -358,8 +367,8 @@ class TestCostManagementAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_optimization_suggestions(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test cost optimization suggestions endpoint."""
         # Setup mocks
@@ -405,8 +414,8 @@ class TestCostManagementAPI:
         assert response_data["potential_savings"] == 23.75
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_budget_manager")
-    @patch("api.cost_management_api.get_user_from_request")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_current_user")
     async def test_anomaly_detection_endpoint(self, mock_get_user, mock_get_manager, mock_budget_manager):
         """Test anomaly detection endpoint."""
         # Setup mocks

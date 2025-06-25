@@ -129,8 +129,12 @@ describe("CostPreview", () => {
       />,
     );
 
-    expect(screen.getByText("$0.0600")).toBeInTheDocument(); // Input cost
-    expect(screen.getByText("$0.0600")).toBeInTheDocument(); // Output cost
+    expect(
+      screen.getByText("Input Cost:").nextElementSibling,
+    ).toHaveTextContent("$0.0600");
+    expect(
+      screen.getByText("Output Cost:").nextElementSibling,
+    ).toHaveTextContent("$0.0600");
   });
 
   test("handles large token counts", () => {
@@ -158,7 +162,12 @@ describe("CostPreview", () => {
       />,
     );
 
-    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(
+      screen.getByText("Input Tokens:").nextElementSibling,
+    ).toHaveTextContent("0");
+    expect(
+      screen.getByText("Expected Output:").nextElementSibling,
+    ).toHaveTextContent("0");
     expect(screen.getByTestId("total-cost")).toHaveTextContent("$0.0000");
   });
 });

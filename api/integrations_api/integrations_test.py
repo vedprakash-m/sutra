@@ -102,10 +102,14 @@ class TestIntegrationsAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    async def test_main_get_request(self, mock_request, valid_user_id):
+    async def test_main_get_request(self, valid_user_id):
         """Test main endpoint with GET request."""
-        # Set the user ID for testing mode
-        mock_request._test_user_id = valid_user_id
+        mock_request = self.create_auth_request(
+            method="GET",
+            url="http://localhost/api/integrations/llm",
+            user_id=valid_user_id,
+            role="user"
+        )
 
         with patch(
             "api.integrations_api.list_llm_integrations"
@@ -120,11 +124,14 @@ class TestIntegrationsAPI:
             mock_list.assert_called_once_with(valid_user_id)
 
     @pytest.mark.asyncio
-    async def test_main_post_request(self, mock_request, valid_user_id):
+    async def test_main_post_request(self, valid_user_id):
         """Test main endpoint with POST request."""
-        mock_request.method = "POST"
-        # Set the user ID for testing mode
-        mock_request._test_user_id = valid_user_id
+        mock_request = self.create_auth_request(
+            method="POST",
+            url="http://localhost/api/integrations/llm",
+            user_id=valid_user_id,
+            role="user"
+        )
 
         with patch(
             "api.integrations_api.create_llm_integration"
@@ -139,12 +146,15 @@ class TestIntegrationsAPI:
             mock_create.assert_called_once_with(valid_user_id, mock_request)
 
     @pytest.mark.asyncio
-    async def test_main_post_test_connection(self, mock_request, valid_user_id):
+    async def test_main_post_test_connection(self, valid_user_id):
         """Test main endpoint with POST request for test connection."""
-        mock_request.method = "POST"
-        mock_request.route_params = {"provider": "openai", "action": "test"}
-        # Set the user ID for testing mode
-        mock_request._test_user_id = valid_user_id
+        mock_request = self.create_auth_request(
+            method="POST",
+            url="http://localhost/api/integrations/llm/openai/test",
+            user_id=valid_user_id,
+            role="user",
+            route_params={"provider": "openai", "action": "test"}
+        )
 
         with patch(
             "api.integrations_api.validate_llm_connection"
@@ -159,12 +169,15 @@ class TestIntegrationsAPI:
             mock_test.assert_called_once_with(valid_user_id, "openai", mock_request)
 
     @pytest.mark.asyncio
-    async def test_main_put_request(self, mock_request, valid_user_id):
+    async def test_main_put_request(self, valid_user_id):
         """Test main endpoint with PUT request."""
-        mock_request.method = "PUT"
-        mock_request.route_params = {"provider": "openai"}
-        # Set the user ID for testing mode
-        mock_request._test_user_id = valid_user_id
+        mock_request = self.create_auth_request(
+            method="PUT",
+            url="http://localhost/api/integrations/llm/openai",
+            user_id=valid_user_id,
+            role="user",
+            route_params={"provider": "openai"}
+        )
 
         with patch(
             "api.integrations_api.update_llm_integration"
@@ -179,12 +192,15 @@ class TestIntegrationsAPI:
             mock_update.assert_called_once_with(valid_user_id, "openai", mock_request)
 
     @pytest.mark.asyncio
-    async def test_main_delete_request(self, mock_request, valid_user_id):
+    async def test_main_delete_request(self, valid_user_id):
         """Test main endpoint with DELETE request."""
-        mock_request.method = "DELETE"
-        mock_request.route_params = {"provider": "openai"}
-        # Set the user ID for testing mode
-        mock_request._test_user_id = valid_user_id
+        mock_request = self.create_auth_request(
+            method="DELETE",
+            url="http://localhost/api/integrations/llm/openai",
+            user_id=valid_user_id,
+            role="user",
+            route_params={"provider": "openai"}
+        )
 
         with patch(
             "api.integrations_api.delete_llm_integration"
@@ -199,21 +215,15 @@ class TestIntegrationsAPI:
             mock_delete.assert_called_once_with(valid_user_id, "openai")
 
     @pytest.mark.asyncio
-    async def test_main_method_not_allowed(self, mock_request, valid_user_id):
+    async def test_main_method_not_allowed(self, valid_user_id):
         """Test main endpoint with unsupported method."""
-        mock_request.method = "PATCH"
+        mock_request = self.create_auth_request(method="PATCH", user_id=valid_user_id)
 
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth, patch(
-            "api.integrations_api.get_user_id_from_token"
-        ) as mock_get_user:
-            mock_auth.return_value = {"valid": True}
-            mock_get_user.return_value = valid_user_id
+        response = await main(mock_request)
 
-            response = await main(mock_request)
-
-            assert response.status_code == 405
-            response_data = json.loads(response.get_body())
-            assert "error" in response_data
+        assert response.status_code == 405
+        response_data = json.loads(response.get_body())
+        assert "error" in response_data
 
     @pytest.mark.asyncio
     @patch("api.integrations_api.get_database_manager")

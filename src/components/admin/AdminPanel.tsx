@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useApi } from "@/hooks/useApi";
 import { adminApi } from "@/services/api";
+import CostManagementAdmin from "./CostManagementAdmin";
 
 export default function AdminPanel() {
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<
-    "overview" | "llm" | "users" | "system"
+    "overview" | "llm" | "users" | "system" | "cost"
   >("overview");
 
   // Fetch admin data
@@ -77,6 +78,7 @@ export default function AdminPanel() {
           {[
             { id: "overview", name: "Overview" },
             { id: "llm", name: "LLM Settings" },
+            { id: "cost", name: "Cost Management" },
             { id: "users", name: "User Management" },
             { id: "system", name: "System Health" },
           ].map((tab) => (
@@ -340,6 +342,9 @@ export default function AdminPanel() {
           </div>
         </div>
       )}
+
+      {/* Cost Management Tab */}
+      {activeTab === "cost" && <CostManagementAdmin />}
 
       {/* User Management Tab */}
       {activeTab === "users" && (

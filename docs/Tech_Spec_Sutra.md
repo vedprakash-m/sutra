@@ -700,7 +700,588 @@ const checkUsageLimit = (session: GuestSession, action: string) => {
 
 ---
 
-## 8. Cost Optimization Strategy (Serverless Focus)
+## 8. AI Cost Management & Automation System
+
+### 8.1. Architecture Overview
+
+The AI Cost Management system provides comprehensive real-time budget tracking, automated cost controls, and predictive analytics for LLM usage across the platform. This system ensures cost transparency for users while providing robust administrative controls and automated safeguards.
+
+**Core Components:**
+
+- **Real-time Budget Tracking Engine**
+- **Automated Cost Control System**
+- **Predictive Analytics Pipeline**
+- **Multi-tier Budget Enforcement**
+- **Smart Model Selection Engine**
+- **Cost Allocation & Billing Integration**
+
+### 8.2. Data Models for Cost Management
+
+#### 8.2.1. Budget Configuration (`BudgetConfigs` Collection)
+
+```json
+{
+  "id": "budget_config_guid",
+  "entityType": "user" | "team" | "guest_cohort" | "system",
+  "entityId": "user_id_guid_or_team_id_guid",
+  "name": "Monthly AI Budget",
+  "budgetPeriod": "daily" | "weekly" | "monthly" | "quarterly",
+  "budgetAmount": 100.00,
+  "currency": "USD",
+  "alertThresholds": [50, 75, 90, 95],
+  "autoActions": {
+    "75": ["email_alert", "dashboard_notification"],
+    "90": ["restrict_expensive_models"],
+    "95": ["pause_all_executions", "admin_alert"],
+    "100": ["suspend_access", "emergency_alert"]
+  },
+  "modelRestrictions": {
+    "gpt-4": { "maxCostPerCall": 0.50 },
+    "claude-3-opus": { "maxCostPerCall": 0.75 },
+    "fallbackModel": "gpt-3.5-turbo"
+  },
+  "rolloverPolicy": "reset" | "carry_forward",
+  "isActive": true,
+  "createdAt": "2025-06-14T22:00:00Z",
+  "updatedAt": "2025-06-14T22:00:00Z"
+}
+```
+
+#### 8.2.2. Real-time Usage Tracking (`UsageMetrics` Collection)
+
+```json
+{
+  "id": "usage_metric_guid",
+  "entityType": "user" | "team" | "guest_session",
+  "entityId": "user_id_guid",
+  "budgetConfigId": "budget_config_guid",
+  "timeWindow": "2025-06-14T00:00:00Z_to_2025-06-14T23:59:59Z",
+  "currentSpend": 45.67,
+  "projectedSpend": 52.34,
+  "budgetUtilization": 0.4567,
+  "executionCount": 127,
+  "modelUsage": {
+    "gpt-4": { "calls": 23, "cost": 12.45, "tokens": 15420 },
+    "gpt-3.5-turbo": { "calls": 89, "cost": 8.90, "tokens": 45600 },
+    "claude-3-haiku": { "calls": 15, "cost": 3.75, "tokens": 8900 }
+  },
+  "costBreakdown": {
+    "inputTokens": 25.30,
+    "outputTokens": 18.45,
+    "apiCalls": 1.92
+  },
+  "lastUpdated": "2025-06-14T22:30:00Z",
+  "alertsTriggered": ["50_percent_warning"],
+  "restrictionsActive": []
+}
+```
+
+#### 8.2.3. Cost Prediction Data (`CostPredictions` Collection)
+
+```json
+{
+  "id": "prediction_guid",
+  "entityId": "user_id_guid",
+  "predictionType": "daily" | "weekly" | "monthly",
+  "predictionDate": "2025-06-15T00:00:00Z",
+  "basedOnDays": 7,
+  "historicalAverage": 12.45,
+  "trendAdjustment": 1.15,
+  "seasonalityFactor": 1.02,
+  "predictedSpend": 14.55,
+  "confidenceInterval": {
+    "lower": 11.20,
+    "upper": 17.90
+  },
+  "factorsConsidered": [
+    "historical_usage",
+    "day_of_week_pattern",
+    "recent_trend",
+    "user_behavior_change"
+  ],
+  "recommendedBudget": 18.00,
+  "alertLevel": "medium",
+  "createdAt": "2025-06-14T23:00:00Z"
+}
+```
+
+#### 8.2.4. Cost Control Actions (`CostActions` Collection)
+
+```json
+{
+  "id": "action_guid",
+  "entityId": "user_id_guid",
+  "actionType": "model_restriction" | "execution_pause" | "alert_sent" | "auto_fallback",
+  "triggerReason": "budget_threshold_90",
+  "triggerValue": 90.5,
+  "actionDetails": {
+    "restrictedModels": ["gpt-4", "claude-3-opus"],
+    "fallbackModel": "gpt-3.5-turbo",
+    "pauseDuration": "until_budget_reset",
+    "notificationsSent": ["email", "dashboard", "admin_alert"]
+  },
+  "executedAt": "2025-06-14T22:35:00Z",
+  "executedBy": "system" | "admin_user_id",
+  "status": "active" | "resolved" | "overridden",
+  "resolvedAt": "2025-06-15T08:00:00Z_optional",
+  "resolution": "budget_reset" | "admin_override" | "manual_resolution"
+}
+```
+
+### 8.3. Real-time Budget Tracking Implementation
+
+#### 8.3.1. Cost Calculation Engine
+
+```python
+# Azure Function: Real-time cost tracking
+class CostTracker:
+    def __init__(self, cosmos_client, cache_client):
+        self.cosmos_client = cosmos_client
+        self.cache_client = cache_client
+        self.model_pricing = self._load_model_pricing()
+
+    async def track_execution_cost(self, execution_data):
+        """Track cost in real-time as LLM executions complete"""
+        cost_breakdown = self._calculate_cost(execution_data)
+
+        # Update real-time metrics
+        await self._update_usage_metrics(
+            execution_data.user_id,
+            cost_breakdown
+        )
+
+        # Check budget thresholds
+        usage_status = await self._check_budget_status(
+            execution_data.user_id
+        )
+
+        # Trigger automated actions if needed
+        if usage_status.threshold_exceeded:
+            await self._trigger_cost_controls(
+                execution_data.user_id,
+                usage_status
+            )
+
+        return cost_breakdown
+
+    def _calculate_cost(self, execution_data):
+        """Calculate precise cost based on model, tokens, and pricing"""
+        model = execution_data.model
+        input_tokens = execution_data.prompt_tokens
+        output_tokens = execution_data.completion_tokens
+
+        pricing = self.model_pricing[model]
+
+        input_cost = (input_tokens / 1000) * pricing["input_cost_per_1k"]
+        output_cost = (output_tokens / 1000) * pricing["output_cost_per_1k"]
+
+        return {
+            "total_cost": input_cost + output_cost,
+            "input_cost": input_cost,
+            "output_cost": output_cost,
+            "model": model,
+            "tokens": {
+                "input": input_tokens,
+                "output": output_tokens
+            }
+        }
+```
+
+#### 8.3.2. Budget Monitoring Service
+
+```python
+class BudgetMonitor:
+    async def check_pre_execution_budget(self, user_id, estimated_cost):
+        """Check budget before allowing execution"""
+        current_usage = await self._get_current_usage(user_id)
+        budget_config = await self._get_budget_config(user_id)
+
+        projected_total = current_usage.current_spend + estimated_cost
+        utilization = projected_total / budget_config.budget_amount
+
+        if utilization >= 1.0:
+            return {"allowed": False, "reason": "budget_exceeded"}
+
+        if utilization >= 0.95:
+            # Suggest cheaper model
+            cheaper_model = self._suggest_cheaper_model(execution_request)
+            return {
+                "allowed": True,
+                "warning": "budget_critical",
+                "suggestion": cheaper_model
+            }
+
+        return {"allowed": True}
+
+    async def _suggest_cheaper_model(self, execution_request):
+        """Smart model selection based on budget constraints"""
+        current_model = execution_request.model
+        prompt_complexity = self._analyze_prompt_complexity(
+            execution_request.prompt
+        )
+
+        # Model selection logic based on complexity and cost
+        if prompt_complexity == "simple" and current_model == "gpt-4":
+            return {
+                "suggested_model": "gpt-3.5-turbo",
+                "cost_savings": "~75%",
+                "quality_impact": "minimal"
+            }
+
+        return None
+```
+
+### 8.4. Automated Cost Control System
+
+#### 8.4.1. Multi-tier Enforcement
+
+**Tier 1: Preventive Controls (Pre-execution)**
+
+- Budget validation before each LLM call
+- Smart model suggestion based on remaining budget
+- Cost estimation with user confirmation for expensive requests
+
+**Tier 2: Real-time Controls (During execution)**
+
+- Streaming cost monitoring for long-running requests
+- Automatic request termination if cost exceeds limits
+- Dynamic model switching for multi-step playbooks
+
+**Tier 3: Reactive Controls (Post-threshold)**
+
+- Immediate restriction of expensive models
+- Automatic pause of all executions
+- Admin alerts and manual override capabilities
+
+#### 8.4.2. Implementation Architecture
+
+```python
+class AutomatedCostControls:
+    def __init__(self):
+        self.control_policies = {
+            50: [self._send_warning_alert],
+            75: [self._restrict_premium_models, self._increase_monitoring],
+            90: [self._pause_expensive_operations, self._admin_alert],
+            95: [self._emergency_pause, self._executive_alert],
+            100: [self._suspend_access, self._escalate_to_billing]
+        }
+
+    async def execute_threshold_actions(self, user_id, threshold, usage_data):
+        """Execute automated actions when budget thresholds are crossed"""
+        actions = self.control_policies.get(threshold, [])
+
+        action_results = []
+        for action in actions:
+            try:
+                result = await action(user_id, usage_data)
+                action_results.append(result)
+
+                # Log action for audit trail
+                await self._log_cost_action(user_id, threshold, action.__name__, result)
+
+            except Exception as e:
+                await self._log_action_error(user_id, action.__name__, str(e))
+
+        return action_results
+
+    async def _restrict_premium_models(self, user_id, usage_data):
+        """Restrict access to expensive models"""
+        restricted_models = ["gpt-4", "claude-3-opus", "gemini-pro"]
+        fallback_model = "gpt-3.5-turbo"
+
+        # Update user's model access
+        await self._update_model_restrictions(
+            user_id,
+            restricted_models,
+            fallback_model
+        )
+
+        return {
+            "action": "model_restriction",
+            "restricted": restricted_models,
+            "fallback": fallback_model,
+            "timestamp": datetime.utcnow()
+        }
+```
+
+### 8.5. Predictive Analytics Pipeline
+
+#### 8.5.1. Usage Pattern Analysis
+
+```python
+class CostPredictionEngine:
+    def __init__(self, ml_client):
+        self.ml_client = ml_client
+        self.prediction_models = self._load_prediction_models()
+
+    async def generate_predictions(self, user_id, prediction_horizon="monthly"):
+        """Generate cost predictions using historical data and ML models"""
+
+        # Gather historical usage data
+        historical_data = await self._get_historical_usage(
+            user_id,
+            lookback_days=30
+        )
+
+        # Feature engineering
+        features = self._extract_features(historical_data)
+
+        # Generate predictions
+        predictions = {}
+
+        # Trend-based prediction
+        predictions["trend"] = self._calculate_trend_prediction(features)
+
+        # Seasonal pattern prediction
+        predictions["seasonal"] = self._calculate_seasonal_prediction(features)
+
+        # ML model prediction
+        predictions["ml"] = await self._ml_prediction(features)
+
+        # Ensemble prediction
+        final_prediction = self._ensemble_prediction(predictions)
+
+        return {
+            "predicted_spend": final_prediction["amount"],
+            "confidence_interval": final_prediction["confidence"],
+            "risk_level": self._assess_risk_level(final_prediction),
+            "recommendations": self._generate_recommendations(final_prediction)
+        }
+
+    def _generate_recommendations(self, prediction):
+        """Generate actionable recommendations based on predictions"""
+        recommendations = []
+
+        if prediction["risk_level"] == "high":
+            recommendations.extend([
+                "Consider setting a lower monthly budget",
+                "Review usage of expensive models (GPT-4, Claude-3-Opus)",
+                "Enable automatic model fallback",
+                "Set up additional budget alerts at 60% and 80%"
+            ])
+
+        if prediction["efficiency_score"] < 0.7:
+            recommendations.extend([
+                "Optimize prompts to reduce token usage",
+                "Use more cost-effective models for simple tasks",
+                "Implement prompt caching for repeated queries"
+            ])
+
+        return recommendations
+```
+
+### 8.6. API Endpoints for Cost Management
+
+#### 8.6.1. Budget Management APIs
+
+```python
+# Cost Management API Endpoints
+
+@app.route('/api/budget/config', methods=['POST'])
+async def create_budget_config(request):
+    """Create or update budget configuration"""
+    data = await request.json()
+
+    budget_config = {
+        "entityType": data["entityType"],
+        "entityId": data["entityId"],
+        "budgetAmount": data["budgetAmount"],
+        "budgetPeriod": data["budgetPeriod"],
+        "alertThresholds": data.get("alertThresholds", [50, 75, 90, 95]),
+        "autoActions": data.get("autoActions", {}),
+        "modelRestrictions": data.get("modelRestrictions", {})
+    }
+
+    # Validate and save
+    result = await budget_service.create_config(budget_config)
+    return json_response(result)
+
+@app.route('/api/budget/usage/<entity_id>', methods=['GET'])
+async def get_current_usage(entity_id):
+    """Get real-time budget usage"""
+    usage_data = await cost_tracker.get_current_usage(entity_id)
+
+    return json_response({
+        "currentSpend": usage_data.current_spend,
+        "budgetAmount": usage_data.budget_amount,
+        "utilization": usage_data.utilization,
+        "projectedSpend": usage_data.projected_spend,
+        "remainingBudget": usage_data.remaining_budget,
+        "daysRemaining": usage_data.days_remaining,
+        "alertLevel": usage_data.alert_level,
+        "restrictionsActive": usage_data.restrictions_active
+    })
+
+@app.route('/api/budget/predictions/<user_id>', methods=['GET'])
+async def get_cost_predictions(user_id):
+    """Get cost predictions and recommendations"""
+    predictions = await prediction_engine.generate_predictions(user_id)
+
+    return json_response({
+        "predictions": predictions,
+        "recommendations": predictions["recommendations"],
+        "riskAssessment": predictions["risk_level"]
+    })
+
+@app.route('/api/cost/estimate', methods=['POST'])
+async def estimate_execution_cost(request):
+    """Estimate cost before execution"""
+    data = await request.json()
+
+    estimate = await cost_estimator.estimate_cost(
+        model=data["model"],
+        prompt=data["prompt"],
+        max_tokens=data.get("max_tokens", 1000)
+    )
+
+    return json_response({
+        "estimatedCost": estimate.total_cost,
+        "breakdown": estimate.breakdown,
+        "budgetImpact": estimate.budget_impact,
+        "alternatives": estimate.cheaper_alternatives
+    })
+```
+
+### 8.7. Frontend Integration
+
+#### 8.7.1. Real-time Budget Display
+
+```typescript
+// Budget tracking component
+interface BudgetStatus {
+  currentSpend: number;
+  budgetAmount: number;
+  utilization: number;
+  alertLevel: 'safe' | 'warning' | 'critical' | 'exceeded';
+  restrictionsActive: string[];
+  timeRemaining: string;
+}
+
+const BudgetTracker: React.FC = () => {
+  const [budgetStatus, setBudgetStatus] = useState<BudgetStatus | null>(null);
+
+  useEffect(() => {
+    // Real-time budget monitoring
+    const interval = setInterval(async () => {
+      const status = await api.getBudgetStatus();
+      setBudgetStatus(status);
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getBudgetColor = (utilization: number) => {
+    if (utilization >= 1.0) return 'red';
+    if (utilization >= 0.9) return 'orange';
+    if (utilization >= 0.75) return 'yellow';
+    return 'green';
+  };
+
+  return (
+    <div className="budget-tracker">
+      <div className="budget-bar">
+        <div
+          className="budget-progress"
+          style={{
+            width: `${Math.min(budgetStatus?.utilization * 100, 100)}%`,
+            backgroundColor: getBudgetColor(budgetStatus?.utilization || 0)
+          }}
+        />
+      </div>
+      <div className="budget-details">
+        <span>${budgetStatus?.currentSpend} / ${budgetStatus?.budgetAmount}</span>
+        <span>{budgetStatus?.timeRemaining} remaining</span>
+      </div>
+      {budgetStatus?.restrictionsActive.length > 0 && (
+        <div className="budget-restrictions">
+          Restrictions: {budgetStatus.restrictionsActive.join(', ')}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+#### 8.7.2. Cost Preview Integration
+
+```typescript
+// Pre-execution cost preview
+const CostPreview: React.FC<{prompt: string, model: string}> = ({ prompt, model }) => {
+  const [costEstimate, setCostEstimate] = useState(null);
+  const [alternatives, setAlternatives] = useState([]);
+
+  useEffect(() => {
+    const estimateCost = async () => {
+      const estimate = await api.estimateExecutionCost({
+        prompt,
+        model,
+        max_tokens: 1000
+      });
+
+      setCostEstimate(estimate);
+      setAlternatives(estimate.alternatives);
+    };
+
+    estimateCost();
+  }, [prompt, model]);
+
+  return (
+    <div className="cost-preview">
+      <div className="estimated-cost">
+        Estimated cost: ${costEstimate?.estimatedCost}
+      </div>
+
+      {alternatives.length > 0 && (
+        <div className="cost-alternatives">
+          <h4>Cheaper alternatives:</h4>
+          {alternatives.map(alt => (
+            <div key={alt.model} className="alternative">
+              <span>{alt.model}: ${alt.cost}</span>
+              <span className="savings">Save {alt.savings}%</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="budget-impact">
+        Budget impact: {costEstimate?.budgetImpact}%
+      </div>
+    </div>
+  );
+};
+```
+
+### 8.8. Administrative Controls
+
+#### 8.8.1. Admin Dashboard Features
+
+- **Global Budget Overview**: System-wide cost tracking and trends
+- **User Budget Management**: Set and modify individual/team budgets
+- **Cost Analytics**: Detailed breakdowns by user, model, and time period
+- **Alert Management**: Configure and monitor automated alerts
+- **Emergency Controls**: Manual override capabilities for critical situations
+
+#### 8.8.2. Reporting and Analytics
+
+```python
+class CostAnalytics:
+    async def generate_cost_report(self, entity_type, time_period):
+        """Generate comprehensive cost analytics report"""
+
+        report_data = {
+            "summary": await self._get_cost_summary(entity_type, time_period),
+            "trends": await self._analyze_cost_trends(entity_type, time_period),
+            "model_breakdown": await self._get_model_usage_breakdown(entity_type, time_period),
+            "user_rankings": await self._get_top_users_by_cost(time_period),
+            "efficiency_metrics": await self._calculate_efficiency_metrics(entity_type, time_period),
+            "predictions": await self._get_future_projections(entity_type),
+            "recommendations": await self._generate_cost_optimization_recommendations(entity_type)
+        }
+
+        return report_data
+```
+
+## 9. Cost Optimization Strategy (Enhanced Serverless Focus)
 
 - **Azure Functions (Consumption Plan):** Pay for execution time/memory and executions. Scales to zero when idle.
 - **Cold Start Mitigation:** Acceptable trade-off for lower cost.
@@ -714,15 +1295,22 @@ const checkUsageLimit = (session: GuestSession, action: string) => {
 - **Azure Front Door (Standard):** Base fee offset by reduced compute/egress costs.
 - **No Persistent Caching (Redis):** No fixed-cost caching.
   - **Alternative Caching:** Client-side, in-memory, and efficient indexing.
-- **Guest User Cost Controls:**
+- **Enhanced Guest User Cost Controls:**
   - **Shared Demo LLM Keys:** Controlled quotas across all guest users
   - **Automatic Session Cleanup:** Prevents storage cost accumulation
   - **Rate Limiting:** Multi-layer protection against cost spikes
   - **Usage Analytics:** Track cost per guest vs. conversion value
   - **Response Caching:** Common guest queries cached to reduce LLM API costs
+  - **Smart Model Selection:** Automatic fallback to cheaper models for guests
+- **AI Cost Management Integration:**
+  - **Real-time Cost Monitoring:** Live tracking of LLM usage costs
+  - **Predictive Budget Analytics:** ML-powered cost forecasting
+  - **Automated Cost Controls:** Multi-tier enforcement with smart fallbacks
+  - **Cost Allocation Tracking:** Detailed attribution across users and teams
 - **Monitoring & Alerts:**
   - Azure Monitor, Application Insights with adaptive sampling.
   - Budgets and alerts in Azure Cost Management.
+  - **AI-specific alerts:** Monitor LLM usage patterns and cost anomalies
   - **Guest-specific alerts:** Monitor guest user LLM usage and conversion costs
   - **Efficient Code:** Directly translates to cost savings.
 

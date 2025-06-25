@@ -322,7 +322,7 @@ class TestCollectionsAPI:
         mock_cosmos_client.delete_item.assert_called_once_with(
             container_name="Collections",
             item_id=collection_id,
-            partition_key=collection_id,
+            partition_key="test-user-123",
         )
 
     @pytest.mark.asyncio
@@ -552,44 +552,28 @@ class TestCollectionsAPI:
     async def test_create_collection_validation_exception(
         self, mock_auth_success, mock_cosmos_client
     ):
-        """Test collection creation with Pydantic validation exception."""
+        """Test collection creation with validation failure."""
         # Arrange
         collection_data = {
-            "name": "Test Collection",
             "description": "Valid description",
+            # Missing required "name" field
         }
 
-        # Mock validation success but Pydantic validation failure
-        with patch("api.shared.validation.validate_collection_data") as mock_validate, \
-             patch("api.collections_api.Collection") as mock_collection:
+        # Create request with proper authentication
+        req = self.create_auth_request(
+            method="POST",
+            url="http://localhost/api/collections",
+            body=collection_data
+        )
 
-            mock_validate.return_value = {"valid": True, "errors": []}
+        # Act
+        response = await collections_main(req)
 
-            # Import ValidationError from pydantic
-            from pydantic import ValidationError
-            mock_collection.side_effect = ValidationError.from_exception_data("Collection", [
-                {
-                    "type": "missing",
-                    "loc": ("name",),
-                    "msg": "Field required",
-                    "input": {},
-                }
-            ])
-
-            # Create request with proper authentication
-            req = self.create_auth_request(
-                method="POST",
-                url="http://localhost/api/collections",
-                body=collection_data
-            )
-
-            # Act
-            response = await collections_main(req)
-
-            # Assert - ValidationError causes 500 due to exception handling
-            assert response.status_code == 500
-            response_data = json.loads(response.get_body())
-            assert "Failed to create collection" in response_data["message"]
+        # Assert - Missing required field causes 400 validation error
+        assert response.status_code == 400
+        response_data = json.loads(response.get_body())
+        assert "Validation failed" in response_data["error"]
+        assert "Collection name is required" in response_data["details"]
 
 
 if __name__ == "__main__":

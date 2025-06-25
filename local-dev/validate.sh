@@ -148,6 +148,14 @@ run_backend_tests() {
         print_warning "Virtual environment not found, tests may fail"
     fi
 
+    # Run comprehensive API consistency checks first
+    print_status "Running API consistency validation..."
+    if ! validate_api_consistency; then
+        print_error "API consistency validation failed - this would cause CI/CD failures"
+        cd ..
+        return 1
+    fi
+
     # Run pytest with coverage
     print_status "Running pytest with coverage..."
     python3 -m pytest --cov=. --cov-report=term-missing --cov-report=xml -v --tb=short
@@ -357,6 +365,105 @@ run_infrastructure_validation() {
         fi
     else
         print_warning "Infrastructure validation script not found"
+        return 0
+    fi
+}
+
+# Function to validate API implementation consistency
+validate_api_consistency() {
+    print_status "Validating API implementation and test consistency..."
+
+    local consistency_issues=0
+
+    # Check for partition key consistency issues
+    print_status "Checking database partition key consistency..."
+
+    # Collections API partition key check
+    if [ -f "collections_api/__init__.py" ] && [ -f "collections_api/collections_test.py" ]; then
+        # Check if implementation uses user_id as partition key
+        local impl_uses_user_id=$(grep -c "partition_key=user_id\|partition_key.*user_id" collections_api/__init__.py)
+        # Check if tests expect collection_id as partition key
+        local test_expects_collection_id=$(grep -c "partition_key.*collection.*id\|partition_key=.*collection" collections_api/collections_test.py)
+
+        if [ "$impl_uses_user_id" -gt 0 ] && [ "$test_expects_collection_id" -gt 0 ]; then
+            print_error "Collections API: Implementation uses user_id as partition key, but tests expect collection_id"
+            print_error "This will cause CI/CD test failures"
+            ((consistency_issues++))
+        fi
+    fi
+
+    # Check for validation expectation mismatches
+    print_status "Checking validation and error handling consistency..."
+
+    # Look for tests that expect specific status codes but implementation returns different codes
+    local test_files=$(find . -name "*test*.py" -type f)
+    for test_file in $test_files; do
+        # Check for tests expecting 500 from validation errors
+        if grep -q "assert.*status_code.*500" "$test_file" && grep -q "ValidationError\|validation.*exception" "$test_file"; then
+            local api_file=${test_file/_test.py//__init__.py}
+            api_file=${api_file/test_/}
+
+            if [ -f "$api_file" ]; then
+                # Check if API actually returns 400 for validation errors
+                if grep -q "status_code=400" "$api_file" && grep -q "validation.*fail\|Validation failed" "$api_file"; then
+                    print_error "Test expects 500 for validation error, but API returns 400: $test_file"
+                    print_error "This will cause CI/CD test failures"
+                    ((consistency_issues++))
+                fi
+            fi
+        fi
+    done
+
+    # Check for authentication mocking inconsistencies
+    print_status "Checking authentication mocking patterns..."
+
+    for test_file in $test_files; do
+        if grep -q "mock_auth_success\|require_auth" "$test_file"; then
+            # Check if test has proper auth mocking setup
+            if ! grep -q "create_auth_request\|x-ms-client-principal" "$test_file"; then
+                print_warning "Test file $test_file may have incomplete auth mocking"
+                print_warning "This could cause intermittent CI/CD failures"
+            fi
+        fi
+    done
+
+    # Check for database field naming consistency
+    print_status "Checking database field naming consistency..."
+
+    for api_file in $(find . -name "__init__.py" -path "*/api/*"); do
+        if grep -q "ownerId\|userId" "$api_file"; then
+            local test_file=${api_file/__init__.py/test.py}
+            test_file=${api_file/__init__.py/_test.py}
+
+            if [ -f "$test_file" ]; then
+                # Check for inconsistent field names between API and tests
+                local api_uses_owner_id=$(grep -c "ownerId" "$api_file")
+                local api_uses_user_id=$(grep -c "userId" "$api_file")
+                local test_expects_owner_id=$(grep -c "ownerId" "$test_file")
+                local test_expects_user_id=$(grep -c "userId" "$test_file")
+
+                if [ "$api_uses_user_id" -gt 0 ] && [ "$test_expects_owner_id" -gt "$test_expects_user_id" ]; then
+                    print_warning "Potential field naming inconsistency in $api_file"
+                    print_warning "API primarily uses 'userId' but test expects 'ownerId'"
+                fi
+            fi
+        fi
+    done
+
+    # Check for missing error handling patterns
+    print_status "Checking error handling patterns..."
+
+    for api_file in $(find . -name "__init__.py" -path "*/api/*"); do
+        if ! grep -q "SutraAPIError\|handle_api_error" "$api_file"; then
+            print_warning "API file $api_file may be missing standardized error handling"
+        fi
+    done
+
+    if [ $consistency_issues -gt 0 ]; then
+        print_error "Found $consistency_issues critical API consistency issues"
+        return 1
+    else
+        print_success "API consistency validation passed"
         return 0
     fi
 }

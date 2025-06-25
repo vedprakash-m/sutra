@@ -83,22 +83,31 @@ This document details both the product requirements and functional specification
 
 ## 6. Core Features & Detailed User Journeys
 
-### 6.0. **Anonymous User Trial System (Phase 1 / MVP - NEW)**
+### 6.0. **AI Cost Management & Automation System (Phase 1 / MVP - ENHANCED)**
 
-**Purpose:** Enable immediate AI testing without registration barriers while maintaining platform security and encouraging conversion to full accounts.
+**Purpose:** Comprehensive cost control, budget management, and intelligent automation for AI operations while enabling immediate trial access and preventing cost overruns.
 
-#### **User Journey: Zero-Friction Trial & Conversion**
+#### **Cost Management Features:**
+
+1. **Real-time Budget Tracking**: Monitor costs across all LLM providers with live dashboards
+2. **Automated Cost Controls**: Dynamic rate limiting and provider switching based on budgets
+3. **Predictive Cost Analytics**: ML-powered usage forecasting and optimization recommendations
+4. **Multi-tier Budget Enforcement**: User-level, provider-level, and system-wide budget controls
+5. **Smart Cost Optimization**: Automatic model selection based on cost-performance ratios
+6. **Alert & Escalation System**: Proactive notifications for budget thresholds and anomalies
+
+#### **User Journey: Zero-Friction Trial with Cost Intelligence**
 
 1. User lands on Sutra platform from any source (marketing, search, referral).
 2. **Immediate Access**: "Try AI Now" button provides instant access without signup.
-3. User enters prompt (max 500 characters) in simple interface.
-4. System validates prompt length and checks IP-based rate limits.
-5. User clicks "Generate AI Response" - system executes with GPT-3.5 Turbo.
-6. Response displayed with usage counter (e.g., "Calls used: 1/5 today").
-7. Clear upgrade messaging shows benefits of full account.
-8. User can continue testing until daily limit reached.
-9. **Conversion Triggers**: Limit reached, feature desires, or quality impressed moments.
-10. User signs up for full access with pre-populated data from trial experience.
+3. **Smart Cost Preview**: System shows estimated cost for user's prompt before execution.
+4. User enters prompt (max 500 characters) in simple interface with real-time cost estimation.
+5. **Intelligent Model Selection**: System automatically chooses most cost-effective model for prompt type.
+6. User clicks "Generate AI Response" - system executes with optimal provider based on cost/quality.
+7. Response displayed with usage counter and cost breakdown (e.g., "Calls used: 1/5 today, Cost: $0.02").
+8. **Progressive Cost Education**: User learns about AI costs and optimization throughout trial.
+9. **Conversion Triggers**: Limit reached, advanced features needed, or cost-savings impressed.
+10. User signs up for full access with intelligent budget recommendations based on trial usage.
 
 #### **Technical Implementation:**
 

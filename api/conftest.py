@@ -21,6 +21,14 @@ if current_dir not in sys.path:
 from shared.models import User, UserRole
 
 
+# Ensure testing mode is enabled for all tests
+@pytest.fixture(autouse=True)
+def enable_testing_mode():
+    """Automatically enable testing mode for all tests."""
+    with patch.dict(os.environ, {"TESTING_MODE": "true"}):
+        yield
+
+
 # Global Authentication Fixtures
 @pytest.fixture
 def mock_static_web_apps_auth():
@@ -93,6 +101,13 @@ def mock_no_auth():
     mock_request.method = "GET"
     mock_request.get_body.return_value = b'{}'
     return mock_request
+
+
+@pytest.fixture
+def mock_auth_failure():
+    """Fixture for simulating authentication failure."""
+    with patch("api.shared.auth_static_web_apps.TESTING_MODE", True):
+        yield
 
 
 # Database Mocking Fixtures

@@ -51,6 +51,42 @@ def valid_user_id():
 class TestIntegrationsAPI:
     """Test class for integrations API endpoints."""
 
+    def create_auth_request(self, method="GET", body=None, route_params=None, params=None,
+                           user_id="test-user-123", role="user", url="http://localhost/api/integrations"):
+        """Helper to create authenticated requests for Azure Static Web Apps."""
+        import azure.functions as func
+        import base64
+        import json
+
+        # Create user principal data
+        principal_data = {
+            "identityProvider": "azureActiveDirectory",
+            "userId": user_id,
+            "userDetails": "Test User",
+            "userRoles": [role],
+            "claims": []
+        }
+
+        # Encode as base64
+        principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
+
+        # Create headers
+        headers = {
+            "x-ms-client-principal": principal_b64,
+            "x-ms-client-principal-id": user_id,
+            "x-ms-client-principal-name": "Test User",
+            "x-ms-client-principal-idp": "azureActiveDirectory"
+        }
+
+        return func.HttpRequest(
+            method=method,
+            url=url,
+            body=json.dumps(body).encode('utf-8') if body else b"",
+            headers=headers,
+            route_params=route_params or {},
+            params=params or {}
+        )
+
     @pytest.mark.asyncio
     async def test_main_unauthorized(self, mock_request):
         """Test main endpoint without authorization."""
@@ -445,13 +481,27 @@ class TestIntegrationsAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    async def test_main_exception_handling(self, mock_request):
+    async def test_main_exception_handling(self):
         """Test main endpoint exception handling."""
-        with patch("api.integrations_api.verify_jwt_token") as mock_auth:
-            mock_auth.side_effect = Exception("Test exception")
+        # Create properly authenticated request
+        from . import main
 
-            response = await main(mock_request)
+        # Create request with authentication
+        req = self.create_auth_request(
+            method="GET",
+            url="http://localhost/api/integrations/llm",
+            route_params={},
+            user_id="test-user-123",
+            role="user"
+        )
 
+        # Mock database to raise exception
+        with patch("api.integrations_api.get_database_manager") as mock_db:
+            mock_db.side_effect = Exception("Database connection failed")
+
+            response = await main(req)
+
+            # The handle_api_error should handle this gracefully
             assert response.status_code == 500
             response_data = json.loads(response.get_body())
             assert "error" in response_data

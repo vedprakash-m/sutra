@@ -20,7 +20,8 @@ class TestDatabaseManager:
         with patch.dict(
             os.environ,
             {
-                "COSMOS_DB_CONNECTION_STRING": "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=test_key;"
+                "COSMOS_DB_CONNECTION_STRING": "AccountEndpoint=https://test.documents.azure.com:443/;AccountKey=test_key==;",
+                "ENVIRONMENT": "production"
             },
         ):
             db_manager = DatabaseManager()
@@ -270,7 +271,10 @@ class TestDatabaseManagerProductionOperations:
         mock_container.create_item.return_value = expected_result
 
         with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
+            os.environ, {
+                "COSMOS_DB_CONNECTION_STRING": "test_connection_string",
+                "ENVIRONMENT": "production"
+            }
         ):
             db_manager = DatabaseManager()
             item = {"id": "test_id", "name": "test_item"}
@@ -298,7 +302,10 @@ class TestDatabaseManagerProductionOperations:
         mock_container.read_item.return_value = expected_result
 
         with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
+            os.environ, {
+                "COSMOS_DB_CONNECTION_STRING": "test_connection_string",
+                "ENVIRONMENT": "production"
+            }
         ):
             db_manager = DatabaseManager()
 
@@ -327,7 +334,10 @@ class TestDatabaseManagerProductionOperations:
         )
 
         with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
+            os.environ, {
+                "COSMOS_DB_CONNECTION_STRING": "test_connection_string",
+                "ENVIRONMENT": "production"
+            }
         ):
             db_manager = DatabaseManager()
 
@@ -349,7 +359,10 @@ class TestDatabaseManagerProductionOperations:
         mock_cosmos_client.return_value = mock_client
 
         with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
+            os.environ, {
+                "COSMOS_DB_CONNECTION_STRING": "test_connection_string",
+                "ENVIRONMENT": "production"
+            }
         ):
             db_manager = DatabaseManager()
 
@@ -378,7 +391,10 @@ class TestDatabaseManagerProductionOperations:
         )
 
         with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
+            os.environ, {
+                "COSMOS_DB_CONNECTION_STRING": "test_connection_string",
+                "ENVIRONMENT": "production"
+            }
         ):
             db_manager = DatabaseManager()
 

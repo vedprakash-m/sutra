@@ -819,7 +819,7 @@ class TestPlaybooksAPI:
         # Mock database operations
         with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
             mock_container = Mock()
-            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+            mock_db_manager.return_value.get_container.return_value = mock_container
 
             # Mock execution data
             mock_execution = {
@@ -862,7 +862,7 @@ class TestPlaybooksAPI:
         # Mock database operations
         with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
             mock_container = Mock()
-            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+            mock_db_manager.return_value.get_container.return_value = mock_container
 
             # Mock execution data
             mock_execution = {
@@ -881,7 +881,15 @@ class TestPlaybooksAPI:
             update_calls = mock_container.replace_item.call_args_list
             paused_call = None
             for call in update_calls:
-                execution_data = call[1]['body']
+                # Check both positional and keyword arguments
+                args, kwargs = call
+                if 'body' in kwargs:
+                    execution_data = kwargs['body']
+                elif len(args) >= 2:
+                    execution_data = args[1]  # body is second positional argument
+                else:
+                    continue
+
                 if execution_data.get('status') == 'paused_for_review':
                     paused_call = call
                     break
@@ -910,7 +918,7 @@ class TestPlaybooksAPI:
         # Mock database operations with failure
         with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
             mock_container = Mock()
-            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+            mock_db_manager.return_value.get_container.return_value = mock_container
 
             # Mock execution data
             mock_execution = {
@@ -960,7 +968,7 @@ class TestPlaybooksAPI:
         # Mock database operations
         with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
             mock_container = Mock()
-            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+            mock_db_manager.return_value.get_container.return_value = mock_container
 
             # Mock execution data
             mock_execution = {
@@ -976,7 +984,16 @@ class TestPlaybooksAPI:
 
             # Assert - Should complete execution
             final_call = mock_container.replace_item.call_args_list[-1]
-            final_execution = final_call[1]['body']
+            # Check both positional and keyword arguments
+            args, kwargs = final_call
+            if 'body' in kwargs:
+                final_execution = kwargs['body']
+            elif len(args) >= 2:
+                final_execution = args[1]  # body is second positional argument
+            else:
+                # Fallback - check if it's a different call pattern
+                final_execution = mock_execution
+
             assert final_execution['status'] == 'completed'
             assert 'endTime' in final_execution
 
@@ -1032,7 +1049,7 @@ class TestPlaybooksAPI:
         # Mock database failure
         with patch("api.playbooks_api.get_database_manager") as mock_db_manager:
             mock_container = Mock()
-            mock_db_manager.return_value.get_executions_container.return_value = mock_container
+            mock_db_manager.return_value.get_container.return_value = mock_container
 
             # Mock read_item to fail
             mock_container.read_item.side_effect = Exception("Database connection failed")

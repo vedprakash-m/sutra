@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
+import { AnonymousLLMTest } from "./AnonymousLLMTest";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -189,6 +190,11 @@ export default function LoginPage() {
               <p>🚀 Beta testing program - help us improve Sutra</p>
               <p>📧 Questions? Contact support for assistance</p>
             </div>
+          </div>
+
+          {/* Anonymous LLM Test Section */}
+          <div className="mt-8">
+            <AnonymousLLMTest />
           </div>
         </div>
       </div>

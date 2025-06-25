@@ -126,6 +126,16 @@ All GUIDs are UUID v4. Timestamps are ISO 8601.
   "name": "John Doe",
   "teamId": "team_id_guid_optional",
   "role": "member",
+  "userType": "registered" | "guest",
+  "guestSessionData": {
+    "sessionId": "guest_session_guid",
+    "expiresAt": "2025-06-15T22:00:00Z",
+    "usageCount": 3,
+    "maxUsageCount": 5,
+    "ipAddress": "192.168.1.1",
+    "userAgent": "Mozilla/5.0...",
+    "createdAt": "2025-06-14T22:00:00Z"
+  },
   "llmApiKeys": {
     "openai": "kv-ref-to-secret",
     "google_gemini": "kv-ref-to-secret",
@@ -289,6 +299,57 @@ All GUIDs are UUID v4. Timestamps are ISO 8601.
 }
 ```
 
+### 3.7. Guest Session (`GuestSessions` Collection)
+
+```json
+{
+  "id": "guest_session_guid",
+  "sessionToken": "jwt_session_token",
+  "userId": "guest_user_id_guid",
+  "status": "active" | "expired" | "converted",
+  "usageCount": 3,
+  "maxUsageCount": 5,
+  "ipAddress": "192.168.1.1",
+  "userAgent": "Mozilla/5.0...",
+  "geoLocation": {
+    "country": "US",
+    "region": "California"
+  },
+  "promptsCreated": ["prompt_id_1", "prompt_id_2"],
+  "executionsPerformed": 3,
+  "conversionTriggerShown": ["signup_modal", "usage_limit_warning"],
+  "lastActivity": "2025-06-14T22:30:00Z",
+  "createdAt": "2025-06-14T22:00:00Z",
+  "expiresAt": "2025-06-15T22:00:00Z",
+  "convertedUserId": "registered_user_id_guid_optional",
+  "convertedAt": "2025-06-14T23:00:00Z_optional"
+}
+```
+
+### 3.8. Guest Usage Analytics (`GuestAnalytics` Collection)
+
+```json
+{
+  "id": "analytics_id_guid",
+  "sessionId": "guest_session_guid",
+  "eventType": "session_start" | "prompt_created" | "prompt_executed" | "conversion_trigger_shown" | "signup_clicked" | "session_expired",
+  "eventData": {
+    "promptId": "prompt_id_guid_optional",
+    "llmProvider": "openai_optional",
+    "executionTime": 1500,
+    "conversionTriggerType": "usage_limit_optional"
+  },
+  "metadata": {
+    "userAgent": "Mozilla/5.0...",
+    "referrer": "https://example.com",
+    "pageUrl": "/prompt-studio"
+  },
+  "timestamp": "2025-06-14T22:00:00Z"
+}
+```
+
+````
+
 ---
 
 ## 4. API Endpoints (Examples)
@@ -343,6 +404,87 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - `POST /api/integrations/llm` – Connect LLM API key
   - **LLM Key Pre-validation:** Lightweight pre-validation call to LLM provider before storing in Key Vault.
 
+### 4.1. Guest User API Endpoints
+
+- `POST /api/guest/session` – Create a new guest session
+  - **Request Body:**
+    ```json
+    {
+      "userAgent": "Mozilla/5.0...",
+      "referrer": "https://example.com",
+      "timezone": "America/Los_Angeles"
+    }
+    ```
+  - **Response:**
+    ```json
+    {
+      "sessionToken": "jwt_session_token",
+      "sessionId": "guest_session_guid",
+      "expiresAt": "2025-06-15T22:00:00Z",
+      "maxUsageCount": 5,
+      "usageCount": 0
+    }
+    ```
+
+- `GET /api/guest/session/{sessionId}` – Get guest session status and usage
+  - **Response:**
+    ```json
+    {
+      "sessionId": "guest_session_guid",
+      "status": "active",
+      "usageCount": 3,
+      "maxUsageCount": 5,
+      "expiresAt": "2025-06-15T22:00:00Z",
+      "canCreatePrompts": true,
+      "canExecutePrompts": true
+    }
+    ```
+
+- `POST /api/guest/prompts` – Create a prompt as guest (rate limited)
+  - **Rate Limiting:** 5 prompts per guest session
+  - **Request Body:** Similar to regular prompt creation but with limited fields
+  - **Response:** Includes conversion trigger when approaching limits
+
+- `POST /api/guest/prompts/{id}/run` – Execute a prompt as guest (rate limited)
+  - **Rate Limiting:** 5 executions per guest session
+  - **LLM Restrictions:** Limited to specific LLM providers with demo keys
+  - **Response:** Includes usage count and conversion triggers
+
+- `POST /api/guest/convert` – Convert guest session to registered user
+  - **Request Body:**
+    ```json
+    {
+      "sessionId": "guest_session_guid",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "password": "secure_password"
+    }
+    ```
+  - **Response:**
+    ```json
+    {
+      "userId": "new_user_id_guid",
+      "migrationStatus": "completed",
+      "migratedPrompts": ["prompt_id_1", "prompt_id_2"],
+      "authToken": "jwt_auth_token"
+    }
+    ```
+
+- `POST /api/admin/guest/analytics` – Get guest user analytics (admin only)
+  - **Response:** Aggregated analytics on guest user behavior, conversion rates
+
+### 4.2. Rate Limiting & Throttling
+
+- **Guest User Limits:**
+  - 5 prompt creations per session
+  - 5 prompt executions per session
+  - 24-hour session duration
+  - IP-based rate limiting: 10 sessions per IP per day
+- **Registered User Limits:**
+  - 100 API calls per minute
+  - 1000 prompt executions per day (configurable by plan)
+- **Implementation:** Azure Front Door rate limiting + Function-level checks
+
 ---
 
 ## 5. Security Considerations
@@ -353,10 +495,16 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - **Centralized Rate Limiting & Filtering:** Edge filtering/rate limiting reduces compute costs.
 - **Authentication & Authorization:**
   - AAD B2C for user authentication.
+  - Guest users receive temporary JWT tokens with limited claims and short expiration.
   - Azure Functions validate JWT tokens for all API access (signature, expiration, issuer/audience, claims).
+  - **Dual Authentication System:**
+    - **Registered Users:** Full AAD B2C integration with persistent identity
+    - **Guest Users:** Temporary session-based authentication with usage tracking
   - **Role-Based Access Control (RBAC):**
-    - **Roles:** Agent, Contributor, PromptManager, Admin
+    - **Roles:** Agent, Contributor, PromptManager, Admin, Guest (new)
+    - **Guest Role Restrictions:** Read-only access to public content, limited creation rights
     - **Entity-Level RBAC:** Permissions (read, write, execute, manage) on Collections, Prompts, Playbooks.
+    - **Guest Permissions:** Limited to personal temporary workspace with automatic cleanup
 - **Data Encryption:**
   - At rest (Cosmos DB, Blob Storage) and in transit (HTTPS/TLS).
   - LLM API Keys stored in Azure Key Vault, accessed via Managed Identities.
@@ -364,13 +512,195 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - **Input Validation & Output Sanitization:**
   - Robust input validation (schema/type/length/regex).
   - Output sanitization (HTML escaping, PII redaction/masking).
+- **Guest User Security:**
+  - **Session-based Authentication:** JWT tokens for guest sessions with short expiration (24 hours)
+  - **IP-based Rate Limiting:** Prevent abuse from single IP addresses
+  - **Content Restrictions:** Guest users cannot access private/team content
+  - **Data Isolation:** Guest user data is clearly marked and subject to automatic cleanup
+  - **Abuse Prevention:** Monitoring for suspicious patterns, CAPTCHA for high-frequency requests
+  - **Limited LLM Access:** Guest users restricted to demo LLM keys with usage quotas
+  - **Session Cleanup:** Automatic deletion of expired guest sessions and associated data after 7 days
+  - **Content Filtering & LLM Guardrails:**
+    - **Input Validation:** Enhanced filtering for guest user prompts to prevent misuse
+    - **Output Monitoring:** Automated scanning of LLM responses for inappropriate content
+    - **Prompt Safety Checks:** Pre-execution validation against known harmful patterns
+    - **Usage Pattern Analysis:** Machine learning models to detect and prevent abuse
+    - **Content Moderation:** Integration with Azure Content Moderator for text analysis
+    - **Compliance Controls:** Automatic logging and reporting of safety violations
 - **Network Security:**
   - CORS configured to allow only frontend domain.
   - NSGs for VNet deployments (future consideration).
 
 ---
 
-## 6. Cost Optimization Strategy (Serverless Focus)
+## 7. Guest User System Architecture
+
+### 7.1. Technical Implementation Overview
+
+The guest user system enables anonymous users to trial Sutra's core functionality without registration. This system balances user experience with security and cost control through careful technical implementation.
+
+**Key Technical Components:**
+
+- **Session Management:** JWT-based guest sessions with configurable expiration
+- **Rate Limiting:** Multi-layer throttling (IP, session, resource-based)
+- **Data Lifecycle:** Automatic cleanup of guest data after expiration
+- **Conversion Pipeline:** Seamless migration from guest to registered user
+- **Analytics Tracking:** Comprehensive guest user behavior analytics
+
+### 7.2. Guest Session Lifecycle
+
+````
+
+1. Anonymous User Visits → 2. Guest Session Created → 3. Usage Tracking → 4. Conversion Triggers → 5. Session Expiry/Conversion
+
+````
+
+**Technical Flow:**
+
+1. **Session Creation:**
+   - Azure Function generates guest session with unique ID
+   - JWT token issued with guest claims and expiration
+   - Session metadata stored in Cosmos DB
+   - Client receives session token for API authentication
+
+2. **Usage Tracking:**
+   - Each API call updates usage counters in real-time
+   - Rate limiting enforced at Azure Front Door and Function levels
+   - Analytics events captured for behavior analysis
+
+3. **Conversion Triggers:**
+   - Smart triggers based on usage patterns and limits
+   - Progressive disclosure of premium features
+   - Contextual upgrade prompts without disrupting workflow
+
+4. **Data Migration:**
+   - On conversion, guest data migrated to new user account
+   - Seamless transition with data preservation
+   - Session invalidation and cleanup
+
+### 7.3. Rate Limiting Architecture
+
+**Multi-Layer Approach:**
+
+1. **Azure Front Door Level:**
+   - IP-based rate limiting (10 sessions per IP per day)
+   - Geographic restrictions if needed
+   - DDoS protection
+
+2. **Azure Functions Level:**
+   - Session-based limits (5 prompts, 5 executions)
+   - Resource-specific throttling
+   - Dynamic rate adjustment based on system load
+
+3. **LLM API Level:**
+   - Demo API keys with daily quotas
+   - Fallback to cached responses for common queries
+   - Cost protection mechanisms
+
+### 7.4. Data Management & Privacy
+
+**Guest Data Handling:**
+
+- **Temporary Storage:** All guest data marked with TTL (Time To Live)
+- **Automatic Cleanup:** Expired sessions cleaned up via Azure Functions timer trigger
+- **Privacy Compliance:** Minimal data collection, no PII storage for guests
+- **Data Isolation:** Guest and registered user data clearly separated
+
+**Migration Strategy:**
+
+```json
+{
+  "migrationProcess": {
+    "step1": "Validate user registration data",
+    "step2": "Create new registered user account",
+    "step3": "Transfer guest prompts and collections",
+    "step4": "Update ownership and permissions",
+    "step5": "Invalidate guest session",
+    "step6": "Send welcome email with migration summary"
+  }
+}
+````
+
+### 7.5. Monitoring & Analytics
+
+**Guest User Metrics:**
+
+- Session creation and conversion rates
+- Usage patterns and feature adoption
+- Geographic distribution and referral sources
+- Technical performance and error rates
+
+**Implementation:**
+
+- Azure Application Insights for real-time monitoring
+- Custom dashboards for guest user analytics
+- Automated alerts for unusual patterns or system issues
+- A/B testing framework for conversion optimization
+
+### 7.6. Cost Optimization for Guest Users
+
+**Resource Management:**
+
+- **Shared LLM Keys:** Demo API keys shared across guest users with quotas
+- **Response Caching:** Common prompts cached to reduce LLM API calls
+- **Session Lifecycle:** Automatic cleanup prevents storage cost accumulation
+- **Rate Limiting:** Prevents abuse and unexpected cost spikes
+
+**Budget Controls:**
+
+- Daily/monthly spending limits on demo LLM usage
+- Real-time cost monitoring with automatic throttling
+- Cost allocation tracking between guest and registered users
+
+### 7.7. Frontend Integration
+
+**Guest User Experience:**
+
+- **Seamless Onboarding:** No registration required to start using core features
+- **Progressive Disclosure:** Features and limitations revealed contextually
+- **Usage Indicators:** Real-time display of remaining trial actions
+- **Conversion Triggers:** Smart prompts for signup based on engagement
+
+**Technical Implementation:**
+
+```typescript
+// Guest session management
+interface GuestSession {
+  sessionId: string;
+  token: string;
+  expiresAt: Date;
+  usageCount: number;
+  maxUsageCount: number;
+  status: "active" | "expired" | "converted";
+}
+
+// Client-side rate limiting
+const checkUsageLimit = (session: GuestSession, action: string) => {
+  if (session.usageCount >= session.maxUsageCount) {
+    showConversionModal("usage_limit_reached");
+    return false;
+  }
+  return true;
+};
+```
+
+**State Management:**
+
+- Local storage for session persistence
+- Real-time usage tracking with server sync
+- Offline capability for prompt editing
+- Seamless transition to authenticated state
+
+**UI/UX Components:**
+
+- Guest user banner with trial status
+- Progressive conversion modals
+- Usage limit warnings and notifications
+- Instant access CTAs throughout the interface
+
+---
+
+## 8. Cost Optimization Strategy (Serverless Focus)
 
 - **Azure Functions (Consumption Plan):** Pay for execution time/memory and executions. Scales to zero when idle.
 - **Cold Start Mitigation:** Acceptable trade-off for lower cost.
@@ -384,9 +714,16 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - **Azure Front Door (Standard):** Base fee offset by reduced compute/egress costs.
 - **No Persistent Caching (Redis):** No fixed-cost caching.
   - **Alternative Caching:** Client-side, in-memory, and efficient indexing.
+- **Guest User Cost Controls:**
+  - **Shared Demo LLM Keys:** Controlled quotas across all guest users
+  - **Automatic Session Cleanup:** Prevents storage cost accumulation
+  - **Rate Limiting:** Multi-layer protection against cost spikes
+  - **Usage Analytics:** Track cost per guest vs. conversion value
+  - **Response Caching:** Common guest queries cached to reduce LLM API costs
 - **Monitoring & Alerts:**
   - Azure Monitor, Application Insights with adaptive sampling.
   - Budgets and alerts in Azure Cost Management.
+  - **Guest-specific alerts:** Monitor guest user LLM usage and conversion costs
   - **Efficient Code:** Directly translates to cost savings.
 
 ---

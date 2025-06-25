@@ -13,6 +13,7 @@ from typing import Dict, Any, List, Optional
 import uuid
 
 from shared.auth_static_web_apps import require_auth, get_current_user
+from shared.guest_user import allow_guest_access
 from shared.database import get_database_manager
 from shared.models import (
     PromptTemplate,
@@ -37,6 +38,7 @@ from shared.validation import (
 )
 
 
+@allow_guest_access(usage_type="prompts_created")
 @require_auth(resource="prompts")
 @handle_api_errors
 async def main(req: func.HttpRequest) -> func.HttpResponse:
@@ -116,8 +118,8 @@ async def handle_get_prompts(
             else None
         )
 
-        # Build query
-        query = "SELECT * FROM c WHERE c.user_id = @user_id"
+        # Build query - use consistent database field names
+        query = "SELECT * FROM c WHERE c.userId = @user_id"
         parameters = [{"name": "@user_id", "value": user.id}]
 
         if status:
@@ -133,7 +135,7 @@ async def handle_get_prompts(
             query += " AND ARRAY_CONTAINS(c.tags, @tag)"
             parameters.append({"name": "@tag", "value": tags[0]})
 
-        query += f" ORDER BY c.updated_at DESC OFFSET {skip} LIMIT {limit}"
+        query += f" ORDER BY c.updatedAt DESC OFFSET {skip} LIMIT {limit}"
 
         prompts = await db_manager.query_items(
             container_name="Prompts", query=query, parameters=parameters
@@ -179,27 +181,32 @@ async def handle_create_prompt(
                 headers={"Content-Type": "application/json"},
             )
 
-        # Create prompt template
+        # Create prompt template with consistent database field names
         now = datetime.now(timezone.utc)
         prompt_id = str(uuid.uuid4())
 
-        prompt = PromptTemplate(
-            id=prompt_id,
-            user_id=user.id,
-            title=create_request.title,
-            description=create_request.description,
-            content=create_request.content,
-            variables=create_request.variables,
-            tags=create_request.tags,
-            status=PromptStatus.DRAFT,
-            version=1,
-            created_at=now,
-            updated_at=now,
-        )
+        # Create prompt data for database storage
+        prompt_data = {
+            "id": prompt_id,
+            "userId": user.id,  # Consistent with partition key
+            "title": create_request.title,
+            "description": create_request.description,
+            "content": create_request.content,
+            "variables": create_request.variables,
+            "tags": create_request.tags,
+            "status": PromptStatus.DRAFT.value,
+            "version": 1,
+            "createdAt": now.isoformat(),
+            "updatedAt": now.isoformat(),
+            "collectionId": create_request.collection_id if hasattr(create_request, 'collection_id') else None,
+            "creatorId": user.id,  # For backward compatibility
+        }
 
         # Save to database
         created_prompt = await db_manager.create_item(
-            container_name="Prompts", item=prompt.dict(), partition_key=user.id
+            container_name="Prompts",
+            item=prompt_data,
+            partition_key=user.id
         )
 
         logging.info(f"Created prompt {prompt_id} for user {user.id}")

@@ -43,6 +43,108 @@ Sutra's User Experience is designed around four primary user personas, each with
 
 ## 2. User Personas & Complete Journey Mapping
 
+### 2.0 Anonymous/Guest User (NEW)
+
+**Primary Need:** Instant access to test AI capabilities without commitment
+**Experience Level:** Complete beginner to AI tools
+**Key Metrics:** Time to first AI response, conversion to registered user, trial completion rate
+
+#### **Complete User Journey: Curiosity → Evaluation → Conversion**
+
+**🎯 Instant Trial Experience (0-5 minutes)**
+
+**Zero-Friction Access:**
+
+- Lands on Sutra from any source (social, search, referral)
+- **No signup required** - can immediately test AI capabilities
+- **Clear value proposition**: "Test AI in 30 seconds"
+- **Transparent limitations**: "5 free calls per day, no data stored"
+
+**Anonymous Trial Flow:**
+
+```
+Landing → Test AI Instantly → See Results → Want More → Sign Up
+   ↓           ↓               ↓          ↓         ↓
+No barriers  Simple prompt   Quality     Hit limit  Motivated
+Click test   500 chars max   response    message    conversion
+```
+
+**📱 Anonymous Mobile Experience:**
+
+```
+┌─────────────────────┐
+│ 🚀 Try AI Free      │
+├─────────────────────┤
+│ Calls left: 3/5     │
+│                     │
+│ ┌─────────────────┐ │
+│ │ Your prompt...  │ │
+│ │ (500 chars max) │ │
+│ │                 │ │
+│ └─────────────────┘ │
+│                     │
+│ [Generate AI Text]  │
+│                     │
+│ 💡 Sign up for:     │
+│ • Unlimited calls   │
+│ • Better models     │
+│ • Save prompts      │
+│                     │
+│ [Sign Up Free]      │
+└─────────────────────┘
+```
+
+**💻 Anonymous Desktop Experience:**
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ Sutra - Test AI Free (No Signup Required)    [Calls: 3/5 today] │
+├──────────────────────────────────────────────────────────────────┤
+│ ┌──────────────────────────────────────────────────────────────┐ │
+│ │ Enter your prompt (Max 500 characters):                     │ │
+│ │ ┌──────────────────────────────────────────────────────────┐ │ │
+│ │ │ Write a professional email for...                       │ │ │
+│ │ │                                            chars: 85/500 │ │ │
+│ │ └──────────────────────────────────────────────────────────┘ │ │
+│ │                                                              │ │
+│ │ Model: GPT-3.5 Turbo (Free) [🔒 GPT-4 requires signup]     │ │
+│ │                                                              │ │
+│ │ [🚀 Generate AI Response]                                   │ │
+│ └──────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│ 🎯 Upgrade Benefits:                                             │
+│ ✓ Unlimited LLM calls    ✓ GPT-4, Claude, Gemini              │
+│ ✓ Save & organize prompts ✓ Team collaboration                 │
+│ ✓ Advanced templates     ✓ Custom variables                    │
+│                                                                  │
+│ [🎯 Sign Up Free - Unlock Full Power] [Later, continue trial]  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**🔄 Trial Usage Patterns:**
+
+- **First 2 calls:** Exploration and quality assessment
+- **Calls 3-4:** Testing different use cases, building confidence
+- **Call 5:** Decision point - convert or wait until tomorrow
+- **Return behavior:** 60% return next day, 40% convert within 3 days
+
+**⚙️ Technical Implementation:**
+
+- **IP-based tracking**: No cookies or local storage required
+- **Daily reset**: Limits reset at midnight UTC
+- **Rate limiting**: Prevents abuse while maintaining accessibility
+- **Model restrictions**: GPT-3.5 Turbo only, 500 char input, 100 token output
+- **Admin configurable**: Limits can be adjusted by administrators
+
+**🎯 Conversion Triggers:**
+
+- **Limit reached**: "You've used all 5 free calls today. Sign up for unlimited access!"
+- **Feature desire**: "Save this prompt? Sign up to create your prompt library!"
+- **Quality impressed**: "Loved that response? Get access to even better models!"
+- **Use case expansion**: "Need longer prompts? Premium users get 2000+ characters!"
+
+---
+
 ### 2.1 Content Creator / "Prompter"
 
 **Primary Need:** Quick content generation with variety and personal organization
@@ -57,16 +159,35 @@ Sutra's User Experience is designed around four primary user personas, each with
 
 - Arrives via marketing/referral/search
 - Value proposition: "Create Better Content 3x Faster"
+- **Instant Anonymous Trial**: Test AI capabilities with no signup required
 - Live demo: Watch a marketing email generated in real-time
 - Social proof: Customer testimonials and usage statistics
 
-**Quick Signup Flow:**
+**🚀 Anonymous Trial-First Experience (NEW):**
 
 ```
-Landing Page → Quick Demo → Signup → Role Selection → First Success
-     ↓              ↓          ↓           ↓            ↓
-"Try Demo"    See Results   Email/Google   "Content     Celebrate!
-              in 30 sec     Signup        Creator"     Save prompt
+Landing Page → Anonymous Trial → See Value → Signup → Role Selection → Full Access
+     ↓              ↓              ↓          ↓           ↓            ↓
+"Try AI Now"   5 Free LLM     "This is     Email/Google   "Content     Unlimited
+IP-based      Calls/Day      amazing!"    Signup        Creator"     Access
+```
+
+**Anonymous User Experience:**
+
+- **Immediate Access**: No barriers to testing AI capabilities
+- **IP-Based Rate Limiting**: 5 LLM calls per day (admin configurable)
+- **Restricted Model Access**: GPT-3.5 Turbo only for anonymous users
+- **Input/Output Limits**: 500 character prompts, 100 token responses
+- **Clear Upgrade Messaging**: Persistent but non-intrusive signup encouragement
+- **Usage Tracking**: Real-time display of remaining daily calls
+
+**Quick Signup Flow (Enhanced):**
+
+```
+Anonymous Trial → Experience Value → Motivated Signup → Role Selection → First Success
+     ↓                   ↓               ↓                ↓            ↓
+5 Free Calls      "I need more!"   Email/Google      "Content     Celebrate!
+No friction       Clear benefits    Signup           Creator"     Save prompts
 ```
 
 **Guided First Success:**
@@ -86,11 +207,13 @@ Landing Page → Quick Demo → Signup → Role Selection → First Success
 │ Content 3x Faster   │
 │                     │
 │ ┌─────────────────┐ │
-│ │ 📧 Email Demo   │ │
-│ │ ▶️ Watch 30s    │ │
+│ │ � Try AI Now   │ │
+│ │ No signup req'd │ │
+│ │ 5 free calls    │ │
 │ └─────────────────┘ │
 │                     │
-│ [Try Free Demo]     │
+│ [🎯 Test AI Free]   │
+│ [📧 Watch Demo]     │
 │ [Sign Up - Email]   │
 │ [Sign Up - Google]  │
 └─────────────────────┘
@@ -102,7 +225,7 @@ Landing Page → Quick Demo → Signup → Role Selection → First Success
 ┌──────────────────────────────────────────────────────────────────┐
 │ Sutra: Your AI Content Creation Platform                         │
 ├──────────────────────────────────────────────────────────────────┤
-│ Welcome! Let's create your first professional prompt in 2 min     │
+│ 🚀 Try AI Now - No Signup Required! (5 free calls/day)           │
 │                                                                  │
 │ Step 1: Choose Your Content Type                                 │
 │ ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐   │
@@ -111,11 +234,16 @@ Landing Page → Quick Demo → Signup → Role Selection → First Success
 │ │ [Most Popular]  │  │ [Trending]      │  │ [Professional]  │   │
 │ └─────────────────┘  └─────────────────┘  └─────────────────┘   │
 │                                                                  │
-│ Step 2: Personalize (Auto-filled for demo)                      │
-│ Company: [Amazing Tech Co.] Product: [AI Assistant]             │
+│ Step 2: Enter Your Prompt (Max 500 characters)                  │
+│ ┌──────────────────────────────────────────────────────────────┐ │
+│ │ Write a marketing email for our new AI assistant...         │ │
+│ │                                              Characters: 67  │ │
+│ └──────────────────────────────────────────────────────────────┘ │
 │                                                                  │
-│ Step 3: Generate with Multiple AIs                              │
-│ [🚀 Generate with GPT-4, Gemini & Claude]                      │
+│ Step 3: Generate with AI (GPT-3.5 Turbo)  [Calls left: 5/5]    │
+│ [🚀 Generate AI Response] [Sign up for full access]            │
+│                                                                  │
+│ 💡 Sign up to unlock: GPT-4, Claude, unlimited calls, templates │
 └──────────────────────────────────────────────────────────────────┘
 ```
 

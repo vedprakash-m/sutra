@@ -72,6 +72,13 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 return await reset_test_data(user_id, req)
             elif method == "POST" and action == "seed":
                 return await seed_test_data(user_id, req)
+        elif resource == "guest":
+            if method == "GET" and action == "settings":
+                return await get_guest_settings()
+            elif method == "PUT" and action == "settings":
+                return await update_guest_settings(user_id, req)
+            elif method == "GET" and action == "stats":
+                return await get_guest_usage_stats_admin(req)
         else:
             return func.HttpResponse(
                 json.dumps({"error": "Resource not found"}),
@@ -977,3 +984,208 @@ async def seed_test_data(
             status_code=500,
             mimetype="application/json",
         )
+
+
+async def get_guest_settings() -> func.HttpResponse:
+    """Get guest user settings."""
+    try:
+        db_manager = get_database_manager()
+
+        try:
+            config = await db_manager.read_item(
+                container_name="SystemConfig",
+                item_id="guest_user_limits",
+                partition_key="guest_user_limits",
+            )
+        except:
+            # Default settings if not configured
+            config = {
+                "id": "guest_user_limits",
+                "limits": {
+                    "llm_calls_per_day": 5,
+                    "prompts_per_day": 10,
+                    "collections_per_session": 3,
+                    "playbooks_per_session": 2,
+                    "session_duration_hours": 24,
+                    "enabled": True
+                },
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+        return func.HttpResponse(
+            json.dumps(config, default=str),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting guest settings: {str(e)}")
+        raise SutraAPIError(f"Failed to get guest settings: {str(e)}", 500)
+
+
+async def update_guest_settings(
+    admin_user_id: str, req: func.HttpRequest
+) -> func.HttpResponse:
+    """Update guest user settings."""
+    try:
+        # Parse request body
+        try:
+            body = req.get_json()
+        except ValueError:
+            return func.HttpResponse(
+                json.dumps({"error": "Invalid JSON in request body"}),
+                status_code=400,
+                mimetype="application/json",
+            )
+
+        db_manager = get_database_manager()
+
+        # Get existing settings
+        try:
+            existing_config = await db_manager.read_item(
+                container_name="SystemConfig",
+                item_id="guest_user_limits",
+                partition_key="guest_user_limits"
+            )
+        except:
+            existing_config = {
+                "id": "guest_user_limits",
+                "limits": {},
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+
+        # Update settings
+        if "limits" in body:
+            # Validate limits
+            valid_limit_keys = [
+                "llm_calls_per_day", "prompts_per_day", "collections_per_session",
+                "playbooks_per_session", "session_duration_hours", "enabled"
+            ]
+
+            for key, value in body["limits"].items():
+                if key in valid_limit_keys:
+                    if key == "enabled":
+                        existing_config["limits"][key] = bool(value)
+                    else:
+                        existing_config["limits"][key] = max(0, int(value))
+
+        existing_config["updated_at"] = datetime.now(timezone.utc).isoformat()
+        existing_config["updated_by"] = admin_user_id
+
+        # Save settings
+        if db_manager._development_mode:
+            updated_config = existing_config
+            logger.info(f"DEV MODE: Would update guest settings: {updated_config}")
+        else:
+            try:
+                updated_config = await db_manager.update_item(
+                    container_name="SystemConfig",
+                    item=existing_config
+                )
+            except:
+                updated_config = await db_manager.create_item(
+                    container_name="SystemConfig",
+                    item=existing_config,
+                    partition_key="guest_user_limits"
+                )
+
+        logger.info(f"Admin {admin_user_id} updated guest user settings")
+
+        return func.HttpResponse(
+            json.dumps(updated_config, default=str),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error updating guest settings: {str(e)}")
+        raise SutraAPIError(f"Failed to update guest settings: {str(e)}", 500)
+
+
+async def get_guest_usage_stats_admin(req: func.HttpRequest) -> func.HttpResponse:
+    """Get guest usage statistics for admin dashboard."""
+    try:
+        # Parse query parameters
+        params = req.params
+        period = params.get("period", "day")  # day, week, month
+
+        db_manager = get_database_manager()
+
+        # Calculate date range
+        now = datetime.now(timezone.utc)
+        if period == "day":
+            start_date = now - timedelta(days=1)
+        elif period == "week":
+            start_date = now - timedelta(weeks=1)
+        elif period == "month":
+            start_date = now - timedelta(days=30)
+        else:
+            start_date = now - timedelta(days=1)
+
+        start_iso = start_date.isoformat()
+
+        if db_manager._development_mode:
+            # Return mock stats for development
+            stats = {
+                "period": period,
+                "start_date": start_iso,
+                "end_date": now.isoformat(),
+                "total_sessions": 42,
+                "active_sessions": 8,
+                "total_llm_calls": 156,
+                "total_prompts_created": 89,
+                "total_collections_created": 23,
+                "total_playbooks_created": 12,
+                "avg_calls_per_session": 3.7,
+                "conversion_rate": 0.15,  # Percentage of guests who signed up
+                "_mock": True
+            }
+        else:
+            # Get real statistics from database
+            query = f"""
+            SELECT
+                COUNT(1) as total_sessions,
+                SUM(c.usage.llm_calls) as total_llm_calls,
+                SUM(c.usage.prompts_created) as total_prompts_created,
+                SUM(c.usage.collections_created) as total_collections_created,
+                SUM(c.usage.playbooks_created) as total_playbooks_created
+            FROM c
+            WHERE c.type = 'guest_session'
+            AND c.created_at >= @start_date
+            """
+
+            parameters = [{"name": "@start_date", "value": start_iso}]
+
+            result = await db_manager.query_items(
+                container_name="GuestSessions",
+                query=query,
+                parameters=parameters
+            )
+
+            stats_data = result[0] if result else {}
+
+            stats = {
+                "period": period,
+                "start_date": start_iso,
+                "end_date": now.isoformat(),
+                "total_sessions": stats_data.get("total_sessions", 0),
+                "total_llm_calls": stats_data.get("total_llm_calls", 0),
+                "total_prompts_created": stats_data.get("total_prompts_created", 0),
+                "total_collections_created": stats_data.get("total_collections_created", 0),
+                "total_playbooks_created": stats_data.get("total_playbooks_created", 0),
+                "avg_calls_per_session": 0,
+            }
+
+            if stats["total_sessions"] > 0:
+                stats["avg_calls_per_session"] = round(stats["total_llm_calls"] / stats["total_sessions"], 2)
+
+        return func.HttpResponse(
+            json.dumps(stats, default=str),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting guest usage stats: {str(e)}")
+        raise SutraAPIError(f"Failed to get guest usage stats: {str(e)}", 500)

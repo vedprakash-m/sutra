@@ -51,10 +51,18 @@ This document details both the product requirements and functional specification
 - **Needs:** Generate structured product documents, ensure consistent communication, and integrate AI into product lifecycle workflows.
 - **Goals:** Streamline documentation, improve cross-team communication, and accelerate product development cycles.
 
+#### **Anonymous/Guest User (NEW)**
+
+- **Needs:** Immediate access to test AI capabilities without registration barriers or commitment.
+- **Goals:** Evaluate platform value through hands-on experience before deciding to sign up.
+- **Constraints:** Limited daily usage (5 LLM calls), restricted to GPT-3.5 Turbo, 500-character prompts, 100-token responses.
+- **Journey:** Trial → Evaluation → Conversion or daily return usage.
+
 ---
 
 ## 4. Key Differentiators
 
+- **Zero-Friction Trial Experience:** Anonymous AI testing with no signup barriers while maintaining platform security.
 - **Intelligent Prompt Optimization:** AI-assisted prompt design, refinement, and comparative analysis across multiple LLMs.
 - **Multi-LLM Agnosticism:** Simultaneous testing and comparison across leading LLMs.
 - **AI Workflow Orchestration:** Dynamic, conditional, and interactive AI-powered workflows.
@@ -74,6 +82,104 @@ This document details both the product requirements and functional specification
 ---
 
 ## 6. Core Features & Detailed User Journeys
+
+### 6.0. **Anonymous User Trial System (Phase 1 / MVP - NEW)**
+
+**Purpose:** Enable immediate AI testing without registration barriers while maintaining platform security and encouraging conversion to full accounts.
+
+#### **User Journey: Zero-Friction Trial & Conversion**
+
+1. User lands on Sutra platform from any source (marketing, search, referral).
+2. **Immediate Access**: "Try AI Now" button provides instant access without signup.
+3. User enters prompt (max 500 characters) in simple interface.
+4. System validates prompt length and checks IP-based rate limits.
+5. User clicks "Generate AI Response" - system executes with GPT-3.5 Turbo.
+6. Response displayed with usage counter (e.g., "Calls used: 1/5 today").
+7. Clear upgrade messaging shows benefits of full account.
+8. User can continue testing until daily limit reached.
+9. **Conversion Triggers**: Limit reached, feature desires, or quality impressed moments.
+10. User signs up for full access with pre-populated data from trial experience.
+
+#### **Technical Implementation:**
+
+- **IP-Based Rate Limiting**: 5 LLM calls per day per IP address (admin configurable)
+- **Model Restrictions**: GPT-3.5 Turbo only for anonymous users
+- **Input/Output Limits**: 500 character prompts, 100 token responses maximum
+- **No Data Persistence**: Responses not saved, no user accounts required
+- **Security**: Abuse prevention through rate limiting and input validation
+- **Admin Controls**: Configurable limits, enable/disable anonymous access
+
+#### **UI Elements:**
+
+- **Anonymous Trial Interface**: Simplified prompt input, character counter, usage tracker
+- **Upgrade Messaging**: Non-intrusive but persistent conversion encouragement
+- **Feature Teasers**: Preview of premium features (GPT-4, saved prompts, templates)
+- **Admin Dashboard**: Anonymous usage statistics, limit configuration, abuse monitoring
+
+#### **System Behavior:**
+
+- Daily limits reset at midnight UTC
+- IP tracking without cookies or local storage
+- Clear error messages for limit exceeded
+- Seamless transition to signup flow
+- Real-time usage feedback
+
+#### **Wireframe: Anonymous Trial Interface**
+
+```
++----------------------------------------------------------------------+
+| [Sutra Logo] Try AI Free - No Signup Required    [Calls: 3/5 today] |
++----------------------------------------------------------------------+
+| Test AI in 30 Seconds                           [Sign Up for More] |
++----------------------------------------------------------------------+
+| ┌────────────────────────────────────────────────────────────────┐ |
+| │ Enter your prompt (Max 500 characters):                       │ |
+| │ ┌────────────────────────────────────────────────────────────┐ │ |
+| │ │ Write a professional email for a client meeting...        │ │ |
+| │ │                                         Characters: 85/500 │ │ |
+| │ └────────────────────────────────────────────────────────────┘ │ |
+| │                                                                │ |
+| │ AI Model: GPT-3.5 Turbo (Free) 🔒 GPT-4 requires signup      │ |
+| │                                                                │ |
+| │ [🚀 Generate AI Response]                                     │ |
+| └────────────────────────────────────────────────────────────────┘ |
+|                                                                    |
+| 🎯 Upgrade to unlock:                                             |
+| ✓ Unlimited calls  ✓ GPT-4, Claude, Gemini  ✓ Save prompts      |
+| ✓ Templates       ✓ Team collaboration      ✓ Advanced features  |
+|                                                                    |
+| [🎯 Get Full Access Free] [Continue Trial (2 calls remaining)]    |
++----------------------------------------------------------------------+
+```
+
+#### **Admin Configuration Interface:**
+
+```
++----------------------------------------------------------------------+
+| Admin Dashboard > Guest User Settings                               |
++----------------------------------------------------------------------+
+| Anonymous User System Configuration                                 |
+|                                                                      |
+| ┌──────────────────────────────────────────────────────────────────┐ |
+| │ [✓] Enable Anonymous User Access                                 │ |
+| │                                                                  │ |
+| │ Daily Call Limit: [5      ] calls per IP address              │ |
+| │ Max Prompt Length: [500    ] characters                        │ |
+| │ Max Response Tokens: [100   ] tokens                           │ |
+| │ Available Models: [✓] GPT-3.5 Turbo [ ] GPT-4 [ ] Claude     │ |
+| │                                                                  │ |
+| │ Usage Statistics (Last 7 days):                                 │ |
+| │ • Total Anonymous Users: 1,247                                  │ |
+| │ • Total API Calls: 4,832                                        │ |
+| │ • Conversion Rate: 23.4%                                        │ |
+| │ • Average Calls per User: 3.9                                   │ |
+| │                                                                  │ |
+| │ [Save Configuration] [View Detailed Analytics]                  │ |
+| └──────────────────────────────────────────────────────────────────┘ |
++----------------------------------------------------------------------+
+```
+
+---
 
 ### 6.1. **Intelligent Prompt Engineering & Optimization (Phase 1 / MVP)**
 
@@ -493,11 +599,29 @@ This document details both the product requirements and functional specification
 
 ## 8. User Stories (Examples)
 
+**Anonymous/Guest User Stories:**
+
+- **As a curious visitor,** I want to test AI capabilities immediately without signing up, to evaluate if Sutra meets my needs.
+- **As a potential user,** I want to see my remaining trial calls clearly displayed, to understand the value proposition and usage limits.
+- **As someone comparing AI tools,** I want to experience real AI responses quickly, to assess quality before committing to an account.
+- **As a privacy-conscious user,** I want assurance that my trial data isn't stored, to feel comfortable testing the platform.
+
+**Registered User Stories:**
+
 - **As a Marketing Manager,** I want to use the "Intelligent Prompt Builder" to quickly generate 5 social media ad headline variations across GPT-4o and Gemini, to pick the most effective.
 - **As a Content Creator,** I want to import my successful prompts from my ChatGPT history into Sutra and store them in collections, to easily reuse them.
 - **As a Customer Support Lead,** I want to create a "Refund Request Workflow" playbook with sequential steps for my team, for consistent and empathetic responses.
 - **As a Lead Prompt Engineer,** I want to compare different prompt versions using version control, to track improvements and revert if needed.
 - **As a Developer,** I want to (Phase 2+) deploy a "Summarize Document" prompt as an API endpoint, to automate summarization in our internal knowledge base.
+
+**Admin User Stories:**
+
+- **As a Platform Administrator,** I want to configure anonymous user limits (daily calls, prompt length, response tokens), to balance trial value with resource costs.
+- **As a Platform Administrator,** I want to monitor anonymous usage patterns and conversion rates, to optimize the trial experience for better user acquisition.
+- **As a Platform Administrator,** I want to enable/disable anonymous access entirely, to have full control over platform entry points.
+
+**General User Stories:**
+
 - **As an Operations Manager,** I want to (Phase 2+) view a "Team-Based LLM Cost Dashboard" to track API spending, to identify inefficiencies.
 - **As a new team member,** I want to access a "Get Started with AI" interactive guide using Sutra's templates, to quickly become productive.
 - **As a CTO,** I want (Phase 3+) audit trails of LLM interactions and content filtering, to ensure compliance with regulations.
@@ -510,13 +634,15 @@ Sutra will be developed in focused, iterative phases.
 
 ### 9.1. Phase 1 (Minimum Viable Product - MVP)
 
-Focus: Core Prompt Management, Multi-LLM Comparison, and basic linear workflows.
+Focus: Zero-friction user acquisition, Core Prompt Management, Multi-LLM Comparison, and basic linear workflows.
 
+- **Anonymous User Trial System:** IP-based rate limiting (5 calls/day), GPT-3.5 Turbo access, 500-char prompts, admin-configurable limits, conversion optimization.
 - **Intelligent Prompt Engineering & Optimization:** Intent-Driven Prompt Builder, Multi-LLM Comparative Analysis (manual output comparison), AI-Powered Suggestions ("Prompt Coach").
 - **Prompt Management & Collaboration:** Dynamic Prompt Collections (Libraries), Import Functionality, Basic Version Control, Team Workspaces & Basic Access Control.
 - **AI Workflow Orchestration (Playbooks):** Drag-and-Drop Workflow Canvas (Linear/Sequential - "No-Code Lite"), Interactive Prompt Guides, Template Gallery.
 - **Integrations:** Direct LLM Integrations (OpenAI, Google Gemini, Anthropic Claude, basic custom endpoint).
-- **User Experience (UX) & Onboarding:** Interactive Onboarding & "PromptCoach," Pre-filled Examples.
+- **User Experience (UX) & Onboarding:** Interactive Onboarding & "PromptCoach," Pre-filled Examples, seamless trial-to-signup conversion flow.
+- **Admin Controls:** Anonymous user configuration, usage analytics, limit management, security monitoring.
 
 ### 9.2. Phase 2+ (Future Enhancements)
 

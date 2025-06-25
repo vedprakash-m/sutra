@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "post", "put", "delete"],
-      "route": "admin-api/{resource}/{action?}/{user_id?}"
+      "route": "prompts/{id?}"
     },
     {
       "type": "http",

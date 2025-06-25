@@ -10,14 +10,25 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: string; // Single role: "user" or "admin"
+  role: string; // Single role: "user", "admin", or "guest"
+}
+
+interface GuestSession {
+  id: string;
+  usage: Record<string, number>;
+  limits: Record<string, number>;
+  remaining: Record<string, number>;
+  active: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
+  guestSession: GuestSession | null;
   isAuthenticated: boolean;
+  isGuest: boolean;
   isLoading: boolean;
   login: () => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   logout: () => void;
   isAdmin: boolean;
   token: string | null;
@@ -50,10 +61,12 @@ interface StaticWebAppsUser {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [guestSession, setGuestSession] = useState<GuestSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
   const isAuthenticated = !!user;
+  const isGuest = user?.role === "guest";
   const isAdmin = user?.role === "admin";
 
   // Initialize auth state from Static Web Apps or fallback
@@ -186,6 +199,57 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuthStatus();
   }, []);
 
+  const loginAsGuest = async () => {
+    try {
+      setIsLoading(true);
+
+      // Get or create guest session
+      const response = await fetch("/api/guest/session", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const sessionId =
+          response.headers.get("X-Guest-Session-Id") || data.session?.id;
+
+        // Create guest user
+        const guestUser: User = {
+          id: data.session.id,
+          email: "guest@sutra.app",
+          name: "Guest User",
+          role: "guest",
+        };
+
+        const guestSessionData: GuestSession = {
+          id: data.session.id,
+          usage: data.usage || {},
+          limits: data.limits || {},
+          remaining: data.remaining || {},
+          active: data.session.active,
+        };
+
+        setUser(guestUser);
+        setGuestSession(guestSessionData);
+        setToken(`guest-${sessionId}`);
+
+        // Store session ID for future requests
+        if (sessionId) {
+          localStorage.setItem("sutra_guest_session_id", sessionId);
+        }
+      } else {
+        throw new Error("Failed to create guest session");
+      }
+    } catch (error) {
+      console.error("Failed to login as guest:", error);
+      alert("Failed to start guest session. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const login = async () => {
     // Check if we're in a development environment
     if (
@@ -295,23 +359,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
     ) {
       // Clear local state first
       setUser(null);
+      setGuestSession(null);
       setToken(null);
       localStorage.removeItem("sutra_demo_user");
+      localStorage.removeItem("sutra_guest_session_id");
       // Then redirect to Azure AD logout
       window.location.href = "/.auth/logout";
     } else {
-      // Development mode: clear demo user
+      // Development mode: clear demo user and guest session
       setUser(null);
+      setGuestSession(null);
       setToken(null);
       localStorage.removeItem("sutra_demo_user");
+      localStorage.removeItem("sutra_guest_session_id");
     }
   };
 
   const value: AuthContextType = {
     user,
+    guestSession,
     isAuthenticated,
+    isGuest,
     isLoading,
     login,
+    loginAsGuest,
     logout,
     isAdmin,
     token,

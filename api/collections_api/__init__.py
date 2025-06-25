@@ -200,47 +200,25 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
         collection_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc)
 
+        # Use consistent database field names throughout
         collection_data = {
             "id": collection_id,
-            "user_id": user_id,  # Match model field name
+            "userId": user_id,  # Consistent with database partition key
             "name": body["name"],
             "description": body.get("description", ""),
-            "prompt_ids": [],  # Match model field name
-            "tags": body.get("tags", []),  # Match model field name
-            "is_public": body.get("type", "private")
-            == "public",  # Match model field name
-            "created_at": now,  # Match model field name
-            "updated_at": now,  # Match model field name
-        }
-
-        # Validate collection object
-        try:
-            collection = Collection(**collection_data)
-        except ValidationError as e:
-            return func.HttpResponse(
-                json.dumps({"error": "Invalid collection data", "details": str(e)}),
-                status_code=400,
-                mimetype="application/json",
-            )
-
-        # Convert for database storage (datetime to ISO string and field mapping)
-        db_collection_data = {
-            "id": collection_id,
-            "userId": user_id,  # Database partition key field
-            "name": body["name"],
-            "description": body.get("description", ""),
-            "promptIds": [],  # Database uses promptIds
+            "type": body.get("type", "private"),  # private, shared_team, public_marketplace
             "tags": body.get("tags", []),
-            "isPublic": body.get("type", "private")
-            == "public",  # Database uses isPublic
-            "createdAt": now.isoformat() + "Z",  # Database uses createdAt
-            "updatedAt": now.isoformat() + "Z",  # Database uses updatedAt
+            "promptIds": [],  # Array of prompt IDs in this collection
+            "teamId": body.get("teamId"),  # For shared_team collections
+            "createdAt": now.isoformat(),
+            "updatedAt": now.isoformat(),
+            "ownerId": user_id,  # For backward compatibility, same as userId
         }
 
         # Save to database
         created_item = await db_manager.create_item(
             container_name="Collections",
-            item=db_collection_data,
+            item=collection_data,
             partition_key=user_id
         )
 
@@ -330,15 +308,28 @@ async def update_collection(
 
         existing_collection = items[0]
 
+        # Update in database using patch operations
+        update_operations = []
+
         # Update fields
         updatable_fields = ["name", "description", "type", "teamId", "permissions"]
         for field in updatable_fields:
             if field in body:
                 existing_collection[field] = body[field]
+                update_operations.append({
+                    "op": "replace",
+                    "path": f"/{field}",
+                    "value": body[field]
+                })
 
-        existing_collection["updatedAt"] = (
-            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        )
+        # Always update the updatedAt timestamp
+        updated_at = datetime.now(timezone.utc).isoformat()
+        existing_collection["updatedAt"] = updated_at
+        update_operations.append({
+            "op": "replace",
+            "path": "/updatedAt",
+            "value": updated_at
+        })
 
         # Validate updated collection
         validation_result = validate_collection_data(existing_collection)
@@ -356,7 +347,10 @@ async def update_collection(
 
         # Update in database
         updated_item = await db_manager.update_item(
-            container_name="Collections", item=existing_collection
+            container_name="Collections",
+            item_id=collection_id,
+            partition_key=user_id,
+            operations=update_operations
         )
 
         logger.info(f"Updated collection {collection_id} for user {user_id}")
@@ -378,7 +372,7 @@ async def delete_collection(user_id: str, collection_id: str) -> func.HttpRespon
         db_manager = get_database_manager()
 
         # Check if collection exists and belongs to user
-        query = "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
+        query = "SELECT * FROM c WHERE c.id = @collection_id AND c.userId = @user_id"
         parameters = [
             {"name": "@collection_id", "value": collection_id},
             {"name": "@user_id", "value": user_id},
@@ -422,7 +416,7 @@ async def delete_collection(user_id: str, collection_id: str) -> func.HttpRespon
         await db_manager.delete_item(
             container_name="Collections",
             item_id=collection_id,
-            partition_key=collection_id,
+            partition_key=user_id,
         )
 
         logger.info(f"Deleted collection {collection_id} for user {user_id}")

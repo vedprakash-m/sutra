@@ -20,7 +20,7 @@ from shared.models import UserRole
 logger = logging.getLogger(__name__)
 
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Azure Static Web Apps Role Assignment Endpoint
 
@@ -51,45 +51,88 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         try:
             # Get user from database to determine role
             db_manager = get_database_manager()
-            container = db_manager.get_container("Users")
 
-            # Try to get existing user
+            # Try to get existing user using async database manager
             try:
-                user_doc = container.read_item(item=user_id, partition_key=user_id)
-                user_role = user_doc.get("role", "user")
-                logger.info(f"Found existing user {user_id} with role: {user_role}")
-            except:
-                # User doesn't exist - implement approval system
-                # Check if this is the first user (make them admin) or require approval
+                user_items = await db_manager.query_items(
+                    container_name="Users",
+                    query="SELECT * FROM c WHERE c.id = @user_id",
+                    parameters=[{"name": "@user_id", "value": user_id}]
+                )
 
-                # Check if any admin users exist
-                query = "SELECT * FROM c WHERE c.role = 'admin'"
-                admin_users = list(container.query_items(query=query, enable_cross_partition_query=True))
+                if user_items:
+                    user_doc = user_items[0]
+                    user_role = user_doc.get("role", "user")
 
-                if not admin_users:
-                    # No admin users exist, make this user an admin (first user)
-                    user_role = "admin"
-                    logger.info(f"No admin users found, making {user_id} the first admin")
+                    # Special case: Force admin role for specific user in development
+                    if user_name and user_name.lower() == "vedprakash.m@outlook.com":
+                        user_role = "admin"
+                        # Update the database record if it's not already admin
+                        if user_doc.get("role") != "admin":
+                            user_doc["role"] = "admin"
+                            user_doc["approvalStatus"] = "approved"
+                            user_doc["updatedAt"] = datetime.now().isoformat()
+                            # In development mode, just log the change (since database is mocked)
+                            logger.info(f"DEVELOPMENT: Setting {user_name} as admin user")
+
+                    logger.info(f"Found existing user {user_id} with role: {user_role}")
+
+                    # Update last login time (only in non-dev mode to avoid database calls)
+                    if not db_manager._development_mode:
+                        user_doc["lastLoginAt"] = datetime.now().isoformat()
+                        user_doc["updatedAt"] = datetime.now().isoformat()
+
+                        await db_manager.update_item(
+                            container_name="Users",
+                            item=user_doc
+                        )
                 else:
-                    # Admin users exist, new users need approval
-                    user_role = "pending_approval"
-                    logger.info(f"Admin users exist, new user {user_id} requires approval")
+                    # User doesn't exist - implement approval system
+                    # Check if this is the first user (make them admin) or require approval
 
-                user_doc = {
-                    "id": user_id,
-                    "name": user_name or "Unknown User",
-                    "email": user_name or f"{user_id}@unknown.com",
-                    "role": user_role,
-                    "identityProvider": identity_provider or "azureActiveDirectory",
-                    "createdAt": datetime.now().isoformat(),
-                    "lastLoginAt": datetime.now().isoformat(),
-                    "updatedAt": datetime.now().isoformat(),
-                    "type": "user",
-                    "approvalStatus": "pending" if user_role == "pending_approval" else "approved"
-                }
+                    # Check if any admin users exist
+                    admin_users = await db_manager.query_items(
+                        container_name="Users",
+                        query="SELECT * FROM c WHERE c.role = 'admin'",
+                        parameters=[]
+                    )
 
-                container.create_item(user_doc)
-                logger.info(f"Created new user {user_id} with role: {user_role}")
+                    # Special case: Make vedprakash.m@outlook.com admin regardless
+                    if user_name and user_name.lower() == "vedprakash.m@outlook.com":
+                        user_role = "admin"
+                        logger.info(f"Making {user_name} admin (special admin user)")
+                    elif not admin_users:
+                        # No admin users exist, make this user an admin (first user)
+                        user_role = "admin"
+                        logger.info(f"No admin users found, making {user_id} the first admin")
+                    else:
+                        # Admin users exist, new users need approval
+                        user_role = "pending_approval"
+                        logger.info(f"Admin users exist, new user {user_id} requires approval")
+
+                    user_doc = {
+                        "id": user_id,
+                        "name": user_name or "Unknown User",
+                        "email": user_name or f"{user_id}@unknown.com",
+                        "role": user_role,
+                        "identityProvider": identity_provider or "azureActiveDirectory",
+                        "createdAt": datetime.now().isoformat(),
+                        "lastLoginAt": datetime.now().isoformat(),
+                        "updatedAt": datetime.now().isoformat(),
+                        "type": "user",
+                        "approvalStatus": "pending" if user_role == "pending_approval" else "approved"
+                    }
+
+                    await db_manager.create_item(
+                        container_name="Users",
+                        item=user_doc,
+                        partition_key=user_id
+                    )
+                    logger.info(f"Created new user {user_id} with role: {user_role}")
+            except Exception as user_error:
+                logger.error(f"Error handling user {user_id}: {str(user_error)}")
+                # Default to user role if there's an error
+                user_role = "user"
 
             # Return roles array as expected by Azure Static Web Apps
             if user_role == "pending_approval":

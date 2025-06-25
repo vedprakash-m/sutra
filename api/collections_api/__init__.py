@@ -22,7 +22,7 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
-@require_auth(resource="collections", action="read")
+@require_auth(resource="collections")
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Collections API endpoint for managing prompt collections.
@@ -82,8 +82,8 @@ async def list_collections(user_id: str, req: func.HttpRequest) -> func.HttpResp
 
         db_manager = get_database_manager()
 
-        # Build query - note: database uses ownerId but model uses user_id
-        query_parts = ["SELECT * FROM c WHERE c.ownerId = @user_id"]
+        # Build query - note: database uses userId to match partition key
+        query_parts = ["SELECT * FROM c WHERE c.userId = @user_id"]
         query_params = [{"name": "@user_id", "value": user_id}]
 
         # Add filters
@@ -113,7 +113,7 @@ async def list_collections(user_id: str, req: func.HttpRequest) -> func.HttpResp
         )
 
         # Get total count for pagination
-        count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.ownerId = @user_id"
+        count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.userId = @user_id"
         count_params = [{"name": "@user_id", "value": user_id}]
 
         if collection_type:
@@ -226,7 +226,7 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
         # Convert for database storage (datetime to ISO string and field mapping)
         db_collection_data = {
             "id": collection_id,
-            "ownerId": user_id,  # Database uses ownerId
+            "userId": user_id,  # Database partition key field
             "name": body["name"],
             "description": body.get("description", ""),
             "promptIds": [],  # Database uses promptIds
@@ -239,7 +239,9 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
 
         # Save to database
         created_item = await db_manager.create_item(
-            container_name="Collections", item=db_collection_data
+            container_name="Collections",
+            item=db_collection_data,
+            partition_key=user_id
         )
 
         logger.info(f"Created collection {collection_id} for user {user_id}")
@@ -261,7 +263,7 @@ async def get_collection(user_id: str, collection_id: str) -> func.HttpResponse:
         db_manager = get_database_manager()
 
         # Query for the collection
-        query = "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
+        query = "SELECT * FROM c WHERE c.id = @collection_id AND c.userId = @user_id"
         parameters = [
             {"name": "@collection_id", "value": collection_id},
             {"name": "@user_id", "value": user_id},

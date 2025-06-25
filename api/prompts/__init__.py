@@ -37,6 +37,7 @@ from shared.validation import (
 )
 
 
+@require_auth(resource="prompts")
 @handle_api_errors
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """Handle prompts API requests with comprehensive validation and error handling."""
@@ -61,12 +62,11 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         ).to_azure_response()
 
 
-@require_auth(resource="prompts", action="read")
 async def handle_get_prompts(
     req: func.HttpRequest, request_id: Optional[str] = None
 ) -> func.HttpResponse:
     """Handle GET requests for prompts with validation."""
-    user = await get_current_user(req)
+    user = req.current_user
     db_manager = get_database_manager()
 
     # Check for specific prompt ID in the route
@@ -154,13 +154,12 @@ async def handle_get_prompts(
         )
 
 
-@require_auth(resource="prompts", action="create")
 async def handle_create_prompt(
     req: func.HttpRequest, request_id: Optional[str] = None
 ) -> func.HttpResponse:
     """Handle POST requests to create prompts."""
     try:
-        user = await get_current_user(req)
+        user = req.current_user
         db_manager = get_database_manager()
 
         # Parse request body
@@ -221,11 +220,10 @@ async def handle_create_prompt(
         )
 
 
-@require_auth(resource="prompts", action="update")
 async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
     """Handle PUT requests to update prompts."""
     try:
-        user = await get_current_user(req)
+        user = req.current_user
         db_manager = get_database_manager()
 
         # Get prompt ID from route
@@ -296,7 +294,6 @@ async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
         # Save updated prompt
         updated_prompt = await db_manager.update_item(
             container_name="Prompts",
-            item_id=prompt_id,
             item=existing_prompt,
             partition_key=user.id,
         )
@@ -320,11 +317,10 @@ async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-@require_auth(resource="prompts", action="delete")
 async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
     """Handle DELETE requests to delete prompts."""
     try:
-        user = await get_current_user(req)
+        user = req.current_user
         db_manager = get_database_manager()
 
         # Get prompt ID from route

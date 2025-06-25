@@ -200,13 +200,11 @@ class TestCollectionsAPI:
 
         mock_cosmos_client.query_items.return_value = [mock_collection]
 
-        # Create request
-        req = func.HttpRequest(
+        # Create request with proper authentication
+        req = self.create_auth_request(
             method="GET",
             url=f"http://localhost/api/collections/{collection_id}",
-            body=b"",
-            headers={},
-            route_params={"id": collection_id},
+            route_params={"id": collection_id}
         )
 
         # Act
@@ -227,13 +225,11 @@ class TestCollectionsAPI:
         collection_id = "nonexistent-collection"
         mock_cosmos_client.query_items.return_value = []  # No collections found
 
-        # Create request
-        req = func.HttpRequest(
+        # Create request with proper authentication
+        req = self.create_auth_request(
             method="GET",
             url=f"http://localhost/api/collections/{collection_id}",
-            body=b"",
-            headers={},
-            route_params={"id": collection_id},
+            route_params={"id": collection_id}
         )
 
         # Act
@@ -273,13 +269,12 @@ class TestCollectionsAPI:
         with patch("api.shared.validation.validate_collection_data") as mock_validate:
             mock_validate.return_value = {"valid": True, "errors": []}
 
-            # Create request
-            req = func.HttpRequest(
+            # Create request with proper authentication
+            req = self.create_auth_request(
                 method="PUT",
                 url=f"http://localhost/api/collections/{collection_id}",
-                body=json.dumps(update_data).encode(),
-                headers={"Content-Type": "application/json"},
-                route_params={"id": collection_id},
+                body=update_data,
+                route_params={"id": collection_id}
             )
 
             # Act
@@ -311,13 +306,11 @@ class TestCollectionsAPI:
             [0],  # No prompts in collection
         ]
 
-        # Create request
-        req = func.HttpRequest(
+        # Create request with proper authentication
+        req = self.create_auth_request(
             method="DELETE",
             url=f"http://localhost/api/collections/{collection_id}",
-            body=b"",
-            headers={},
-            route_params={"id": collection_id},
+            route_params={"id": collection_id}
         )
 
         # Act
@@ -351,13 +344,11 @@ class TestCollectionsAPI:
             [5],  # 5 prompts in collection
         ]
 
-        # Create request
-        req = func.HttpRequest(
+        # Create request with proper authentication
+        req = self.create_auth_request(
             method="DELETE",
             url=f"http://localhost/api/collections/{collection_id}",
-            body=b"",
-            headers={},
-            route_params={"id": collection_id},
+            route_params={"id": collection_id}
         )
 
         # Act
@@ -405,14 +396,12 @@ class TestCollectionsAPI:
             [2],  # Count of prompts
         ]
 
-        # Create request
-        req = func.HttpRequest(
+        # Create request with proper authentication
+        req = self.create_auth_request(
             method="GET",
             url=f"http://localhost/api/collections/{collection_id}/prompts",
-            body=b"",
-            headers={},
             route_params={"id": collection_id},
-            params={},
+            params={}
         )
 
         # Act
@@ -448,13 +437,10 @@ class TestCollectionsAPI:
     @pytest.mark.asyncio
     async def test_method_not_allowed(self, mock_auth_success):
         """Test unsupported HTTP method returns 405."""
-        # Create request with unsupported method
-        req = func.HttpRequest(
+        # Create request with unsupported method but proper authentication
+        req = self.create_auth_request(
             method="PATCH",  # Not supported
-            url="http://localhost/api/collections",
-            body=b"",
-            headers={},
-            route_params={},
+            url="http://localhost/api/collections"
         )
 
         # Act
@@ -590,13 +576,11 @@ class TestCollectionsAPI:
                 }
             ])
 
-            # Create request
-            req = func.HttpRequest(
+            # Create request with proper authentication
+            req = self.create_auth_request(
                 method="POST",
                 url="http://localhost/api/collections",
-                body=json.dumps(collection_data).encode(),
-                headers={"Content-Type": "application/json"},
-                route_params={},
+                body=collection_data
             )
 
             # Act

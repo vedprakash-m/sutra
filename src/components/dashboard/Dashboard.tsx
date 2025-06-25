@@ -1,10 +1,23 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useApi } from "@/hooks/useApi";
 import { collectionsApi, playbooksApi } from "@/services/api";
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
+  const [isFirstTime, setIsFirstTime] = useState(false);
+
+  // Check if this is a first-time user
+  useEffect(() => {
+    if (user?.id) {
+      const lastVisit = localStorage.getItem(`lastVisit_${user.id}`);
+      setIsFirstTime(!lastVisit);
+
+      // Record this visit
+      localStorage.setItem(`lastVisit_${user.id}`, new Date().toISOString());
+    }
+  }, [user?.id]);
 
   // Fetch dashboard data
   const { data: collectionsData, loading: collectionsLoading } = useApi(
@@ -21,7 +34,7 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {user?.name}
+          {isFirstTime ? "Welcome" : "Welcome back"}, {user?.name}
         </h1>
         <p className="mt-1 text-sm text-gray-600">
           Here's what you can do with Sutra today

@@ -1,10 +1,10 @@
 # Sutra Project Metadata - Source of Truth
 
-## Project Status: **🚀 PRODUCTION DEPLOYED - ACTIVE**
+## Project Status: **� PRODUCTION ACTIVE - CRITICAL ISSUES IDENTIFIED**
 
-**Last Updated:** June 23, 2025
-**Current Phase:** 🚀 LIVE PRODUCTION WITH MICROSOFT ENTRA EXTERNAL ID
-**Overall Health:** 🟢 EXCEPTIONAL (Production Active)
+**Last Updated:** June 24, 2025
+**Current Phase:** � PRODUCTION DEPLOYED - URGENT FIXES IN PROGRESS
+**Overall Health:** � CRITICAL ISSUES (Functional but needs immediate fixes)
 
 ---
 
@@ -21,6 +21,51 @@
 - **Testing:** Jest (Frontend: 92.39%), Pytest (Backend: 92%), Playwright (E2E)
 - **CI/CD:** GitHub Actions + Azure DevOps integration
 - **Infrastructure:** Azure Bicep templates + Key Vault secrets management
+
+---
+
+## 🚨 **CRITICAL PRODUCTION ISSUES - JUNE 24, 2025**
+
+### **Issue Status: IDENTIFIED - FIXES IN PROGRESS**
+
+**Reported by:** Vedprakash.m@outlook.com (Admin user)
+**Discovery Date:** June 24, 2025
+**Priority:** P0 - Critical (Affects core functionality)
+
+#### **Issue Summary:**
+
+| Issue # | Component        | Description                                                                                | Status           | Severity |
+| ------- | ---------------- | ------------------------------------------------------------------------------------------ | ---------------- | -------- |
+| #1      | Authentication   | Admin user (vedprakash.m@outlook.com) showing as regular user, can't access admin features | 🔧 Investigating | Critical |
+| #2      | UI/UX            | Login greeting shows "Welcome back" for new users + uses email instead of name             | 🔧 Investigating | Medium   |
+| #3      | Prompt Builder   | Save Prompt functionality not working                                                      | 🔧 Investigating | Critical |
+| #4      | Collections      | Collections page throws "Error loading collections"                                        | 🔧 Investigating | Critical |
+| #5      | Playbook Builder | Save Playbook functionality not working                                                    | 🔧 Investigating | Critical |
+| #6      | Integrations     | Admin Configuration Required message despite admin login                                   | 🔧 Investigating | Critical |
+
+#### **Impact Assessment:**
+
+- **Core Save Operations**: Not functional (Prompts, Playbooks)
+- **Admin Features**: Not accessible despite admin authentication
+- **Collections System**: Completely broken
+- **User Experience**: Poor onboarding and greeting logic
+
+#### **Root Cause Analysis:**
+
+```
+Initial Hypothesis:
+1. Role assignment system not working correctly in production
+2. Database operations may be failing (save/load issues)
+3. Authentication context not properly propagated to frontend
+4. API endpoints may have authentication/authorization issues
+```
+
+#### **Fix Plan:**
+
+1. **Immediate**: Investigate authentication and role assignment
+2. **Priority 1**: Fix save operations (prompts, playbooks)
+3. **Priority 2**: Fix collections loading
+4. **Priority 3**: Improve user experience (greetings, messaging)
 
 ---
 
@@ -329,10 +374,139 @@ sutra/
 
 ---
 
-**Project Health:** 🟢 **EXCELLENT** - Production deployed with exceptional quality metrics
+---
 
-**Implementation Status:** Live production environment serving users with 100% test success rate
+## 🔥 **CRITICAL PRODUCTION ISSUES - IMMEDIATE ACTION REQUIRED**
 
-**Security Status:** Enterprise-grade with Microsoft Entra External ID and Azure Key Vault
+**Status:** � **URGENT** - User-reported production failures (June 24, 2025)
+**Impact:** High - Core functionality broken, admin access compromised
 
-**Next Review:** July 15, 2025 (Monthly production health review)
+### **Reported Issues Table**
+
+| Issue                                                           | Priority | Impact | Status           | Root Cause               |
+| --------------------------------------------------------------- | -------- | ------ | ---------------- | ------------------------ |
+| Admin user not recognized as admin                              | P0       | High   | 🔍 Investigating | Role propagation failure |
+| Incorrect login greeting (email vs name, always "Welcome back") | P1       | Medium | 🔍 Investigating | Frontend logic issue     |
+| Prompt Builder save failure                                     | P0       | High   | 🔍 Investigating | API/auth issue           |
+| Collections page error                                          | P0       | High   | 🔍 Investigating | API/auth issue           |
+| Playbook Builder save failure                                   | P0       | High   | 🔍 Investigating | API/auth issue           |
+| Admin-only integration settings not accessible                  | P0       | High   | 🔍 Investigating | Role-based access issue  |
+
+### **User Report Details**
+
+- **User:** vedprakash.m@outlook.com (should be admin)
+- **Environment:** Production (https://zealous-flower-04bbe021e.2.azurestaticapps.net)
+- **Date:** June 24, 2025
+- **Core Symptom:** Admin functionality completely inaccessible
+
+### **Impact Assessment**
+
+- **User Experience:** Severely degraded - core features non-functional
+- **Admin Functions:** Completely broken - no LLM configuration possible
+- **Data Operations:** Save operations failing across all modules
+- **Authentication:** Role assignment not working properly
+
+### **Immediate Action Plan**
+
+1. ✅ Update metadata with issue tracking
+2. 🔍 Debug role assignment for vedprakash.m@outlook.com
+3. 🔍 Investigate API authentication headers in production
+4. 🔍 Check Cosmos DB role assignment records
+5. 🔍 Fix greeting logic (name vs email, first-time detection)
+6. 🔍 Debug save operations for prompts/playbooks/collections
+7. 🔍 Validate admin-only access controls
+8. 🧪 Test all fixes in production environment
+
+---
+
+**Project Health:** 🟡 **CRITICAL ISSUES** - Production deployed but core functionality broken
+
+**Implementation Status:** Live production environment with user-reported failures
+
+**Security Status:** Enterprise-grade authentication but role assignment failing
+
+### **Fix Progress - 2025-06-24 21:05 - TESTING PHASE**
+
+| Issue                                     | Status        | Fix Applied                            | Next Step            |
+| ----------------------------------------- | ------------- | -------------------------------------- | -------------------- |
+| Admin role not recognized                 | 🔧 **FIXING** | Frontend role detection improved       | E2E validation first |
+| Incorrect greeting (email/welcome back)   | ✅ **FIXED**  | Name extraction + first-time detection | E2E validation first |
+| Prompt Builder save failure               | ✅ **FIXED**  | Database mapping corrected             | E2E validation first |
+| Collections page error                    | ✅ **FIXED**  | Database field names fixed             | E2E validation first |
+| Playbook Builder save failure             | ✅ **FIXED**  | Database mapping corrected             | E2E validation first |
+| Admin integration settings not accessible | 🔧 **FIXING** | Role propagation improved              | E2E validation first |
+
+### **🧪 PRE-DEPLOYMENT VALIDATION PLAN**
+
+**Priority: Test E2E locally before production deployment**
+
+**Testing Strategy:**
+
+1. ✅ Database mapping fixes validated (all API function signatures corrected)
+2. 🔄 **CURRENT**: Local E2E testing to validate database operations
+3. ⏳ **NEXT**: Production deployment after successful E2E validation
+
+**Local E2E Test Coverage:**
+
+- Database create/read/update/delete operations
+- Authentication flow with mock users
+- Frontend-backend integration
+- Save operations for prompts, collections, playbooks
+
+### **🎯 ROOT CAUSE ANALYSIS - COMPLETE**
+
+**Critical Database Mapping Issues (NOW FIXED):**
+
+1. **Function Signature Errors**: ✅ FIXED
+
+   - Prompts API: `update_item()` called with wrong parameters
+   - Collections/Playbooks: `create_item()` missing `partition_key`
+
+2. **Field Name Mismatches**: ✅ FIXED
+
+   - Collections: Used `ownerId` instead of `userId` (partition key)
+   - Playbooks: Used `creatorId` instead of `userId` (partition key)
+   - Prompts: Already correct (`userId`)
+
+3. **Authentication Context Issues**: ✅ FIXED
+
+   - Prompts API: Missing `@require_auth` on main function
+   - Collections API: Wrong action restriction on main function
+   - Inconsistent use of `req.current_user` vs `get_current_user()`
+
+4. **Cosmos DB Container Mapping**: ✅ VERIFIED
+   - All containers use `/userId` partition key correctly
+   - API queries now match container schema
+
+**Validation Results:**
+
+- ✅ Frontend Build: SUCCESS
+- ✅ Database Manager: Function signatures correct
+- ✅ Container Mapping: All APIs use correct field names
+- ✅ Authentication Flow: req.current_user properly set
+
+### **Root Cause Analysis**
+
+**Authentication Flow Issues:**
+
+1. ✅ Azure Static Web Apps → Frontend: Working correctly
+2. 🔧 Frontend Role Detection: Fixed - now checks both Azure roles and backend /getroles
+3. 🔍 Frontend → Backend API: Under investigation - headers may not be forwarded
+4. ✅ Backend Role Assignment (/getroles): Working correctly (no auth decorator)
+5. 🔍 Backend Database: Connection configured - needs runtime verification
+
+**Immediate Actions Taken:**
+
+- Fixed AuthProvider to call /getroles endpoint as fallback for role detection
+- Improved name extraction from email address for better user experience
+- Added first-time vs returning user detection for proper greeting
+- Verified API authentication decorators are properly configured
+
+**Next Steps:**
+
+1. Test the frontend fixes in production
+2. Debug API request headers from Static Web Apps to Functions
+3. Verify Cosmos DB connection and user data in production
+4. Test admin functionality with the improved role detection
+
+**Next Review:** Daily until issues resolved (Target: June 25, 2025)

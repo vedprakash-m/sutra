@@ -91,7 +91,7 @@ async def list_playbooks(user_id: str, req: func.HttpRequest) -> func.HttpRespon
         db_manager = get_database_manager()
 
         # Build query
-        query_parts = ["SELECT * FROM c WHERE c.creatorId = @user_id"]
+        query_parts = ["SELECT * FROM c WHERE c.userId = @user_id"]
         query_params = [{"name": "@user_id", "value": user_id}]
 
         # Add filters
@@ -121,7 +121,7 @@ async def list_playbooks(user_id: str, req: func.HttpRequest) -> func.HttpRespon
         )
 
         # Get total count for pagination
-        count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.creatorId = @user_id"
+        count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.userId = @user_id"
         count_params = [{"name": "@user_id", "value": user_id}]
 
         if visibility:
@@ -262,7 +262,7 @@ async def create_playbook(user_id: str, req: func.HttpRequest) -> func.HttpRespo
         # Convert back to database field names for storage
         db_data = {
             "id": playbook_data["id"],
-            "creatorId": playbook_data["user_id"],  # Convert back for DB
+            "userId": playbook_data["user_id"],  # Use userId to match partition key
             "name": playbook_data["name"],
             "description": playbook_data["description"],
             "visibility": body.get("visibility", "private"),
@@ -274,7 +274,9 @@ async def create_playbook(user_id: str, req: func.HttpRequest) -> func.HttpRespo
         }
 
         created_item = await db_manager.create_item(
-            container_name="Playbooks", item=db_data
+            container_name="Playbooks",
+            item=db_data,
+            partition_key=user_id
         )
 
         logger.info(f"Created playbook {playbook_id} for user {user_id}")
@@ -297,7 +299,7 @@ async def get_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
         container = db_manager.get_container("Playbooks")
 
         # Query for the playbook
-        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
+        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.userId = @user_id"
         parameters = [
             {"name": "@playbook_id", "value": playbook_id},
             {"name": "@user_id", "value": user_id},
@@ -348,7 +350,7 @@ async def update_playbook(
         container = db_manager.get_container("Playbooks")
 
         # Get existing playbook
-        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
+        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.userId = @user_id"
         parameters = [
             {"name": "@playbook_id", "value": playbook_id},
             {"name": "@user_id", "value": user_id},
@@ -425,7 +427,7 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
         container = db_manager.get_container("Playbooks")
 
         # Check if playbook exists and belongs to user
-        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
+        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.userId = @user_id"
         parameters = [
             {"name": "@playbook_id", "value": playbook_id},
             {"name": "@user_id", "value": user_id},
@@ -504,7 +506,7 @@ async def run_playbook(
 
         # Get playbook
         playbooks_container = db_manager.get_container("Playbooks")
-        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.creatorId = @user_id"
+        query = "SELECT * FROM c WHERE c.id = @playbook_id AND c.userId = @user_id"
         parameters = [
             {"name": "@playbook_id", "value": playbook_id},
             {"name": "@user_id", "value": user_id},

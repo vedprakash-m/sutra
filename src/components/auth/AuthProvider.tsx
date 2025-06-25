@@ -77,17 +77,66 @@ export function AuthProvider({ children }: AuthProviderProps) {
                   c.typ ===
                   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
               )?.val || principal.userDetails;
-            const name =
-              principal.claims.find(
-                (c) =>
-                  c.typ ===
-                  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
-              )?.val || email;
+            // Extract name from claims or derive from email
+            let name = principal.claims.find(
+              (c) =>
+                c.typ ===
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+            )?.val;
 
-            // Determine user role from Azure AD roles
-            const userRole = principal.userRoles?.includes("admin")
-              ? "admin"
-              : "user";
+            // If no name claim, extract name from email
+            if (!name && email) {
+              // Extract name part from email (before @)
+              const emailName = email.split("@")[0];
+              // Convert common email formats to display names
+              name = emailName
+                .split(/[._-]/)
+                .map(
+                  (part) =>
+                    part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
+                )
+                .join(" ");
+            }
+
+            // Final fallback
+            if (!name) {
+              name = email || "User";
+            }
+
+            // Get user role from our backend role assignment
+            // Note: Azure Static Web Apps should call /api/getroles and populate userRoles
+            // but we'll also fetch it directly as a fallback
+            let userRole = "user";
+            if (principal.userRoles?.includes("admin")) {
+              userRole = "admin";
+            }
+
+            // Fallback: If no roles in userRoles, fetch from our backend
+            if (
+              !principal.userRoles ||
+              principal.userRoles.length === 0 ||
+              (principal.userRoles.length === 1 &&
+                principal.userRoles[0] === "authenticated")
+            ) {
+              try {
+                const roleResponse = await fetch("/api/getroles", {
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                });
+                if (roleResponse.ok) {
+                  const roleData = await roleResponse.json();
+                  if (roleData.roles && roleData.roles.includes("admin")) {
+                    userRole = "admin";
+                  }
+                }
+              } catch (roleError) {
+                console.warn(
+                  "Could not fetch user role from backend:",
+                  roleError,
+                );
+              }
+            }
 
             const authUser: User = {
               id: principal.userId,

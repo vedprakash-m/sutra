@@ -89,6 +89,10 @@ class TestLLMExecuteAPI:
         else:
             mock_req.get_json.return_value = {}
 
+        # Set test user ID for auth decorator in testing mode
+        if user_id:
+            mock_req._test_user_id = user_id
+
         return mock_req
 
     @pytest.mark.asyncio

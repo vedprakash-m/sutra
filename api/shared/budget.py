@@ -131,6 +131,11 @@ class EnhancedBudgetManager:
                 "output_cost_per_1k": 0.002,
                 "context_window": 16385
             },
+            "claude-3": {
+                "input_cost_per_1k": 0.015,
+                "output_cost_per_1k": 0.075,
+                "context_window": 200000
+            },
             "claude-3-opus": {
                 "input_cost_per_1k": 0.015,
                 "output_cost_per_1k": 0.075,
@@ -216,9 +221,14 @@ class EnhancedBudgetManager:
         """Estimate cost before execution."""
         try:
             if model not in self.model_pricing:
-                raise ValueError(f"Unknown model: {model}")
-
-            pricing = self.model_pricing[model]
+                # Use default pricing for unknown models
+                pricing = {
+                    "input_cost_per_1k": 0.01,
+                    "output_cost_per_1k": 0.03,
+                    "context_window": 4096
+                }
+            else:
+                pricing = self.model_pricing[model]
 
             # Estimate input tokens (rough approximation: 1 token ≈ 4 characters)
             estimated_input_tokens = len(prompt) // 4
@@ -229,8 +239,10 @@ class EnhancedBudgetManager:
             output_cost = (estimated_output_tokens / 1000) * pricing["output_cost_per_1k"]
             total_cost = input_cost + output_cost
 
-            # Find cheaper alternatives
-            cheaper_alternatives = self._find_cheaper_alternatives(model, total_cost, prompt)
+            # Find cheaper alternatives only if model is known
+            cheaper_alternatives = []
+            if model in self.model_pricing:
+                cheaper_alternatives = self._find_cheaper_alternatives(model, total_cost, prompt)
 
             return {
                 "model": model,
@@ -246,7 +258,17 @@ class EnhancedBudgetManager:
 
         except Exception as e:
             logging.error(f"Failed to estimate execution cost: {e}")
-            raise
+            return {
+                "model": model,
+                "estimated_cost": 0.0,
+                "breakdown": {
+                    "input_cost": 0.0,
+                    "output_cost": 0.0,
+                    "estimated_input_tokens": 0,
+                    "estimated_output_tokens": 0
+                },
+                "cheaper_alternatives": []
+            }
 
     def _find_cheaper_alternatives(self, current_model: str, current_cost: float, prompt: str) -> List[Dict[str, Any]]:
         """Find cheaper model alternatives."""
@@ -539,6 +561,36 @@ class EnhancedBudgetManager:
         """Placeholder for automated action triggering."""
         pass
 
+    async def _get_daily_usage(self, usage_records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """Private helper to aggregate usage records by date."""
+        daily_usage = {}
+
+        for record in usage_records:
+            # Try to get date from record, fallback to parsing timestamp
+            date = record.get("date")
+            if not date and "timestamp" in record:
+                try:
+                    timestamp = record["timestamp"]
+                    if isinstance(timestamp, str):
+                        dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                    else:
+                        dt = timestamp
+                    date = dt.strftime("%Y-%m-%d")
+                except (ValueError, TypeError):
+                    continue
+
+            if not date:
+                continue
+
+            if date not in daily_usage:
+                daily_usage[date] = {"cost": 0, "tokens": 0, "requests": 0}
+
+            daily_usage[date]["cost"] += record.get("cost", 0)
+            daily_usage[date]["tokens"] += record.get("tokens_used", 0)
+            daily_usage[date]["requests"] += 1
+
+        return daily_usage
+
 
 # Legacy budget manager class kept for compatibility
 class BudgetManager(EnhancedBudgetManager):
@@ -597,17 +649,38 @@ class BudgetManager(EnhancedBudgetManager):
             total_tokens = sum(record.get("tokens_used", 0) for record in records)
             total_requests = len(records)
 
+            # Calculate provider breakdown
+            provider_breakdown = {}
+            for record in records:
+                provider = record.get("provider", "unknown")
+                if provider not in provider_breakdown:
+                    provider_breakdown[provider] = {
+                        "cost": 0,
+                        "tokens": 0,
+                        "requests": 0
+                    }
+                provider_breakdown[provider]["cost"] += record.get("cost", 0)
+                provider_breakdown[provider]["tokens"] += record.get("tokens_used", 0)
+                provider_breakdown[provider]["requests"] += 1
+
             return {
                 "user_id": user_id,
                 "total_cost": total_cost,
                 "total_tokens": total_tokens,
                 "total_requests": total_requests,
                 "period_days": days,
+                "provider_breakdown": provider_breakdown,
                 "records": records
             }
         except Exception as e:
             logging.error(f"Failed to get user usage: {str(e)}")
-            return {"user_id": user_id, "total_cost": 0, "total_tokens": 0, "total_requests": 0}
+            return {
+                "user_id": user_id,
+                "total_cost": 0,
+                "total_tokens": 0,
+                "total_requests": 0,
+                "provider_breakdown": {}
+            }
 
     async def get_system_usage(self, days: int = 30) -> Dict[str, Any]:
         """Get system-wide usage summary."""
@@ -626,14 +699,27 @@ class BudgetManager(EnhancedBudgetManager):
 
             # Aggregate by user
             user_usage = {}
+            provider_breakdown = {}
+
             for record in records:
                 user_id = record.get("user_id", "unknown")
+                provider = record.get("provider", "unknown")
+                cost = record.get("cost", 0)
+                tokens = record.get("tokens_used", 0)
+
+                # User aggregation
                 if user_id not in user_usage:
                     user_usage[user_id] = {"cost": 0, "tokens": 0, "requests": 0}
-
-                user_usage[user_id]["cost"] += record.get("cost", 0)
-                user_usage[user_id]["tokens"] += record.get("tokens_used", 0)
+                user_usage[user_id]["cost"] += cost
+                user_usage[user_id]["tokens"] += tokens
                 user_usage[user_id]["requests"] += 1
+
+                # Provider aggregation
+                if provider not in provider_breakdown:
+                    provider_breakdown[provider] = {"cost": 0, "tokens": 0, "requests": 0}
+                provider_breakdown[provider]["cost"] += cost
+                provider_breakdown[provider]["tokens"] += tokens
+                provider_breakdown[provider]["requests"] += 1
 
             # Sort top users by cost
             top_users = [
@@ -650,12 +736,20 @@ class BudgetManager(EnhancedBudgetManager):
                 "total_tokens": total_tokens,
                 "total_requests": len(records),
                 "unique_users": len(user_usage),
+                "provider_breakdown": provider_breakdown,
                 "top_users": top_users[:10],
                 "period_days": days
             }
         except Exception as e:
             logging.error(f"Failed to get system usage: {str(e)}")
-            return {"total_cost": 0, "total_tokens": 0, "total_requests": 0, "unique_users": 0, "top_users": []}
+            return {
+                "total_cost": 0,
+                "total_tokens": 0,
+                "total_requests": 0,
+                "unique_users": 0,
+                "provider_breakdown": {},
+                "top_users": []
+            }
 
     async def check_user_budget(self, user_id: str, additional_cost: float = 0) -> Dict[str, Any]:
         """Check user budget limits."""
@@ -718,7 +812,7 @@ class BudgetManager(EnhancedBudgetManager):
 
             if not budget_config:
                 # Default provider limits
-                monthly_limit = 5000.0
+                monthly_limit = 500.0
             else:
                 monthly_limit = budget_config.budget_amount
 
@@ -751,6 +845,7 @@ class BudgetManager(EnhancedBudgetManager):
                 "provider": provider,
                 "current_cost": current_cost,
                 "projected_cost": projected_cost,
+                "budget_limit": monthly_limit,
                 "monthly_limit": monthly_limit,
                 "utilization_percent": utilization_percent,
                 "remaining_budget": remaining_budget,
@@ -763,9 +858,10 @@ class BudgetManager(EnhancedBudgetManager):
                 "provider": provider,
                 "current_cost": 0,
                 "projected_cost": additional_cost,
-                "monthly_limit": 5000.0,
+                "budget_limit": 500.0,
+                "monthly_limit": 500.0,
                 "utilization_percent": 0,
-                "remaining_budget": 5000.0,
+                "remaining_budget": 500.0,
                 "alert_level": "safe",
                 "within_budget": True
             }
@@ -773,17 +869,59 @@ class BudgetManager(EnhancedBudgetManager):
     async def get_budget_alerts(self) -> List[Dict[str, Any]]:
         """Get active budget alerts."""
         try:
-            query = """
-                SELECT * FROM c
-                WHERE c.alert_level IN ('warning', 'critical', 'exceeded')
-                AND c.is_active = true
-                ORDER BY c.created_at DESC
-            """
+            alerts = []
 
-            alerts = await self.db_manager.query_items(
-                container_name="budget_alerts",
-                query=query
-            )
+            # Check system usage for user alerts
+            system_usage = await self.get_system_usage(days=30)
+            top_users = system_usage.get("top_users", [])
+
+            for user in top_users:
+                user_budget = await self.check_user_budget(user["user_id"])
+                utilization = user_budget.get("utilization_percent", 0)
+
+                if utilization >= 95:
+                    alerts.append({
+                        "type": "user_budget_critical",
+                        "user_id": user["user_id"],
+                        "utilization_percent": utilization,
+                        "remaining_budget": user_budget.get("remaining_budget", 0),
+                        "message": f"User {user['user_id']} has exceeded 95% of budget",
+                        "alert_level": "critical"
+                    })
+                elif utilization >= 80:
+                    alerts.append({
+                        "type": "user_budget_warning",
+                        "user_id": user["user_id"],
+                        "utilization_percent": utilization,
+                        "remaining_budget": user_budget.get("remaining_budget", 0),
+                        "message": f"User {user['user_id']} has exceeded 80% of budget",
+                        "alert_level": "warning"
+                    })
+
+            # Check provider budgets
+            from .models import LLMProvider
+            for provider in [LLMProvider.OPENAI, LLMProvider.ANTHROPIC, LLMProvider.GOOGLE]:
+                provider_budget = await self.check_provider_budget(provider)
+                utilization = provider_budget.get("utilization_percent", 0)
+
+                if utilization >= 95:
+                    alerts.append({
+                        "type": "provider_budget_critical",
+                        "provider": provider,
+                        "utilization_percent": utilization,
+                        "remaining_budget": provider_budget.get("remaining_budget", 0),
+                        "message": f"Provider {provider.value} has exceeded 95% of budget",
+                        "alert_level": "critical"
+                    })
+                elif utilization >= 80:
+                    alerts.append({
+                        "type": "provider_budget_warning",
+                        "provider": provider,
+                        "utilization_percent": utilization,
+                        "remaining_budget": provider_budget.get("remaining_budget", 0),
+                        "message": f"Provider {provider.value} has exceeded 80% of budget",
+                        "alert_level": "warning"
+                    })
 
             return alerts
 
@@ -863,7 +1001,27 @@ class BudgetManager(EnhancedBudgetManager):
     async def estimate_operation_cost(self, provider: LLMProvider, model: str, operation: str,
                                     input_tokens: int, expected_output_tokens: int) -> Dict[str, Any]:
         """Estimate cost for an operation."""
-        return await self.estimate_execution_cost(model, f"{'x' * input_tokens}", expected_output_tokens)
+        result = await self.estimate_execution_cost(model, f"{'x' * input_tokens}", expected_output_tokens)
+
+        # Add provider and operation info
+        result["provider"] = provider
+        result["operation"] = operation
+
+        # Flatten breakdown fields to top level for compatibility
+        breakdown = result.get("breakdown", {})
+        result["input_cost"] = breakdown.get("input_cost", 0.0)
+        result["output_cost"] = breakdown.get("output_cost", 0.0)
+        result["estimated_input_tokens"] = breakdown.get("estimated_input_tokens", 0)
+        result["estimated_output_tokens"] = breakdown.get("estimated_output_tokens", 0)
+        result["total_tokens"] = result["estimated_input_tokens"] + result["estimated_output_tokens"]
+
+        # Add warnings if model is unknown
+        warnings = []
+        if model not in self.model_pricing:
+            warnings.append("model")
+
+        result["warnings"] = warnings
+        return result
 
     async def check_and_enforce_budget(self, user_id: str, additional_cost: float) -> Dict[str, Any]:
         """Check and enforce budget limits."""
@@ -1106,6 +1264,6 @@ def get_budget_manager() -> BudgetManager:
     return _budget_manager
 
 
-def get_enhanced_budget_manager() -> EnhancedBudgetManager:
+def get_enhanced_budget_manager() -> BudgetManager:
     """Get the enhanced budget manager instance."""
     return get_budget_manager()

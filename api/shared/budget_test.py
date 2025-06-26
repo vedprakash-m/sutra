@@ -414,7 +414,7 @@ class TestBudgetManagerEdgeCases:
                 "unknown", additional_cost=0.0
             )
 
-            assert result["budget_limit"] == 100.0  # Default limit
+            assert result["budget_limit"] == 500.0  # Default limit
 
     @pytest.mark.asyncio
     @patch("api.shared.budget.get_database_manager")

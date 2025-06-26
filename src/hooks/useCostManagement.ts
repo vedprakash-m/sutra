@@ -279,7 +279,7 @@ export const useCostManagement = () => {
     isOverBudget: budgetStatus ? budgetStatus.utilization >= 100 : false,
     isCritical: budgetStatus ? budgetStatus.utilization >= 90 : false,
     hasRestrictions: budgetStatus
-      ? budgetStatus.restrictionsActive.length > 0
+      ? (budgetStatus.restrictionsActive?.length || 0) > 0
       : false,
   };
 };

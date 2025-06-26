@@ -10,6 +10,12 @@ echo "============================"
 echo "This validation exactly mirrors the CI/CD environment"
 echo ""
 
+# Ensure we're in the right directory
+if [ ! -f "package.json" ]; then
+    echo "❌ Error: Must be run from the project root directory"
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -265,6 +271,57 @@ test_performance() {
     fi
 }
 
+# Function to run frontend tests with coverage (mirrors CI exactly)
+test_frontend_coverage() {
+    log_info "Running frontend tests with coverage (CI mirror)..."
+
+    if ! npm run test:coverage; then
+        log_error "Frontend tests failed coverage thresholds"
+        log_error "CI expects 70% coverage for statements, branches, and lines"
+        return 1
+    fi
+
+    log_success "Frontend tests passed with required coverage"
+}
+
+# Function to run backend tests (mirrors CI exactly)
+test_backend_comprehensive() {
+    log_info "Running comprehensive backend tests (CI mirror)..."
+
+    cd api
+
+    # Run with verbose output and coverage like CI does
+    if ! python -m pytest --tb=short -v --cov=. --cov-report=term-missing; then
+        log_error "Backend tests failed"
+        cd ..
+        return 1
+    fi
+
+    cd ..
+    log_success "Backend tests passed"
+}
+
+# Function to validate test results match CI expectations
+validate_ci_expectations() {
+    log_info "Validating test results match CI expectations..."
+
+    # Check frontend coverage
+    log_info "Checking frontend coverage meets CI thresholds..."
+    if ! test_frontend_coverage; then
+        log_error "Frontend coverage validation failed"
+        return 1
+    fi
+
+    # Check backend tests
+    log_info "Checking backend tests comprehensive..."
+    if ! test_backend_comprehensive; then
+        log_error "Backend test validation failed"
+        return 1
+    fi
+
+    log_success "All CI expectations validated"
+}
+
 # Function to generate validation report
 generate_report() {
     log_info "Generating validation report..."
@@ -316,6 +373,9 @@ main() {
     test_health_endpoints
     test_container_dependencies
     test_performance
+
+    # NEW: Validate comprehensive tests like CI does
+    validate_ci_expectations
 
     # Generate report
     generate_report

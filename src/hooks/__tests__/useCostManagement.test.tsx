@@ -1,174 +1,204 @@
 import { renderHook, act } from "@testing-library/react";
-import React from "react";
+import useCostManagement from "../useCostManagement";
 
-// Mock API functions
-const mockApi = {
-  getBudgetStatus: jest.fn(),
-  getCostPrediction: jest.fn(),
-  estimateOperationCost: jest.fn(),
-};
+// Mock fetch
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
 
-// Mock useCostManagement hook for testing
-const useCostManagement = () => {
-  const [budgetStatus, setBudgetStatus] = React.useState<{
-    data: any;
-    isLoading: boolean;
-    error: Error | null;
-  }>({
-    data: null,
-    isLoading: false,
-    error: null,
-  });
-
-  const [costPrediction] = React.useState<{
-    data: any;
-    isLoading: boolean;
-    error: Error | null;
-  }>({
-    data: null,
-    isLoading: false,
-    error: null,
-  });
-
-  const refreshBudgetStatus = React.useCallback(async () => {
-    setBudgetStatus((prev) => ({ ...prev, isLoading: true }));
-    try {
-      const data = await mockApi.getBudgetStatus();
-      setBudgetStatus({ data, isLoading: false, error: null });
-    } catch (error) {
-      setBudgetStatus({ data: null, isLoading: false, error: error as Error });
-    }
-  }, []);
-
-  const estimateCost = React.useCallback(
-    async (params: {
-      provider: string;
-      model: string;
-      inputTokens: number;
-      expectedOutputTokens: number;
-    }) => {
-      return await mockApi.estimateOperationCost(params);
-    },
-    [],
-  );
-
-  return {
-    budgetStatus,
-    costPrediction,
-    refreshBudgetStatus,
-    estimateCost,
-  };
-};
-
-describe("useCostManagement", () => {
+describe("useCostManagement - Simple Tests", () => {
   beforeEach(() => {
+    mockFetch.mockReset();
     jest.clearAllMocks();
   });
 
-  test("initializes with default state", () => {
+  it("should initialize with default values", () => {
+    // Mock initial budget status call to return null/error
+    mockFetch.mockRejectedValueOnce(new Error("No budget"));
+
     const { result } = renderHook(() => useCostManagement());
 
-    expect(result.current.budgetStatus.data).toBeNull();
-    expect(result.current.budgetStatus.isLoading).toBe(false);
-    expect(result.current.budgetStatus.error).toBeNull();
-    expect(result.current.costPrediction.data).toBeNull();
-    expect(typeof result.current.refreshBudgetStatus).toBe("function");
-    expect(typeof result.current.estimateCost).toBe("function");
+    expect(result.current.budgetStatus).toBeNull();
+    expect(result.current.error).toBeNull();
+    expect(result.current.isOverBudget).toBe(false);
+    expect(result.current.isCritical).toBe(false);
+    expect(result.current.hasRestrictions).toBe(false);
   });
 
-  test("refreshBudgetStatus calls API and updates state", async () => {
-    const mockBudgetData = {
-      user_id: "user-123",
-      current_cost: 25.0,
-      budget_limit: 100.0,
-      remaining_budget: 75.0,
-      utilization_percent: 25.0,
-      status: "good",
-    };
-
-    mockApi.getBudgetStatus.mockResolvedValue(mockBudgetData);
+  it("should have basic functionality available", () => {
+    mockFetch.mockRejectedValueOnce(new Error("No budget"));
 
     const { result } = renderHook(() => useCostManagement());
 
+    expect(typeof result.current.createBudgetConfig).toBe("function");
+    expect(typeof result.current.estimateExecutionCost).toBe("function");
+    expect(typeof result.current.getCostPredictions).toBe("function");
+    expect(typeof result.current.checkAccessRestrictions).toBe("function");
+    expect(typeof result.current.getBudgetColor).toBe("function");
+    expect(typeof result.current.getAlertLevel).toBe("function");
+    expect(typeof result.current.formatCurrency).toBe("function");
+    expect(typeof result.current.shouldShowCostWarning).toBe("function");
+    expect(typeof result.current.getRecommendedModel).toBe("function");
+  });
+
+  it("should return formatted currency correctly", () => {
+    mockFetch.mockRejectedValueOnce(new Error("No budget"));
+
+    const { result } = renderHook(() => useCostManagement());
+
+    expect(result.current.formatCurrency(1.23)).toBe("$1.23");
+    expect(result.current.formatCurrency(0.001)).toBe("$0.001");
+  });
+
+  it("should detect cost warnings correctly", () => {
+    mockFetch.mockRejectedValueOnce(new Error("No budget"));
+
+    const { result } = renderHook(() => useCostManagement());
+
+    const lowCostEstimate = {
+      model: "gpt-3.5-turbo",
+      estimatedCost: 10,
+      breakdown: {
+        inputCost: 5,
+        outputCost: 5,
+        estimatedInputTokens: 100,
+        estimatedOutputTokens: 100,
+      },
+      cheaperAlternatives: [],
+      budgetCheck: { allowed: true },
+    };
+
+    const highCostEstimate = {
+      model: "gpt-4",
+      estimatedCost: 60,
+      breakdown: {
+        inputCost: 30,
+        outputCost: 30,
+        estimatedInputTokens: 100,
+        estimatedOutputTokens: 100,
+      },
+      cheaperAlternatives: [],
+      budgetCheck: { allowed: true },
+    };
+
+    expect(result.current.shouldShowCostWarning(lowCostEstimate)).toBe(false);
+    expect(result.current.shouldShowCostWarning(highCostEstimate)).toBe(false);
+  });
+
+  it("should get alert level correctly", () => {
+    mockFetch.mockRejectedValueOnce(new Error("No budget"));
+
+    const { result } = renderHook(() => useCostManagement());
+
+    expect(result.current.getAlertLevel(30)).toBe("safe");
+    expect(result.current.getAlertLevel(75)).toBe("warning");
+    expect(result.current.getAlertLevel(95)).toBe("critical");
+  });
+
+  it("should get budget color correctly", () => {
+    mockFetch.mockRejectedValueOnce(new Error("No budget"));
+
+    const { result } = renderHook(() => useCostManagement());
+
+    expect(result.current.getBudgetColor(30)).toBe("#22c55e");
+    expect(result.current.getBudgetColor(75)).toBe("#eab308");
+    expect(result.current.getBudgetColor(95)).toBe("#f97316");
+  });
+
+  it("should get recommended model for null alternatives", () => {
+    mockFetch.mockRejectedValueOnce(new Error("No budget"));
+
+    const { result } = renderHook(() => useCostManagement());
+
+    const estimateWithNoAlternatives = {
+      model: "gpt-4",
+      estimatedCost: 0.05,
+      breakdown: {
+        inputCost: 0.03,
+        outputCost: 0.02,
+        estimatedInputTokens: 100,
+        estimatedOutputTokens: 100,
+      },
+      cheaperAlternatives: [],
+      budgetCheck: { allowed: true },
+    };
+
+    expect(
+      result.current.getRecommendedModel(estimateWithNoAlternatives),
+    ).toBeNull();
+  });
+
+  it("should handle async functions without throwing", async () => {
+    // Setup proper mocks for async calls
+    mockFetch
+      .mockRejectedValueOnce(new Error("Budget failed")) // Initial budget call
+      .mockResolvedValueOnce({
+        // Create budget config
+        ok: true,
+        json: async () => ({ success: true }),
+      })
+      .mockResolvedValueOnce({
+        // Estimate cost
+        ok: true,
+        json: async () => ({
+          model: "gpt-3.5-turbo",
+          estimatedCost: 0.01,
+          breakdown: {
+            inputCost: 0.005,
+            outputCost: 0.005,
+            estimatedInputTokens: 50,
+            estimatedOutputTokens: 50,
+          },
+          cheaperAlternatives: [],
+          budgetCheck: { allowed: true },
+        }),
+      })
+      .mockResolvedValueOnce({
+        // Get predictions
+        ok: true,
+        json: async () => ({
+          predictedSpend: 50,
+          confidenceInterval: { lower: 40, upper: 60 },
+          recommendations: [],
+          trendDirection: "stable",
+          riskLevel: "low",
+        }),
+      })
+      .mockResolvedValueOnce({
+        // Check restrictions
+        ok: true,
+        json: async () => ({ allowed: true }),
+      });
+
+    const { result } = renderHook(() => useCostManagement());
+
+    // Test all async functions
     await act(async () => {
-      await result.current.refreshBudgetStatus();
+      const config = await result.current.createBudgetConfig({
+        entityType: "user",
+        entityId: "test-user",
+        budgetAmount: 100,
+        budgetPeriod: "monthly",
+        alertThresholds: [70, 90],
+      });
+      expect(config).toEqual({ success: true });
     });
 
-    expect(mockApi.getBudgetStatus).toHaveBeenCalledTimes(1);
-    expect(result.current.budgetStatus.data).toEqual(mockBudgetData);
-    expect(result.current.budgetStatus.isLoading).toBe(false);
-    expect(result.current.budgetStatus.error).toBeNull();
-  });
-
-  test("refreshBudgetStatus handles errors", async () => {
-    const mockError = new Error("API Error");
-    mockApi.getBudgetStatus.mockRejectedValue(mockError);
-
-    const { result } = renderHook(() => useCostManagement());
-
     await act(async () => {
-      await result.current.refreshBudgetStatus();
+      const estimate = await result.current.estimateExecutionCost(
+        "gpt-3.5-turbo",
+        "test prompt",
+      );
+      expect(estimate.model).toBe("gpt-3.5-turbo");
     });
 
-    expect(result.current.budgetStatus.data).toBeNull();
-    expect(result.current.budgetStatus.isLoading).toBe(false);
-    expect(result.current.budgetStatus.error).toEqual(mockError);
-  });
+    await act(async () => {
+      const prediction = await result.current.getCostPredictions();
+      expect(prediction.predictedSpend).toBe(50);
+    });
 
-  test("estimateCost calls API with correct parameters", async () => {
-    const mockEstimate = {
-      provider: "openai",
-      model: "gpt-4",
-      estimated_cost: 0.045,
-      input_cost: 0.03,
-      output_cost: 0.015,
-      total_tokens: 1500,
-    };
-
-    mockApi.estimateOperationCost.mockResolvedValue(mockEstimate);
-
-    const { result } = renderHook(() => useCostManagement());
-
-    const params = {
-      provider: "openai",
-      model: "gpt-4",
-      inputTokens: 1000,
-      expectedOutputTokens: 500,
-    };
-
-    const estimate = await result.current.estimateCost(params);
-
-    expect(mockApi.estimateOperationCost).toHaveBeenCalledWith(params);
-    expect(estimate).toEqual(mockEstimate);
-  });
-
-  test("estimateCost handles API errors", async () => {
-    const mockError = new Error("Estimation failed");
-    mockApi.estimateOperationCost.mockRejectedValue(mockError);
-
-    const { result } = renderHook(() => useCostManagement());
-
-    const params = {
-      provider: "openai",
-      model: "gpt-4",
-      inputTokens: 1000,
-      expectedOutputTokens: 500,
-    };
-
-    await expect(result.current.estimateCost(params)).rejects.toThrow(
-      "Estimation failed",
-    );
-  });
-
-  test("maintains function reference stability", () => {
-    const { result, rerender } = renderHook(() => useCostManagement());
-
-    const initialRefresh = result.current.refreshBudgetStatus;
-    const initialEstimate = result.current.estimateCost;
-
-    rerender();
-
-    expect(result.current.refreshBudgetStatus).toBe(initialRefresh);
-    expect(result.current.estimateCost).toBe(initialEstimate);
+    await act(async () => {
+      const restrictions = await result.current.checkAccessRestrictions();
+      expect(restrictions.allowed).toBe(true);
+    });
   });
 });

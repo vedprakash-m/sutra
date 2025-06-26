@@ -1,116 +1,207 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "react-query";
+import BudgetTracker from "../BudgetTracker";
 
-// Mock BudgetTracker component for testing
-const BudgetTracker: React.FC = () => {
-  const budgetData = {
-    current_cost: 25.0,
-    budget_limit: 100.0,
-    remaining_budget: 75.0,
-    utilization_percent: 25.0,
-    status: "good",
-    last_updated: new Date().toISOString(),
-  };
+// Mock the useCostManagement hook
+jest.mock("../../../hooks/useCostManagement", () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
 
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Budget Tracker
-      </h3>
-
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Current Usage</span>
-          <span className="font-medium">
-            ${budgetData.current_cost.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Budget Limit</span>
-          <span className="font-medium">
-            ${budgetData.budget_limit.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-green-500 h-2 rounded-full"
-            style={{ width: `${budgetData.utilization_percent}%` }}
-            data-testid="progress-bar"
-          />
-        </div>
-
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">Utilization</span>
-          <span className="font-medium">{budgetData.utilization_percent}%</span>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <div
-            className="w-3 h-3 rounded-full bg-green-500"
-            data-testid="status-indicator"
-          />
-          <span className="text-sm text-gray-600">Status: Good</span>
-        </div>
-
-        <button
-          className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          onClick={() => {}}
-        >
-          Refresh
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// Create a wrapper component with QueryClient
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-};
+const mockUseCostManagement =
+  require("../../../hooks/useCostManagement").default;
 
 describe("BudgetTracker", () => {
-  test("renders budget tracker with basic information", () => {
-    render(<BudgetTracker />, { wrapper: createWrapper() });
+  let queryClient: QueryClient;
 
-    expect(screen.getByText("Budget Tracker")).toBeInTheDocument();
-    expect(screen.getByText("$25.00")).toBeInTheDocument(); // Current cost
-    expect(screen.getByText("$100.00")).toBeInTheDocument(); // Budget limit
-    expect(screen.getByText("25%")).toBeInTheDocument(); // Utilization
-    expect(screen.getByTestId("status-indicator")).toBeInTheDocument();
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    jest.clearAllMocks();
   });
 
-  test("displays correct progress bar width", () => {
-    render(<BudgetTracker />, { wrapper: createWrapper() });
+  const renderWithQueryClient = (component: React.ReactElement) => {
+    return render(
+      <QueryClientProvider client={queryClient}>
+        {component}
+      </QueryClientProvider>,
+    );
+  };
 
-    const progressBar = screen.getByTestId("progress-bar");
-    expect(progressBar).toHaveStyle("width: 25%");
+  it("should render loading state", () => {
+    mockUseCostManagement.mockReturnValue({
+      budgetStatus: null,
+      loading: true,
+      error: null,
+      getBudgetColor: jest.fn(),
+      formatCurrency: jest.fn(),
+      isOverBudget: false,
+      isCritical: false,
+      hasRestrictions: false,
+    });
+
+    renderWithQueryClient(<BudgetTracker />);
+    expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
   });
 
-  test("renders refresh button", () => {
-    render(<BudgetTracker />, { wrapper: createWrapper() });
+  it("should render error state", () => {
+    mockUseCostManagement.mockReturnValue({
+      budgetStatus: null,
+      loading: false,
+      error: "Failed to load budget",
+      getBudgetColor: jest.fn(),
+      formatCurrency: jest.fn(),
+      isOverBudget: false,
+      isCritical: false,
+      hasRestrictions: false,
+    });
 
-    const refreshButton = screen.getByRole("button", { name: /refresh/i });
-    expect(refreshButton).toBeInTheDocument();
+    renderWithQueryClient(<BudgetTracker />);
+    expect(screen.getByText("⚠️ Failed to load budget")).toBeInTheDocument();
   });
 
-  test("shows good status indicator", () => {
-    render(<BudgetTracker />, { wrapper: createWrapper() });
+  it("should render no budget configured", () => {
+    mockUseCostManagement.mockReturnValue({
+      budgetStatus: null,
+      loading: false,
+      error: null,
+      getBudgetColor: jest.fn(),
+      formatCurrency: jest.fn(),
+      isOverBudget: false,
+      isCritical: false,
+      hasRestrictions: false,
+    });
 
-    const statusIndicator = screen.getByTestId("status-indicator");
-    expect(statusIndicator).toHaveClass("bg-green-500");
-    expect(screen.getByText("Status: Good")).toBeInTheDocument();
+    renderWithQueryClient(<BudgetTracker />);
+    expect(screen.getByText("No budget configured")).toBeInTheDocument();
+  });
+
+  it("should render budget status with details", () => {
+    const mockBudgetStatus = {
+      currentSpend: 25.0,
+      budgetAmount: 100.0,
+      remainingBudget: 75.0,
+      utilization: 0.25,
+      alertLevel: "safe" as const,
+      restrictionsActive: [],
+      timeRemaining: "15 days",
+      executionCount: 150,
+      modelUsage: {},
+    };
+
+    mockUseCostManagement.mockReturnValue({
+      budgetStatus: mockBudgetStatus,
+      loading: false,
+      error: null,
+      getBudgetColor: jest.fn().mockReturnValue("#22c55e"),
+      formatCurrency: jest
+        .fn()
+        .mockImplementation((val) => `$${val.toFixed(2)}`),
+      isOverBudget: false,
+      isCritical: false,
+      hasRestrictions: false,
+    });
+
+    renderWithQueryClient(<BudgetTracker showDetails={true} />);
+    expect(screen.getByText("Budget Usage")).toBeInTheDocument();
+    expect(screen.getByText("$25.00 / $100.00")).toBeInTheDocument();
+    expect(screen.getByText("25.0%")).toBeInTheDocument();
+  });
+
+  it("should render compact view", () => {
+    const mockBudgetStatus = {
+      currentSpend: 25.0,
+      budgetAmount: 100.0,
+      remainingBudget: 75.0,
+      utilization: 0.25,
+      alertLevel: "safe" as const,
+      restrictionsActive: [],
+      timeRemaining: "15 days",
+      executionCount: 150,
+      modelUsage: {},
+    };
+
+    mockUseCostManagement.mockReturnValue({
+      budgetStatus: mockBudgetStatus,
+      loading: false,
+      error: null,
+      getBudgetColor: jest.fn().mockReturnValue("#22c55e"),
+      formatCurrency: jest
+        .fn()
+        .mockImplementation((val) => `$${val.toFixed(2)}`),
+      isOverBudget: false,
+      isCritical: false,
+      hasRestrictions: false,
+    });
+
+    renderWithQueryClient(<BudgetTracker compact={true} />);
+    expect(screen.getByText("$25.00 / $100.00")).toBeInTheDocument();
+  });
+
+  it("should handle over budget status", () => {
+    const mockBudgetStatus = {
+      currentSpend: 120.0,
+      budgetAmount: 100.0,
+      remainingBudget: -20.0,
+      utilization: 1.2,
+      alertLevel: "exceeded" as const,
+      restrictionsActive: ["model-restriction"],
+      timeRemaining: "5 days",
+      executionCount: 300,
+      modelUsage: {},
+    };
+
+    mockUseCostManagement.mockReturnValue({
+      budgetStatus: mockBudgetStatus,
+      loading: false,
+      error: null,
+      getBudgetColor: jest.fn().mockReturnValue("#ef4444"),
+      formatCurrency: jest
+        .fn()
+        .mockImplementation((val) => `$${val.toFixed(2)}`),
+      isOverBudget: true,
+      isCritical: true,
+      hasRestrictions: true,
+    });
+
+    renderWithQueryClient(<BudgetTracker />);
+    expect(screen.getByText("Over Budget")).toBeInTheDocument();
+    expect(screen.getByText("Restrictions Active")).toBeInTheDocument();
+  });
+
+  it("should render refresh functionality", () => {
+    const mockBudgetStatus = {
+      currentSpend: 25.0,
+      budgetAmount: 100.0,
+      remainingBudget: 75.0,
+      utilization: 0.25,
+      alertLevel: "safe" as const,
+      restrictionsActive: [],
+      timeRemaining: "15 days",
+      executionCount: 150,
+      modelUsage: {},
+    };
+
+    mockUseCostManagement.mockReturnValue({
+      budgetStatus: mockBudgetStatus,
+      loading: false,
+      error: null,
+      getBudgetColor: jest.fn().mockReturnValue("#22c55e"),
+      formatCurrency: jest
+        .fn()
+        .mockImplementation((val) => `$${val.toFixed(2)}`),
+      isOverBudget: false,
+      isCritical: false,
+      hasRestrictions: false,
+    });
+
+    renderWithQueryClient(<BudgetTracker />);
+    expect(screen.getByText("Budget Usage")).toBeInTheDocument();
+    expect(screen.getByText("150")).toBeInTheDocument(); // execution count
   });
 });

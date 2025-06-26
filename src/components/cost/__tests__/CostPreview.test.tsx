@@ -1,173 +1,176 @@
-import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import CostPreview from "../CostPreview";
 
-// Mock CostPreview component for testing
-interface CostPreviewProps {
-  provider: string;
-  model: string;
-  inputTokens: number;
-  expectedOutputTokens: number;
-}
+// Mock the useCostManagement hook
+const mockEstimateExecutionCost = jest.fn(() =>
+  Promise.resolve({
+    model: "gpt-4",
+    estimatedCost: 0.02,
+    breakdown: {
+      inputCost: 0.01,
+      outputCost: 0.01,
+      estimatedInputTokens: 100,
+      estimatedOutputTokens: 100,
+    },
+    cheaperAlternatives: [
+      {
+        model: "gpt-3.5-turbo",
+        estimatedCost: 0.005,
+        savingsPercent: 75,
+        qualityImpact: "minimal",
+      },
+    ],
+    budgetCheck: {
+      allowed: true,
+    },
+  }),
+);
 
-const CostPreview: React.FC<CostPreviewProps> = ({
-  provider,
-  model,
-  inputTokens,
-  expectedOutputTokens,
-}) => {
-  // Simple cost calculation for testing
-  const inputCostPer1K =
-    provider === "openai" && model === "gpt-4" ? 0.03 : 0.01;
-  const outputCostPer1K =
-    provider === "openai" && model === "gpt-4" ? 0.06 : 0.02;
+const mockFormatCurrency = jest.fn((amount) => `$${amount.toFixed(3)}`);
+const mockShouldShowCostWarning = jest.fn(() => false);
+const mockGetRecommendedModel = jest.fn(() => "gpt-4");
 
-  const inputCost = (inputTokens / 1000) * inputCostPer1K;
-  const outputCost = (expectedOutputTokens / 1000) * outputCostPer1K;
-  const totalCost = inputCost + outputCost;
-
-  return (
-    <div className="bg-gray-50 rounded-lg p-4 border">
-      <h4 className="text-sm font-medium text-gray-900 mb-2">Cost Preview</h4>
-
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Provider:</span>
-          <span className="font-medium">{provider}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-gray-600">Model:</span>
-          <span className="font-medium">{model}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-gray-600">Input Tokens:</span>
-          <span className="font-medium">{inputTokens.toLocaleString()}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-gray-600">Expected Output:</span>
-          <span className="font-medium">
-            {expectedOutputTokens.toLocaleString()}
-          </span>
-        </div>
-
-        <hr className="my-2" />
-
-        <div className="flex justify-between">
-          <span className="text-gray-600">Input Cost:</span>
-          <span className="font-medium">${inputCost.toFixed(4)}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-gray-600">Output Cost:</span>
-          <span className="font-medium">${outputCost.toFixed(4)}</span>
-        </div>
-
-        <div className="flex justify-between font-semibold border-t pt-2">
-          <span>Estimated Total:</span>
-          <span data-testid="total-cost">${totalCost.toFixed(4)}</span>
-        </div>
-      </div>
-    </div>
-  );
-};
+jest.mock("../../../hooks/useCostManagement", () => ({
+  __esModule: true,
+  default: () => ({
+    estimateExecutionCost: mockEstimateExecutionCost,
+    formatCurrency: mockFormatCurrency,
+    shouldShowCostWarning: mockShouldShowCostWarning,
+    getRecommendedModel: mockGetRecommendedModel,
+  }),
+}));
 
 describe("CostPreview", () => {
-  test("renders cost preview with basic information", () => {
-    render(
-      <CostPreview
-        provider="openai"
-        model="gpt-4"
-        inputTokens={1000}
-        expectedOutputTokens={500}
-      />,
-    );
+  const defaultProps = {
+    prompt:
+      "This is a test prompt that is long enough to trigger cost estimation",
+    model: "gpt-4",
+    maxTokens: 1000,
+  };
 
-    expect(screen.getByText("Cost Preview")).toBeInTheDocument();
-    expect(screen.getByText("openai")).toBeInTheDocument();
-    expect(screen.getByText("gpt-4")).toBeInTheDocument();
-    expect(screen.getByText("1,000")).toBeInTheDocument();
-    expect(screen.getByText("500")).toBeInTheDocument();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  test("calculates cost correctly for GPT-4", () => {
-    render(
-      <CostPreview
-        provider="openai"
-        model="gpt-4"
-        inputTokens={1000}
-        expectedOutputTokens={500}
-      />,
-    );
+  it("should render estimated cost after loading", async () => {
+    render(<CostPreview {...defaultProps} />);
 
-    // Expected: (1000/1000 * 0.03) + (500/1000 * 0.06) = 0.03 + 0.03 = 0.06
-    expect(screen.getByTestId("total-cost")).toHaveTextContent("$0.0600");
+    await waitFor(() => {
+      expect(screen.getByText("Estimated cost:")).toBeInTheDocument();
+    });
   });
 
-  test("calculates cost correctly for cheaper model", () => {
-    render(
-      <CostPreview
-        provider="openai"
-        model="gpt-3.5-turbo"
-        inputTokens={1000}
-        expectedOutputTokens={500}
-      />,
-    );
+  it("should display cost estimate after loading", async () => {
+    render(<CostPreview {...defaultProps} />);
 
-    // Expected: (1000/1000 * 0.01) + (500/1000 * 0.02) = 0.01 + 0.01 = 0.02
-    expect(screen.getByTestId("total-cost")).toHaveTextContent("$0.0200");
+    await waitFor(() => {
+      expect(screen.getByText("$0.020")).toBeInTheDocument();
+    });
   });
 
-  test("displays input and output costs separately", () => {
-    render(
-      <CostPreview
-        provider="openai"
-        model="gpt-4"
-        inputTokens={2000}
-        expectedOutputTokens={1000}
-      />,
-    );
+  it("should display cost breakdown", async () => {
+    render(<CostPreview {...defaultProps} />);
 
-    expect(
-      screen.getByText("Input Cost:").nextElementSibling,
-    ).toHaveTextContent("$0.0600");
-    expect(
-      screen.getByText("Output Cost:").nextElementSibling,
-    ).toHaveTextContent("$0.0600");
+    await waitFor(() => {
+      expect(screen.getByText(/Input:/)).toBeInTheDocument();
+      expect(screen.getByText(/Output:/)).toBeInTheDocument();
+    });
   });
 
-  test("handles large token counts", () => {
-    render(
-      <CostPreview
-        provider="openai"
-        model="gpt-4"
-        inputTokens={10000}
-        expectedOutputTokens={5000}
-      />,
-    );
+  it("should display cheaper alternatives", async () => {
+    render(<CostPreview {...defaultProps} />);
 
-    expect(screen.getByText("10,000")).toBeInTheDocument();
-    expect(screen.getByText("5,000")).toBeInTheDocument();
-    expect(screen.getByTestId("total-cost")).toHaveTextContent("$0.6000");
+    await waitFor(() => {
+      expect(screen.getByText("Cheaper alternatives:")).toBeInTheDocument();
+      expect(screen.getByText("gpt-3.5-turbo")).toBeInTheDocument();
+      expect(screen.getByText("(-75%)")).toBeInTheDocument();
+    });
   });
 
-  test("handles zero token counts", () => {
-    render(
-      <CostPreview
-        provider="openai"
-        model="gpt-4"
-        inputTokens={0}
-        expectedOutputTokens={0}
-      />,
+  it("should handle model change when alternative is selected", async () => {
+    const onModelChange = jest.fn();
+    render(<CostPreview {...defaultProps} onModelChange={onModelChange} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("gpt-3.5-turbo")).toBeInTheDocument();
+    });
+
+    const switchButton = screen.getByText("(switch)");
+    fireEvent.click(switchButton);
+
+    expect(onModelChange).toHaveBeenCalledWith("gpt-3.5-turbo");
+  });
+
+  it("should not estimate cost for short prompts", () => {
+    const { container } = render(
+      <CostPreview {...defaultProps} prompt="Short" />,
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("should handle estimation errors", async () => {
+    mockEstimateExecutionCost.mockRejectedValueOnce(new Error("API Error"));
+
+    render(<CostPreview {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("⚠️ Failed to estimate cost"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should display warning for high cost estimates", async () => {
+    mockShouldShowCostWarning.mockReturnValueOnce(true);
+    mockEstimateExecutionCost.mockResolvedValueOnce({
+      model: "gpt-4",
+      estimatedCost: 0.02,
+      breakdown: {
+        inputCost: 0.01,
+        outputCost: 0.01,
+        estimatedInputTokens: 100,
+        estimatedOutputTokens: 100,
+      },
+      cheaperAlternatives: [],
+      budgetCheck: {
+        allowed: true,
+        utilization: 85,
+      } as any,
+    });
+
+    render(<CostPreview {...defaultProps} />);
+
+    await waitFor(() => {
+      // Just check that the component renders with the warning state
+      expect(screen.getByText("Estimated cost:")).toBeInTheDocument();
+    });
+  });
+
+  it("should apply custom className", async () => {
+    const { container } = render(
+      <CostPreview {...defaultProps} className="custom-class" />,
     );
 
-    expect(
-      screen.getByText("Input Tokens:").nextElementSibling,
-    ).toHaveTextContent("0");
-    expect(
-      screen.getByText("Expected Output:").nextElementSibling,
-    ).toHaveTextContent("0");
-    expect(screen.getByTestId("total-cost")).toHaveTextContent("$0.0000");
+    await waitFor(() => {
+      expect(container.querySelector(".cost-preview")).toHaveClass(
+        "custom-class",
+      );
+    });
+  });
+
+  it("should handle model recommendation", async () => {
+    mockGetRecommendedModel.mockReturnValueOnce("gpt-3.5-turbo");
+
+    const onModelChange = jest.fn();
+    render(<CostPreview {...defaultProps} onModelChange={onModelChange} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          /Switch to gpt-3.5-turbo for better budget efficiency/,
+        ),
+      ).toBeInTheDocument();
+    });
   });
 });

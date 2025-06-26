@@ -14,7 +14,7 @@ const getApiBaseUrl = () => {
   return (
     importMeta.env.VITE_API_URL ||
     (importMeta.env.NODE_ENV === "development"
-      ? "http://localhost:7075/api"
+      ? "/api" // Use proxy in development
       : "https://sutra-api.azurewebsites.net/api")
   );
 };
@@ -93,6 +93,31 @@ class ApiService {
     // Add client info for rate limiting and analytics
     headers["X-Client-Name"] = "sutra-web";
     headers["X-Client-Version"] = "1.0.0";
+
+    // Development mode: Add Azure Static Web Apps headers for demo users
+    if (
+      process.env.NODE_ENV === "development" ||
+      window.location.hostname === "localhost"
+    ) {
+      const demoUser = localStorage.getItem("sutra_demo_user");
+      if (demoUser) {
+        try {
+          const user = JSON.parse(demoUser);
+          // Create Azure Static Web Apps principal header
+          const principal = {
+            userId: user.id,
+            userDetails: user.email,
+            identityProvider: "azureActiveDirectory",
+            userRoles: user.role === "admin" ? ["admin", "user"] : ["user"],
+          };
+          headers["x-ms-client-principal"] = btoa(JSON.stringify(principal));
+          headers["x-ms-client-principal-id"] = user.id;
+          headers["x-ms-client-principal-name"] = user.email;
+        } catch (e) {
+          console.warn("Failed to parse demo user for headers:", e);
+        }
+      }
+    }
 
     return headers;
   }
@@ -180,51 +205,49 @@ export interface Collection {
   name: string;
   description: string;
   type: "private" | "shared_team" | "public_marketplace";
-  owner_id: string;
-  created_at: string;
-  updated_at: string;
-  prompt_count?: number;
+  userId: string; // Backend uses camelCase
+  ownerId: string; // Backend field name
+  createdAt: string; // Backend uses camelCase
+  updatedAt: string; // Backend uses camelCase
+  promptIds?: string[]; // Backend field name
+  teamId?: string; // Backend field name
   tags?: string[];
+  // Computed fields from backend
+  prompt_count?: number; // For display
 }
 
 export interface Prompt {
   id: string;
   title: string;
   content: string;
-  collection_id: string;
-  created_at: string;
-  updated_at: string;
+  collectionId: string; // Backend uses camelCase
+  userId: string; // Backend uses camelCase
+  createdAt: string; // Backend uses camelCase
+  updatedAt: string; // Backend uses camelCase
   version: number;
   tags?: string[];
+}
+
+// LLM Integration types
+export interface LLMIntegration {
+  id: string;
+  provider: string;
+  api_key: string;
+  enabled: boolean;
+  status?: "connected" | "disconnected" | "error";
+  last_tested?: string;
+  url?: string;
 }
 
 export interface Playbook {
   id: string;
   name: string;
   description: string;
-  steps: PlaybookStep[];
-  creator_id: string;
+  steps: any[];
+  owner_id: string;
   created_at: string;
   updated_at: string;
-  visibility: "private" | "shared";
-}
-
-export interface PlaybookStep {
-  id: string;
-  type: "prompt" | "review" | "variable";
-  prompt_id?: string;
-  content?: string;
-  variables?: Record<string, any>;
-  order: number;
-}
-
-export interface LLMIntegration {
-  id: string;
-  provider: string;
-  name: string;
-  api_key: string;
-  enabled: boolean;
-  configuration: Record<string, any>;
+  visibility?: "private" | "shared" | "public";
 }
 
 // API Functions
@@ -300,6 +323,46 @@ export const llmApi = {
     model: string,
     variables?: Record<string, any>,
   ) => apiService.post("/llm", { promptText, model, variables }),
+};
+
+export const promptsApi = {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    collection_id?: string;
+  }) => apiService.get<PaginatedResponse<Prompt>>("/prompts", params),
+
+  get: (id: string) => apiService.get<Prompt>(`/prompts/${id}`),
+
+  create: (prompt: {
+    title: string;
+    description: string;
+    content: string;
+    variables?: any[];
+    tags?: string[];
+    collection_id?: string;
+  }) => apiService.post<Prompt>("/prompts", prompt),
+
+  update: (id: string, prompt: Partial<Prompt>) =>
+    apiService.put<Prompt>(`/prompts/${id}`, prompt),
+
+  delete: (id: string) => apiService.delete(`/prompts/${id}`),
+
+  execute: (id: string, variables?: Record<string, any>) =>
+    apiService.post(`/prompts/${id}/execute`, { variables }),
+};
+
+export const guestApi = {
+  executePrompt: (prompt: string, model?: string) =>
+    apiService.post("/guest-llm/execute", {
+      prompt,
+      model: model || "gpt-3.5-turbo",
+    }),
+
+  getModels: () => apiService.get("/guest-llm/models"),
+
+  getUsage: () => apiService.get("/guest-llm/usage"),
 };
 
 export default apiService;

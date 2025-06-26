@@ -29,7 +29,14 @@ export function AnonymousLLMTest() {
     setError(null);
 
     try {
-      const response = await fetch("/api/anonymous/llm/execute", {
+      // Get API base URL from environment or use default
+      const apiBaseUrl =
+        import.meta.env?.VITE_API_URL ||
+        (import.meta.env?.NODE_ENV === "development"
+          ? "http://localhost:7071/api"
+          : "https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api");
+
+      const response = await fetch(`${apiBaseUrl}/anonymous/llm/execute`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,11 +66,14 @@ export function AnonymousLLMTest() {
             `Prompt too long (${data.current_length} chars). Anonymous users limited to ${data.max_length} characters.`,
           );
         } else {
-          setError(data.error || "Failed to process request");
+          setError(data.error || data.message || "Failed to process request");
         }
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      console.error("Anonymous LLM test error:", err);
+      setError(
+        `Network error: ${err instanceof Error ? err.message : "Please try again."}`,
+      );
     } finally {
       setLoading(false);
     }

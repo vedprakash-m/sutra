@@ -59,6 +59,10 @@ class StaticWebAppsAuthManager:
                     # Determine primary role (Azure Static Web Apps can have multiple roles)
                     role = UserRole.ADMIN if "admin" in user_roles else UserRole.USER
 
+                    # Special case: Force admin role for specific user
+                    if user_name and user_name.lower() == "vedprakash.m@outlook.com":
+                        role = UserRole.ADMIN
+
                     return User(
                         id=user_id,
                         email=user_name,  # In Entra External ID, userDetails is often email
@@ -77,8 +81,12 @@ class StaticWebAppsAuthManager:
             identity_provider = req.headers.get("x-ms-client-principal-idp", "azureActiveDirectory")
 
             if user_id:
-                # Default to user role, could be enhanced with database lookup
+                # Default to user role, but check for special admin users
                 role = UserRole.USER
+
+                # Special case: Force admin role for specific user
+                if user_name and user_name.lower() == "vedprakash.m@outlook.com":
+                    role = UserRole.ADMIN
 
                 return User(
                     id=user_id,

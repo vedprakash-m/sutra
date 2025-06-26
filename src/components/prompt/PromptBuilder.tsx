@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { llmApi, collectionsApi } from "@/services/api";
+import { llmApi, collectionsApi, promptsApi } from "@/services/api";
 import PromptCoach from "./PromptCoach";
 
 interface PromptData {
@@ -77,31 +77,53 @@ export default function PromptBuilder() {
     setIsTesting(false);
   };
 
-  // Save prompt as a collection for now (MVP approach)
+  // Save prompt using proper prompts API
   const handleSavePrompt = async () => {
     if (!promptData.title.trim() || !promptData.content.trim()) return;
 
     setIsSaving(true);
     try {
-      const collection = {
-        name: promptData.title,
-        description: `${promptData.description}\n\nPrompt Content:\n${promptData.content}`,
-        type: "private" as const,
-        owner_id: user?.id || "dev-user",
-        tags: ["prompt"],
+      const promptRequest = {
+        title: promptData.title,
+        description: promptData.description,
+        content: promptData.content,
+        variables: [], // Can be enhanced later
+        tags: ["manual"], // Default tag for manually created prompts
       };
 
       if (id) {
-        // Update existing collection
-        await collectionsApi.update(id, collection);
+        // Update existing prompt
+        await promptsApi.update(id, promptRequest);
       } else {
-        // Create new collection
-        await collectionsApi.create(collection);
+        // Create new prompt
+        await promptsApi.create(promptRequest);
       }
 
-      navigate("/collections");
+      navigate("/collections"); // Navigate back to collections
     } catch (error) {
       console.error("Error saving prompt:", error);
+      // For now, fallback to collections approach if prompts API fails
+      try {
+        const collection = {
+          name: promptData.title,
+          description: `${promptData.description}\n\nPrompt Content:\n${promptData.content}`,
+          type: "private" as const,
+          userId: user?.id || "dev-user", // Use correct field name
+          tags: ["prompt"],
+        };
+
+        if (id) {
+          // Update existing collection
+          await collectionsApi.update(id, collection);
+        } else {
+          // Create new collection
+          await collectionsApi.create(collection);
+        }
+
+        navigate("/collections");
+      } catch (fallbackError) {
+        console.error("Fallback save also failed:", fallbackError);
+      }
     } finally {
       setIsSaving(false);
     }

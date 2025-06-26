@@ -38,7 +38,21 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     try:
         # Get authenticated user from request context
-        user_id = req.current_user.id
+        user_id = getattr(req, 'current_user', {}).get('id') if hasattr(req, 'current_user') else None
+        if not user_id:
+            # Fallback: try to get user from auth headers
+            from shared.auth_static_web_apps import StaticWebAppsAuthManager
+            auth_manager = StaticWebAppsAuthManager()
+            user = auth_manager.get_user_from_headers(req)
+            user_id = user.id if user else None
+
+        if not user_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         method = req.method
         route_params = req.route_params
         provider = route_params.get("provider")
@@ -71,6 +85,51 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
     """List LLM integrations for the authenticated user."""
     try:
         db_manager = get_database_manager()
+
+        # Check if database is available (development mode handling)
+        if not db_manager.client:
+            # Return mock data for development mode
+            return func.HttpResponse(
+                json.dumps({
+                    "integrations": {
+                        "openai": {
+                            "keyRef": "***masked***",
+                            "enabled": False,
+                            "status": "disconnected",
+                            "lastTested": None
+                        },
+                        "anthropic": {
+                            "keyRef": "***masked***",
+                            "enabled": False,
+                            "status": "disconnected",
+                            "lastTested": None
+                        }
+                    },
+                    "supportedProviders": [
+                        {
+                            "id": "openai",
+                            "name": "OpenAI",
+                            "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+                            "requiresUrl": False,
+                        },
+                        {
+                            "id": "anthropic",
+                            "name": "Anthropic",
+                            "models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
+                            "requiresUrl": False,
+                        },
+                        {
+                            "id": "google",
+                            "name": "Google",
+                            "models": ["gemini-pro", "gemini-pro-vision"],
+                            "requiresUrl": False,
+                        }
+                    ],
+                    "_mock": True
+                }),
+                status_code=200,
+                mimetype="application/json",
+            )
 
         # Get user profile with LLM integrations
         query = "SELECT * FROM c WHERE c.id = @user_id"

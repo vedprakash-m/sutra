@@ -34,7 +34,7 @@ export default function CollectionsPage() {
         name: "New Collection",
         description: "A new collection for organizing prompts",
         type: "private" as const,
-        owner_id: user?.id || "dev-user",
+        userId: user?.id || "dev-user", // Use backend field name
       };
       await collectionsApi.create(newCollection);
       refetch();
@@ -133,8 +133,8 @@ export default function CollectionsPage() {
                 </div>
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>{collection.prompt_count || 0} prompts</span>
-                    <span>Updated {formatDate(collection.updated_at)}</span>
+                    <span>{collection.promptIds?.length || 0} prompts</span>
+                    <span>Updated {formatDate(collection.updatedAt)}</span>
                   </div>
                 </div>
               </div>
@@ -234,7 +234,7 @@ export default function CollectionsPage() {
                 name: prompt.title,
                 description: prompt.description || "Imported prompt",
                 type: "private" as const,
-                owner_id: user?.id || "dev-user",
+                userId: user?.id || "dev-user", // Use backend field name
                 tags: ["imported", prompt.source.toLowerCase()],
               });
             } catch (error) {

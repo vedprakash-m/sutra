@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Admin Setup Test</title>
+  </head>
+  <body>
+    <h1>Setting up Demo Admin User</h1>
+    <p>This will set up localStorage for demo admin testing.</p>
+
+    <button onclick="setupAdmin()">Setup Admin User</button>
+    <button onclick="checkAuth()">Check Current Auth</button>
+    <button onclick="clearAuth()">Clear Auth</button>
+
+    <div id="output"></div>
+
+    <script>
+      function setupAdmin() {
+        localStorage.setItem("sutra_demo_role", "admin");
+        localStorage.setItem(
+          "sutra_demo_user",
+          JSON.stringify({
+            id: "vedprakash-admin-001",
+            email: "vedprakash.m@outlook.com",
+            name: "Vedprakash Mishra",
+            role: "admin",
+          }),
+        );
+        document.getElementById("output").innerHTML =
+          '<p>Admin user set up! Now go to <a href="http://localhost:3001" target="_blank">http://localhost:3001</a> and refresh the page.</p>';
+      }
+
+      function checkAuth() {
+        const role = localStorage.getItem("sutra_demo_role");
+        const user = localStorage.getItem("sutra_demo_user");
+        document.getElementById("output").innerHTML = `
+                <p><strong>Current Role:</strong> ${role || "None"}</p>
+                <p><strong>Current User:</strong> ${user || "None"}</p>
+            `;
+      }
+
+      function clearAuth() {
+        localStorage.removeItem("sutra_demo_role");
+        localStorage.removeItem("sutra_demo_user");
+        document.getElementById("output").innerHTML = "<p>Auth cleared!</p>";
+      }
+    </script>
+  </body>
+</html>

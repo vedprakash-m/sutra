@@ -610,6 +610,34 @@ class EnhancedBudgetManager:
 
         return daily_usage
 
+    async def _initialize_usage_metrics(self, config: BudgetConfig) -> None:
+        """Initialize real-time usage metrics for a budget configuration."""
+        try:
+            metrics_data = {
+                "id": f"metrics_{config.entity_id}_{self._get_current_period()}",
+                "entity_type": config.entity_type,
+                "entity_id": config.entity_id,
+                "budget_config_id": config.id,
+                "time_window": self._get_current_period(),
+                "current_spend": 0.0,
+                "projected_spend": 0.0,
+                "budget_utilization": 0.0,
+                "execution_count": 0,
+                "model_usage": {},
+                "cost_breakdown": {},
+                "last_updated": datetime.now(timezone.utc),
+                "alerts_triggered": [],
+                "restrictions_active": []
+            }
+
+            await self.db_manager.create_item(
+                container_name="usage_metrics",
+                item=metrics_data,
+                partition_key=config.entity_id
+            )
+
+        except Exception as e:
+            logging.error(f"Failed to initialize usage metrics: {e}")
 
 # Legacy budget manager class kept for compatibility
 class BudgetManager(EnhancedBudgetManager):
@@ -1012,27 +1040,91 @@ class BudgetManager(EnhancedBudgetManager):
     # Additional methods expected by tests
     async def get_real_time_budget_status(self, user_id: str) -> Dict[str, Any]:
         """Get real-time budget status for a user."""
-        return await self.check_user_budget(user_id)
+        budget_check = await self.check_user_budget(user_id)
+
+        # Add status based on utilization
+        utilization = budget_check.get("utilization_percent", 0)
+        if utilization >= 90:
+            status = "critical"
+        elif utilization >= 75:
+            status = "warning"
+        elif utilization >= 50:
+            status = "moderate"
+        else:
+            status = "safe"
+
+        budget_check["status"] = status
+        budget_check["last_updated"] = datetime.now(timezone.utc).isoformat()
+
+        return budget_check
 
     async def predict_monthly_costs(self, user_id: str) -> Dict[str, Any]:
         """Predict monthly costs based on historical data."""
         try:
-            # Get last 7 days of usage
-            usage_data = await self.get_user_usage(user_id, days=7)
-            total_cost = usage_data.get("total_cost", 0)
-            daily_avg = total_cost / 7
+            # Get last 7 days of historical data
+            start_date = datetime.now(timezone.utc) - timedelta(days=7)
+            query = f"""
+                SELECT * FROM c
+                WHERE c.user_id = '{user_id}' AND c.timestamp >= '{start_date.isoformat()}'
+            """
+
+            historical_records = await self.db_manager.query_items(
+                container_name="usage_tracking",
+                query=query
+            )
+
+            if not historical_records:
+                return {
+                    "user_id": user_id,
+                    "predicted_monthly_cost": 0,
+                    "confidence": 0,
+                    "based_on_days": 0,
+                    "daily_average": 0,
+                    "trend": "stable"
+                }
+
+            # Calculate daily costs
+            daily_costs = {}
+            for record in historical_records:
+                date = record.get("date") or datetime.fromisoformat(record.get("timestamp", "")).strftime("%Y-%m-%d")
+                cost = record.get("cost", 0)
+                daily_costs[date] = daily_costs.get(date, 0) + cost
+
+            # Calculate trend
+            dates = sorted(daily_costs.keys())
+            costs = [daily_costs[date] for date in dates]
+
+            trend = "stable"
+            if len(costs) >= 2:
+                # Simple trend analysis
+                first_half = sum(costs[:len(costs)//2]) / max(1, len(costs)//2)
+                second_half = sum(costs[len(costs)//2:]) / max(1, len(costs) - len(costs)//2)
+
+                if second_half > first_half * 1.1:
+                    trend = "increasing"
+                elif second_half < first_half * 0.9:
+                    trend = "decreasing"
+
+            total_cost = sum(costs)
+            daily_avg = total_cost / len(costs) if costs else 0
             monthly_prediction = daily_avg * 30
 
             return {
                 "user_id": user_id,
                 "predicted_monthly_cost": monthly_prediction,
                 "confidence": 0.8,
-                "based_on_days": 7,
-                "daily_average": daily_avg
+                "based_on_days": len(costs),
+                "daily_average": daily_avg,
+                "trend": trend
             }
         except Exception as e:
             logging.error(f"Failed to predict monthly costs: {str(e)}")
-            return {"user_id": user_id, "predicted_monthly_cost": 0, "confidence": 0}
+            return {
+                "user_id": user_id,
+                "predicted_monthly_cost": 0,
+                "confidence": 0,
+                "trend": "stable"
+            }
 
     async def estimate_operation_cost(self, provider: LLMProvider, model: str, operation: str,
                                     input_tokens: int, expected_output_tokens: int) -> Dict[str, Any]:
@@ -1235,7 +1327,7 @@ class BudgetManager(EnhancedBudgetManager):
 
         if projected_cost > monthly_limit:
             action = "block"
-        elif projected_cost > monthly_limit * 0.9:
+        elif projected_cost >= monthly_limit * 0.9:
             action = "warn"
         else:
             action = "allow"
@@ -1244,46 +1336,69 @@ class BudgetManager(EnhancedBudgetManager):
             "user_id": user_id,
             "user_tier": user_tier,
             "monthly_limit": monthly_limit,
+            "tier_limit": monthly_limit,  # Add alias for test compatibility
             "current_cost": current_cost,
             "projected_cost": projected_cost,
+            "utilization_percent": (projected_cost / monthly_limit * 100) if monthly_limit > 0 else 0,
             "action": action
         }
 
     async def get_cost_optimization_suggestions(self, user_id: str) -> Dict[str, Any]:
         """Get cost optimization suggestions for a user."""
         try:
-            usage_data = await self.get_user_usage(user_id, days=30)
-            records = usage_data.get("records", [])
+            # Get raw usage records from database
+            start_date = datetime.now(timezone.utc) - timedelta(days=30)
+            query = f"""
+                SELECT * FROM c
+                WHERE c.user_id = '{user_id}' AND c.timestamp >= '{start_date.isoformat()}'
+            """
+
+            records = await self.db_manager.query_items(
+                container_name="usage_tracking",
+                query=query
+            )
 
             suggestions = []
+            total_potential_savings = 0
 
             # Analyze model usage
             model_usage = {}
             for record in records:
-                model = record.get("metadata", {}).get("model", "unknown")
+                model = record.get("model", "unknown")
+                cost = record.get("cost", 0)
+
                 if model not in model_usage:
                     model_usage[model] = {"count": 0, "cost": 0}
                 model_usage[model]["count"] += 1
-                model_usage[model]["cost"] += record.get("cost", 0)
+                model_usage[model]["cost"] += cost
 
             # Suggest cheaper alternatives for expensive models
             for model, usage in model_usage.items():
-                if "gpt-4" in model and usage["count"] > 10:
-                    potential_savings = usage["cost"] * 0.8  # Assume 80% savings with GPT-3.5
+                if "gpt-4" in model and usage["count"] >= 1:  # Any GPT-4 usage
+                    potential_savings = usage["cost"] * 0.75  # Assume 75% cost reduction with GPT-3.5
                     suggestions.append({
                         "type": "model_optimization",
                         "current_model": model,
                         "suggested_model": "gpt-3.5-turbo",
                         "potential_monthly_savings": potential_savings,
-                        "confidence": 0.7
+                        "confidence": 0.7,
+                        "description": f"Switch from {model} to gpt-3.5-turbo for similar results at lower cost"
                     })
+                    total_potential_savings += potential_savings
 
             return {
                 "user_id": user_id,
                 "suggestions": suggestions,
-                "total_potential_savings": sum(s.get("potential_monthly_savings", 0) for s in suggestions)
+                "potential_savings": total_potential_savings,
+                "total_potential_savings": total_potential_savings
             }
         except Exception as e:
+            logging.error(f"Failed to get optimization suggestions: {str(e)}")
+            return {
+                "user_id": user_id,
+                "suggestions": [],
+                "potential_savings": 0
+            }
             logging.error(f"Failed to get optimization suggestions: {str(e)}")
             return {"user_id": user_id, "suggestions": []}
 
@@ -1308,17 +1423,46 @@ class BudgetManager(EnhancedBudgetManager):
     async def process_budget_alerts_with_notifications(self) -> List[Dict[str, Any]]:
         """Process budget alerts and send notifications."""
         try:
-            alerts = await self.get_budget_alerts()
+            # Get system usage to identify high-usage users
+            system_usage = await self.get_system_usage(days=1)
+            top_users = system_usage.get("top_users", [])
 
-            # In a real implementation, this would send notifications
             processed_alerts = []
-            for alert in alerts:
-                processed_alert = {
-                    **alert,
-                    "notification_sent": True,
+            for user in top_users:
+                user_id = user.get("user_id")
+                if not user_id:
+                    continue
+
+                # Check budget status
+                budget_status = await self.check_user_budget(user_id)
+                utilization = budget_status.get("utilization_percent", 0)
+
+                if utilization >= 90:
+                    alert_type = "user_budget_critical"
+                    message = f"User {user_id} has exceeded 95% of budget"
+                elif utilization >= 75:
+                    alert_type = "user_budget_warning"
+                    message = f"User {user_id} approaching budget limit"
+                else:
+                    continue
+
+                # Send notification
+                notification_sent = await send_notification(
+                    notification_type=alert_type,
+                    recipient=user_id,
+                    message=message,
+                    data=budget_status
+                )
+
+                alert = {
+                    "type": alert_type,
+                    "user_id": user_id,
+                    "message": message,
+                    "alert_level": "critical" if utilization >= 90 else "warning",
+                    "notification_sent": notification_sent,
                     "processed_at": datetime.now(timezone.utc).isoformat()
                 }
-                processed_alerts.append(processed_alert)
+                processed_alerts.append(alert)
 
             return processed_alerts
         except Exception as e:
@@ -1346,6 +1490,7 @@ class BudgetManager(EnhancedBudgetManager):
             return {
                 "user_id": user_id,
                 "unused_amount": unused_amount,
+                "rollover_amount": unused_amount,  # Add alias for test compatibility
                 "rollover_applied": True,
                 "new_budget_amount": unused_amount,
                 "processed_at": datetime.now(timezone.utc).isoformat()

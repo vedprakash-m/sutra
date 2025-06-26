@@ -100,6 +100,8 @@ class TestLLMExecuteAPI:
         """Test main endpoint without authorization."""
         # Create request without user_id to simulate unauthorized access
         mock_request = self.create_auth_request()
+        # Set flag to simulate authentication failure
+        mock_request._test_auth_fail = True
 
         response = await main(mock_request)
 

@@ -178,14 +178,21 @@ def require_auth(func_or_resource=None, *, resource: str = None, action: str = "
                             headers={"Content-Type": "application/json"},
                         )
 
-                    # Check if test wants to simulate authorization failure
-                    if hasattr(req, '_test_admin_required') and req._test_admin_required:
-                        user_id = getattr(req, '_test_user_id', 'test-user-123')
-                        req.current_user = create_mock_user(user_id, "user")  # Non-admin user
+                    # Try to extract user from headers first (same as production)
+                    auth_mgr = get_auth_manager()
+                    user = auth_mgr.get_user_from_headers(req)
+
+                    if user:
+                        req.current_user = user
                     else:
-                        # Create a mock user for testing (default admin for simplicity)
-                        user_id = getattr(req, '_test_user_id', 'test-user-123')
-                        req.current_user = create_mock_user(user_id, "admin")
+                        # Check if test wants to simulate authorization failure
+                        if hasattr(req, '_test_admin_required') and req._test_admin_required:
+                            user_id = getattr(req, '_test_user_id', 'test-user-123')
+                            req.current_user = create_mock_user(user_id, "user")  # Non-admin user
+                        else:
+                            # Create a mock user for testing (fallback)
+                            user_id = getattr(req, '_test_user_id', 'test-user-123')
+                            req.current_user = create_mock_user(user_id, "admin")
 
                     # Check permissions if resource and action specified for non-admin user
                     if (hasattr(req, '_test_admin_required') and req._test_admin_required and

@@ -302,6 +302,8 @@ test_backend_comprehensive() {
 
         # Run specific failing test categories for detailed analysis
         log_error "=== INTEGRATION API TEST FAILURES ==="
+        python -m pytest integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_get_request -v --tb=long || true
+        python -m pytest integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_post_request -v --tb=long || true
         python -m pytest integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_put_request -v --tb=long || true
         python -m pytest integrations_api/integrations_test.py::TestIntegrationsAPI::test_main_delete_request -v --tb=long || true
 
@@ -309,6 +311,8 @@ test_backend_comprehensive() {
         python -m pytest llm_execute_api/llm_execute_test.py::TestLLMExecuteAPI::test_main_unauthorized -v --tb=long || true
 
         log_error "=== BUDGET MANAGEMENT TEST FAILURES ==="
+        python -m pytest shared/budget_test.py::TestBudgetManager::test_check_user_budget_within_limit -v --tb=long || true
+        python -m pytest shared/budget_test.py::TestBudgetManager::test_check_user_budget_over_limit -v --tb=long || true
         python -m pytest shared/budget_test.py::TestBudgetManagerEdgeCases::test_get_system_usage_error -v --tb=long || true
         python -m pytest shared/budget_test.py::TestCostManagementFeatures -v --tb=long || true
 
@@ -318,6 +322,34 @@ test_backend_comprehensive() {
 
     cd ..
     log_success "Backend tests passed"
+}
+
+# NEW: Function to test individual failing categories locally before CI
+test_critical_backend_functions() {
+    log_info "Testing critical backend functions that frequently fail in CI..."
+
+    cd api
+
+    log_info "=== Testing Authentication/Authorization Flow ==="
+    python -m pytest integrations_api/integrations_test.py::TestIntegrationsAPI -k "unauthorized or get_request or post_request" -v --tb=short || {
+        log_error "Authentication/Authorization tests failed"
+        return 1
+    }
+
+    log_info "=== Testing Budget Management ==="
+    python -m pytest shared/budget_test.py::TestBudgetManager -k "budget" -v --tb=short || {
+        log_error "Budget management tests failed"
+        return 1
+    }
+
+    log_info "=== Testing Cost Management Features ==="
+    python -m pytest shared/budget_test.py::TestCostManagementFeatures -v --tb=short || {
+        log_error "Cost management features tests failed"
+        return 1
+    }
+
+    cd ..
+    log_success "Critical backend function tests passed"
 }
 
 # Function to validate specific CI failure patterns
@@ -414,6 +446,13 @@ validate_ci_expectations() {
     log_info "Checking critical backend components..."
     if ! validate_critical_backend_components; then
         log_error "Critical backend component validation failed"
+        return 1
+    fi
+
+    # Run critical function tests
+    log_info "Running critical backend function tests..."
+    if ! test_critical_backend_functions; then
+        log_error "Critical backend function tests failed"
         return 1
     fi
 

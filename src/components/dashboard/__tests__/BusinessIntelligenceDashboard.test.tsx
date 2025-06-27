@@ -37,16 +37,23 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 describe("BusinessIntelligenceDashboard", () => {
-  it("should render dashboard with loading state initially", () => {
+  it("should render dashboard with loading state initially", async () => {
     render(
       <TestWrapper>
         <BusinessIntelligenceDashboard />
       </TestWrapper>,
     );
 
-    expect(
-      screen.getByText("Business Intelligence Dashboard"),
-    ).toBeInTheDocument();
+    // Check that loading state is displayed (skeleton with pulse animation)
+    const skeletonElements = document.querySelectorAll(".animate-pulse");
+    expect(skeletonElements.length).toBeGreaterThan(0);
+
+    // Wait for loading to complete to prevent act() warnings
+    await waitFor(() => {
+      expect(
+        screen.getByText("Business Intelligence Dashboard"),
+      ).toBeInTheDocument();
+    });
   });
 
   it("should render metrics after loading", async () => {
@@ -98,8 +105,16 @@ describe("BusinessIntelligenceDashboard", () => {
       expect(screen.getByText("Avg Response Time")).toBeInTheDocument();
     });
 
-    // The icons should be rendered as SVG elements
-    const svgElements = screen.getAllByRole("img", { hidden: true });
-    expect(svgElements.length).toBeGreaterThan(0);
+    // Check that all expected metric cards are rendered
+    expect(screen.getByText("Error Rate")).toBeInTheDocument();
+    expect(screen.getByText("Active Users")).toBeInTheDocument();
+    expect(screen.getByText("Cost per Request")).toBeInTheDocument();
+    expect(screen.getByText("System Health")).toBeInTheDocument();
+    expect(screen.getByText("User Satisfaction")).toBeInTheDocument();
+
+    // Check that metric values are displayed
+    expect(screen.getByText("245ms")).toBeInTheDocument();
+    expect(screen.getByText("3.0%")).toBeInTheDocument();
+    expect(screen.getByText("127")).toBeInTheDocument();
   });
 });

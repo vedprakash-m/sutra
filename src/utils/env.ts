@@ -11,7 +11,11 @@ export function getApiBaseUrl(): string {
 
   try {
     // This will work in Vite/browser environment
-    if (typeof window !== "undefined" && "import" in window) {
+    if (
+      typeof window !== "undefined" &&
+      "import" in window &&
+      (window as any).import?.meta
+    ) {
       viteApiUrl = (window as any).import?.meta?.env?.VITE_API_URL;
       nodeEnv = (window as any).import?.meta?.env?.NODE_ENV;
     } else {
@@ -42,7 +46,11 @@ export function isDevMode(): boolean {
   }
 
   try {
-    if (typeof window !== "undefined" && "import" in window) {
+    if (
+      typeof window !== "undefined" &&
+      "import" in window &&
+      (window as any).import?.meta
+    ) {
       return (window as any).import?.meta?.env?.DEV || false;
     }
     return process.env.NODE_ENV === "development";
@@ -57,7 +65,11 @@ export function isProdMode(): boolean {
   }
 
   try {
-    if (typeof window !== "undefined" && "import" in window) {
+    if (
+      typeof window !== "undefined" &&
+      "import" in window &&
+      (window as any).import?.meta
+    ) {
       return (window as any).import?.meta?.env?.PROD || false;
     }
     return process.env.NODE_ENV === "production";

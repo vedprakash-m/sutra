@@ -1,10 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { localAuthPlugin, getMockAuthHeaders } from "./src/dev/localAuthPlugin";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), localAuthPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -24,6 +25,13 @@ export default defineConfig({
               if (header.startsWith("x-ms-")) {
                 proxyReq.setHeader(header, req.headers[header]);
               }
+            });
+
+            // Add mock authentication headers for local development
+            const authMode = process.env.VITE_LOCAL_AUTH_MODE || "admin";
+            const mockHeaders = getMockAuthHeaders(authMode);
+            Object.entries(mockHeaders).forEach(([key, value]) => {
+              proxyReq.setHeader(key, value);
             });
           });
         },

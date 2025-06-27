@@ -69,29 +69,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isGuest = user?.role === "guest";
   const isAdmin = user?.role === "admin";
 
-  // Initialize auth state from Static Web Apps or fallback
+  // Initialize auth state from Static Web Apps or local development mock
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        // First, try Static Web Apps authentication
+        // Detect environment
+        const isProduction = window.location.hostname.includes(
+          "azurestaticapps.net",
+        );
+        const isLocalDev =
+          process.env.NODE_ENV === "development" ||
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1";
+
+        console.log(`🔍 Environment detection:`, { isProduction, isLocalDev });
+
+        // Try Static Web Apps authentication (works in both production and local mock)
         const response = await fetch("/.auth/me");
 
         if (response.ok) {
           const authInfo: StaticWebAppsUser = await response.json();
-          console.log("Azure Static Web Apps auth info:", authInfo);
+          console.log("Authentication info:", authInfo);
 
           if (authInfo.clientPrincipal) {
             const principal = authInfo.clientPrincipal;
 
-            // Extract user information from claims
-            const email =
-              principal.claims.find(
-                (c) =>
-                  c.typ ===
-                  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-              )?.val || principal.userDetails;
+            // Extract user information from claims or userDetails
+            const email = principal.userDetails;
+
             // Extract name from claims or derive from email
-            let name = principal.claims.find(
+            let name = principal.claims?.find(
               (c) =>
                 c.typ ===
                 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
@@ -99,9 +106,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             // If no name claim, extract name from email
             if (!name && email) {
-              // Extract name part from email (before @)
               const emailName = email.split("@")[0];
-              // Convert common email formats to display names
               name = emailName
                 .split(/[._-]/)
                 .map(
@@ -116,32 +121,56 @@ export function AuthProvider({ children }: AuthProviderProps) {
               name = email || "User";
             }
 
-            // Get user role from our backend role assignment
-            // Note: Azure Static Web Apps should call /api/getroles and populate userRoles
-            // but we'll also fetch it directly as a fallback
+            // Determine user role - check multiple sources
             let userRole = "user";
+
+            console.log(`🔍 Role determination for ${email}:`, {
+              userRoles: principal.userRoles,
+              userDetails: principal.userDetails,
+              userId: principal.userId,
+              isLocalDev,
+            });
+
+            // Check Azure Static Web Apps roles first
             if (principal.userRoles?.includes("admin")) {
               userRole = "admin";
+              console.log("✅ Admin role found in Azure userRoles");
             }
 
-            // Fallback: If no roles in userRoles, fetch from our backend
-            if (
-              !principal.userRoles ||
-              principal.userRoles.length === 0 ||
-              (principal.userRoles.length === 1 &&
-                principal.userRoles[0] === "authenticated")
-            ) {
+            // Override for specific admin user (both environments)
+            if (email === "vedprakash.m@outlook.com") {
+              userRole = "admin";
+              console.log("🔑 Admin override for primary admin user");
+            }
+
+            // Fallback: Get role from backend API
+            if (!principal.userRoles?.includes("admin")) {
               try {
+                console.log("🔄 Fetching role from backend /getroles...");
                 const roleResponse = await fetch("/api/getroles", {
+                  method: "GET",
                   headers: {
                     "Content-Type": "application/json",
                   },
                 });
+
                 if (roleResponse.ok) {
                   const roleData = await roleResponse.json();
-                  if (roleData.roles && roleData.roles.includes("admin")) {
+                  console.log("Backend role response:", roleData);
+
+                  if (
+                    roleData.roles &&
+                    Array.isArray(roleData.roles) &&
+                    roleData.roles.includes("admin")
+                  ) {
                     userRole = "admin";
+                    console.log("✅ Admin role confirmed by backend API");
                   }
+                } else {
+                  console.warn(
+                    "Backend role API response not ok:",
+                    roleResponse.status,
+                  );
                 }
               } catch (roleError) {
                 console.warn(
@@ -155,42 +184,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
               id: principal.userId,
               email: email,
               name: name,
-              role: userRole, // Single role based on Azure AD
+              role: userRole,
             };
 
+            console.log("✅ Authenticated user created:", authUser);
             setUser(authUser);
-            setToken("static-web-apps-token");
+            setToken(isLocalDev ? "local-dev-token" : "static-web-apps-token");
             setIsLoading(false);
             return;
           } else {
-            console.log("No clientPrincipal found in auth response");
+            console.log("No clientPrincipal found - user is anonymous");
           }
         } else {
           console.log(
-            "Auth endpoint response not ok:",
-            response.status,
-            response.statusText,
+            `Auth endpoint response not ok: ${response.status} ${response.statusText}`,
           );
-        }
 
-        // Only allow demo mode in development environments
-        if (
-          process.env.NODE_ENV === "development" ||
-          window.location.hostname === "localhost" ||
-          window.location.hostname === "127.0.0.1"
-        ) {
-          // Fallback: Check localStorage for demo user (development only)
-          const storedUser = localStorage.getItem("sutra_demo_user");
-          if (storedUser) {
-            const demoUser = JSON.parse(storedUser);
-            setUser(demoUser);
-            setToken("demo-token");
+          // In local development, if no auth mock is set, default to anonymous
+          if (isLocalDev) {
+            console.log(
+              "🔧 Local development - no auth configured, remaining anonymous",
+            );
           }
         }
-        // In production, if no authenticated user, user remains null and will see login page
+
+        // If we reach here, user is not authenticated
+        console.log("No authenticated user found");
       } catch (error) {
         console.error("Failed to check auth status:", error);
-        // On error, user remains null and will see login page
+
+        // In local development, provide more helpful error messages
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "💡 Local development tip: Set VITE_LOCAL_AUTH_MODE=admin to test admin features",
+          );
+        }
       } finally {
         setIsLoading(false);
       }
@@ -203,7 +231,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setIsLoading(true);
 
-      // Get or create guest session
+      // Get or create guest session using the existing API
       const response = await fetch("/api/guest/session", {
         headers: {
           "Content-Type": "application/json",
@@ -239,6 +267,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (sessionId) {
           localStorage.setItem("sutra_guest_session_id", sessionId);
         }
+
+        console.log("✅ Guest session created:", {
+          guestUser,
+          guestSessionData,
+        });
       } else {
         throw new Error("Failed to create guest session");
       }
@@ -252,23 +285,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async () => {
     // Check if we're in a development environment
-    if (
+    const isLocalDev =
       process.env.NODE_ENV === "development" ||
       window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1"
-    ) {
-      // Development mode: use demo authentication
-      const storedRole = localStorage.getItem("sutra_demo_role") || "user";
-      const demoUser: User = {
-        id: storedRole === "admin" ? "demo-admin-001" : "demo-user-001",
-        email: storedRole === "admin" ? "admin@sutra.app" : "demo@sutra.app",
-        name: storedRole === "admin" ? "Demo Admin" : "Demo User",
-        role: storedRole, // Single role, not array
-      };
+      window.location.hostname === "127.0.0.1";
 
-      localStorage.setItem("sutra_demo_user", JSON.stringify(demoUser));
-      setUser(demoUser);
-      setToken("demo-token");
+    if (isLocalDev) {
+      // Development mode: Show options to switch auth mode
+      const authMode = prompt(
+        "Local Development Authentication:\n\n" +
+          "Enter auth mode:\n" +
+          "- 'admin' for admin user\n" +
+          "- 'user' for regular user\n" +
+          "- 'anonymous' for anonymous access\n\n" +
+          "Current mode: " +
+          (localStorage.getItem("vite_local_auth_mode") || "anonymous"),
+        localStorage.getItem("vite_local_auth_mode") || "admin",
+      );
+
+      if (authMode && ["admin", "user", "anonymous"].includes(authMode)) {
+        localStorage.setItem("vite_local_auth_mode", authMode);
+
+        // Set environment variable for the mock
+        if (window.location.search.includes("reload=false")) {
+          // Just update state without reload for testing
+          window.location.search = "";
+        } else {
+          // Reload to pick up new auth mode
+          window.location.reload();
+        }
+      }
     } else {
       // Production: Redirect to Azure Static Web Apps authentication endpoint
       try {
@@ -361,8 +407,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setGuestSession(null);
       setToken(null);
-      localStorage.removeItem("sutra_demo_user");
       localStorage.removeItem("sutra_guest_session_id");
+      localStorage.removeItem("vite_local_auth_mode");
       // Then redirect to Azure AD logout
       window.location.href = "/.auth/logout";
     } else {
@@ -370,8 +416,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setGuestSession(null);
       setToken(null);
-      localStorage.removeItem("sutra_demo_user");
       localStorage.removeItem("sutra_guest_session_id");
+      localStorage.removeItem("vite_local_auth_mode");
     }
   };
 

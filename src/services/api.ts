@@ -365,4 +365,15 @@ export const guestApi = {
   getUsage: () => apiService.get("/guest-llm/usage"),
 };
 
+// Combined API export for easier access
+export const api = {
+  prompts: promptsApi,
+  collections: collectionsApi,
+  playbooks: playbooksApi,
+  integrations: integrationsApi,
+  admin: adminApi,
+  llm: llmApi,
+  guest: guestApi,
+};
+
 export default apiService;

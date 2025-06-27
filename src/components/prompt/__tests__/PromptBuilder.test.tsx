@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import PromptBuilder from "../PromptBuilder";
-import { llmApi, collectionsApi } from "@/services/api";
+import { llmApi, collectionsApi, promptsApi } from "@/services/api";
 
 // Mock the useAuth hook
 jest.mock("@/components/auth/AuthProvider", () => ({
@@ -24,6 +24,10 @@ jest.mock("@/services/api", () => ({
   collectionsApi: {
     create: jest.fn(),
     addPrompt: jest.fn(),
+  },
+  promptsApi: {
+    create: jest.fn(),
+    update: jest.fn(),
   },
 }));
 
@@ -47,6 +51,15 @@ beforeEach(() => {
   jest.clearAllMocks();
   (llmApi.execute as jest.Mock).mockResolvedValue({
     data: "Test response",
+  });
+  (collectionsApi.create as jest.Mock).mockResolvedValue({
+    id: "test-collection-id",
+  });
+  (promptsApi.create as jest.Mock).mockResolvedValue({
+    id: "test-prompt-id",
+  });
+  (promptsApi.update as jest.Mock).mockResolvedValue({
+    id: "test-prompt-id",
   });
   (collectionsApi.create as jest.Mock).mockResolvedValue({
     id: "test-collection-id",
@@ -231,12 +244,12 @@ describe("PromptBuilder", () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(collectionsApi.create).toHaveBeenCalledWith({
-        name: "Test Prompt",
-        description: "\n\nPrompt Content:\nTest content",
-        type: "private",
-        userId: "test-user",
-        tags: ["prompt"],
+      expect(promptsApi.create).toHaveBeenCalledWith({
+        title: "Test Prompt",
+        description: "",
+        content: "Test content",
+        variables: [],
+        tags: ["manual"],
       });
     });
   });

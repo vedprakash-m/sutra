@@ -274,6 +274,7 @@ class CreatePromptRequest(BaseModel):
     content: str = Field(..., min_length=1)
     variables: List[PromptVariable] = []
     tags: List[str] = []
+    collection_id: Optional[str] = None  # Allow prompts to be created in specific collections
 
     @field_validator("tags")
     @classmethod

@@ -198,7 +198,7 @@ async def handle_create_prompt(
             "version": 1,
             "createdAt": now.isoformat(),
             "updatedAt": now.isoformat(),
-            "collectionId": create_request.collection_id if hasattr(create_request, 'collection_id') else None,
+            "collectionId": create_request.collection_id,  # Store collection_id from request
             "creatorId": user.id,  # For backward compatibility
         }
 

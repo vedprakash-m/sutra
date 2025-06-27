@@ -40,6 +40,9 @@ export default {
     // Include more components for better coverage
     "!src/components/**/*.stories.{ts,tsx}",
     "!src/**/__mocks__/**",
+    // Exclude development-only files
+    "!src/dev/**",
+    "!src/test-utils.tsx",
   ],
   coverageReporters: ["text", "lcov", "html"],
   coverageDirectory: "coverage",

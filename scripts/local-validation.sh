@@ -180,8 +180,8 @@ if npm run test:coverage > /tmp/frontend_coverage.log 2>&1; then
 else
     log_error "Frontend test coverage failed!"
     echo ""
-    echo "Frontend test failures that would break CI/CD:"
-    grep -A 3 -B 1 "FAIL\|✕\|Error:" /tmp/frontend_coverage.log | head -20
+    echo "Coverage threshold failure (matches CI/CD behavior):"
+    grep -A 5 -B 5 "coverage threshold\|not met" /tmp/frontend_coverage.log | head -20
     echo ""
     echo "See full log: /tmp/frontend_coverage.log"
     echo ""

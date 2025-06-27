@@ -3,10 +3,15 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useApi } from "@/hooks/useApi";
 import { collectionsApi, playbooksApi } from "@/services/api";
+import EnhancedMonitoring from "@/services/enhancedMonitoring";
+import { BusinessIntelligenceDashboard } from "./BusinessIntelligenceDashboard";
 
 export default function Dashboard() {
   const { user, isAdmin } = useAuth();
   const [isFirstTime, setIsFirstTime] = useState(false);
+
+  // Initialize enhanced monitoring
+  const monitoring = EnhancedMonitoring.getInstance();
 
   // Check if this is a first-time user
   useEffect(() => {
@@ -14,10 +19,32 @@ export default function Dashboard() {
       const lastVisit = localStorage.getItem(`lastVisit_${user.id}`);
       setIsFirstTime(!lastVisit);
 
+      // Record this visit with enhanced monitoring
+      monitoring.trackUserActivity({
+        userId: user.id,
+        activity: isFirstTime ? "first_visit" : "dashboard_visit",
+        timestamp: new Date(),
+        metadata: { userRole: user.role },
+      });
+
       // Record this visit
       localStorage.setItem(`lastVisit_${user.id}`, new Date().toISOString());
     }
-  }, [user?.id]);
+  }, [user?.id, monitoring, isFirstTime]);
+
+  // Track dashboard performance
+  useEffect(() => {
+    const startTime = performance.now();
+
+    return () => {
+      const loadTime = performance.now() - startTime;
+      monitoring.trackComponentPerformance({
+        component: "Dashboard",
+        loadTime,
+        timestamp: new Date(),
+      });
+    };
+  }, [monitoring]);
 
   // Fetch dashboard data
   const { data: collectionsData, loading: collectionsLoading } = useApi(
@@ -294,6 +321,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Business Intelligence Dashboard */}
+      {isAdmin && (
+        <div className="mb-8">
+          <BusinessIntelligenceDashboard />
+        </div>
+      )}
 
       {/* Admin Quick Access */}
       {isAdmin && (

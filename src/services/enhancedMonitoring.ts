@@ -59,6 +59,60 @@ class EnhancedMonitoring {
   }
 
   /**
+   * Track user activity for engagement analytics
+   */
+  trackUserActivity(activity: {
+    userId: string;
+    activity: string;
+    timestamp: Date;
+    metadata?: any;
+  }): void {
+    try {
+      console.log(`👤 User activity tracked:`, activity);
+      // Store activity for analytics
+      this.storeUserActivity(activity);
+    } catch (error) {
+      console.error("Failed to track user activity:", error);
+    }
+  }
+
+  /**
+   * Track performance metrics for components
+   */
+  trackComponentPerformance(performance: {
+    component: string;
+    loadTime: number;
+    timestamp: Date;
+  }): void {
+    try {
+      console.log(`⚡ Component performance tracked:`, performance);
+      // Store performance metrics
+      this.storeComponentPerformance(performance);
+    } catch (error) {
+      console.error("Failed to track component performance:", error);
+    }
+  }
+
+  /**
+   * Get dashboard metrics for business intelligence
+   */
+  async getDashboardMetrics(): Promise<any> {
+    try {
+      // Simulate fetching metrics from storage/database
+      const metrics = {
+        responseTime: 245,
+        errorRate: 0.03,
+        activeUsers: 127,
+        systemHealth: 98.5,
+      };
+      return metrics;
+    } catch (error) {
+      console.error("Failed to get dashboard metrics:", error);
+      return null;
+    }
+  }
+
+  /**
    * Track complete user journey with detailed analytics
    */
   trackUserJourney(userId: string, journey: UserJourney): void {
@@ -243,6 +297,16 @@ class EnhancedMonitoring {
     if (baseCost === 0) return 1;
 
     return Math.min(1, (baseEfficiency / baseCost) * 100);
+  }
+
+  private storeUserActivity(activity: any): void {
+    console.debug("📊 Storing user activity:", activity);
+    // Implementation for storing user activity
+  }
+
+  private storeComponentPerformance(performance: any): void {
+    console.debug("⚡ Storing component performance:", performance);
+    // Implementation for storing component performance
   }
 
   // Additional helper methods...

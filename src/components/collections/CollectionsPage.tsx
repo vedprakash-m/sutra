@@ -133,7 +133,7 @@ export default function CollectionsPage() {
                 </div>
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>{collection.promptIds?.length || 0} prompts</span>
+                    <span>{collection.prompt_count || 0} prompts</span>
                     <span>Updated {formatDate(collection.updatedAt)}</span>
                   </div>
                 </div>

@@ -80,13 +80,16 @@ describe("AnonymousLLMTest", () => {
       expect(usageContainer).toBeTruthy();
     });
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/anonymous/llm/execute", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:7071/api/anonymous/llm/execute",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: "What is AI?" }),
       },
-      body: JSON.stringify({ prompt: "What is AI?" }),
-    });
+    );
   });
 
   it("handles rate limit exceeded error", async () => {
@@ -134,7 +137,7 @@ describe("AnonymousLLMTest", () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Network error. Please try again.")).toBeTruthy();
+      expect(screen.getByText("Network error: Network error")).toBeTruthy();
     });
   });
 });

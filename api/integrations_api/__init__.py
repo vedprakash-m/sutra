@@ -37,22 +37,8 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - POST /api/integrations/llm/{provider}/test - Test LLM connection
     """
     try:
-        # Get authenticated user from request context
-        user_id = getattr(req, 'current_user', {}).get('id') if hasattr(req, 'current_user') else None
-        if not user_id:
-            # Fallback: try to get user from auth headers
-            from shared.auth_static_web_apps import StaticWebAppsAuthManager
-            auth_manager = StaticWebAppsAuthManager()
-            user = auth_manager.get_user_from_headers(req)
-            user_id = user.id if user else None
-
-        if not user_id:
-            return func.HttpResponse(
-                json.dumps({"error": "Authentication required"}),
-                status_code=401,
-                mimetype="application/json",
-            )
-
+        # Get authenticated user from request context (set by @require_auth decorator)
+        user_id = req.current_user.id
         method = req.method
         route_params = req.route_params
         provider = route_params.get("provider")

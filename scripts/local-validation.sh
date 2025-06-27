@@ -173,6 +173,20 @@ echo "----------------------"
 # Frontend unit tests (now working after fixes)
 run_test "Frontend unit tests" "npm run test -- --watchAll=false"
 
+# Frontend test coverage (critical validation)
+log_info "Running frontend test coverage validation..."
+if npm run test:coverage > /tmp/frontend_coverage.log 2>&1; then
+    log_success "Frontend test coverage passed"
+else
+    log_error "Frontend test coverage failed!"
+    echo ""
+    echo "Frontend test failures that would break CI/CD:"
+    grep -A 3 -B 1 "FAIL\|✕\|Error:" /tmp/frontend_coverage.log | head -20
+    echo ""
+    echo "See full log: /tmp/frontend_coverage.log"
+    echo ""
+fi
+
 cd api
 
 # Backend unit tests - Match CI/CD environment exactly

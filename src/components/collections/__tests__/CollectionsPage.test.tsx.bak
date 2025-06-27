@@ -258,7 +258,7 @@ describe("CollectionsPage", () => {
         name: "New Collection",
         description: "A new collection for organizing prompts",
         type: "private",
-        userId: "test-user-id",
+        owner_id: "test-user-id",
       });
     });
 
@@ -412,7 +412,7 @@ describe("CollectionsPage", () => {
         name: "New Collection",
         description: "A new collection for organizing prompts",
         type: "private",
-        userId: "test-user-id",
+        owner_id: "test-user-id",
       });
     });
 
@@ -427,7 +427,7 @@ describe("CollectionsPage", () => {
           name: "Test Collection",
           description: "Test description",
           type: "private",
-          userId: "test-user-id",
+          owner_id: "test-user-id",
           created_at: "2024-01-15T10:30:00Z",
           updated_at: "2024-01-15T10:30:00Z",
           prompt_count: 2,
@@ -496,7 +496,7 @@ describe("CollectionsPage", () => {
         name: "New Collection",
         description: "A new collection for organizing prompts",
         type: "private",
-        userId: "dev-user", // Should fall back to dev-user
+        owner_id: "dev-user", // Should fall back to dev-user
       });
     });
 
@@ -512,7 +512,7 @@ describe("CollectionsPage", () => {
           name: "Test Collection",
           description: "Test description",
           type: "private",
-          userId: "test-user-id",
+          owner_id: "test-user-id",
           created_at: "2024-01-01T00:00:00Z",
           updated_at: "2024-01-01T00:00:00Z",
           // prompt_count is missing
@@ -540,7 +540,7 @@ describe("CollectionsPage", () => {
           name: "Amazing Collection",
           description: "Test description",
           type: "private",
-          userId: "test-user-id",
+          owner_id: "test-user-id",
           created_at: "2024-01-01T00:00:00Z",
           updated_at: "2024-01-01T00:00:00Z",
           prompt_count: 1,
@@ -550,7 +550,7 @@ describe("CollectionsPage", () => {
           name: "zzz Collection",
           description: "Test description",
           type: "private",
-          userId: "test-user-id",
+          owner_id: "test-user-id",
           created_at: "2024-01-01T00:00:00Z",
           updated_at: "2024-01-01T00:00:00Z",
           prompt_count: 1,
@@ -602,7 +602,7 @@ describe("CollectionsPage", () => {
         name: "Imported Prompt 1",
         description: "First imported prompt",
         type: "private",
-        userId: "test-user-id",
+        owner_id: "test-user-id",
         tags: ["imported", "openai"],
       });
     });
@@ -813,7 +813,7 @@ describe("CollectionsPage", () => {
           name: "", // Empty name
           description: "Test description",
           type: "private",
-          userId: "test-user-id",
+          owner_id: "test-user-id",
           created_at: "2024-01-01T00:00:00Z",
           updated_at: "2024-01-01T00:00:00Z",
           prompt_count: 1,

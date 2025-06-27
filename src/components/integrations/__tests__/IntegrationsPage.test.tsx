@@ -1,7 +1,61 @@
 import { render, screen } from "@testing-library/react";
+import { ReactNode } from "react";
 import IntegrationsPage from "../IntegrationsPage";
 
+// Mock the integrationsApi before importing
+jest.mock("@/services/api", () => ({
+  integrationsApi: {
+    listLLM: jest.fn().mockResolvedValue({
+      integrations: {},
+      supportedProviders: [],
+    }),
+    saveLLM: jest.fn().mockResolvedValue({}),
+    deleteLLM: jest.fn().mockResolvedValue({}),
+  },
+}));
+
+// Mock user for regular user tests
+const mockRegularUser = {
+  id: "test-user-1",
+  email: "test@example.com",
+  name: "Test User",
+  role: "user",
+};
+
+// Mock user for admin tests
+const mockAdminUser = {
+  id: "admin-user-1",
+  email: "admin@example.com",
+  name: "Admin User",
+  role: "admin",
+};
+
+// Mock the useAuth hook
+const mockUseAuth = jest.fn();
+
+jest.mock("@/components/auth/AuthProvider", () => ({
+  useAuth: () => mockUseAuth(),
+  AuthProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
 describe("IntegrationsPage", () => {
+  beforeEach(() => {
+    // Default to regular user
+    mockUseAuth.mockReturnValue({
+      user: mockRegularUser,
+      isAuthenticated: true,
+      isGuest: false,
+      isLoading: false,
+      login: jest.fn(),
+      logout: jest.fn(),
+      isAdmin: false,
+      token: "test-token",
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   it("should render the integrations page with title", () => {
     render(<IntegrationsPage />);
 
@@ -72,5 +126,39 @@ describe("IntegrationsPage", () => {
 
     const geminiCard = screen.getByText("Google Gemini").closest("div");
     expect(geminiCard).toBeInTheDocument();
+  });
+
+  it("should show admin configuration required message for regular users", () => {
+    render(<IntegrationsPage />);
+
+    expect(screen.getByText("Admin Access Required")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "LLM integrations are managed by administrators. Contact your admin to configure API keys and budgets.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("should show admin dashboard for admin users", () => {
+    // Mock admin user for this test
+    mockUseAuth.mockReturnValue({
+      user: mockAdminUser,
+      isAuthenticated: true,
+      isGuest: false,
+      isLoading: false,
+      login: jest.fn(),
+      logout: jest.fn(),
+      isAdmin: true,
+      token: "admin-token",
+    });
+
+    render(<IntegrationsPage />);
+
+    expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "You can configure LLM provider API keys and manage system integrations.",
+      ),
+    ).toBeInTheDocument();
   });
 });

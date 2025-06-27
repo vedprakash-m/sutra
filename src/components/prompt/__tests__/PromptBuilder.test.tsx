@@ -235,7 +235,7 @@ describe("PromptBuilder", () => {
         name: "Test Prompt",
         description: "\n\nPrompt Content:\nTest content",
         type: "private",
-        owner_id: "test-user",
+        userId: "test-user",
         tags: ["prompt"],
       });
     });

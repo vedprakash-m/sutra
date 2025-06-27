@@ -16,8 +16,15 @@ export default {
         tsconfig: {
           jsx: "react-jsx",
         },
+        useESM: true,
       },
     ],
+  },
+  extensionsToTreatAsEsm: [".ts", ".tsx"],
+  globals: {
+    "ts-jest": {
+      useESM: true,
+    },
   },
   // Handle import.meta in Jest environment
   transformIgnorePatterns: ["node_modules/(?!(.*\\.mjs$))"],

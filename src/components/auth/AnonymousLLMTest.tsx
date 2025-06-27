@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getApiBaseUrl } from "../../utils/env";
 
 interface AnonymousTestResponse {
   choices: Array<{ text: string }>;
@@ -30,11 +31,7 @@ export function AnonymousLLMTest() {
 
     try {
       // Get API base URL from environment or use default
-      const apiBaseUrl =
-        import.meta.env?.VITE_API_URL ||
-        (import.meta.env?.NODE_ENV === "development"
-          ? "http://localhost:7071/api"
-          : "https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api");
+      const apiBaseUrl = getApiBaseUrl();
 
       const response = await fetch(`${apiBaseUrl}/anonymous/llm/execute`, {
         method: "POST",

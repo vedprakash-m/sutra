@@ -12,33 +12,33 @@ from jsonschema import validate, ValidationError as JSONSchemaValidationError, D
 
 class SchemaValidator:
     """Centralized schema validator for all entities"""
-    
+
     def __init__(self):
         self.schemas = {}
         self.schema_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared", "schemas")
         self._load_schemas()
-    
+
     def _load_schemas(self):
         """Load all JSON schemas from the schemas directory"""
         try:
             # For now, use fallback schemas to avoid JSON reference resolution issues
             self._load_fallback_schemas()
             return
-            
+
             schema_files = ['base.json', 'prompt.json', 'collection.json', 'playbook.json', 'user.json', 'cost.json']
-            
+
             for schema_file in schema_files:
                 schema_path = os.path.join(self.schema_dir, schema_file)
                 if os.path.exists(schema_path):
                     with open(schema_path, 'r') as f:
                         schema_name = schema_file.replace('.json', '')
                         self.schemas[schema_name] = json.load(f)
-                        
+
         except Exception as e:
             print(f"Warning: Could not load schemas: {e}")
             # Provide basic fallback schemas
             self._load_fallback_schemas()
-    
+
     def _load_fallback_schemas(self):
         """Load basic fallback schemas if files are not found"""
         self.schemas = {
@@ -119,15 +119,15 @@ class SchemaValidator:
                 'additionalProperties': True
             }
         }
-    
+
     def validate_entity(self, data: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
         """
         Validate an entity against its schema
-        
+
         Args:
             data: The data to validate
             entity_type: The type of entity (prompt, collection, playbook, user, etc.)
-            
+
         Returns:
             Dictionary with 'valid' boolean and 'errors' list
         """
@@ -136,9 +136,9 @@ class SchemaValidator:
                 'valid': False,
                 'errors': [f'Unknown entity type: {entity_type}']
             }
-        
+
         schema = self.schemas[entity_type]
-        
+
         try:
             validate(instance=data, schema=schema, cls=Draft7Validator)
             return {
@@ -155,21 +155,21 @@ class SchemaValidator:
                 'valid': False,
                 'errors': [f'Validation error: {str(e)}']
             }
-    
+
     def validate_batch(self, entities: List[Dict[str, Any]], entity_type: str) -> Dict[str, Any]:
         """
         Validate multiple entities of the same type
-        
+
         Args:
             entities: List of entities to validate
             entity_type: The type of entity
-            
+
         Returns:
             Dictionary with overall validation result and individual errors
         """
         results = []
         all_valid = True
-        
+
         for i, entity in enumerate(entities):
             result = self.validate_entity(entity, entity_type)
             results.append({
@@ -179,7 +179,7 @@ class SchemaValidator:
             })
             if not result['valid']:
                 all_valid = False
-        
+
         return {
             'valid': all_valid,
             'results': results,
@@ -203,11 +203,11 @@ def get_validator() -> SchemaValidator:
 def validate_entity(data: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
     """
     Convenience function to validate a single entity
-    
+
     Args:
         data: The data to validate
         entity_type: The type of entity
-        
+
     Returns:
         Dictionary with 'valid' boolean and 'errors' list
     """
@@ -217,11 +217,11 @@ def validate_entity(data: Dict[str, Any], entity_type: str) -> Dict[str, Any]:
 def validate_batch(entities: List[Dict[str, Any]], entity_type: str) -> Dict[str, Any]:
     """
     Convenience function to validate multiple entities
-    
+
     Args:
         entities: List of entities to validate
         entity_type: The type of entity
-        
+
     Returns:
         Dictionary with overall validation result
     """

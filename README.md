@@ -5,7 +5,7 @@
 <div align="center">
 
 [![Production Status](https://img.shields.io/badge/status-production-success.svg)](https://zealous-flower-04bbe021e.2.azurestaticapps.net)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Azure](https://img.shields.io/badge/cloud-azure-0078d4.svg)](https://azure.microsoft.com)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-3178c6.svg)](https://www.typescriptlang.org)
 [![Python](https://img.shields.io/badge/python-3.11+-3776ab.svg)](https://www.python.org)
@@ -339,7 +339,7 @@ src/components/admin/CostManagementAdmin.tsx  # Admin cost dashboard
 
 ## 📄 **License**
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
 
 ---
 

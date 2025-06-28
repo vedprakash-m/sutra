@@ -21,14 +21,18 @@ export interface ValidationError {
  */
 export const validators = {
   required: (value: any, fieldName: string): string | null => {
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null || value === "") {
       return `${fieldName} is required`;
     }
     return null;
   },
 
-  string: (value: any, fieldName: string, options: { minLength?: number; maxLength?: number } = {}): string | null => {
-    if (typeof value !== 'string') {
+  string: (
+    value: any,
+    fieldName: string,
+    options: { minLength?: number; maxLength?: number } = {},
+  ): string | null => {
+    if (typeof value !== "string") {
       return `${fieldName} must be a string`;
     }
     if (options.minLength && value.length < options.minLength) {
@@ -41,7 +45,7 @@ export const validators = {
   },
 
   email: (value: any, fieldName: string): string | null => {
-    if (typeof value !== 'string') {
+    if (typeof value !== "string") {
       return `${fieldName} must be a string`;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,15 +55,23 @@ export const validators = {
     return null;
   },
 
-  enum: (value: any, fieldName: string, allowedValues: any[]): string | null => {
+  enum: (
+    value: any,
+    fieldName: string,
+    allowedValues: any[],
+  ): string | null => {
     if (!allowedValues.includes(value)) {
-      return `${fieldName} must be one of: ${allowedValues.join(', ')}`;
+      return `${fieldName} must be one of: ${allowedValues.join(", ")}`;
     }
     return null;
   },
 
-  number: (value: any, fieldName: string, options: { min?: number; max?: number } = {}): string | null => {
-    if (typeof value !== 'number' || isNaN(value)) {
+  number: (
+    value: any,
+    fieldName: string,
+    options: { min?: number; max?: number } = {},
+  ): string | null => {
+    if (typeof value !== "number" || isNaN(value)) {
       return `${fieldName} must be a number`;
     }
     if (options.min !== undefined && value < options.min) {
@@ -71,7 +83,11 @@ export const validators = {
     return null;
   },
 
-  integer: (value: any, fieldName: string, options: { min?: number; max?: number } = {}): string | null => {
+  integer: (
+    value: any,
+    fieldName: string,
+    options: { min?: number; max?: number } = {},
+  ): string | null => {
     if (!Number.isInteger(value)) {
       return `${fieldName} must be an integer`;
     }
@@ -79,13 +95,17 @@ export const validators = {
   },
 
   boolean: (value: any, fieldName: string): string | null => {
-    if (typeof value !== 'boolean') {
+    if (typeof value !== "boolean") {
       return `${fieldName} must be a boolean`;
     }
     return null;
   },
 
-  array: (value: any, fieldName: string, options: { minItems?: number; maxItems?: number } = {}): string | null => {
+  array: (
+    value: any,
+    fieldName: string,
+    options: { minItems?: number; maxItems?: number } = {},
+  ): string | null => {
     if (!Array.isArray(value)) {
       return `${fieldName} must be an array`;
     }
@@ -99,14 +119,14 @@ export const validators = {
   },
 
   objectId: (value: any, fieldName: string): string | null => {
-    if (typeof value !== 'string' || value.length === 0) {
+    if (typeof value !== "string" || value.length === 0) {
       return `${fieldName} must be a non-empty string`;
     }
     return null;
   },
 
   timestamp: (value: any, fieldName: string): string | null => {
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const date = new Date(value);
       if (isNaN(date.getTime())) {
         return `${fieldName} must be a valid ISO timestamp`;
@@ -115,7 +135,7 @@ export const validators = {
       return `${fieldName} must be a Date object or ISO timestamp string`;
     }
     return null;
-  }
+  },
 };
 
 /**
@@ -123,106 +143,164 @@ export const validators = {
  */
 export const schemas = {
   prompt: {
-    required: ['id', 'title', 'description', 'content', 'userId', 'createdAt'],
+    required: ["id", "title", "description", "content", "userId", "createdAt"],
     fields: {
-      id: { validator: 'objectId' },
-      title: { validator: 'string', options: { minLength: 1, maxLength: 200 } },
-      description: { validator: 'string', options: { minLength: 1, maxLength: 1000 } },
-      content: { validator: 'string', options: { minLength: 1 } },
-      userId: { validator: 'objectId' },
-      tags: { validator: 'array', options: { maxItems: 10 } },
-      isPublic: { validator: 'boolean' },
-      category: { validator: 'enum', options: ['writing', 'coding', 'analysis', 'creative', 'business', 'other'] },
-      createdAt: { validator: 'timestamp' },
-      updatedAt: { validator: 'timestamp' },
-      usageCount: { validator: 'integer', options: { min: 0 } },
-      version: { validator: 'string' }
-    }
+      id: { validator: "objectId" },
+      title: { validator: "string", options: { minLength: 1, maxLength: 200 } },
+      description: {
+        validator: "string",
+        options: { minLength: 1, maxLength: 1000 },
+      },
+      content: { validator: "string", options: { minLength: 1 } },
+      userId: { validator: "objectId" },
+      tags: { validator: "array", options: { maxItems: 10 } },
+      isPublic: { validator: "boolean" },
+      category: {
+        validator: "enum",
+        options: [
+          "writing",
+          "coding",
+          "analysis",
+          "creative",
+          "business",
+          "other",
+        ],
+      },
+      createdAt: { validator: "timestamp" },
+      updatedAt: { validator: "timestamp" },
+      usageCount: { validator: "integer", options: { min: 0 } },
+      version: { validator: "string" },
+    },
   },
 
   collection: {
-    required: ['id', 'name', 'description', 'userId', 'createdAt'],
+    required: ["id", "name", "description", "userId", "createdAt"],
     fields: {
-      id: { validator: 'objectId' },
-      name: { validator: 'string', options: { minLength: 1, maxLength: 100 } },
-      description: { validator: 'string', options: { minLength: 1, maxLength: 500 } },
-      userId: { validator: 'objectId' },
-      prompts: { validator: 'array' },
-      isPublic: { validator: 'boolean' },
-      tags: { validator: 'array', options: { maxItems: 10 } },
-      category: { validator: 'enum', options: ['personal', 'team', 'public', 'template', 'other'] },
-      createdAt: { validator: 'timestamp' },
-      updatedAt: { validator: 'timestamp' },
-      promptCount: { validator: 'integer', options: { min: 0 } }
-    }
+      id: { validator: "objectId" },
+      name: { validator: "string", options: { minLength: 1, maxLength: 100 } },
+      description: {
+        validator: "string",
+        options: { minLength: 1, maxLength: 500 },
+      },
+      userId: { validator: "objectId" },
+      prompts: { validator: "array" },
+      isPublic: { validator: "boolean" },
+      tags: { validator: "array", options: { maxItems: 10 } },
+      category: {
+        validator: "enum",
+        options: ["personal", "team", "public", "template", "other"],
+      },
+      createdAt: { validator: "timestamp" },
+      updatedAt: { validator: "timestamp" },
+      promptCount: { validator: "integer", options: { min: 0 } },
+    },
   },
 
   playbook: {
-    required: ['id', 'name', 'description', 'userId', 'createdAt', 'steps'],
+    required: ["id", "name", "description", "userId", "createdAt", "steps"],
     fields: {
-      id: { validator: 'objectId' },
-      name: { validator: 'string', options: { minLength: 1, maxLength: 100 } },
-      description: { validator: 'string', options: { minLength: 1, maxLength: 1000 } },
-      userId: { validator: 'objectId' },
-      steps: { validator: 'array', options: { minItems: 1 } },
-      tags: { validator: 'array', options: { maxItems: 10 } },
-      category: { validator: 'enum', options: ['automation', 'analysis', 'content', 'customer_service', 'development', 'other'] },
-      isPublic: { validator: 'boolean' },
-      version: { validator: 'string' },
-      createdAt: { validator: 'timestamp' },
-      updatedAt: { validator: 'timestamp' },
-      executionCount: { validator: 'integer', options: { min: 0 } },
-      avgExecutionTime: { validator: 'number', options: { min: 0 } }
-    }
+      id: { validator: "objectId" },
+      name: { validator: "string", options: { minLength: 1, maxLength: 100 } },
+      description: {
+        validator: "string",
+        options: { minLength: 1, maxLength: 1000 },
+      },
+      userId: { validator: "objectId" },
+      steps: { validator: "array", options: { minItems: 1 } },
+      tags: { validator: "array", options: { maxItems: 10 } },
+      category: {
+        validator: "enum",
+        options: [
+          "automation",
+          "analysis",
+          "content",
+          "customer_service",
+          "development",
+          "other",
+        ],
+      },
+      isPublic: { validator: "boolean" },
+      version: { validator: "string" },
+      createdAt: { validator: "timestamp" },
+      updatedAt: { validator: "timestamp" },
+      executionCount: { validator: "integer", options: { min: 0 } },
+      avgExecutionTime: { validator: "number", options: { min: 0 } },
+    },
   },
 
   user: {
-    required: ['id', 'email', 'role', 'createdAt'],
+    required: ["id", "email", "role", "createdAt"],
     fields: {
-      id: { validator: 'objectId' },
-      email: { validator: 'email' },
-      name: { validator: 'string', options: { minLength: 1, maxLength: 100 } },
-      role: { validator: 'enum', options: ['admin', 'user', 'guest'] },
-      permissions: { validator: 'array' },
-      createdAt: { validator: 'timestamp' },
-      updatedAt: { validator: 'timestamp' },
-      lastLoginAt: { validator: 'timestamp' },
-      isActive: { validator: 'boolean' },
-      emailVerified: { validator: 'boolean' }
-    }
+      id: { validator: "objectId" },
+      email: { validator: "email" },
+      name: { validator: "string", options: { minLength: 1, maxLength: 100 } },
+      role: { validator: "enum", options: ["admin", "user", "guest"] },
+      permissions: { validator: "array" },
+      createdAt: { validator: "timestamp" },
+      updatedAt: { validator: "timestamp" },
+      lastLoginAt: { validator: "timestamp" },
+      isActive: { validator: "boolean" },
+      emailVerified: { validator: "boolean" },
+    },
   },
 
   cost: {
-    required: ['id', 'userId', 'provider', 'model', 'requestId', 'timestamp', 'cost'],
+    required: [
+      "id",
+      "userId",
+      "provider",
+      "model",
+      "requestId",
+      "timestamp",
+      "cost",
+    ],
     fields: {
-      id: { validator: 'objectId' },
-      userId: { validator: 'objectId' },
-      provider: { validator: 'enum', options: ['openai', 'anthropic', 'google', 'local'] },
-      model: { validator: 'string' },
-      requestId: { validator: 'objectId' },
-      promptId: { validator: 'objectId' },
-      playbookId: { validator: 'objectId' },
-      timestamp: { validator: 'timestamp' },
-      cost: { validator: 'number', options: { min: 0 } },
-      inputTokens: { validator: 'integer', options: { min: 0 } },
-      outputTokens: { validator: 'integer', options: { min: 0 } },
-      totalTokens: { validator: 'integer', options: { min: 0 } },
-      requestDuration: { validator: 'number', options: { min: 0 } },
-      requestType: { validator: 'enum', options: ['prompt_execution', 'playbook_step', 'test_execution', 'api_call'] },
-      status: { validator: 'enum', options: ['success', 'error', 'timeout', 'cancelled'] },
-      errorMessage: { validator: 'string' }
-    }
-  }
+      id: { validator: "objectId" },
+      userId: { validator: "objectId" },
+      provider: {
+        validator: "enum",
+        options: ["openai", "anthropic", "google", "local"],
+      },
+      model: { validator: "string" },
+      requestId: { validator: "objectId" },
+      promptId: { validator: "objectId" },
+      playbookId: { validator: "objectId" },
+      timestamp: { validator: "timestamp" },
+      cost: { validator: "number", options: { min: 0 } },
+      inputTokens: { validator: "integer", options: { min: 0 } },
+      outputTokens: { validator: "integer", options: { min: 0 } },
+      totalTokens: { validator: "integer", options: { min: 0 } },
+      requestDuration: { validator: "number", options: { min: 0 } },
+      requestType: {
+        validator: "enum",
+        options: [
+          "prompt_execution",
+          "playbook_step",
+          "test_execution",
+          "api_call",
+        ],
+      },
+      status: {
+        validator: "enum",
+        options: ["success", "error", "timeout", "cancelled"],
+      },
+      errorMessage: { validator: "string" },
+    },
+  },
 };
 /**
  * Validate data against a schema
  */
-export function validateData(schemaName: keyof typeof schemas, data: any, partial = false): ValidationResult {
+export function validateData(
+  schemaName: keyof typeof schemas,
+  data: any,
+  partial = false,
+): ValidationResult {
   const schema = schemas[schemaName];
   if (!schema) {
     return {
       isValid: false,
-      errors: [`Unknown schema: ${schemaName}`]
+      errors: [`Unknown schema: ${schemaName}`],
     };
   }
 
@@ -242,7 +320,7 @@ export function validateData(schemaName: keyof typeof schemas, data: any, partia
   // Validate each field that exists in the data
   for (const [fieldName, fieldValue] of Object.entries(data)) {
     const fieldSchema = schema.fields[fieldName];
-    
+
     if (!fieldSchema) {
       // Field not in schema - skip or warn?
       continue;
@@ -250,13 +328,13 @@ export function validateData(schemaName: keyof typeof schemas, data: any, partia
 
     const validatorName = fieldSchema.validator;
     const validatorOptions = fieldSchema.options;
-    
+
     if (validatorName in validators) {
       const validator = validators[validatorName as keyof typeof validators];
       let error: string | null = null;
 
       // Handle different validator signatures
-      if (validatorName === 'enum' && validatorOptions) {
+      if (validatorName === "enum" && validatorOptions) {
         error = (validator as any)(fieldValue, fieldName, validatorOptions);
       } else if (validatorOptions) {
         error = (validator as any)(fieldValue, fieldName, validatorOptions);
@@ -275,29 +353,34 @@ export function validateData(schemaName: keyof typeof schemas, data: any, partia
   return {
     isValid: errors.length === 0,
     errors,
-    data: errors.length === 0 ? validatedData : undefined
+    data: errors.length === 0 ? validatedData : undefined,
   };
 }
 
 /**
  * Convenience validation functions
  */
-export const validatePrompt = (data: any, partial = false) => validateData('prompt', data, partial);
-export const validateCollection = (data: any, partial = false) => validateData('collection', data, partial);
-export const validatePlaybook = (data: any, partial = false) => validateData('playbook', data, partial);
-export const validateUser = (data: any, partial = false) => validateData('user', data, partial);
-export const validateCost = (data: any, partial = false) => validateData('cost', data, partial);
+export const validatePrompt = (data: any, partial = false) =>
+  validateData("prompt", data, partial);
+export const validateCollection = (data: any, partial = false) =>
+  validateData("collection", data, partial);
+export const validatePlaybook = (data: any, partial = false) =>
+  validateData("playbook", data, partial);
+export const validateUser = (data: any, partial = false) =>
+  validateData("user", data, partial);
+export const validateCost = (data: any, partial = false) =>
+  validateData("cost", data, partial);
 
 /**
  * Create validation middleware for Express.js
  */
 export function createValidationMiddleware(
-  schemaName: keyof typeof schemas, 
+  schemaName: keyof typeof schemas,
   options: {
     validateBody?: boolean;
     validateQuery?: boolean;
     partial?: boolean;
-  } = {}
+  } = {},
 ) {
   return (req: any, res: any, next: any) => {
     const errors: string[] = [];
@@ -305,7 +388,7 @@ export function createValidationMiddleware(
     if (options.validateBody && req.body) {
       const result = validateData(schemaName, req.body, options.partial);
       if (!result.isValid) {
-        errors.push(`Body validation: ${result.errors.join(', ')}`);
+        errors.push(`Body validation: ${result.errors.join(", ")}`);
       } else if (result.data) {
         req.body = result.data; // Use validated data
       }
@@ -314,14 +397,14 @@ export function createValidationMiddleware(
     if (options.validateQuery && req.query) {
       const result = validateData(schemaName, req.query, true); // Query params are always partial
       if (!result.isValid) {
-        errors.push(`Query validation: ${result.errors.join(', ')}`);
+        errors.push(`Query validation: ${result.errors.join(", ")}`);
       }
     }
 
     if (errors.length > 0) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: errors
+        error: "Validation failed",
+        details: errors,
       });
     }
 
@@ -332,8 +415,13 @@ export function createValidationMiddleware(
 /**
  * Validation middleware creators
  */
-export const createPromptValidation = (options = {}) => createValidationMiddleware('prompt', options);
-export const createCollectionValidation = (options = {}) => createValidationMiddleware('collection', options);
-export const createPlaybookValidation = (options = {}) => createValidationMiddleware('playbook', options);
-export const createUserValidation = (options = {}) => createValidationMiddleware('user', options);
-export const createCostValidation = (options = {}) => createValidationMiddleware('cost', options);
+export const createPromptValidation = (options = {}) =>
+  createValidationMiddleware("prompt", options);
+export const createCollectionValidation = (options = {}) =>
+  createValidationMiddleware("collection", options);
+export const createPlaybookValidation = (options = {}) =>
+  createValidationMiddleware("playbook", options);
+export const createUserValidation = (options = {}) =>
+  createValidationMiddleware("user", options);
+export const createCostValidation = (options = {}) =>
+  createValidationMiddleware("cost", options);

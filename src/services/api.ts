@@ -1,8 +1,8 @@
 // API Configuration - Enhanced with Field Conversion and Unified Auth
-import { 
+import {
   convertObjectToCamelCase,
-  convertObjectToSnakeCase
-} from '../utils/fieldConverter';
+  convertObjectToSnakeCase,
+} from "../utils/fieldConverter";
 
 const getApiBaseUrl = () => {
   // Handle test environment where import.meta might not be available
@@ -48,11 +48,11 @@ export interface ApiResponse<T = any> {
 export interface PaginatedResponse<T> {
   items: T[];
   pagination: {
-    currentPage: number;  // Updated to camelCase
-    totalPages: number;   // Updated to camelCase
-    totalCount: number;   // Updated to camelCase
+    currentPage: number; // Updated to camelCase
+    totalPages: number; // Updated to camelCase
+    totalCount: number; // Updated to camelCase
     limit: number;
-    hasNext: boolean;     // Updated to camelCase
+    hasNext: boolean; // Updated to camelCase
     has_prev: boolean;
   };
 }
@@ -189,7 +189,7 @@ class ApiService {
     }
 
     const responseData = await response.json();
-    
+
     // Convert response data from snake_case to camelCase
     return convertObjectToCamelCase(responseData) as T;
   }
@@ -233,7 +233,7 @@ class ApiService {
   async post<T>(endpoint: string, data?: any): Promise<T> {
     // Convert request data to snake_case before sending
     const convertedData = data ? convertObjectToSnakeCase(data) : undefined;
-    
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "POST",
       headers: await this.getHeaders(),
@@ -246,7 +246,7 @@ class ApiService {
   async put<T>(endpoint: string, data?: any): Promise<T> {
     // Convert request data to snake_case before sending
     const convertedData = data ? convertObjectToSnakeCase(data) : undefined;
-    
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "PUT",
       headers: await this.getHeaders(),

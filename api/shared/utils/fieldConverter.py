@@ -26,10 +26,10 @@ def to_camel_case(snake_str: str) -> str:
 def convert_camel_to_snake(obj: Any) -> Any:
     """
     Recursively convert all keys in a dictionary from camelCase to snake_case
-    
+
     Args:
         obj: Dictionary, list, or primitive value to convert
-        
+
     Returns:
         Converted object with snake_case keys
     """
@@ -48,10 +48,10 @@ def convert_camel_to_snake(obj: Any) -> Any:
 def convert_snake_to_camel(obj: Any) -> Any:
     """
     Recursively convert all keys in a dictionary from snake_case to camelCase
-    
+
     Args:
         obj: Dictionary, list, or primitive value to convert
-        
+
     Returns:
         Converted object with camelCase keys
     """
@@ -70,11 +70,11 @@ def convert_snake_to_camel(obj: Any) -> Any:
 def batch_convert_requests(requests: List[Dict[str, Any]], to_format: str = "snake") -> List[Dict[str, Any]]:
     """
     Convert a batch of request objects
-    
+
     Args:
         requests: List of request dictionaries to convert
         to_format: "snake" or "camel" - target format
-        
+
     Returns:
         List of converted request objects
     """
@@ -85,11 +85,11 @@ def batch_convert_requests(requests: List[Dict[str, Any]], to_format: str = "sna
 def batch_convert_responses(responses: List[Dict[str, Any]], to_format: str = "camel") -> List[Dict[str, Any]]:
     """
     Convert a batch of response objects
-    
+
     Args:
         responses: List of response dictionaries to convert
         to_format: "snake" or "camel" - target format
-        
+
     Returns:
         List of converted response objects
     """
@@ -100,7 +100,7 @@ def batch_convert_responses(responses: List[Dict[str, Any]], to_format: str = "c
 # Export commonly used functions
 __all__ = [
     'to_snake_case',
-    'to_camel_case', 
+    'to_camel_case',
     'convert_camel_to_snake',
     'convert_snake_to_camel',
     'batch_convert_requests',

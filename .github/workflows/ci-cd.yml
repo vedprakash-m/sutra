@@ -20,44 +20,9 @@ env:
 
 # Concurrent jobs for speed, but with proper dependencies
 jobs:
-  # Fast feedback loop - Code Quality (runs first, fails fast)
-  code-quality:
+  # Unified validation - ensures 100% parity with local development
+  unified-validation:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci --prefer-offline --no-audit
-
-      - name: Run linting (with caching)
-        uses: actions/cache@v3
-        with:
-          path: .eslintcache
-          key: eslint-cache-${{ runner.os }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
-
-      - name: Lint with cache
-        run: npm run lint -- --cache --cache-location .eslintcache
-
-      - name: Run type checking
-        run: npm run type-check
-
-      - name: Check formatting
-        run: npm run format:check
-
-      - name: Validate package-lock.json
-        run: npm audit --audit-level=high
-
-  # Frontend validation
-  frontend-tests:
-    runs-on: ubuntu-latest
-    needs: code-quality
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -68,17 +33,22 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Install dependencies
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install frontend dependencies
         run: npm ci --prefer-offline --no-audit
 
-      - name: Run unit tests with coverage
-        run: npm run test:coverage
+      - name: Install backend dependencies
+        working-directory: ./api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage/lcov.info
-          flags: frontend
+      - name: Run unified validation (CI mode)
+        run: ./scripts/unified-validation.sh ci all
 
       - name: Build frontend (verify build works)
         run: npm run build
@@ -92,7 +62,7 @@ jobs:
   # Backend validation
   backend-tests:
     runs-on: ubuntu-latest
-    needs: code-quality
+    needs: unified-validation
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -148,7 +118,7 @@ jobs:
   # Infrastructure validation
   infrastructure-tests:
     runs-on: ubuntu-latest
-    needs: code-quality
+    needs: unified-validation
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -183,7 +153,7 @@ jobs:
   # Enhanced security scanning
   security-scan:
     runs-on: ubuntu-latest
-    needs: code-quality
+    needs: unified-validation
     timeout-minutes: 15
     if: github.event_name == 'push' && github.repository == github.event.repository.full_name
     steps:
@@ -219,7 +189,7 @@ jobs:
   # TODO: Re-enable once E2E environment issues are resolved
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: [frontend-tests, backend-tests, infrastructure-tests]
+    needs: [unified-validation, backend-tests, infrastructure-tests]
     timeout-minutes: 30
     if: false # Temporarily disabled to unblock deployment
     steps:
@@ -287,7 +257,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [
-        frontend-tests,
+        unified-validation,
         backend-tests,
         infrastructure-tests,
         security-scan,

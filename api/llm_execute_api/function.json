@@ -7,7 +7,7 @@
       "direction": "in",
       "name": "req",
       "methods": ["get", "post"],
-      "route": "llm/{action?}"
+      "route": "llm/execute/{action?}"
     },
     {
       "type": "http",

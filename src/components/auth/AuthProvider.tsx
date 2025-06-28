@@ -147,11 +147,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (!principal.userRoles?.includes("admin")) {
               try {
                 console.log("🔄 Fetching role from backend /getroles...");
+
+                // Create authentication headers using the same logic as ApiService
+                const authHeaders: Record<string, string> = {
+                  "Content-Type": "application/json",
+                  "x-ms-client-principal": btoa(JSON.stringify(principal)),
+                  "x-ms-client-principal-id": principal.userId,
+                  "x-ms-client-principal-name": principal.userDetails,
+                  "x-ms-client-principal-idp": principal.identityProvider,
+                };
+
                 const roleResponse = await fetch("/api/getroles", {
                   method: "GET",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
+                  headers: authHeaders,
                 });
 
                 if (roleResponse.ok) {

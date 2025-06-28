@@ -29,17 +29,17 @@ class AuthEnvironment(Enum):
 
 class AuthProvider(ABC):
     """Abstract base class for authentication providers"""
-    
+
     @abstractmethod
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         """Extract and validate user from request"""
         pass
-    
+
     @abstractmethod
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate user has required permissions"""
         pass
-    
+
     @abstractmethod
     async def refresh_user_session(self, user: User) -> Optional[User]:
         """Refresh user session if needed"""
@@ -49,32 +49,32 @@ class AuthProvider(ABC):
 # Adapter classes to bridge existing auth managers with the provider interface
 class StaticWebAppsAuthProvider(AuthProvider):
     """Provider adapter for StaticWebAppsAuthManager"""
-    
+
     def __init__(self):
         self.manager = StaticWebAppsAuthManager()
-    
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         return self.manager.get_user_from_headers(req)
-    
+
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         # Basic permission validation - can be enhanced
         return user.role in [UserRole.ADMIN, UserRole.USER]
-    
+
     async def refresh_user_session(self, user: User) -> Optional[User]:
         return user  # Static Web Apps handles session management
 
 
 class MockAuthProvider(AuthProvider):
     """Provider adapter for MockAuthManager"""
-    
+
     def __init__(self):
         self.manager = MockAuthManager()
-    
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         # Create a mock user for development/testing
         from datetime import datetime, timezone
         now = datetime.now(timezone.utc)
-        
+
         return User(
             id=self.manager.user_id,
             email=self.manager.email,
@@ -83,10 +83,10 @@ class MockAuthProvider(AuthProvider):
             created_at=now,
             updated_at=now
         )
-    
+
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         return True  # Mock allows all permissions
-    
+
     async def refresh_user_session(self, user: User) -> Optional[User]:
         return user
 
@@ -95,25 +95,25 @@ class UnifiedAuthProvider:
     Unified authentication provider that delegates to appropriate auth implementation
     based on environment and configuration
     """
-    
+
     def __init__(self):
         self.environment = self._detect_environment()
         self.provider = self._create_provider()
-        
+
         logger.info(f"Initialized UnifiedAuthProvider for {self.environment.value} environment")
-    
+
     def _detect_environment(self) -> AuthEnvironment:
         """Detect the current environment"""
         # Check environment variables
         env = os.getenv('SUTRA_AUTH_ENV', '').lower()
-        
+
         if env == 'production' or os.getenv('WEBSITE_SITE_NAME'):
             return AuthEnvironment.PRODUCTION
         elif env == 'testing' or os.getenv('PYTEST_CURRENT_TEST'):
             return AuthEnvironment.TESTING
         else:
             return AuthEnvironment.DEVELOPMENT
-    
+
     def _create_provider(self) -> AuthProvider:
         """Create appropriate auth provider based on environment"""
         if self.environment == AuthEnvironment.PRODUCTION:
@@ -122,7 +122,7 @@ class UnifiedAuthProvider:
             return TestingAuthProvider()
         else:
             return DevelopmentAuthProvider()
-    
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         """Get user from request using configured provider"""
         try:
@@ -133,11 +133,11 @@ class UnifiedAuthProvider:
         except Exception as e:
             logger.error(f"Authentication failed: {str(e)}")
             return None
-    
+
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate user permissions"""
         return await self.provider.validate_user_permissions(user, required_permissions)
-    
+
     async def require_authentication(self, req: func.HttpRequest) -> User:
         """Require authentication and return user or raise error"""
         user = await self.get_user_from_request(req)
@@ -148,7 +148,7 @@ class UnifiedAuthProvider:
                 status_code=401
             )
         return user
-    
+
     async def require_admin(self, req: func.HttpRequest) -> User:
         """Require admin role and return user or raise error"""
         user = await self.require_authentication(req)
@@ -159,7 +159,7 @@ class UnifiedAuthProvider:
                 status_code=403
             )
         return user
-    
+
     async def require_permissions(self, req: func.HttpRequest, permissions: List[str]) -> User:
         """Require specific permissions and return user or raise error"""
         user = await self.require_authentication(req)
@@ -173,38 +173,38 @@ class UnifiedAuthProvider:
 
 class ProductionAuthProvider(AuthProvider):
     """Production authentication using Azure Static Web Apps"""
-    
+
     def __init__(self):
         self.swa_provider = StaticWebAppsAuthProvider()
-    
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         """Get user from Azure Static Web Apps headers"""
         return self.swa_provider.get_user_from_headers(req)
-    
+
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate permissions based on role and explicit permissions"""
         # Admin users have all permissions
         if user.role == UserRole.ADMIN:
             return True
-        
+
         # Check explicit user permissions if available
         user_permissions = getattr(user, 'permissions', [])
         return all(perm in user_permissions for perm in required_permissions)
-    
+
     async def refresh_user_session(self, user: User) -> Optional[User]:
         """Refresh session (not needed for Static Web Apps)"""
         return user
 
 class DevelopmentAuthProvider(AuthProvider):
     """Development authentication with demo users and auto-injection"""
-    
+
     def __init__(self):
         self.mock_provider = MockAuthProvider()
-        
+
         # Demo users for development
         from datetime import datetime, timezone
         now = datetime.now(timezone.utc)
-        
+
         self.demo_users = {
             'vedprakash.m@outlook.com': User(
                 id='dev_admin_1',
@@ -231,61 +231,61 @@ class DevelopmentAuthProvider(AuthProvider):
                 updated_at=now
             )
         }
-    
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         """Get user with demo user injection for development"""
-        
+
         # First try to get user from headers (might be set by frontend)
         user_id_header = req.headers.get('x-ms-client-principal-id')
         user_email_header = req.headers.get('x-ms-client-principal-name')
-        
+
         if user_email_header and user_email_header in self.demo_users:
             return self.demo_users[user_email_header]
-        
+
         # Auto-inject admin user for specific demo endpoints
         path = req.url.lower()
         if any(path.endswith(endpoint) for endpoint in ['/admin', '/integrations', '/users']):
             return self.demo_users['vedprakash.m@outlook.com']
-        
+
         # Default to demo user for other endpoints
         return self.demo_users['demo.user@example.com']
-    
+
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate permissions with wildcard support"""
         user_permissions = getattr(user, 'permissions', [])
-        
+
         # Check for wildcard permission
         if '*' in user_permissions:
             return True
-        
+
         return all(perm in user_permissions for perm in required_permissions)
-    
+
     async def refresh_user_session(self, user: User) -> Optional[User]:
         """Refresh session (always return user in development)"""
         return user
 
 class TestingAuthProvider(AuthProvider):
     """Testing authentication with configurable mock users"""
-    
+
     def __init__(self):
         self.mock_provider = MockAuthProvider()
         self._current_user: Optional[User] = None
-    
+
     def set_test_user(self, user: Optional[User]):
         """Set current test user (for test setup)"""
         self._current_user = user
-    
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         """Return configured test user"""
         return self._current_user
-    
+
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Always validate permissions for testing"""
         user_permissions = getattr(user, 'permissions', [])
         if '*' in user_permissions or user.role == UserRole.ADMIN:
             return True
         return all(perm in user_permissions for perm in required_permissions)
-    
+
     async def refresh_user_session(self, user: User) -> Optional[User]:
         """Return user as-is for testing"""
         return user
@@ -321,11 +321,11 @@ async def require_permissions(req: func.HttpRequest, permissions: List[str]) -> 
 def auth_required(permissions: Optional[List[str]] = None, admin_only: bool = False):
     """
     Decorator for functions that require authentication
-    
+
     Args:
         permissions: List of required permissions
         admin_only: Whether admin role is required
-    
+
     Usage:
         @auth_required()
         async def my_function(req, user):
@@ -340,29 +340,29 @@ def auth_required(permissions: Optional[List[str]] = None, admin_only: bool = Fa
                     user = await require_permissions(req, permissions)
                 else:
                     user = await require_authentication(req)
-                
+
                 # Add user to kwargs for the function
                 kwargs['user'] = user
                 return await func(req, *args, **kwargs)
-                
+
             except SutraAPIError:
                 raise
             except Exception as e:
                 logger.error(f"Authentication decorator error: {str(e)}")
                 raise SutraAPIError(f"Authentication failed: {str(e)}", 401)
-        
+
         return wrapper
     return decorator
 
 # Migration utilities for existing code
 class LegacyAuthBridge:
     """Bridge to help migrate from old auth functions to unified auth"""
-    
+
     @staticmethod
     async def get_user_from_headers(req: func.HttpRequest) -> Optional[User]:
         """Legacy function bridge"""
         return await get_user_from_request(req)
-    
+
     @staticmethod
     def get_user_role(user_id: str) -> UserRole:
         """Legacy function bridge - simplified"""

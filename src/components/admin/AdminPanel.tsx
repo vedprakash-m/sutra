@@ -29,6 +29,23 @@ export default function AdminPanel() {
   const usage = usageStats as any;
   const llm = llmSettings as any;
 
+  // Handler for LLM configuration
+  const handleLLMConfiguration = (provider: string) => {
+    const currentConfig = llm?.[provider];
+    const apiKey = prompt(
+      `Configure ${provider} API Settings:\n\n` + "Enter your API key:",
+      currentConfig?.apiKey ? "***************************" : "",
+    );
+
+    if (apiKey && apiKey !== "***************************") {
+      // In a real implementation, this would call the backend API
+      console.log(`🔧 Configuring ${provider} with new API key`);
+      alert(
+        `${provider} configuration updated! (Note: This is a demo - actual API integration would save to backend)`,
+      );
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -281,7 +298,10 @@ export default function AdminPanel() {
                       >
                         {llm?.[provider]?.enabled ? "Active" : "Inactive"}
                       </span>
-                      <button className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700">
+                      <button
+                        onClick={() => handleLLMConfiguration(provider)}
+                        className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
+                      >
                         Configure
                       </button>
                     </div>
@@ -353,13 +373,33 @@ export default function AdminPanel() {
             <h2 className="text-lg font-medium text-gray-900 mb-4">
               User Management
             </h2>
-            <div className="text-center py-8">
-              <p className="text-gray-500">
-                User management features coming soon...
+            <div className="text-center py-4">
+              <p className="text-gray-600 mb-4">
+                Full user management interface is available at:
               </p>
-              <p className="text-sm text-gray-400 mt-2">
-                This will include user roles, permissions, and activity
-                monitoring.
+              <a
+                href="/admin.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+                Open User Management Console
+              </a>
+              <p className="text-sm text-gray-500 mt-2">
+                Manage user roles, approvals, and permissions
               </p>
             </div>
           </div>

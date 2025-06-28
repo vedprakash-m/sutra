@@ -64,6 +64,137 @@ export const BusinessIntelligenceDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [monitoring, analytics, user?.id]);
 
+  // Action handlers for dashboard buttons
+  const handleGenerateReport = async () => {
+    try {
+      setLoading(true);
+      console.log("🔄 Generating comprehensive analytics report...");
+
+      // Simulate report generation
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Create report data
+      const reportData = {
+        timestamp: new Date().toISOString(),
+        metrics: metrics,
+        promptPatterns: await analytics.analyzePromptPatterns(
+          user?.id || "admin",
+        ),
+        costProjections: await analytics.predictCostTrends(user?.id || "admin"),
+        anomalies: await analytics.detectAnomalies(user?.id || "admin"),
+        systemHealth: await monitoring.getDashboardMetrics(),
+        recommendations: await analytics.generatePersonalizedRecommendations(
+          user?.id || "admin",
+        ),
+      };
+
+      // Download as JSON file
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `sutra-analytics-report-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log("✅ Analytics report generated and downloaded");
+    } catch (error) {
+      console.error("❌ Failed to generate report:", error);
+      alert("Failed to generate report. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportMetrics = async () => {
+    try {
+      console.log("📊 Exporting metrics data...");
+
+      // Create CSV export
+      const csvData = [
+        ["Metric", "Value", "Timestamp"],
+        [
+          "Response Time (ms)",
+          metrics?.responseTime || 0,
+          new Date().toISOString(),
+        ],
+        [
+          "Error Rate (%)",
+          ((metrics?.errorRate || 0) * 100).toFixed(2),
+          new Date().toISOString(),
+        ],
+        ["Active Users", metrics?.activeUsers || 0, new Date().toISOString()],
+        [
+          "Cost per Request ($)",
+          (metrics?.costPerRequest || 0).toFixed(3),
+          new Date().toISOString(),
+        ],
+        [
+          "System Health (%)",
+          metrics?.systemHealth || 0,
+          new Date().toISOString(),
+        ],
+        [
+          "User Satisfaction",
+          metrics?.userSatisfaction || 0,
+          new Date().toISOString(),
+        ],
+      ];
+
+      const csvContent = csvData.map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `sutra-metrics-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log("✅ Metrics exported successfully");
+    } catch (error) {
+      console.error("❌ Failed to export metrics:", error);
+      alert("Failed to export metrics. Please try again.");
+    }
+  };
+
+  const handleConfigureAlerts = () => {
+    console.log("🔔 Opening alert configuration...");
+
+    // Create a simple alert configuration modal
+    const alertConfig = prompt(
+      "Configure Alert Thresholds:\n\n" +
+        "Enter alert settings in JSON format:\n" +
+        'Example: {"responseTime": 1000, "errorRate": 0.05, "systemHealth": 95}',
+      JSON.stringify(
+        {
+          responseTime: 1000,
+          errorRate: 0.05,
+          systemHealth: 95,
+        },
+        null,
+        2,
+      ),
+    );
+
+    if (alertConfig) {
+      try {
+        const config = JSON.parse(alertConfig);
+        localStorage.setItem("sutra-alert-config", JSON.stringify(config));
+        console.log("✅ Alert configuration saved:", config);
+        alert("Alert configuration saved successfully!");
+      } catch (error) {
+        console.error("❌ Invalid JSON format:", error);
+        alert("Invalid JSON format. Please check your input.");
+      }
+    }
+  };
+
   if (!isAdmin) {
     return null; // Only show to admin users
   }
@@ -216,13 +347,25 @@ export const BusinessIntelligenceDashboard: React.FC = () => {
 
         {/* Quick Actions */}
         <div className="mt-6 flex flex-wrap gap-3">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Generate Report
+          <button
+            onClick={handleGenerateReport}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Generating..." : "Generate Report"}
           </button>
-          <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+          <button
+            onClick={handleExportMetrics}
+            disabled={loading}
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Export Metrics
           </button>
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+          <button
+            onClick={handleConfigureAlerts}
+            disabled={loading}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Configure Alerts
           </button>
         </div>

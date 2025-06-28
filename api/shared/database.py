@@ -22,6 +22,8 @@ class DatabaseManager:
 
         # Get connection string from environment
         self._connection_string = os.getenv("COSMOS_DB_CONNECTION_STRING")
+
+        # In development mode, we don't require a connection string as we use mocks
         if not self._connection_string and not self._development_mode:
             raise ValueError(
                 "COSMOS_DB_CONNECTION_STRING environment variable is required"
@@ -34,9 +36,8 @@ class DatabaseManager:
         """Get or create Cosmos DB client."""
         if self._client is None:
             if self._development_mode:
-                # In a testing environment, we might not have a connection string.
-                # We can return a mock or a specific test instance if needed.
-                # For now, we prevent creating a client without a connection string.
+                # In development mode, we might not have a connection string.
+                # Return None to trigger mock behavior
                 if not self._connection_string:
                     return None
             self._client = CosmosClient.from_connection_string(self._connection_string)

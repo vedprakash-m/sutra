@@ -47,7 +47,7 @@ except ImportError:
     # Fallback if schema validator not available
     def validatePrompt(data, partial=False):
         return {"isValid": True, "errors": [], "data": data}
-    
+
     def createPromptValidation(options=None):
         return lambda req, res, next: next()
 
@@ -60,7 +60,7 @@ async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
 
     request_id = extract_request_id(req)
     cost_manager = get_real_time_cost_manager()
-    
+
     # Store user in request for consistency with existing code
     req.current_user = user
 

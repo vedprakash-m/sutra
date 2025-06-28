@@ -28,14 +28,14 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Current user information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /users:
     get:
@@ -44,15 +44,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
         - name: role
           in: query
           schema:
             type: string
             enum: [admin, user, guest]
       responses:
-        '200':
+        "200":
           description: List of users
           content:
             application/json:
@@ -62,11 +62,11 @@ paths:
                   users:
                     type: array
                     items:
-                      $ref: '#/components/schemas/User'
+                      $ref: "#/components/schemas/User"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                    $ref: "#/components/schemas/Pagination"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
   /users/{userId}:
     get:
@@ -75,16 +75,16 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/UserId'
+        - $ref: "#/components/parameters/UserId"
       responses:
-        '200':
+        "200":
           description: User information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/User"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # Prompts
   /prompts:
@@ -94,12 +94,12 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
         - name: category
           in: query
           schema:
-            $ref: '#/components/schemas/PromptCategory'
+            $ref: "#/components/schemas/PromptCategory"
         - name: isPublic
           in: query
           schema:
@@ -110,7 +110,7 @@ paths:
             type: string
             description: Comma-separated list of tags
       responses:
-        '200':
+        "200":
           description: List of prompts
           content:
             application/json:
@@ -120,9 +120,9 @@ paths:
                   prompts:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Prompt'
+                      $ref: "#/components/schemas/Prompt"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
+                    $ref: "#/components/schemas/Pagination"
 
     post:
       summary: Create a new prompt
@@ -134,16 +134,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PromptInput'
+              $ref: "#/components/schemas/PromptInput"
       responses:
-        '201':
+        "201":
           description: Prompt created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Prompt'
-        '400':
-          $ref: '#/components/responses/ValidationError'
+                $ref: "#/components/schemas/Prompt"
+        "400":
+          $ref: "#/components/responses/ValidationError"
 
   /prompts/{promptId}:
     get:
@@ -152,16 +152,16 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/PromptId'
+        - $ref: "#/components/parameters/PromptId"
       responses:
-        '200':
+        "200":
           description: Prompt information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Prompt'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Prompt"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     put:
       summary: Update prompt
@@ -169,22 +169,22 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/PromptId'
+        - $ref: "#/components/parameters/PromptId"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PromptInput'
+              $ref: "#/components/schemas/PromptInput"
       responses:
-        '200':
+        "200":
           description: Prompt updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Prompt'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Prompt"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
     delete:
       summary: Delete prompt
@@ -192,12 +192,12 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/PromptId'
+        - $ref: "#/components/parameters/PromptId"
       responses:
-        '204':
+        "204":
           description: Prompt deleted successfully
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   # Collections
   /collections:
@@ -207,14 +207,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
         - name: category
           in: query
           schema:
-            $ref: '#/components/schemas/CollectionCategory'
+            $ref: "#/components/schemas/CollectionCategory"
       responses:
-        '200':
+        "200":
           description: List of collections
           content:
             application/json:
@@ -224,9 +224,9 @@ paths:
                   collections:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Collection'
+                      $ref: "#/components/schemas/Collection"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
+                    $ref: "#/components/schemas/Pagination"
 
     post:
       summary: Create a new collection
@@ -238,14 +238,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CollectionInput'
+              $ref: "#/components/schemas/CollectionInput"
       responses:
-        '201':
+        "201":
           description: Collection created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: "#/components/schemas/Collection"
 
   /collections/{collectionId}:
     get:
@@ -254,14 +254,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/CollectionId'
+        - $ref: "#/components/parameters/CollectionId"
       responses:
-        '200':
+        "200":
           description: Collection information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: "#/components/schemas/Collection"
 
     put:
       summary: Update collection
@@ -269,20 +269,20 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/CollectionId'
+        - $ref: "#/components/parameters/CollectionId"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CollectionInput'
+              $ref: "#/components/schemas/CollectionInput"
       responses:
-        '200':
+        "200":
           description: Collection updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Collection'
+                $ref: "#/components/schemas/Collection"
 
     delete:
       summary: Delete collection
@@ -290,9 +290,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/CollectionId'
+        - $ref: "#/components/parameters/CollectionId"
       responses:
-        '204':
+        "204":
           description: Collection deleted successfully
 
   # Playbooks
@@ -303,14 +303,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
         - name: category
           in: query
           schema:
-            $ref: '#/components/schemas/PlaybookCategory'
+            $ref: "#/components/schemas/PlaybookCategory"
       responses:
-        '200':
+        "200":
           description: List of playbooks
           content:
             application/json:
@@ -320,9 +320,9 @@ paths:
                   playbooks:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Playbook'
+                      $ref: "#/components/schemas/Playbook"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
+                    $ref: "#/components/schemas/Pagination"
 
     post:
       summary: Create a new playbook
@@ -334,14 +334,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PlaybookInput'
+              $ref: "#/components/schemas/PlaybookInput"
       responses:
-        '201':
+        "201":
           description: Playbook created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Playbook'
+                $ref: "#/components/schemas/Playbook"
 
   /playbooks/{playbookId}:
     get:
@@ -350,14 +350,14 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/PlaybookId'
+        - $ref: "#/components/parameters/PlaybookId"
       responses:
-        '200':
+        "200":
           description: Playbook information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Playbook'
+                $ref: "#/components/schemas/Playbook"
 
   /playbooks/{playbookId}/execute:
     post:
@@ -366,7 +366,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/PlaybookId'
+        - $ref: "#/components/parameters/PlaybookId"
       requestBody:
         required: true
         content:
@@ -382,12 +382,12 @@ paths:
                   default: false
                   description: Whether to perform a dry run (validation only)
       responses:
-        '200':
+        "200":
           description: Playbook execution result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaybookExecution'
+                $ref: "#/components/schemas/PlaybookExecution"
 
   # Cost Management
   /cost/summary:
@@ -406,14 +406,14 @@ paths:
         - name: provider
           in: query
           schema:
-            $ref: '#/components/schemas/LLMProvider'
+            $ref: "#/components/schemas/LLMProvider"
       responses:
-        '200':
+        "200":
           description: Cost summary
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CostSummary'
+                $ref: "#/components/schemas/CostSummary"
 
   /cost/records:
     get:
@@ -422,8 +422,8 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
         - name: startDate
           in: query
           schema:
@@ -437,9 +437,9 @@ paths:
         - name: provider
           in: query
           schema:
-            $ref: '#/components/schemas/LLMProvider'
+            $ref: "#/components/schemas/LLMProvider"
       responses:
-        '200':
+        "200":
           description: List of cost records
           content:
             application/json:
@@ -449,9 +449,9 @@ paths:
                   records:
                     type: array
                     items:
-                      $ref: '#/components/schemas/CostRecord'
+                      $ref: "#/components/schemas/CostRecord"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
+                    $ref: "#/components/schemas/Pagination"
 
   # LLM Execution
   /llm/execute:
@@ -465,14 +465,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LLMRequest'
+              $ref: "#/components/schemas/LLMRequest"
       responses:
-        '200':
+        "200":
           description: LLM execution result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LLMResponse'
+                $ref: "#/components/schemas/LLMResponse"
 
   /llm/execute/anonymous:
     post:
@@ -483,16 +483,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LLMRequest'
+              $ref: "#/components/schemas/LLMRequest"
       responses:
-        '200':
+        "200":
           description: LLM execution result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LLMResponse'
-        '429':
-          $ref: '#/components/responses/RateLimited'
+                $ref: "#/components/schemas/LLMResponse"
+        "429":
+          $ref: "#/components/responses/RateLimited"
 
 components:
   securitySchemes:
@@ -583,7 +583,8 @@ components:
 
     PlaybookCategory:
       type: string
-      enum: [automation, analysis, content, customer_service, development, other]
+      enum:
+        [automation, analysis, content, customer_service, development, other]
 
     # Main entities
     User:
@@ -591,7 +592,7 @@ components:
       required: [id, email, role, createdAt]
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         email:
           type: string
           format: email
@@ -601,7 +602,7 @@ components:
           maxLength: 100
           example: "John Doe"
         role:
-          $ref: '#/components/schemas/UserRole'
+          $ref: "#/components/schemas/UserRole"
         permissions:
           type: array
           items:
@@ -613,18 +614,18 @@ components:
           type: boolean
           default: false
         createdAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         updatedAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         lastLoginAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
 
     Prompt:
       type: object
       required: [id, title, description, content, userId, createdAt]
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         title:
           type: string
           minLength: 1
@@ -640,9 +641,9 @@ components:
           minLength: 1
           example: "Write a professional email about {{topic}} to {{recipient}}"
         userId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         category:
-          $ref: '#/components/schemas/PromptCategory'
+          $ref: "#/components/schemas/PromptCategory"
         tags:
           type: array
           items:
@@ -671,9 +672,9 @@ components:
                 default: false
               defaultValue: {}
         createdAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         updatedAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         usageCount:
           type: integer
           minimum: 0
@@ -699,7 +700,7 @@ components:
           type: string
           minLength: 1
         category:
-          $ref: '#/components/schemas/PromptCategory'
+          $ref: "#/components/schemas/PromptCategory"
         tags:
           type: array
           items:
@@ -718,7 +719,7 @@ components:
       required: [id, name, description, userId, createdAt]
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         name:
           type: string
           minLength: 1
@@ -730,13 +731,13 @@ components:
           maxLength: 500
           example: "Collection of prompts for marketing content"
         userId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         prompts:
           type: array
           items:
-            $ref: '#/components/schemas/ObjectId'
+            $ref: "#/components/schemas/ObjectId"
         category:
-          $ref: '#/components/schemas/CollectionCategory'
+          $ref: "#/components/schemas/CollectionCategory"
         tags:
           type: array
           items:
@@ -750,9 +751,9 @@ components:
           minimum: 0
           default: 0
         createdAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         updatedAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
 
     CollectionInput:
       type: object
@@ -769,9 +770,9 @@ components:
         prompts:
           type: array
           items:
-            $ref: '#/components/schemas/ObjectId'
+            $ref: "#/components/schemas/ObjectId"
         category:
-          $ref: '#/components/schemas/CollectionCategory'
+          $ref: "#/components/schemas/CollectionCategory"
         tags:
           type: array
           items:
@@ -784,7 +785,7 @@ components:
       required: [id, name, description, userId, createdAt, steps]
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         name:
           type: string
           minLength: 1
@@ -796,14 +797,14 @@ components:
           maxLength: 1000
           example: "Automated customer support response generation"
         userId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         steps:
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/PlaybookStep'
+            $ref: "#/components/schemas/PlaybookStep"
         category:
-          $ref: '#/components/schemas/PlaybookCategory'
+          $ref: "#/components/schemas/PlaybookCategory"
         tags:
           type: array
           items:
@@ -824,9 +825,9 @@ components:
           type: number
           minimum: 0
         createdAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         updatedAt:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
 
     PlaybookInput:
       type: object
@@ -844,9 +845,9 @@ components:
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/PlaybookStep'
+            $ref: "#/components/schemas/PlaybookStep"
         category:
-          $ref: '#/components/schemas/PlaybookCategory'
+          $ref: "#/components/schemas/PlaybookCategory"
         tags:
           type: array
           items:
@@ -859,7 +860,7 @@ components:
       required: [id, name, type, order]
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         name:
           type: string
           minLength: 1
@@ -878,22 +879,22 @@ components:
         nextSteps:
           type: array
           items:
-            $ref: '#/components/schemas/ObjectId'
+            $ref: "#/components/schemas/ObjectId"
 
     PlaybookExecution:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         playbookId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         status:
           type: string
           enum: [running, completed, failed, cancelled]
         startTime:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         endTime:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         results:
           type: object
         errors:
@@ -909,22 +910,22 @@ components:
       required: [id, userId, provider, model, requestId, timestamp, cost]
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         userId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         provider:
-          $ref: '#/components/schemas/LLMProvider'
+          $ref: "#/components/schemas/LLMProvider"
         model:
           type: string
           example: "gpt-4"
         requestId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         promptId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         playbookId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         timestamp:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         cost:
           type: number
           minimum: 0
@@ -998,7 +999,7 @@ components:
       required: [provider, model, prompt]
       properties:
         provider:
-          $ref: '#/components/schemas/LLMProvider'
+          $ref: "#/components/schemas/LLMProvider"
         model:
           type: string
           example: "gpt-4"
@@ -1035,15 +1036,15 @@ components:
               maximum: 2
               default: 0
         promptId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         playbookId:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
 
     LLMResponse:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/ObjectId'
+          $ref: "#/components/schemas/ObjectId"
         content:
           type: string
           example: "Quantum computing is a type of computation that harnesses quantum mechanics..."
@@ -1067,7 +1068,7 @@ components:
           type: number
           minimum: 0
         timestamp:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
         metadata:
           type: object
 
@@ -1106,7 +1107,7 @@ components:
           items:
             type: string
         timestamp:
-          $ref: '#/components/schemas/Timestamp'
+          $ref: "#/components/schemas/Timestamp"
 
   responses:
     ValidationError:
@@ -1114,18 +1115,22 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             error: "ValidationError"
             message: "Request validation failed"
-            details: ["title: must be at least 1 characters", "description: is required"]
+            details:
+              [
+                "title: must be at least 1 characters",
+                "description: is required",
+              ]
 
     Unauthorized:
       description: Authentication required
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             error: "Unauthorized"
             message: "Authentication required"
@@ -1135,7 +1140,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             error: "Forbidden"
             message: "Insufficient permissions for this operation"
@@ -1145,7 +1150,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             error: "NotFound"
             message: "The requested resource was not found"
@@ -1155,7 +1160,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             error: "RateLimited"
             message: "Too many requests. Please try again later."

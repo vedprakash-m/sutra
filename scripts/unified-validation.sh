@@ -160,7 +160,7 @@ validate_security() {
 validate_frontend_tests() {
     print_step "Step 5: Frontend Unit Tests"
 
-    if npm test -- --run --passWithNoTests > /dev/null 2>&1; then
+    if npm test -- --passWithNoTests --watchAll=false > /dev/null 2>&1; then
         print_success "Frontend tests passed"
     else
         print_error "Frontend tests failed"

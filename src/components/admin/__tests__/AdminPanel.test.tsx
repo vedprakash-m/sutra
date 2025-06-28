@@ -178,7 +178,7 @@ describe("AdminPanel", () => {
     fireEvent.click(usersTab);
 
     expect(
-      screen.getByText("User management features coming soon..."),
+      screen.getByText("Full user management interface is available at:"),
     ).toBeInTheDocument();
   });
 

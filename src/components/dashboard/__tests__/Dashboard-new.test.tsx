@@ -122,7 +122,7 @@ describe("Dashboard-new", () => {
           type: "template",
         },
       ],
-      pagination: { total_count: 15 },
+      pagination: { totalCount: 15 },
     };
 
     mockUseApi
@@ -181,7 +181,7 @@ describe("Dashboard-new", () => {
           type: "template",
         },
       ],
-      pagination: { total_count: 2 },
+      pagination: { totalCount: 2 },
     };
 
     mockUseApi
@@ -199,7 +199,7 @@ describe("Dashboard-new", () => {
   it("should show empty state message for collections", () => {
     const collectionsData = {
       items: [],
-      pagination: { total_count: 0 },
+      pagination: { totalCount: 0 },
     };
 
     mockUseApi
@@ -239,7 +239,7 @@ describe("Dashboard-new", () => {
           visibility: "public",
         },
       ],
-      pagination: { total_count: 2 },
+      pagination: { totalCount: 2 },
     };
 
     mockUseApi
@@ -257,7 +257,7 @@ describe("Dashboard-new", () => {
   it("should show empty state message for playbooks", () => {
     const playbooksData = {
       items: [],
-      pagination: { total_count: 0 },
+      pagination: { totalCount: 0 },
     };
 
     mockUseApi
@@ -360,7 +360,7 @@ describe("Dashboard-new", () => {
           type: "template",
         },
       ],
-      pagination: { total_count: 2 },
+      pagination: { totalCount: 2 },
     };
 
     mockUseApi
@@ -389,7 +389,7 @@ describe("Dashboard-new", () => {
           visibility: "public",
         },
       ],
-      pagination: { total_count: 2 },
+      pagination: { totalCount: 2 },
     };
 
     mockUseApi

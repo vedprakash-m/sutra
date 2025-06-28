@@ -490,12 +490,12 @@ describe("collectionsApi", () => {
     const mockResponse = {
       items: [{ id: "1", name: "Test Collection" }],
       pagination: {
-        current_page: 1,
-        total_pages: 1,
-        total_count: 1,
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 1,
         limit: 10,
-        has_next: false,
-        has_prev: false,
+        hasNext: false,
+        hasPrev: false,
       },
     };
 
@@ -582,12 +582,12 @@ describe("playbooksApi", () => {
     const mockPlaybooks = {
       items: [{ id: "1", name: "Test Playbook" }],
       pagination: {
-        current_page: 1,
-        total_pages: 1,
-        total_count: 1,
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 1,
         limit: 10,
-        has_next: false,
-        has_prev: false,
+        hasNext: false,
+        hasPrev: false,
       },
     };
 

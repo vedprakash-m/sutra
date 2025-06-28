@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Prompt Schema",
+  "description": "Schema for prompt objects in the Sutra system",
+  "type": "object",
+  "required": ["id", "title", "description", "content", "userId", "createdAt"],
+  "properties": {
+    "id": {
+      "$ref": "./base.json#/definitions/objectId",
+      "description": "Unique prompt identifier"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Prompt title"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "description": "Prompt description"
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Prompt content/template"
+    },
+    "userId": {
+      "$ref": "./base.json#/definitions/userId",
+      "description": "ID of the user who created the prompt"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "maxItems": 10,
+      "description": "Tags for organizing prompts"
+    },
+    "isPublic": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the prompt is publicly accessible"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["writing", "coding", "analysis", "creative", "business", "other"],
+      "description": "Prompt category"
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$",
+            "description": "Variable name (camelCase)"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "boolean", "array", "object"],
+            "description": "Variable data type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Variable description"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the variable is required"
+          },
+          "defaultValue": {
+            "description": "Default value for the variable"
+          }
+        }
+      },
+      "description": "Template variables used in the prompt"
+    },
+    "createdAt": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the prompt was created"
+    },
+    "updatedAt": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the prompt was last updated"
+    },
+    "usageCount": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Number of times this prompt has been used"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0",
+      "description": "Semantic version of the prompt"
+    }
+  },
+  "additionalProperties": false
+}

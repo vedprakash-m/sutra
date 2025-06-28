@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cost Management Schema",
+  "description": "Schema for cost management objects in the Sutra system",
+  "type": "object",
+  "required": ["id", "userId", "provider", "model", "requestId", "timestamp", "cost"],
+  "properties": {
+    "id": {
+      "$ref": "./base.json#/definitions/objectId",
+      "description": "Unique cost record identifier"
+    },
+    "userId": {
+      "$ref": "./base.json#/definitions/userId",
+      "description": "ID of the user who incurred the cost"
+    },
+    "provider": {
+      "$ref": "./base.json#/definitions/llmProvider",
+      "description": "LLM provider that processed the request"
+    },
+    "model": {
+      "$ref": "./base.json#/definitions/llmModel",
+      "description": "Specific model used"
+    },
+    "requestId": {
+      "$ref": "./base.json#/definitions/objectId",
+      "description": "Unique request identifier for tracking"
+    },
+    "promptId": {
+      "$ref": "./base.json#/definitions/objectId",
+      "description": "ID of the prompt used (if applicable)"
+    },
+    "playbookId": {
+      "$ref": "./base.json#/definitions/objectId",
+      "description": "ID of the playbook used (if applicable)"
+    },
+    "timestamp": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the request was made"
+    },
+    "cost": {
+      "$ref": "./base.json#/definitions/costAmount",
+      "description": "Cost of the request in USD"
+    },
+    "inputTokens": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of input tokens"
+    },
+    "outputTokens": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of output tokens"
+    },
+    "totalTokens": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total tokens (input + output)"
+    },
+    "requestDuration": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Request duration in seconds"
+    },
+    "requestType": {
+      "type": "string",
+      "enum": ["prompt_execution", "playbook_step", "test_execution", "api_call"],
+      "description": "Type of request that generated the cost"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "error", "timeout", "cancelled"],
+      "description": "Request completion status"
+    },
+    "errorMessage": {
+      "type": "string",
+      "description": "Error message if status is error"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "maxTokens": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "topP": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "frequencyPenalty": {
+          "type": "number",
+          "minimum": -2,
+          "maximum": 2
+        },
+        "presencePenalty": {
+          "type": "number",
+          "minimum": -2,
+          "maximum": 2
+        }
+      },
+      "description": "Model parameters used for the request"
+    }
+  },
+  "additionalProperties": false
+}

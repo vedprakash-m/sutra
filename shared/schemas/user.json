@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "User Schema",
+  "description": "Schema for user objects in the Sutra system",
+  "type": "object",
+  "required": ["id", "email", "role", "createdAt"],
+  "properties": {
+    "id": {
+      "$ref": "./base.json#/definitions/objectId",
+      "description": "Unique user identifier"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "User email address"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "User display name"
+    },
+    "role": {
+      "$ref": "./base.json#/definitions/userRole",
+      "description": "User role in the system"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "prompts.create",
+          "prompts.read",
+          "prompts.update",
+          "prompts.delete",
+          "collections.create",
+          "collections.read",
+          "collections.update",
+          "collections.delete",
+          "playbooks.create",
+          "playbooks.read",
+          "playbooks.update",
+          "playbooks.delete",
+          "playbooks.execute",
+          "llm.execute",
+          "cost.view",
+          "cost.manage",
+          "admin.users",
+          "admin.integrations",
+          "admin.settings"
+        ]
+      },
+      "uniqueItems": true,
+      "description": "Specific permissions granted to the user"
+    },
+    "preferences": {
+      "type": "object",
+      "properties": {
+        "theme": {
+          "type": "string",
+          "enum": ["light", "dark", "auto"],
+          "default": "auto"
+        },
+        "language": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "default": "en"
+        },
+        "defaultProvider": {
+          "$ref": "./base.json#/definitions/llmProvider"
+        },
+        "defaultModel": {
+          "$ref": "./base.json#/definitions/llmModel"
+        },
+        "notifications": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "boolean",
+              "default": true
+            },
+            "budgetAlerts": {
+              "type": "boolean",
+              "default": true
+            },
+            "executionAlerts": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      },
+      "description": "User preferences and settings"
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "monthlyBudget": {
+          "$ref": "./base.json#/definitions/costAmount",
+          "description": "Monthly spending limit in USD"
+        },
+        "dailyRequests": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Daily request limit"
+        },
+        "maxTokensPerRequest": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum tokens per request"
+        }
+      },
+      "description": "Usage limits for the user"
+    },
+    "usage": {
+      "type": "object",
+      "properties": {
+        "totalSpent": {
+          "$ref": "./base.json#/definitions/costAmount",
+          "description": "Total amount spent (lifetime)"
+        },
+        "monthlySpent": {
+          "$ref": "./base.json#/definitions/costAmount",
+          "description": "Amount spent this month"
+        },
+        "totalRequests": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total requests made (lifetime)"
+        },
+        "monthlyRequests": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Requests made this month"
+        },
+        "lastRequestAt": {
+          "$ref": "./base.json#/definitions/timestamp"
+        }
+      },
+      "description": "Usage statistics for the user"
+    },
+    "createdAt": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the user account was created"
+    },
+    "updatedAt": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the user account was last updated"
+    },
+    "lastLoginAt": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the user last logged in"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the user account is active"
+    },
+    "emailVerified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user's email has been verified"
+    }
+  },
+  "additionalProperties": false
+}

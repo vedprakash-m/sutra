@@ -14,18 +14,21 @@ import uuid
 import httpx
 import asyncio
 
-from shared.auth_static_web_apps import require_auth, get_current_user, verify_jwt_token, get_user_id_from_token, check_admin_role
+# NEW: Use unified authentication and validation systems
+from shared.unified_auth import auth_required
+from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from shared.utils.schemaValidator import validate_entity
+from shared.real_time_cost import get_cost_manager
 from shared.database import get_database_manager
-from shared.models import ValidationError
-from shared.validation import validate_llm_integration_data
+from shared.models import ValidationError, User
 from shared.error_handling import handle_api_error, SutraAPIError
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
-@require_auth
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+@auth_required(permissions=["integrations.read", "integrations.create", "integrations.update", "integrations.delete"])
+async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     Integrations API endpoint for managing LLM provider integrations.
 

@@ -13,15 +13,20 @@ from datetime import datetime
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
+# NEW: Use unified authentication and validation systems
+from shared.unified_auth import auth_required
+from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from shared.utils.schemaValidator import validate_entity
+from shared.real_time_cost import get_cost_manager
 from shared.database import get_database_manager
-from shared.auth_static_web_apps import require_admin
+from shared.models import User
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
-@require_admin
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+@auth_required(admin_only=True)
+async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     User Management API Endpoint
 

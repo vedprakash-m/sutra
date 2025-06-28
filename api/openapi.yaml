@@ -1,0 +1,1177 @@
+openapi: 3.0.3
+info:
+  title: Sutra Multi-LLM Prompt Studio API
+  description: |
+    API specification for the Sutra Multi-LLM Prompt Studio platform.
+    This API provides endpoints for managing prompts, collections, playbooks,
+    users, and cost tracking across multiple LLM providers.
+  version: 1.0.0
+  contact:
+    name: Sutra Team
+    email: support@sutra.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001/api
+    description: Local development server
+  - url: https://sutra-app.azurestaticapps.net/api
+    description: Production server
+
+paths:
+  # Authentication & Users
+  /auth/me:
+    get:
+      summary: Get current user information
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users:
+    get:
+      summary: List users (admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [admin, user, guest]
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/{userId}:
+    get:
+      summary: Get user by ID
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Prompts
+  /prompts:
+    get:
+      summary: List prompts
+      tags: [Prompts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/PromptCategory'
+        - name: isPublic
+          in: query
+          schema:
+            type: boolean
+        - name: tags
+          in: query
+          schema:
+            type: string
+            description: Comma-separated list of tags
+      responses:
+        '200':
+          description: List of prompts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prompts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Prompt'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create a new prompt
+      tags: [Prompts]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptInput'
+      responses:
+        '201':
+          description: Prompt created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /prompts/{promptId}:
+    get:
+      summary: Get prompt by ID
+      tags: [Prompts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PromptId'
+      responses:
+        '200':
+          description: Prompt information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Update prompt
+      tags: [Prompts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PromptId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromptInput'
+      responses:
+        '200':
+          description: Prompt updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete prompt
+      tags: [Prompts]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PromptId'
+      responses:
+        '204':
+          description: Prompt deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Collections
+  /collections:
+    get:
+      summary: List collections
+      tags: [Collections]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/CollectionCategory'
+      responses:
+        '200':
+          description: List of collections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  collections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Collection'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create a new collection
+      tags: [Collections]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionInput'
+      responses:
+        '201':
+          description: Collection created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+
+  /collections/{collectionId}:
+    get:
+      summary: Get collection by ID
+      tags: [Collections]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Collection information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+
+    put:
+      summary: Update collection
+      tags: [Collections]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionInput'
+      responses:
+        '200':
+          description: Collection updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+
+    delete:
+      summary: Delete collection
+      tags: [Collections]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '204':
+          description: Collection deleted successfully
+
+  # Playbooks
+  /playbooks:
+    get:
+      summary: List playbooks
+      tags: [Playbooks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/PlaybookCategory'
+      responses:
+        '200':
+          description: List of playbooks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playbooks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Playbook'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      summary: Create a new playbook
+      tags: [Playbooks]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaybookInput'
+      responses:
+        '201':
+          description: Playbook created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playbook'
+
+  /playbooks/{playbookId}:
+    get:
+      summary: Get playbook by ID
+      tags: [Playbooks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlaybookId'
+      responses:
+        '200':
+          description: Playbook information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playbook'
+
+  /playbooks/{playbookId}/execute:
+    post:
+      summary: Execute a playbook
+      tags: [Playbooks]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PlaybookId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                inputs:
+                  type: object
+                  description: Input variables for playbook execution
+                dryRun:
+                  type: boolean
+                  default: false
+                  description: Whether to perform a dry run (validation only)
+      responses:
+        '200':
+          description: Playbook execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybookExecution'
+
+  # Cost Management
+  /cost/summary:
+    get:
+      summary: Get cost summary
+      tags: [Cost Management]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, week, month, year]
+            default: month
+        - name: provider
+          in: query
+          schema:
+            $ref: '#/components/schemas/LLMProvider'
+      responses:
+        '200':
+          description: Cost summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostSummary'
+
+  /cost/records:
+    get:
+      summary: Get detailed cost records
+      tags: [Cost Management]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: provider
+          in: query
+          schema:
+            $ref: '#/components/schemas/LLMProvider'
+      responses:
+        '200':
+          description: List of cost records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CostRecord'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  # LLM Execution
+  /llm/execute:
+    post:
+      summary: Execute LLM request
+      tags: [LLM Execution]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LLMRequest'
+      responses:
+        '200':
+          description: LLM execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMResponse'
+
+  /llm/execute/anonymous:
+    post:
+      summary: Execute anonymous LLM request (guest users)
+      tags: [LLM Execution]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LLMRequest'
+      responses:
+        '200':
+          description: LLM execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LLMResponse'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: User ID
+
+    PromptId:
+      name: promptId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Prompt ID
+
+    CollectionId:
+      name: collectionId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Collection ID
+
+    PlaybookId:
+      name: playbookId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Playbook ID
+
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+  schemas:
+    # Base types
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2024-01-15T10:30:00Z"
+
+    ObjectId:
+      type: string
+      minLength: 1
+      example: "prompt_12345"
+
+    LLMProvider:
+      type: string
+      enum: [openai, anthropic, google, local]
+
+    UserRole:
+      type: string
+      enum: [admin, user, guest]
+
+    PromptCategory:
+      type: string
+      enum: [writing, coding, analysis, creative, business, other]
+
+    CollectionCategory:
+      type: string
+      enum: [personal, team, public, template, other]
+
+    PlaybookCategory:
+      type: string
+      enum: [automation, analysis, content, customer_service, development, other]
+
+    # Main entities
+    User:
+      type: object
+      required: [id, email, role, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        name:
+          type: string
+          maxLength: 100
+          example: "John Doe"
+        role:
+          $ref: '#/components/schemas/UserRole'
+        permissions:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+          default: true
+        emailVerified:
+          type: boolean
+          default: false
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        lastLoginAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    Prompt:
+      type: object
+      required: [id, title, description, content, userId, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Email Generator"
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "Generate professional emails based on context"
+        content:
+          type: string
+          minLength: 1
+          example: "Write a professional email about {{topic}} to {{recipient}}"
+        userId:
+          $ref: '#/components/schemas/ObjectId'
+        category:
+          $ref: '#/components/schemas/PromptCategory'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+          example: ["email", "business", "communication"]
+        isPublic:
+          type: boolean
+          default: false
+        variables:
+          type: array
+          items:
+            type: object
+            required: [name, type]
+            properties:
+              name:
+                type: string
+                pattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+              type:
+                type: string
+                enum: [string, number, boolean, array, object]
+              description:
+                type: string
+              required:
+                type: boolean
+                default: false
+              defaultValue: {}
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        usageCount:
+          type: integer
+          minimum: 0
+          default: 0
+        version:
+          type: string
+          pattern: "^\\d+\\.\\d+\\.\\d+$"
+          default: "1.0.0"
+
+    PromptInput:
+      type: object
+      required: [title, description, content]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        content:
+          type: string
+          minLength: 1
+        category:
+          $ref: '#/components/schemas/PromptCategory'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        isPublic:
+          type: boolean
+          default: false
+        variables:
+          type: array
+          items:
+            type: object
+
+    Collection:
+      type: object
+      required: [id, name, description, userId, createdAt]
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Marketing Prompts"
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "Collection of prompts for marketing content"
+        userId:
+          $ref: '#/components/schemas/ObjectId'
+        prompts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectId'
+        category:
+          $ref: '#/components/schemas/CollectionCategory'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        isPublic:
+          type: boolean
+          default: false
+        promptCount:
+          type: integer
+          minimum: 0
+          default: 0
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    CollectionInput:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+        prompts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectId'
+        category:
+          $ref: '#/components/schemas/CollectionCategory'
+        tags:
+          type: array
+          items:
+            type: string
+        isPublic:
+          type: boolean
+
+    Playbook:
+      type: object
+      required: [id, name, description, userId, createdAt, steps]
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Customer Support Flow"
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "Automated customer support response generation"
+        userId:
+          $ref: '#/components/schemas/ObjectId'
+        steps:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PlaybookStep'
+        category:
+          $ref: '#/components/schemas/PlaybookCategory'
+        tags:
+          type: array
+          items:
+            type: string
+          maxItems: 10
+        isPublic:
+          type: boolean
+          default: false
+        version:
+          type: string
+          pattern: "^\\d+\\.\\d+\\.\\d+$"
+          default: "1.0.0"
+        executionCount:
+          type: integer
+          minimum: 0
+          default: 0
+        avgExecutionTime:
+          type: number
+          minimum: 0
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    PlaybookInput:
+      type: object
+      required: [name, description, steps]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        steps:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/PlaybookStep'
+        category:
+          $ref: '#/components/schemas/PlaybookCategory'
+        tags:
+          type: array
+          items:
+            type: string
+        isPublic:
+          type: boolean
+
+    PlaybookStep:
+      type: object
+      required: [id, name, type, order]
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        type:
+          type: string
+          enum: [prompt, llm_call, transform, condition, loop, human_input]
+        order:
+          type: integer
+          minimum: 0
+        config:
+          type: object
+        nextSteps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectId'
+
+    PlaybookExecution:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        playbookId:
+          $ref: '#/components/schemas/ObjectId'
+        status:
+          type: string
+          enum: [running, completed, failed, cancelled]
+        startTime:
+          $ref: '#/components/schemas/Timestamp'
+        endTime:
+          $ref: '#/components/schemas/Timestamp'
+        results:
+          type: object
+        errors:
+          type: array
+          items:
+            type: string
+        totalCost:
+          type: number
+          minimum: 0
+
+    CostRecord:
+      type: object
+      required: [id, userId, provider, model, requestId, timestamp, cost]
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        userId:
+          $ref: '#/components/schemas/ObjectId'
+        provider:
+          $ref: '#/components/schemas/LLMProvider'
+        model:
+          type: string
+          example: "gpt-4"
+        requestId:
+          $ref: '#/components/schemas/ObjectId'
+        promptId:
+          $ref: '#/components/schemas/ObjectId'
+        playbookId:
+          $ref: '#/components/schemas/ObjectId'
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        cost:
+          type: number
+          minimum: 0
+          multipleOf: 0.0001
+          example: 0.0042
+        inputTokens:
+          type: integer
+          minimum: 0
+          example: 150
+        outputTokens:
+          type: integer
+          minimum: 0
+          example: 75
+        totalTokens:
+          type: integer
+          minimum: 0
+          example: 225
+        requestDuration:
+          type: number
+          minimum: 0
+          example: 2.5
+        requestType:
+          type: string
+          enum: [prompt_execution, playbook_step, test_execution, api_call]
+        status:
+          type: string
+          enum: [success, error, timeout, cancelled]
+        errorMessage:
+          type: string
+
+    CostSummary:
+      type: object
+      properties:
+        period:
+          type: string
+          enum: [today, week, month, year]
+        totalCost:
+          type: number
+          minimum: 0
+        totalRequests:
+          type: integer
+          minimum: 0
+        byProvider:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              cost:
+                type: number
+                minimum: 0
+              requests:
+                type: integer
+                minimum: 0
+        byDay:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              cost:
+                type: number
+                minimum: 0
+              requests:
+                type: integer
+                minimum: 0
+
+    LLMRequest:
+      type: object
+      required: [provider, model, prompt]
+      properties:
+        provider:
+          $ref: '#/components/schemas/LLMProvider'
+        model:
+          type: string
+          example: "gpt-4"
+        prompt:
+          type: string
+          minLength: 1
+          example: "Explain quantum computing in simple terms"
+        parameters:
+          type: object
+          properties:
+            temperature:
+              type: number
+              minimum: 0
+              maximum: 2
+              default: 0.7
+            maxTokens:
+              type: integer
+              minimum: 1
+              maximum: 4096
+              default: 1000
+            topP:
+              type: number
+              minimum: 0
+              maximum: 1
+              default: 1
+            frequencyPenalty:
+              type: number
+              minimum: -2
+              maximum: 2
+              default: 0
+            presencePenalty:
+              type: number
+              minimum: -2
+              maximum: 2
+              default: 0
+        promptId:
+          $ref: '#/components/schemas/ObjectId'
+        playbookId:
+          $ref: '#/components/schemas/ObjectId'
+
+    LLMResponse:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ObjectId'
+        content:
+          type: string
+          example: "Quantum computing is a type of computation that harnesses quantum mechanics..."
+        usage:
+          type: object
+          properties:
+            inputTokens:
+              type: integer
+              minimum: 0
+            outputTokens:
+              type: integer
+              minimum: 0
+            totalTokens:
+              type: integer
+              minimum: 0
+        cost:
+          type: number
+          minimum: 0
+          multipleOf: 0.0001
+        duration:
+          type: number
+          minimum: 0
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        metadata:
+          type: object
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+          example: "The request data is invalid"
+        details:
+          type: array
+          items:
+            type: string
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+
+  responses:
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "ValidationError"
+            message: "Request validation failed"
+            details: ["title: must be at least 1 characters", "description: is required"]
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            message: "Authentication required"
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Forbidden"
+            message: "Insufficient permissions for this operation"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "NotFound"
+            message: "The requested resource was not found"
+
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "RateLimited"
+            message: "Too many requests. Please try again later."
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User management operations
+  - name: Prompts
+    description: Prompt management operations
+  - name: Collections
+    description: Collection management operations
+  - name: Playbooks
+    description: Playbook management and execution
+  - name: Cost Management
+    description: Cost tracking and budget management
+  - name: LLM Execution
+    description: LLM request execution

@@ -13,18 +13,21 @@ from typing import Dict, Any, List, Optional
 import uuid
 import asyncio
 
-from shared.auth_static_web_apps import require_auth, get_current_user, verify_jwt_token, get_user_id_from_token, check_admin_role
+# NEW: Use unified authentication and validation systems
+from shared.unified_auth import auth_required, get_user_from_request
+from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from shared.utils.schemaValidator import validate_entity
+from shared.real_time_cost import get_cost_manager
 from shared.database import get_database_manager
-from shared.models import Playbook, PlaybookExecution, ValidationError
-from shared.validation import validate_playbook_data
+from shared.models import Playbook, PlaybookExecution, ValidationError, User
 from shared.error_handling import handle_api_error, SutraAPIError
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
-@require_auth
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+@auth_required(permissions=["playbooks.read", "playbooks.create", "playbooks.update", "playbooks.delete", "playbooks.execute"])
+async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     Playbooks API endpoint for managing AI workflow playbooks.
 

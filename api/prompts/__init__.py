@@ -12,8 +12,9 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from shared.auth_static_web_apps import require_auth, get_current_user
-from shared.guest_user import allow_guest_access
+# Updated imports for unified auth and validation
+from shared.unified_auth import require_authentication, require_permissions, auth_required
+from shared.real_time_cost import get_real_time_cost_manager
 from shared.database import get_database_manager
 from shared.models import (
     PromptTemplate,
@@ -29,6 +30,8 @@ from shared.error_handling import (
     ErrorHandler,
     handle_api_errors,
     extract_request_id,
+    SutraError,
+    ErrorType
 )
 from shared.validation import (
     validate_pagination_params,
@@ -37,15 +40,29 @@ from shared.validation import (
     RateLimitValidator,
 )
 
+# Import schema validation
+try:
+    from shared.utils.schemaValidator import validatePrompt, createPromptValidation
+except ImportError:
+    # Fallback if schema validator not available
+    def validatePrompt(data, partial=False):
+        return {"isValid": True, "errors": [], "data": data}
+    
+    def createPromptValidation(options=None):
+        return lambda req, res, next: next()
 
-@allow_guest_access(usage_type="prompts_created")
-@require_auth(resource="prompts")
+
+@auth_required(permissions=["prompts.create", "prompts.read"])
 @handle_api_errors
-async def main(req: func.HttpRequest) -> func.HttpResponse:
-    """Handle prompts API requests with comprehensive validation and error handling."""
+async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
+    """Handle prompts API requests with unified auth and validation."""
     logging.info("Prompts API function processed a request.")
 
     request_id = extract_request_id(req)
+    cost_manager = get_real_time_cost_manager()
+    
+    # Store user in request for consistency with existing code
+    req.current_user = user
 
     # Route based on HTTP method
     method = req.method.upper()

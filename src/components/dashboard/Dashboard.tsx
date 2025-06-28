@@ -138,7 +138,7 @@ export default function Dashboard() {
                   <dd className="text-lg font-medium text-gray-900">
                     {collectionsLoading
                       ? "Loading..."
-                      : collectionsData?.pagination?.total_count || 0}
+                      : collectionsData?.pagination?.totalCount || 0}
                   </dd>
                 </dl>
               </div>

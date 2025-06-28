@@ -5,12 +5,16 @@ from typing import Dict, Any, Optional, List
 import azure.functions as func
 from azure.functions import HttpRequest, HttpResponse
 
+# NEW: Use unified authentication and validation systems
+from ..shared.unified_auth import auth_required, get_user_from_request
+from ..shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from ..shared.real_time_cost import get_cost_manager
+from ..shared.models import UserRole, User
 from ..shared.budget import get_enhanced_budget_manager, BudgetConfig
-from ..shared.auth import get_current_user, require_auth
-from ..shared.models import UserRole
 
 
-async def main(req: HttpRequest) -> HttpResponse:
+@auth_required(permissions=["cost.read", "cost.manage"])
+async def main(req: HttpRequest, user: User) -> HttpResponse:
     """
     Cost Management API endpoint.
 

@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Playbook Schema",
+  "description": "Schema for playbook objects in the Sutra system",
+  "type": "object",
+  "required": ["id", "name", "description", "userId", "createdAt", "steps"],
+  "properties": {
+    "id": {
+      "$ref": "./base.json#/definitions/objectId",
+      "description": "Unique playbook identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Playbook name"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "description": "Playbook description"
+    },
+    "userId": {
+      "$ref": "./base.json#/definitions/userId",
+      "description": "ID of the user who created the playbook"
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "order"],
+        "properties": {
+          "id": {
+            "$ref": "./base.json#/definitions/objectId",
+            "description": "Unique step identifier"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Step name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Step description"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["prompt", "llm_call", "transform", "condition", "loop", "human_input"],
+            "description": "Type of step"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Order of execution"
+          },
+          "config": {
+            "type": "object",
+            "description": "Step-specific configuration",
+            "properties": {
+              "promptId": {
+                "$ref": "./base.json#/definitions/objectId",
+                "description": "Reference to prompt (for prompt steps)"
+              },
+              "provider": {
+                "$ref": "./base.json#/definitions/llmProvider",
+                "description": "LLM provider (for llm_call steps)"
+              },
+              "model": {
+                "$ref": "./base.json#/definitions/llmModel",
+                "description": "LLM model (for llm_call steps)"
+              },
+              "parameters": {
+                "type": "object",
+                "description": "Model parameters (temperature, max_tokens, etc.)"
+              },
+              "condition": {
+                "type": "string",
+                "description": "Condition expression (for condition steps)"
+              },
+              "transformType": {
+                "type": "string",
+                "enum": ["extract", "format", "validate", "split", "merge"],
+                "description": "Type of transformation (for transform steps)"
+              }
+            }
+          },
+          "nextSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "./base.json#/definitions/objectId"
+            },
+            "description": "IDs of next steps to execute"
+          },
+          "errorHandling": {
+            "type": "object",
+            "properties": {
+              "retryCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 5,
+                "default": 0
+              },
+              "fallbackStepId": {
+                "$ref": "./base.json#/definitions/objectId"
+              },
+              "continueOnError": {
+                "type": "boolean",
+                "default": false
+              }
+            }
+          }
+        }
+      },
+      "description": "Ordered list of playbook steps"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "maxItems": 10,
+      "description": "Tags for organizing playbooks"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["automation", "analysis", "content", "customer_service", "development", "other"],
+      "description": "Playbook category"
+    },
+    "isPublic": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the playbook is publicly accessible"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0",
+      "description": "Semantic version of the playbook"
+    },
+    "executionCount": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Number of times this playbook has been executed"
+    },
+    "avgExecutionTime": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Average execution time in seconds"
+    },
+    "createdAt": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the playbook was created"
+    },
+    "updatedAt": {
+      "$ref": "./base.json#/definitions/timestamp",
+      "description": "When the playbook was last updated"
+    }
+  },
+  "additionalProperties": false
+}

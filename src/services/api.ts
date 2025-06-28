@@ -1,4 +1,9 @@
-// API Configuration - Direct access to Azure Functions (No Gateway)
+// API Configuration - Enhanced with Field Conversion and Unified Auth
+import { 
+  convertObjectToCamelCase,
+  convertObjectToSnakeCase
+} from '../utils/fieldConverter';
+
 const getApiBaseUrl = () => {
   // Handle test environment where import.meta might not be available
   if (typeof window === "undefined" && typeof global !== "undefined") {
@@ -43,11 +48,11 @@ export interface ApiResponse<T = any> {
 export interface PaginatedResponse<T> {
   items: T[];
   pagination: {
-    current_page: number;
-    total_pages: number;
-    total_count: number;
+    currentPage: number;  // Updated to camelCase
+    totalPages: number;   // Updated to camelCase
+    totalCount: number;   // Updated to camelCase
     limit: number;
-    has_next: boolean;
+    hasNext: boolean;     // Updated to camelCase
     has_prev: boolean;
   };
 }
@@ -161,7 +166,7 @@ class ApiService {
     return headers;
   }
 
-  // Enhanced error handling for direct access
+  // Enhanced error handling for direct access with field conversion
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       let errorMessage = `HTTP error! status: ${response.status}`;
@@ -183,14 +188,19 @@ class ApiService {
       throw new Error(errorMessage);
     }
 
-    return response.json();
+    const responseData = await response.json();
+    
+    // Convert response data from snake_case to camelCase
+    return convertObjectToCamelCase(responseData) as T;
   }
 
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
     const url = new URL(`${this.baseUrl}${endpoint}`);
 
     if (params) {
-      Object.entries(params).forEach(([key, value]) => {
+      // Convert params to snake_case before sending
+      const convertedParams = convertObjectToSnakeCase(params);
+      Object.entries(convertedParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           url.searchParams.append(key, String(value));
         }
@@ -221,20 +231,26 @@ class ApiService {
   }
 
   async post<T>(endpoint: string, data?: any): Promise<T> {
+    // Convert request data to snake_case before sending
+    const convertedData = data ? convertObjectToSnakeCase(data) : undefined;
+    
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "POST",
       headers: await this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
+      body: convertedData ? JSON.stringify(convertedData) : undefined,
     });
 
     return this.handleResponse<T>(response);
   }
 
   async put<T>(endpoint: string, data?: any): Promise<T> {
+    // Convert request data to snake_case before sending
+    const convertedData = data ? convertObjectToSnakeCase(data) : undefined;
+    
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "PUT",
       headers: await this.getHeaders(),
-      body: data ? JSON.stringify(data) : undefined,
+      body: convertedData ? JSON.stringify(convertedData) : undefined,
     });
 
     return this.handleResponse<T>(response);

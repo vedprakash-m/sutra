@@ -12,18 +12,21 @@ from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from shared.auth_static_web_apps import require_auth, get_current_user, verify_jwt_token, get_user_id_from_token, check_admin_role
+# NEW: Use unified authentication and validation systems
+from shared.unified_auth import auth_required, get_user_from_request
+from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from shared.utils.schemaValidator import validate_entity
+from shared.real_time_cost import get_cost_manager
 from shared.database import get_database_manager
-from shared.models import Collection, ValidationError
-from shared.validation import validate_collection_data
+from shared.models import Collection, ValidationError, User
 from shared.error_handling import handle_api_error, SutraAPIError
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
-@require_auth(resource="collections")
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+@auth_required(permissions=["collections.read", "collections.create", "collections.update", "collections.delete"])
+async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     Collections API endpoint for managing prompt collections.
 
@@ -36,28 +39,31 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - GET /api/collections/{id}/prompts - Get prompts in collection
     """
     try:
-        # Get authenticated user from request context
-        user = req.current_user
+        # User is automatically injected by the auth decorator
         user_id = user.id
         method = req.method
         route_params = req.route_params
         collection_id = route_params.get("id")
 
+        # Track API cost
+        cost_manager = get_cost_manager()
+        await cost_manager.track_api_usage(user_id, "collections", method.lower())
+
         # Route to appropriate handler
         if method == "GET":
             if collection_id:
                 if req.url.endswith("/prompts"):
-                    return await get_collection_prompts(user_id, collection_id, req)
+                    return await get_collection_prompts(user, collection_id, req)
                 else:
-                    return await get_collection(user_id, collection_id)
+                    return await get_collection(user, collection_id)
             else:
-                return await list_collections(user_id, req)
+                return await list_collections(user, req)
         elif method == "POST":
-            return await create_collection(user_id, req)
+            return await create_collection(user, req)
         elif method == "PUT" and collection_id:
-            return await update_collection(user_id, collection_id, req)
+            return await update_collection(user, collection_id, req)
         elif method == "DELETE" and collection_id:
-            return await delete_collection(user_id, collection_id)
+            return await delete_collection(user, collection_id)
         else:
             return func.HttpResponse(
                 json.dumps({"error": "Method not allowed"}),
@@ -69,9 +75,10 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         return handle_api_error(e)
 
 
-async def list_collections(user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+async def list_collections(user: User, req: func.HttpRequest) -> func.HttpResponse:
     """List collections for the authenticated user with pagination and filtering."""
     try:
+        user_id = user.id
         # Parse query parameters
         params = req.params
         page = int(params.get("page", 1))
@@ -156,8 +163,11 @@ async def list_collections(user_id: str, req: func.HttpRequest) -> func.HttpResp
             },
         }
 
+        # Convert response to camelCase for frontend
+        camel_response = convert_snake_to_camel(response_data)
+
         return func.HttpResponse(
-            json.dumps(response_data, default=str),
+            json.dumps(camel_response, default=str),
             status_code=200,
             mimetype="application/json",
         )
@@ -167,9 +177,10 @@ async def list_collections(user_id: str, req: func.HttpRequest) -> func.HttpResp
         raise SutraAPIError(f"Failed to list collections: {str(e)}", 500)
 
 
-async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpResponse:
+async def create_collection(user: User, req: func.HttpRequest) -> func.HttpResponse:
     """Create a new collection."""
     try:
+        user_id = user.id
         # Parse request body
         try:
             body = req.get_json()
@@ -182,8 +193,11 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
 
         db_manager = get_database_manager()
 
-        # Validate required fields
-        validation_result = validate_collection_data(body)
+        # Convert request from camelCase to snake_case
+        snake_body = convert_camel_to_snake(body)
+
+        # Validate using centralized schema validation
+        validation_result = validate_entity(snake_body, "collection")
         if not validation_result["valid"]:
             return func.HttpResponse(
                 json.dumps(
@@ -204,10 +218,10 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
         collection_data = {
             "id": collection_id,
             "userId": user_id,  # Consistent with database partition key
-            "name": body["name"],
-            "description": body.get("description", ""),
-            "type": body.get("type", "private"),  # private, shared_team, public_marketplace
-            "tags": body.get("tags", []),
+            "name": snake_body["name"],
+            "description": snake_body.get("description", ""),
+            "type": snake_body.get("type", "private"),  # private, shared_team, public_marketplace
+            "tags": snake_body.get("tags", []),
             "promptIds": [],  # Array of prompt IDs in this collection
             "teamId": body.get("teamId"),  # For shared_team collections
             "createdAt": now.isoformat(),
@@ -224,8 +238,11 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
 
         logger.info(f"Created collection {collection_id} for user {user_id}")
 
+        # Convert response to camelCase for frontend
+        camel_response = convert_snake_to_camel(created_item)
+
         return func.HttpResponse(
-            json.dumps(created_item, default=str),
+            json.dumps(camel_response, default=str),
             status_code=201,
             mimetype="application/json",
         )
@@ -235,9 +252,10 @@ async def create_collection(user_id: str, req: func.HttpRequest) -> func.HttpRes
         raise SutraAPIError(f"Failed to create collection: {str(e)}", 500)
 
 
-async def get_collection(user_id: str, collection_id: str) -> func.HttpResponse:
+async def get_collection(user: User, collection_id: str) -> func.HttpResponse:
     """Get a specific collection by ID."""
     try:
+        user_id = user.id
         db_manager = get_database_manager()
 
         # Query for the collection
@@ -260,8 +278,11 @@ async def get_collection(user_id: str, collection_id: str) -> func.HttpResponse:
 
         collection = items[0]
 
+        # Convert response to camelCase for frontend
+        camel_response = convert_snake_to_camel(collection)
+
         return func.HttpResponse(
-            json.dumps(collection, default=str),
+            json.dumps(camel_response, default=str),
             status_code=200,
             mimetype="application/json",
         )
@@ -272,10 +293,11 @@ async def get_collection(user_id: str, collection_id: str) -> func.HttpResponse:
 
 
 async def update_collection(
-    user_id: str, collection_id: str, req: func.HttpRequest
+    user: User, collection_id: str, req: func.HttpRequest
 ) -> func.HttpResponse:
     """Update an existing collection."""
     try:
+        user_id = user.id
         # Parse request body
         try:
             body = req.get_json()
@@ -366,9 +388,10 @@ async def update_collection(
         raise SutraAPIError(f"Failed to update collection: {str(e)}", 500)
 
 
-async def delete_collection(user_id: str, collection_id: str) -> func.HttpResponse:
+async def delete_collection(user: User, collection_id: str) -> func.HttpResponse:
     """Delete a collection."""
     try:
+        user_id = user.id
         db_manager = get_database_manager()
 
         # Check if collection exists and belongs to user
@@ -433,10 +456,11 @@ async def delete_collection(user_id: str, collection_id: str) -> func.HttpRespon
 
 
 async def get_collection_prompts(
-    user_id: str, collection_id: str, req: func.HttpRequest
+    user: User, collection_id: str, req: func.HttpRequest
 ) -> func.HttpResponse:
     """Get prompts within a specific collection."""
     try:
+        user_id = user.id
         # Parse query parameters
         params = req.params
         page = int(params.get("page", 1))

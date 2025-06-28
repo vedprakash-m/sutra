@@ -407,10 +407,10 @@ describe("ApiService", () => {
   });
 
   describe("getHeaders", () => {
-    it("should return headers without auth token when token is null", () => {
+    it("should return headers without auth token when token is null", async () => {
       apiService.setToken(null);
       const service = apiService as any;
-      const headers = service.getHeaders();
+      const headers = await service.getHeaders();
 
       expect(headers).toEqual({
         "Content-Type": "application/json",
@@ -420,11 +420,11 @@ describe("ApiService", () => {
       expect(headers["Authorization"]).toBeUndefined();
     });
 
-    it("should return headers with auth token when token is set", () => {
+    it("should return headers with auth token when token is set", async () => {
       const testToken = "test-auth-token";
       apiService.setToken(testToken);
       const service = apiService as any;
-      const headers = service.getHeaders();
+      const headers = await service.getHeaders();
 
       expect(headers).toEqual({
         "Content-Type": "application/json",

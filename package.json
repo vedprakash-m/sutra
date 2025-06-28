@@ -34,6 +34,9 @@
     "security:audit": "npm audit --audit-level=moderate",
     "security:fix": "npm audit fix",
     "precommit": "./scripts/local-validation.sh",
+    "pre-push": "./scripts/pre-push-validation.sh",
+    "validate": "./scripts/pre-push-validation.sh",
+    "build:prod": "NODE_ENV=production npm run build",
     "prepare": "command -v pre-commit >/dev/null && pre-commit install || echo 'pre-commit not available'"
   },
   "dependencies": {

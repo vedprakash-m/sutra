@@ -4,16 +4,43 @@ import path from "path";
 import { localAuthPlugin, getMockAuthHeaders } from "./src/dev/localAuthPlugin";
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react(), localAuthPlugin()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(async () => {
+  // Check if local API is available
+  let useLocalAPI = false;
+  try {
+    const response = await fetch("http://localhost:7071/api/health", {
+      signal: AbortSignal.timeout(2000),
+    });
+    useLocalAPI = response.ok;
+    console.log("🚀 Local API detected, using local backend");
+  } catch (error) {
+    console.log("⚠️ Local API not available, using production backend");
+    useLocalAPI = false;
+  }
+
+  const baseConfig: any = {
+    plugins: [react(), localAuthPlugin()],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-  server: {
-    port: 3000,
-    proxy: {
+    server: {
+      port: 3000,
+    },
+    build: {
+      outDir: "dist",
+      sourcemap: true,
+    },
+    define: {
+      // Pass backend mode to the frontend
+      "import.meta.env.VITE_USE_LOCAL_API": JSON.stringify(useLocalAPI),
+    },
+  };
+
+  // Add proxy only if local API is available
+  if (useLocalAPI) {
+    baseConfig.server.proxy = {
       "/api": {
         target: "http://localhost:7071",
         changeOrigin: true,
@@ -36,10 +63,11 @@ export default defineConfig({
           });
         },
       },
-    },
-  },
-  build: {
-    outDir: "dist",
-    sourcemap: true,
-  },
+    };
+  } else {
+    // When no local API, the frontend will use the production API directly
+    console.log("📡 Frontend will connect directly to production API");
+  }
+
+  return baseConfig;
 });

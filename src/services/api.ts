@@ -11,12 +11,24 @@ const getApiBaseUrl = () => {
       ? (globalThis as any).import?.meta || { env: {} }
       : { env: {} };
 
-  return (
-    importMeta.env.VITE_API_URL ||
-    (importMeta.env.NODE_ENV === "development"
-      ? "/api" // Use proxy in development
-      : "https://sutra-api.azurewebsites.net/api")
-  );
+  // Check if we have an explicit API URL override
+  if (importMeta.env.VITE_API_URL) {
+    return importMeta.env.VITE_API_URL;
+  }
+
+  // In development, check if local API is available via Vite config
+  if (importMeta.env.NODE_ENV === "development") {
+    const useLocalAPI = importMeta.env.VITE_USE_LOCAL_API === "true";
+    if (useLocalAPI) {
+      return "/api"; // Use proxy when local API is available
+    } else {
+      // Use production API directly when local API is not available
+      return "https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api";
+    }
+  }
+
+  // Production default
+  return "https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api";
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -81,10 +93,20 @@ class ApiService {
     return null;
   }
 
-  private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
+  private async getHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+
+    // In development connecting to production API, use minimal headers to avoid CORS preflight
+    if (
+      process.env.NODE_ENV === "development" &&
+      this.baseUrl.includes("azurewebsites.net")
+    ) {
+      // Use only simple headers that don't trigger CORS preflight
+      headers["Accept"] = "application/json";
+    } else {
+      // For local development or production, use full headers
+      headers["Content-Type"] = "application/json";
+    }
 
     if (this.token) {
       headers["Authorization"] = `Bearer ${this.token}`;
@@ -94,28 +116,45 @@ class ApiService {
     headers["X-Client-Name"] = "sutra-web";
     headers["X-Client-Version"] = "1.0.0";
 
-    // Development mode: Add Azure Static Web Apps headers for demo users
+    // Development mode: Add Azure Static Web Apps headers
     if (
       process.env.NODE_ENV === "development" ||
       window.location.hostname === "localhost"
     ) {
-      const demoUser = localStorage.getItem("sutra_demo_user");
-      if (demoUser) {
-        try {
-          const user = JSON.parse(demoUser);
-          // Create Azure Static Web Apps principal header
-          const principal = {
-            userId: user.id,
-            userDetails: user.email,
-            identityProvider: "azureActiveDirectory",
-            userRoles: user.role === "admin" ? ["admin", "user"] : ["user"],
-          };
-          headers["x-ms-client-principal"] = btoa(JSON.stringify(principal));
-          headers["x-ms-client-principal-id"] = user.id;
-          headers["x-ms-client-principal-name"] = user.email;
-        } catch (e) {
-          console.warn("Failed to parse demo user for headers:", e);
+      try {
+        // Try to get user info from /.auth/me endpoint (mock auth)
+        const authResponse = await fetch("/.auth/me");
+        if (authResponse.ok) {
+          const authData = await authResponse.json();
+          if (authData.clientPrincipal) {
+            const principal = authData.clientPrincipal;
+            headers["x-ms-client-principal"] = btoa(JSON.stringify(principal));
+            headers["x-ms-client-principal-id"] = principal.userId;
+            headers["x-ms-client-principal-name"] = principal.userDetails;
+            headers["x-ms-client-principal-idp"] = principal.identityProvider;
+          }
+        } else {
+          // Fallback to localStorage if /.auth/me doesn't work
+          const demoUser = localStorage.getItem("sutra_demo_user");
+          if (demoUser) {
+            const user = JSON.parse(demoUser);
+            const principal = {
+              userId: user.id,
+              userDetails: user.email,
+              identityProvider: "azureActiveDirectory",
+              userRoles: user.role === "admin" ? ["admin", "user"] : ["user"],
+            };
+            headers["x-ms-client-principal"] = btoa(JSON.stringify(principal));
+            headers["x-ms-client-principal-id"] = user.id;
+            headers["x-ms-client-principal-name"] = user.email;
+            headers["x-ms-client-principal-idp"] = "azureActiveDirectory";
+          }
         }
+
+        // For requests to production API from localhost, don't send Origin header to avoid CORS
+        // The backend allows requests without Origin header
+      } catch (e) {
+        console.warn("Failed to get auth headers for development:", e);
       }
     }
 
@@ -158,10 +197,25 @@ class ApiService {
       });
     }
 
-    const response = await fetch(url.toString(), {
+    const headers = await this.getHeaders();
+
+    // For development, try to disable CORS by using no-cors mode
+    // This will work for simple requests but not return response data
+    const fetchOptions: any = {
       method: "GET",
-      headers: this.getHeaders(),
-    });
+      headers,
+    };
+
+    // In development connecting to production API, use mode: 'cors'
+    // The backend should allow requests without Origin header
+    if (
+      process.env.NODE_ENV === "development" &&
+      this.baseUrl.includes("azurewebsites.net")
+    ) {
+      fetchOptions.mode = "cors";
+    }
+
+    const response = await fetch(url.toString(), fetchOptions);
 
     return this.handleResponse<T>(response);
   }
@@ -169,7 +223,7 @@ class ApiService {
   async post<T>(endpoint: string, data?: any): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "POST",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
     });
 
@@ -179,7 +233,7 @@ class ApiService {
   async put<T>(endpoint: string, data?: any): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "PUT",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
       body: data ? JSON.stringify(data) : undefined,
     });
 
@@ -189,7 +243,7 @@ class ApiService {
   async delete<T>(endpoint: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "DELETE",
-      headers: this.getHeaders(),
+      headers: await this.getHeaders(),
     });
 
     return this.handleResponse<T>(response);

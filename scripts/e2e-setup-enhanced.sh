@@ -143,6 +143,26 @@ if [[ $RETRY_COUNT -eq $MAX_RETRIES ]]; then
     exit 1
 fi
 
+# Validate backend test collection
+echo ""
+echo "🔍 Validating backend test collection..."
+cd api 2>/dev/null || {
+    echo "⚠️  Warning: Could not find api directory for backend validation"
+}
+
+if [ -d ".venv" ]; then
+    source .venv/bin/activate 2>/dev/null || true
+fi
+
+if python -m pytest --collect-only -q > /dev/null 2>&1; then
+    echo "✅ Backend test collection validated"
+else
+    echo "❌ Backend test collection failed - import errors detected"
+    echo "🔧 Run 'cd api && python -m pytest --collect-only' to see details"
+fi
+
+cd .. 2>/dev/null || true
+
 echo ""
 echo "🎉 E2E environment ready!"
 echo "📊 Service endpoints:"

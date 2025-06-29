@@ -56,6 +56,10 @@ class SutraAPIError(Exception):
         super().__init__(message)
 
 
+# Backward compatibility alias
+SutraError = SutraAPIError
+
+
 def handle_api_error(error: Exception) -> func.HttpResponse:
     """Handle API errors and return appropriate HTTP response."""
     try:
@@ -171,6 +175,19 @@ class ErrorSeverity(str, Enum):
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
+
+class ErrorType(str, Enum):
+    """Error types for categorization."""
+
+    VALIDATION = "validation"
+    AUTHENTICATION = "authentication"
+    AUTHORIZATION = "authorization"
+    NOT_FOUND = "not_found"
+    INTERNAL = "internal"
+    EXTERNAL = "external"
+    RATE_LIMIT = "rate_limit"
+    BUSINESS_LOGIC = "business_logic"
 
 
 class ErrorCategory(str, Enum):

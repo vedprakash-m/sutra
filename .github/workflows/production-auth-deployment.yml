@@ -1,0 +1,194 @@
+name: Production Authentication Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+      configure_auth:
+        description: "Configure authentication"
+        required: true
+        default: true
+        type: boolean
+
+env:
+  AZURE_RESOURCE_GROUP: sutra-rg
+  NODE_VERSION: "18"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  configure-authentication:
+    if: ${{ github.event.inputs.configure_auth == 'true' }}
+    runs-on: ubuntu-latest
+    name: Configure Azure Authentication
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Configure App Registration
+        run: |
+          echo "🚀 Configuring Azure App Registration..."
+          ./scripts/configure-azure-app-registration.sh
+
+      - name: Deploy Production Configuration
+        run: |
+          echo "🚀 Deploying production configuration..."
+          ./scripts/deploy-production-config.sh
+
+      - name: Upload Environment Configuration
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-config
+          path: |
+            production.env
+            .env.production
+            public/staticwebapp.config.json
+
+  build-and-deploy:
+    needs: [configure-authentication]
+    if: always() && (needs.configure-authentication.result == 'success' || needs.configure-authentication.result == 'skipped')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Application
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Download Configuration
+        if: ${{ github.event.inputs.configure_auth == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: production-config
+          path: ./
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: |
+          npm run test:ci
+          npm run test:coverage
+
+      - name: Build application
+        run: |
+          npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/"
+          api_location: ""
+          output_location: "dist"
+
+      - name: Deploy Function App
+        run: |
+          echo "🚀 Deploying Function App..."
+          cd api
+
+          # Create deployment package
+          zip -r ../function-app.zip . -x "*.pyc" "__pycache__/*" "venv/*" ".pytest_cache/*"
+
+          # Deploy to Function App
+          FUNCTION_APP_NAME=$(az functionapp list --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query "[0].name" --output tsv)
+          az functionapp deployment source config-zip \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name $FUNCTION_APP_NAME \
+            --src ../function-app.zip
+
+  test-deployment:
+    needs: [build-and-deploy]
+    if: always() && needs.build-and-deploy.result == 'success'
+    runs-on: ubuntu-latest
+    name: Test Production Deployment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download Configuration
+        if: ${{ github.event.inputs.configure_auth == 'true' }}
+        uses: actions/download-artifact@v3
+        with:
+          name: production-config
+          path: ./
+
+      - name: Test Authentication System
+        run: |
+          echo "🧪 Testing production authentication..."
+          ./scripts/test-production-auth.sh
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: auth-test-results
+          path: auth-test-results.json
+
+      - name: Notify Deployment Success
+        run: |
+          echo "🎉 Production deployment completed successfully!"
+          echo "✅ Authentication system is ready"
+          echo "✅ JWKS caching implemented"
+          echo "✅ Security headers configured"
+          echo "✅ Cross-app SSO foundation ready"
+
+  update-metadata:
+    needs: [test-deployment]
+    if: always() && needs.test-deployment.result == 'success'
+    runs-on: ubuntu-latest
+    name: Update Project Metadata
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update metadata.md
+        run: |
+          # Update Phase 4 status to complete
+          sed -i 's/📋 PENDING/✅ COMPLETE/g' docs/metadata.md
+          sed -i 's/Production Config Pending/Production Ready/g' docs/metadata.md
+          sed -i 's/95% Complete/100% Complete/g' docs/metadata.md
+
+          # Add deployment timestamp
+          echo "" >> docs/metadata.md
+          echo "**Production Deployment Completed:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> docs/metadata.md
+
+      - name: Commit updated metadata
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/metadata.md
+          git commit -m "✅ Phase 4: Production Deployment Complete - Authentication System Live" || exit 0
+          git push

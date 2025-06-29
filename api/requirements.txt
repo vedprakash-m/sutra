@@ -7,11 +7,21 @@ azure-identity>=1.16.1
 azure-keyvault-secrets==4.7.0
 azure-storage-blob==12.19.0
 
+# Microsoft Authentication Library
+msal>=1.24.0
+cryptography>=41.0.7
+
 # Core Dependencies
 pydantic==2.5.2
 httpx==0.25.2
 python-multipart>=0.0.18
 python-jose[cryptography]>=3.4.0
+pyjwt>=2.9.0
+jwcrypto>=1.5.0
+
+# JWKS and JWT validation
+requests>=2.31.0
+cachetools>=5.3.0
 
 # Web Framework (for local development)
 fastapi>=0.109.1
@@ -22,9 +32,7 @@ uvicorn==0.24.0
 pytest>=7.4.0
 pytest-asyncio>=0.21.1
 pytest-cov>=4.1.0
-requests>=2.31.0
 python-dotenv>=1.0.0
-pyjwt>=2.9.0
 
 # Security updates for transitive dependencies
 jinja2>=3.1.4

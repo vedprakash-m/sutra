@@ -8,6 +8,9 @@ export default {
     "^@/services/api$": "<rootDir>/src/services/__mocks__/api.ts",
     "^../services/api$": "<rootDir>/src/services/__mocks__/api.ts",
     "^../../services/api$": "<rootDir>/src/services/__mocks__/api.ts",
+    // Mock MSAL libraries for Jest
+    "^@azure/msal-react$": "<rootDir>/src/__mocks__/@azure/msal-react.tsx",
+    "^@azure/msal-browser$": "<rootDir>/src/__mocks__/@azure/msal-browser.ts",
   },
   transform: {
     "^.+\\.tsx?$": [

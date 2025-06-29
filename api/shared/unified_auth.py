@@ -1,7 +1,7 @@
 """
 Unified Authentication Provider
 Centralized authentication system for Sutra Multi-LLM Platform
-Part of systematic resolution for authentication complexity
+Microsoft Entra ID integration with VedUser standard compliance
 """
 
 import os
@@ -14,8 +14,8 @@ import azure.functions as func
 from .models import User, UserRole
 from .auth_static_web_apps import StaticWebAppsAuthManager
 from .auth_mocking import MockAuthManager
-from .error_handling import SutraAPIError
-from .error_handling import SutraAPIError
+from .error_handling import SutraAPIError, SutraError
+from .entra_auth import validate_request_headers, VedUser as EntraVedUser
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +45,57 @@ class AuthProvider(ABC):
         """Refresh user session if needed"""
         pass
 
+class EntraIdAuthProvider(AuthProvider):
+    """Microsoft Entra ID authentication provider"""
+
+    def __init__(self):
+        self.tenant_id = os.getenv('ENTRA_TENANT_ID', 'common')
+        self.client_id = os.getenv('ENTRA_CLIENT_ID')
+        logger.info(f"✅ EntraIdAuthProvider initialized (tenant: {self.tenant_id})")
+
+    async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
+        """Extract and validate user from request using Entra ID"""
+        try:
+            headers = dict(req.headers)
+            ved_user = validate_request_headers(headers)
+
+            if ved_user:
+                # Convert EntraVedUser to legacy User model for compatibility
+                user = User(
+                    id=ved_user.id,
+                    email=ved_user.email,
+                    name=ved_user.name,
+                    role=UserRole.ADMIN if ved_user.role == 'admin' else UserRole.USER,
+                    created_at=ved_user.created_at,
+                    updated_at=ved_user.updated_at
+                )
+
+                logger.info(f"✅ Entra ID user authenticated: {user.email} (role: {user.role})")
+                return user
+
+            logger.warning("❌ Entra ID authentication failed")
+            return None
+
+        except Exception as e:
+            logger.error(f"❌ Entra ID authentication error: {e}")
+            return None
+
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
+        """Validate user has required permissions"""
+        # Basic role-based validation
+        if user.role == UserRole.ADMIN:
+            return True
+
+        # Add more sophisticated permission checking here
+        # For now, users have basic permissions
+        basic_permissions = ['read', 'create_prompts', 'manage_own_data']
+        return all(perm in basic_permissions for perm in required_permissions)
+
+    async def refresh_user_session(self, user: User) -> Optional[User]:
+        """Refresh user session if needed"""
+        # Entra ID handles token refresh automatically via MSAL
+        # Return user as-is for now
+        return user
 
 # Adapter classes to bridge existing auth managers with the provider interface
 class StaticWebAppsAuthProvider(AuthProvider):
@@ -172,14 +223,32 @@ class UnifiedAuthProvider:
         return user
 
 class ProductionAuthProvider(AuthProvider):
-    """Production authentication using Azure Static Web Apps"""
+    """Production authentication using Microsoft Entra ID with SWA fallback"""
 
     def __init__(self):
+        # Primary: Microsoft Entra ID
+        self.entra_provider = EntraIdAuthProvider()
+        # Fallback: Azure Static Web Apps
         self.swa_provider = StaticWebAppsAuthProvider()
 
+        logger.info("✅ ProductionAuthProvider initialized with Entra ID + SWA fallback")
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
-        """Get user from Azure Static Web Apps headers"""
-        return self.swa_provider.get_user_from_headers(req)
+        """Get user from Entra ID or fallback to Azure Static Web Apps"""
+        # Try Entra ID authentication first
+        user = await self.entra_provider.get_user_from_request(req)
+        if user:
+            logger.info(f"✅ Entra ID authentication successful: {user.email}")
+            return user
+
+        # Fallback to Azure Static Web Apps
+        user = await self.swa_provider.get_user_from_request(req)
+        if user:
+            logger.info(f"✅ SWA fallback authentication successful: {user.email}")
+            return user
+
+        logger.warning("❌ Both Entra ID and SWA authentication failed")
+        return None
 
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate permissions based on role and explicit permissions"""
@@ -192,13 +261,16 @@ class ProductionAuthProvider(AuthProvider):
         return all(perm in user_permissions for perm in required_permissions)
 
     async def refresh_user_session(self, user: User) -> Optional[User]:
-        """Refresh session (not needed for Static Web Apps)"""
+        """Refresh session (handled by Entra ID/MSAL)"""
         return user
 
 class DevelopmentAuthProvider(AuthProvider):
-    """Development authentication with demo users and auto-injection"""
+    """Development authentication with Entra ID support and mock fallback"""
 
     def __init__(self):
+        # Primary: Try Entra ID if configured
+        self.entra_provider = EntraIdAuthProvider()
+        # Fallback: Mock authentication
         self.mock_provider = MockAuthProvider()
 
         # Demo users for development
@@ -233,21 +305,30 @@ class DevelopmentAuthProvider(AuthProvider):
         }
 
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
-        """Get user with demo user injection for development"""
+        """Get user with Entra ID support and demo user fallback for development"""
 
-        # First try to get user from headers (might be set by frontend)
+        # First try Entra ID authentication if token is present
+        user = await self.entra_provider.get_user_from_request(req)
+        if user:
+            logger.info(f"✅ Development Entra ID authentication: {user.email}")
+            return user
+
+        # Fallback to demo user injection for local development
         user_id_header = req.headers.get('x-ms-client-principal-id')
         user_email_header = req.headers.get('x-ms-client-principal-name')
 
         if user_email_header and user_email_header in self.demo_users:
+            logger.info(f"✅ Development demo user: {user_email_header}")
             return self.demo_users[user_email_header]
 
         # Auto-inject admin user for specific demo endpoints
         path = req.url.lower()
         if any(path.endswith(endpoint) for endpoint in ['/admin', '/integrations', '/users']):
+            logger.info("✅ Development auto-admin injection")
             return self.demo_users['vedprakash.m@outlook.com']
 
         # Default to demo user for other endpoints
+        logger.info("✅ Development default demo user")
         return self.demo_users['demo.user@example.com']
 
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
@@ -331,7 +412,7 @@ def auth_required(permissions: Optional[List[str]] = None, admin_only: bool = Fa
         async def my_function(req, user):
             pass
     """
-    def decorator(func):
+    def decorator(handler_func):
         async def wrapper(req: func.HttpRequest, *args, **kwargs):
             try:
                 if admin_only:
@@ -343,7 +424,7 @@ def auth_required(permissions: Optional[List[str]] = None, admin_only: bool = Fa
 
                 # Add user to kwargs for the function
                 kwargs['user'] = user
-                return await func(req, *args, **kwargs)
+                return await handler_func(req, *args, **kwargs)
 
             except SutraAPIError:
                 raise

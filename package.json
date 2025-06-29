@@ -40,6 +40,8 @@
     "prepare": "command -v pre-commit >/dev/null && pre-commit install || echo 'pre-commit not available'"
   },
   "dependencies": {
+    "@azure/msal-browser": "^4.13.2",
+    "@azure/msal-react": "^3.0.13",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "axios": "^1.6.0",

@@ -5,24 +5,10 @@ import {
   useState,
   useEffect,
 } from "react";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string; // Single role: "user", "admin", or "guest"
-}
-
-interface GuestSession {
-  id: string;
-  usage: Record<string, number>;
-  limits: Record<string, number>;
-  remaining: Record<string, number>;
-  active: boolean;
-}
+import { VedUser, GuestSession } from "@/types/auth";
 
 interface AuthContextType {
-  user: User | null;
+  user: VedUser | null;
   guestSession: GuestSession | null;
   isAuthenticated: boolean;
   isGuest: boolean;
@@ -60,14 +46,18 @@ interface StaticWebAppsUser {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<VedUser | null>(null);
   const [guestSession, setGuestSession] = useState<GuestSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
-  const isAuthenticated = !!user;
-  const isGuest = user?.role === "guest";
-  const isAdmin = user?.role === "admin";
+  const isAuthenticated =
+    !!user && user.vedProfile?.subscriptionTier !== "guest";
+  const isGuest = user?.vedProfile?.subscriptionTier === "guest";
+  const isAdmin =
+    user?.permissions?.includes("admin") ||
+    user?.permissions?.includes("Administrator") ||
+    false;
 
   // Initialize auth state from Static Web Apps or local development mock
   useEffect(() => {
@@ -94,56 +84,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (authInfo.clientPrincipal) {
             const principal = authInfo.clientPrincipal;
 
-            // Extract user information from claims or userDetails
-            const email = principal.userDetails;
+            // Use standardized user extraction function
+            const authUser = extractStandardUser(principal);
 
-            // Extract name from claims or derive from email
-            let name = principal.claims?.find(
-              (c) =>
-                c.typ ===
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
-            )?.val;
-
-            // If no name claim, extract name from email
-            if (!name && email) {
-              const emailName = email.split("@")[0];
-              name = emailName
-                .split(/[._-]/)
-                .map(
-                  (part) =>
-                    part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
-                )
-                .join(" ");
-            }
-
-            // Final fallback
-            if (!name) {
-              name = email || "User";
-            }
-
-            // Determine user role - check multiple sources
-            let userRole = "user";
-
-            console.log(`🔍 Role determination for ${email}:`, {
-              userRoles: principal.userRoles,
-              userDetails: principal.userDetails,
-              userId: principal.userId,
-              isLocalDev,
-            });
-
-            // Check Azure Static Web Apps roles first
-            if (principal.userRoles?.includes("admin")) {
-              userRole = "admin";
-              console.log("✅ Admin role found in Azure userRoles");
-            }
-
-            // Override for specific admin user (both environments)
-            if (email === "vedprakash.m@outlook.com") {
-              userRole = "admin";
-              console.log("🔑 Admin override for primary admin user");
-            }
-
-            // Fallback: Get role from backend API
+            // Check backend for role confirmation if user has standard role
             if (!principal.userRoles?.includes("admin")) {
               try {
                 console.log("🔄 Fetching role from backend /getroles...");
@@ -171,7 +115,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     Array.isArray(roleData.roles) &&
                     roleData.roles.includes("admin")
                   ) {
-                    userRole = "admin";
+                    // Update permissions if backend confirms admin role
+                    authUser.permissions = [...authUser.permissions, "admin"];
+                    authUser.vedProfile.subscriptionTier = "enterprise";
                     console.log("✅ Admin role confirmed by backend API");
                   }
                 } else {
@@ -187,13 +133,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 );
               }
             }
-
-            const authUser: User = {
-              id: principal.userId,
-              email: email,
-              name: name,
-              role: userRole,
-            };
 
             console.log("✅ Authenticated user created:", authUser);
             setUser(authUser);
@@ -252,11 +191,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
           response.headers.get("X-Guest-Session-Id") || data.session?.id;
 
         // Create guest user
-        const guestUser: User = {
+        const guestUser: VedUser = {
           id: data.session.id,
           email: "guest@sutra.app",
           name: "Guest User",
-          role: "guest",
+          givenName: "Guest",
+          familyName: "User",
+          permissions: [],
+          vedProfile: {
+            profileId: data.session.id,
+            subscriptionTier: "guest",
+            appsEnrolled: ["sutra"],
+            preferences: {},
+          },
         };
 
         const guestSessionData: GuestSession = {
@@ -265,6 +212,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           limits: data.limits || {},
           remaining: data.remaining || {},
           active: data.session.active,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
         };
 
         setUser(guestUser);
@@ -443,4 +392,84 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/**
+ * Standardized user extraction function - Apps_Auth_Requirement.md compliance
+ * Creates VedUser object from Azure Static Web Apps or MSAL token claims
+ */
+function extractStandardUser(principal: any): VedUser {
+  // Validate required claims
+  if (!principal.userId || !principal.userDetails) {
+    throw new Error("Invalid principal: missing required claims");
+  }
+
+  const email = principal.userDetails;
+  const userId = principal.userId;
+
+  // Extract name from claims or derive from email
+  let name = principal.claims?.find(
+    (c: any) =>
+      c.typ === "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+  )?.val;
+
+  let givenName =
+    principal.claims?.find(
+      (c: any) =>
+        c.typ ===
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+    )?.val || "";
+
+  let familyName =
+    principal.claims?.find(
+      (c: any) =>
+        c.typ ===
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+    )?.val || "";
+
+  // If no name claim, derive from givenName and familyName
+  if (!name) {
+    name = `${givenName} ${familyName}`.trim();
+  }
+
+  // If still no name, extract from email
+  if (!name && email) {
+    const emailName = email.split("@")[0];
+    name = emailName
+      .split(/[._-]/)
+      .map(
+        (part: string) =>
+          part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
+      )
+      .join(" ");
+  }
+
+  // Final fallback
+  if (!name) {
+    name = email || "User";
+  }
+
+  // Extract permissions from roles
+  const permissions = principal.userRoles || [];
+
+  // Determine subscription tier based on roles and email
+  let subscriptionTier: "free" | "premium" | "enterprise" | "guest" = "free";
+  if (email === "vedprakash.m@outlook.com") {
+    subscriptionTier = "enterprise";
+  }
+
+  return {
+    id: userId,
+    email: email,
+    name: name.trim(),
+    givenName: givenName,
+    familyName: familyName,
+    permissions: permissions,
+    vedProfile: {
+      profileId: userId,
+      subscriptionTier: subscriptionTier,
+      appsEnrolled: ["sutra"],
+      preferences: {},
+    },
+  };
 }

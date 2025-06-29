@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { AuthProvider, useAuth } from "@/components/auth/AuthProvider";
+import { AuthProvider, useAuth } from "@/components/auth/MSALAuthProvider";
 import LoginPage from "@/components/auth/LoginPage";
 import NavBar from "@/components/layout/NavBar";
 import Dashboard from "@/components/dashboard/Dashboard";

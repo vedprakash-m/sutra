@@ -24,7 +24,9 @@ export default function Dashboard() {
         userId: user.id,
         activity: isFirstTime ? "first_visit" : "dashboard_visit",
         timestamp: new Date(),
-        metadata: { userRole: user.role },
+        metadata: {
+          userRole: user.permissions.includes("admin") ? "admin" : "user",
+        },
       });
 
       // Record this visit

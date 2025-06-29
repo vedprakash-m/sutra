@@ -192,6 +192,8 @@ describe("GuestLogin Component", () => {
           llm_calls: 3,
           prompts: 5,
         },
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       };
 
       mockUseAuth.mockReturnValue({
@@ -233,6 +235,8 @@ describe("GuestLogin Component", () => {
           llm_calls: 1,
           prompts: 2,
         },
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       };
 
       mockUseAuth.mockReturnValue({
@@ -274,6 +278,8 @@ describe("GuestLogin Component", () => {
           llm_calls: 0,
           prompts: 0,
         },
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       };
 
       mockUseAuth.mockReturnValue({
@@ -303,6 +309,8 @@ describe("GuestLogin Component", () => {
         usage: {},
         limits: {},
         remaining: {},
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       };
 
       mockUseAuth.mockReturnValue({

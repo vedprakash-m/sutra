@@ -10,24 +10,39 @@ Sutra's User Experience is designed around four primary user personas, each with
 
 ### 🔐 **CRITICAL: Authentication vs User Personas Distinction**
 
+**Microsoft Entra ID Integration (vedid.onmicrosoft.com) - Apps_Auth_Requirement.md Compliance:**
+
+- **Sole Authentication Provider**: Microsoft Entra ID `vedid.onmicrosoft.com` (no alternatives)
+- **Authority**: `https://login.microsoftonline.com/vedid.onmicrosoft.com`
+- **VedUser Standard**: Mandatory unified user object with `vedProfile` across all Vedprakash apps
+- **Cross-App SSO**: Single sign-on across sutra.vedprakash.net, vimarsh.vedprakash.net, vigor.vedprakash.net, pathfinder.vedprakash.net, carpool.vedprakash.net
+- **MSAL Implementation**: `@azure/msal-react` (frontend), `msal` (backend) with JWKS caching
+- **Security Requirements**: Complete security headers, token signature verification, audit logging
+
 **Authentication Roles (System Access Control):**
 
-- **User Role**: All personas (Content Creators, Customer Service, Developers, Product Managers) authenticate as "User"
-- **Admin Role**: System administrators with LLM API configuration, budget management, app usage monitoring, and administrative controls
+- **User Role**: All personas authenticate as "User" with Microsoft Entra ID (standard access)
+- **Admin Role**: System administrators with LLM configuration, budget management, user oversight
 
-**User Personas (UX Design Guidance):**
+**User Personas (UX Design Guidance - NOT Auth Roles):**
 
-- Content Creator / "Prompter", Customer Service Professional, Developer / Prompt Engineer, Product Manager
-- These are UX design personas, NOT authentication roles
-- All personas use the same "User" authentication role but receive personalized experiences based on their usage patterns and preferences
+- Content Creator/"Prompter", Customer Service Professional, Developer/Prompt Engineer, Product Manager
+- All use "User" authentication role but receive personalized experiences based on preferences
+- Interface adapts to usage patterns while maintaining consistent security model
 
-**Admin Role Capabilities:**
+**Enterprise SSO Benefits:**
 
-- LLM API configuration and management
-- Budget monitoring and usage controls
-- Application usage analytics and reporting
-- User management and administrative oversight
-- System configuration and maintenance controls
+- Login once, access all Vedprakash applications automatically
+- Unified profile, preferences, and billing across domain
+- Professional enterprise-grade authentication flow
+- Centralized security policies and comprehensive audit trails
+
+**Technical Implementation Highlights:**
+
+- **Anonymous Trials**: IP-based guest access (preserved) with conversion to full Entra ID auth
+- **Token Management**: JWT with automatic refresh, sessionStorage for cross-domain SSO
+- **Error Handling**: Standardized authentication error responses per requirement
+- **Monitoring**: Comprehensive authentication event logging and security incident tracking
 
 ### 1.1 Core Design Philosophy
 

@@ -81,6 +81,64 @@ This document details both the product requirements and functional specification
 
 ---
 
+## 5.1. Authentication & Identity Requirements
+
+**Sutra implements Microsoft Entra ID (vedid.onmicrosoft.com) as the sole authentication provider**, strictly adhering to Vedprakash domain authentication standards for unified identity management across all applications.
+
+### **Authentication Standards (Apps_Auth_Requirement.md Compliance):**
+
+- **Identity Provider:** Microsoft Entra ID (`vedid.onmicrosoft.com`) exclusively
+- **Authentication Method:** OAuth 2.0 / OpenID Connect with MSAL libraries
+- **Token Format:** JWT tokens from Microsoft Entra ID with signature verification
+- **Session Management:** Stateless authentication via JWT with automatic refresh
+- **Single Sign-On:** Cross-domain SSO across all `.vedprakash.net` applications
+
+### **VedUser Standard Interface:**
+
+```typescript
+interface VedUser {
+  id: string; // Entra ID subject claim (primary identifier)
+  email: string; // User's email address
+  name: string; // Full display name
+  givenName: string; // First name
+  familyName: string; // Last name
+  permissions: string[]; // App-specific permissions from JWT claims
+  vedProfile: {
+    profileId: string; // Vedprakash domain profile ID
+    subscriptionTier: "free" | "premium" | "enterprise";
+    appsEnrolled: string[]; // List of enrolled apps
+    preferences: Record<string, any>; // User preferences
+  };
+}
+```
+
+### **User Experience Requirements:**
+
+- **Anonymous Trial Access:** IP-based guest access (5 calls/day, GPT-3.5 Turbo only)
+- **Seamless Registration:** Microsoft Entra ID authentication with automatic VedUser creation
+- **Progressive Onboarding:** Zero-friction trial to authenticated user conversion
+- **Cross-App Navigation:** Single sign-on across all Vedprakash applications
+
+### **Technical Implementation (Mandatory):**
+
+- **Frontend:** `@azure/msal-react` with vedid.onmicrosoft.com authority
+- **Backend:** JWKS caching with 1-hour TTL for token validation
+- **Security Headers:** Complete CSP, HSTS, X-Frame-Options implementation
+- **API Authentication:** Bearer tokens with standardized error responses
+- **Monitoring:** Comprehensive authentication event logging and audit trails
+
+### **Critical Security Requirements:**
+
+- **JWKS Caching:** Mandatory implementation prevents rate limiting
+- **Token Validation:** Full signature verification against Microsoft's JWKS endpoint
+- **Standardized User Extraction:** Required `extractStandardUser()` function
+- **SSO Configuration:** sessionStorage caching with cross-domain compatibility
+- **Security Headers:** All mandatory headers per Apps_Auth_Requirement.md
+
+This authentication system ensures 100% compliance with Vedprakash domain standards while providing enterprise-grade security and optimal user experience across all `.vedprakash.net` applications.
+
+---
+
 ## 6. Core Features & Detailed User Journeys
 
 ### 6.0. **AI Cost Management & Automation System (Phase 1 / MVP - ENHANCED)**
@@ -252,9 +310,9 @@ This document details both the product requirements and functional specification
 |-------------------------------------|                                |
 | 4. PromptCoach Suggestions:         |                                |
 | 💡 "Consider adding specific        |                                |
-|     examples to improve clarity"    |                                |
-| 💡 "Try using 'step-by-step' for    | [💾 Save to Collection]         |
-|     better structured output"       | [🔄 Refine Prompt]             |
+|     examples to improve clarity"    | [💾 Save to Collection]         |
+| 💡 "Try using 'step-by-step' for    | [🔄 Refine Prompt]             |
+|     better structured output"       |                                |
 |-------------------------------------|                                |
 | 5. Select LLMs:                     |                                |
 | [✓] GPT-4o    [✓] Gemini-1.5-Pro    |                                |
@@ -690,7 +748,7 @@ Prioritized based on user feedback and market demand.
 - **Architecture:** Cloud-native, scalable microservices.
 - **LLM Integrations:** Secure APIs, flexible integration patterns.
 - **Data Storage:** Secure, scalable database.
-- **Security:** Robust authentication (OAuth, SSO), authorization (RBAC), data encryption (at rest/in transit), compliance.
+- **Security:** Microsoft Entra ID authentication (MSAL integration, VedUser standard), Single Sign-On across Vedprakash domain, authorization (RBAC), data encryption (at rest/in transit), compliance with enterprise security standards.
 - **Performance:** Low latency for prompt execution, responsive UI.
 - **Extensibility:** Well-documented APIs/SDKs (Phase 3+).
 

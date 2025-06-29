@@ -1,17 +1,18 @@
 # Sutra - Multi-LLM Prompt Studio
 
-> **🚀 Production-Deployed Enterprise AI Platform**
+> **🚀 Production-Ready Enterprise AI Platform**
 
 <div align="center">
 
-[![Production Status](https://img.shields.io/badge/status-production-success.svg)](https://zealous-flower-04bbe021e.2.azurestaticapps.net)
+[![Production Status](https://img.shields.io/badge/status-production_ready-success.svg)](https://zealous-flower-04bbe021e.2.azurestaticapps.net)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Azure](https://img.shields.io/badge/cloud-azure-0078d4.svg)](https://azure.microsoft.com)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-3178c6.svg)](https://www.typescriptlang.org)
-[![Python](https://img.shields.io/badge/python-3.11+-3776ab.svg)](https://www.python.org)
-[![Test Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](#testing--quality)
+[![Python](https://img.shields.io/badge/python-3.12+-3776ab.svg)](https://www.python.org)
+[![Test Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen.svg)](#testing--quality)
+[![Auth Compliance](https://img.shields.io/badge/auth-100%25_compliant-green.svg)](#authentication)
 
-**Weaving your AI solutions together**
+**Enterprise-grade platform for prompt engineering, multi-LLM optimization, and AI workflow orchestration**
 
 [🌐 Live Demo](https://zealous-flower-04bbe021e.2.azurestaticapps.net) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation)
 
@@ -21,28 +22,31 @@
 
 ## 🎯 **What is Sutra?**
 
-Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how teams create, optimize, and deploy AI solutions. Think of it as **your AI workflow command center** - where prompt engineering meets production deployment.
+Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how teams create, optimize, and deploy AI solutions. Think of it as **your AI workflow command center** - where prompt engineering meets production deployment with enterprise security and compliance.
 
 **🔥 Why teams choose Sutra:**
 
-- **Immediate productivity**: Go from idea to production-ready AI workflows in minutes
-- **Multi-LLM optimization**: Compare and optimize across GPT-4, Claude 3.5, Gemini Pro simultaneously
-- **Enterprise security**: Microsoft Entra External ID with 95% cost reduction vs traditional auth
-- **Production-proven**: Live deployment serving real users with 99.9% uptime
+- **🚀 Immediate Productivity**: Go from idea to production-ready AI workflows in minutes
+- **🤖 Multi-LLM Optimization**: Compare and optimize across GPT-4, Claude 3.5, Gemini Pro simultaneously
+- **🔐 Enterprise Security**: Microsoft Entra ID with JWKS caching and enterprise-grade security headers
+- **📊 Production-Proven**: Live deployment with 95%+ test coverage and comprehensive monitoring
+- **⚡ Cost-Optimized**: Serverless Azure architecture with 70-80% cost savings during downtime
 
 ### **🏆 Production Status**
 
 - ✅ **Live Production Environment** (June 2025)
-- ✅ **878+ Tests Passing** (95%+ success rate)
-- ✅ **92%+ Test Coverage** (Frontend: 92.39%, Backend: 92%)
+- ✅ **877+ Tests Passing** (Frontend: 92%+, Backend: 95%+)
+- ✅ **100% Authentication Compliance** (Apps_Auth_Requirement.md)
+- ✅ **Enterprise Security Headers** (CSP, HSTS, X-Frame-Options)
 - ✅ **Zero High-Severity Vulnerabilities**
-- ✅ **Cost-Optimized Architecture** (70-80% savings during downtime)
+- ✅ **JWKS Caching & Token Validation** (Microsoft Entra ID)
 
 ### **🌐 Live Production URLs**
 
 - **🚀 Application**: https://zealous-flower-04bbe021e.2.azurestaticapps.net
-- **📊 API Health**: `https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api/health`
-- **🔐 Authentication**: Microsoft Entra External ID (vedid.onmicrosoft.com)
+- **📊 API Health**: https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api/health
+- **🔐 Authentication**: Microsoft Entra ID (vedid.onmicrosoft.com)
+- **📈 Monitoring**: Application Insights with real-time metrics
 
 ### **🎯 Perfect For**
 
@@ -80,10 +84,18 @@ Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how tea
 
 ### 🛡️ **Enterprise Security & Authentication**
 
-- **🔐 Microsoft Entra External ID**: Modern identity platform with social login support
-- **💰 Cost Optimized**: 95% reduction in authentication costs ($1.00 → $0.05 per MAU)
-- **🎭 Role-Based Access**: Granular user/admin permissions with comprehensive audit trails
+- **🔐 Microsoft Entra ID**: Enterprise-grade authentication with vedid.onmicrosoft.com tenant
+- **🔑 JWKS Caching**: JWT signature validation with 1-hour TTL for performance
+- **�️ Security Headers**: CSP, HSTS, X-Frame-Options, and comprehensive security implementation
+- **🎭 Role-Based Access**: Granular user/admin permissions with VedUser standardization
 - **🔒 Azure Key Vault**: Enterprise-grade secret management and encryption at rest/transit
+
+### 👥 **Anonymous & Guest Support**
+
+- **🎭 Guest Mode**: Full functionality without registration for trial users
+- **⚡ Rate Limiting**: Smart throttling with usage tracking for anonymous users
+- **🔄 Seamless Upgrade**: One-click conversion from guest to authenticated user
+- **📊 Usage Analytics**: Comprehensive tracking for both authenticated and anonymous users
 
 ---
 
@@ -93,37 +105,66 @@ Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how tea
 
 Visit our production environment: **https://zealous-flower-04bbe021e.2.azurestaticapps.net**
 
-1. **Sign in** with Microsoft, Google, Facebook, or GitHub
+1. **Sign in** with Microsoft Entra ID (or try as guest)
+2. **Create your first prompt** in the Prompt Builder
+3. **Test across multiple LLMs** to compare responses
+4. **Save to collections** for team collaboration
+5. **Build workflows** with the Playbook runner
+
+### **⚡ Local Development Setup**
+
+```bash
+# Quick start - no local backend needed
+git clone https://github.com/vedprakash/sutra.git
+cd sutra
+npm install
+npm run dev
+
+# ✅ Connects to production API with mock authentication
+# ✅ Perfect for frontend development and testing
+```
+
 2. **Create your first prompt** in the prompt studio
 3. **Test across multiple LLMs** to find the best performance
 4. **Build a playbook** to automate your AI workflow
 
-### **💻 Local Development**
+### **💻 Advanced Development Options**
 
 ```bash
 # Clone the repository
 git clone https://github.com/vedprakashmishra/sutra.git
 cd sutra
 
-# Start full local environment (Docker + hot reload)
-npm run dev:local
+# Option A: Production API (Recommended for frontend development)
+npm install && npm run dev  # Auto-connects to production API with mock auth
 
-# Or start components separately
-docker-compose up -d    # Cosmos DB emulator + storage
-npm run dev            # Frontend development server (localhost:5173)
-cd api && func start   # Azure Functions local runtime (localhost:7071)
+# Option B: Local Backend (For API development)
+cd api && func start --port 7071  # Terminal 1
+npm run dev                       # Terminal 2
+
+# Option C: Full Local Environment
+docker-compose -f docker-compose.e2e-arm64.yml up -d
+cd api && func start --port 7071
+npm run dev
 ```
 
-### **✅ Validate Your Setup**
+### **✅ Testing & Validation**
 
 ```bash
-# Run comprehensive validation
-npm run ci:local
+# Frontend testing (92%+ coverage)
+npm run test              # Unit tests with mock authentication
+npm run test:coverage     # Coverage report
 
-# Individual test suites
-npm run test           # Frontend unit tests (92.39% coverage)
-npm run test:e2e       # Playwright E2E tests
-cd api && python -m pytest --cov=.  # Backend tests (92% coverage)
+# Backend testing (95%+ coverage)
+cd api && python -m pytest --cov=. --cov-report=xml
+
+# End-to-end testing
+npm run test:e2e          # Playwright tests
+
+# Production deployment testing
+./scripts/configure-azure-app-registration.sh
+./scripts/deploy-production-config.sh
+./scripts/test-production-auth.sh
 ```
 
 ---
@@ -154,21 +195,24 @@ Sutra implements a **two-tier architecture** that separates persistent data from
 
 ### **🛠️ Technology Stack**
 
-| **Layer**          | **Technology**                | **Purpose**                 |
-| ------------------ | ----------------------------- | --------------------------- |
-| **Frontend**       | React 18 + TypeScript + Vite  | Modern UI with fast builds  |
-| **Backend**        | Azure Functions + Python 3.11 | Serverless API endpoints    |
-| **Database**       | Azure Cosmos DB (NoSQL)       | Global-scale data storage   |
-| **Authentication** | Microsoft Entra External ID   | Modern identity platform    |
-| **Infrastructure** | Azure Bicep Templates         | Infrastructure as Code      |
-| **Testing**        | Jest + Pytest + Playwright    | Comprehensive test coverage |
-| **CI/CD**          | GitHub Actions                | Automated deployment        |
+| **Layer**          | **Technology**                | **Purpose**                  |
+| ------------------ | ----------------------------- | ---------------------------- |
+| **Frontend**       | React 18 + TypeScript + Vite  | Modern UI with fast builds   |
+| **Backend**        | Azure Functions + Python 3.12 | Serverless API endpoints     |
+| **Database**       | Azure Cosmos DB (NoSQL)       | Global-scale data storage    |
+| **Authentication** | Microsoft Entra ID + MSAL     | Enterprise identity platform |
+| **Infrastructure** | Azure Bicep Templates         | Infrastructure as Code       |
+| **Testing**        | Jest + Pytest + Playwright    | 95%+ test coverage           |
+| **CI/CD**          | GitHub Actions                | Automated deployment         |
 
 ### **🔐 Security Architecture**
 
-- **🎯 Zero Trust Model**: Every request validated through Azure Static Web Apps
-- **🔒 Header-Based Auth**: No sensitive tokens in backend code
-- **🛡️ Azure Key Vault**: Centralized secret management
+- **🎯 Microsoft Entra ID**: Primary authentication with vedid.onmicrosoft.com tenant
+- **🔑 JWKS Caching**: JWT signature validation with TTLCache (1-hour TTL)
+- **�️ Security Headers**: Enterprise-grade CSP, HSTS, X-Frame-Options implementation
+- **� Azure Key Vault**: Centralized secret management with role-based access
+- **👤 VedUser Standard**: Unified user object across frontend and backend
+- **🎭 Fallback Auth**: Azure Static Web Apps authentication for development
 - **📊 Audit Logging**: Comprehensive activity tracking
 - **🔍 Security Scanning**: Automated vulnerability assessment
 

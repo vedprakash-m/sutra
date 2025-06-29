@@ -79,9 +79,21 @@ For the MVP, the application will be deployed as a single-region, single environ
 
 ### 2.4. Identity & Access Management
 
-- **Azure Active Directory B2C (AAD B2C):** User identities and authentication.
-  - _Justification:_ Secure, scalable, cost-effective, managed.
-- **Alternative (Enterprise):** Azure AD for SSO in enterprise deployments.
+- **Microsoft Entra ID (vedid.onmicrosoft.com):** Sole authentication provider per Apps_Auth_Requirement.md
+  - _Authority:_ `https://login.microsoftonline.com/vedid.onmicrosoft.com`
+  - _Justification:_ Enterprise-grade security, mandatory domain-wide SSO, cost elimination of Auth0/Firebase (~$240-480/month), unified audit trails
+- **VedUser Standard:** Mandatory unified user object across all Vedprakash applications
+- **Authentication Libraries:**
+  - Frontend: `@azure/msal-react` (required)
+  - Backend: `msal` Python library with JWKS caching
+- **Token Management:** JWT with automatic refresh, sessionStorage caching for SSO
+- **Security Implementation:**
+  - JWKS caching with 1-hour TTL (mandatory)
+  - Complete security headers (CSP, HSTS, X-Frame-Options)
+  - Standardized `extractStandardUser()` function
+  - Bearer token validation with signature verification
+- **Cross-Domain SSO:** Seamless authentication across sutra.vedprakash.net, vimarsh.vedprakash.net, vigor.vedprakash.net, pathfinder.vedprakash.net, carpool.vedprakash.net
+- **Guest User System:** IP-based rate limiting (5 calls/day) with preserved trial experience
 
 ### 2.5. External LLM Integration
 

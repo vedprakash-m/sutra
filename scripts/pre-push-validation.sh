@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pre-Push Validation Script - Delegates to Local Validation
+# Pre-Push Validation Script - Uses Unified Validation
 # This ensures comprehensive testing before push
 
 set -e
@@ -12,8 +12,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}🔍 Running Pre-Push Validation...${NC}"
-echo "Using local validation script for comprehensive testing"
+echo "Using unified validation script for comprehensive testing"
 echo ""
 
-# Delegate to local validation script in strict mode
-exec "$SCRIPT_DIR/local-validation.sh" --strict
+# Use unified validation in strict mode (matches CI/CD exactly)
+exec "$SCRIPT_DIR/unified-validation.sh" strict all

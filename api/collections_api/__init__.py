@@ -18,6 +18,7 @@ from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to
 from shared.utils.schemaValidator import validate_entity
 from shared.real_time_cost import get_cost_manager
 from shared.database import get_database_manager
+from shared.validation import validate_collection_data
 from shared.models import Collection, ValidationError, User
 from shared.error_handling import handle_api_error, SutraAPIError
 

@@ -19,7 +19,15 @@ const mockRegularUser = {
   id: "test-user-1",
   email: "test@example.com",
   name: "Test User",
-  role: "user",
+  givenName: "Test",
+  familyName: "User",
+  permissions: ["user"],
+  vedProfile: {
+    profileId: "test-user-1",
+    subscriptionTier: "free" as const,
+    appsEnrolled: ["sutra"],
+    preferences: {},
+  },
 };
 
 // Mock user for admin tests
@@ -27,7 +35,15 @@ const mockAdminUser = {
   id: "admin-user-1",
   email: "admin@example.com",
   name: "Admin User",
-  role: "admin",
+  givenName: "Admin",
+  familyName: "User",
+  permissions: ["admin"],
+  vedProfile: {
+    profileId: "admin-user-1",
+    subscriptionTier: "free" as const,
+    appsEnrolled: ["sutra"],
+    preferences: {},
+  },
 };
 
 // Mock the useAuth hook

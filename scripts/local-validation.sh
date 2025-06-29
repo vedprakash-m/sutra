@@ -3,15 +3,44 @@
 # Enhanced Local Validation - Match GitHub CI/CD exactly
 # This script provides comprehensive pre-commit validation including E2E
 # MUST be run before every commit to prevent CI/CD failures
+# DEPRECATED: Use scripts/unified-validation.sh instead
 
 set -e
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check for deprecated usage
+echo "⚠️  DEPRECATED: This script has been replaced by unified-validation.sh"
+echo "   For better CI/CD parity, use: scripts/unified-validation.sh"
+echo ""
+echo "   Migration guide:"
+echo "   - scripts/local-validation.sh → scripts/unified-validation.sh local all"
+echo "   - scripts/local-validation.sh --strict → scripts/unified-validation.sh strict all"
+echo "   - scripts/local-validation.sh --skip-e2e → scripts/unified-validation.sh local core"
+echo ""
+echo "   Continuing with legacy validation for compatibility..."
+echo ""
 
 # Check for --strict flag to match CI/CD behavior exactly
 STRICT_MODE=false
 if [[ "$1" == "--strict" ]]; then
     STRICT_MODE=true
     echo "Running in STRICT MODE to match CI/CD behavior"
+    # Delegate to unified validation in strict mode
+    echo "Delegating to unified validation script..."
+    exec "$SCRIPT_DIR/unified-validation.sh" strict all
 fi
+
+# Check for --skip-e2e flag
+if [[ "$1" == "--skip-e2e" ]]; then
+    echo "Delegating to unified validation script (core scope)..."
+    exec "$SCRIPT_DIR/unified-validation.sh" local core
+fi
+
+# Default: delegate to unified validation
+echo "Delegating to unified validation script (local mode)..."
+exec "$SCRIPT_DIR/unified-validation.sh" local all
 
 # Colors for output
 RED='\033[0;31m'

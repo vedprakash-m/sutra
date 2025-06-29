@@ -39,7 +39,7 @@ export default function IntegrationsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Check if user is admin
-  const isAdmin = user?.permissions.includes("admin") || false;
+  const isAdmin = user?.permissions?.includes("admin") || false;
 
   useEffect(() => {
     if (isAdmin) {

@@ -28,19 +28,11 @@ async def main(req: HttpRequest, user: User) -> HttpResponse:
     """
 
     try:
-        # Get current user
-        current_user = await get_current_user(req)
-        if not current_user:
-            return HttpResponse(
-                json.dumps({"error": "Unauthorized"}),
-                status_code=401,
-                headers={"Content-Type": "application/json"}
-            )
-
+        # User is already authenticated via decorator
         user_info = {
-            "user_id": current_user.id,
-            "email": current_user.email,
-            "role": current_user.role.value if hasattr(current_user.role, 'value') else current_user.role,
+            "user_id": user.user_id,
+            "email": user.email,
+            "role": user.roles[0].value if user.roles else "user",
             "user_tier": "premium"  # Default for now
         }
         budget_manager = get_enhanced_budget_manager()

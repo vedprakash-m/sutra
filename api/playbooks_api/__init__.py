@@ -18,6 +18,7 @@ from shared.unified_auth import auth_required, get_user_from_request
 from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
 from shared.utils.schemaValidator import validate_entity
 from shared.real_time_cost import get_cost_manager
+from shared.validation import validate_playbook_data
 from shared.database import get_database_manager
 from shared.models import Playbook, PlaybookExecution, ValidationError, User
 from shared.error_handling import handle_api_error, SutraAPIError

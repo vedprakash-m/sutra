@@ -18,6 +18,7 @@ import asyncio
 from shared.unified_auth import auth_required
 from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
 from shared.utils.schemaValidator import validate_entity
+from shared.validation import validate_llm_integration_data
 from shared.real_time_cost import get_cost_manager
 from shared.database import get_database_manager
 from shared.models import ValidationError, User

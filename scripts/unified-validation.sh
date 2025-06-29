@@ -195,6 +195,8 @@ validate_anonymous_user_features() {
         log_warning "Rate limiting not detected - required for anonymous users"
     fi
 }
+
+validate_code_quality() {
     log_info "Validating code quality..."
 
     # ESLint

@@ -162,6 +162,34 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           name: 'SUTRA_MAX_REQUESTS_PER_MINUTE'
           value: '100'
         }
+        {
+          name: 'SUTRA_GUEST_DAILY_LIMIT'
+          value: '5'
+        }
+        {
+          name: 'SUTRA_GUEST_MODEL_RESTRICTION'
+          value: 'gpt-3.5-turbo'
+        }
+        {
+          name: 'SUTRA_GUEST_PROMPT_MAX_LENGTH'
+          value: '500'
+        }
+        {
+          name: 'SUTRA_GUEST_RESPONSE_MAX_TOKENS'
+          value: '100'
+        }
+        {
+          name: 'SUTRA_ENABLE_ANONYMOUS_ACCESS'
+          value: 'true'
+        }
+        {
+          name: 'SUTRA_ENTRA_ID_AUTHORITY'
+          value: 'https://${environment().authentication.loginEndpoint}vedid.onmicrosoft.com'
+        }
+        {
+          name: 'SUTRA_ENTRA_ID_CLIENT_ID'
+          value: '@Microsoft.KeyVault(VaultName=${last(split(keyVaultUri, '/'))};SecretName=entra-id-client-id)'
+        }
       ]
       cors: {
         allowedOrigins: [
@@ -170,6 +198,12 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           'https://localhost:5173' // Development
           'https://localhost:3000' // Development alternative
           empty(customDomain) ? '' : 'https://${customDomain}'
+          // Cross-domain SSO support per Apps_Auth_Requirement.md
+          'https://sutra.vedprakash.net'
+          'https://vimarsh.vedprakash.net'
+          'https://vigor.vedprakash.net'
+          'https://pathfinder.vedprakash.net'
+          'https://carpool.vedprakash.net'
         ]
         supportCredentials: true // Enable for authentication
       }

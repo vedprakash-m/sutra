@@ -166,7 +166,35 @@ install_dependencies() {
     log_success "Dependencies installed"
 }
 
-validate_code_quality() {
+validate_product_alignment() {
+    log_info "Validating product documentation alignment..."
+
+    # Run the product alignment script
+    if [[ -x "$SCRIPT_DIR/validate-product-alignment.sh" ]]; then
+        "$SCRIPT_DIR/validate-product-alignment.sh"
+        log_success "Product alignment validation completed"
+    else
+        log_warning "Product alignment validation script not found or not executable"
+    fi
+}
+
+validate_anonymous_user_features() {
+    log_info "Validating anonymous user functionality..."
+
+    # Check if anonymous user endpoints exist
+    if [[ -f "api/guest_api/__init__.py" ]]; then
+        log_success "Guest API module found"
+    else
+        log_warning "Guest API module not found - anonymous users require dedicated endpoints"
+    fi
+
+    # Check for rate limiting implementation
+    if grep -r "rate.*limit\|throttle" api/ --include="*.py" > /dev/null 2>&1; then
+        log_success "Rate limiting implementation detected"
+    else
+        log_warning "Rate limiting not detected - required for anonymous users"
+    fi
+}
     log_info "Validating code quality..."
 
     # ESLint
@@ -388,6 +416,8 @@ main() {
     install_dependencies || return 1
 
     # Code quality and testing
+    validate_product_alignment
+    validate_anonymous_user_features
     validate_code_quality
     run_unit_tests
     validate_build || return 1

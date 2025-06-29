@@ -146,4 +146,255 @@ describe("LoginPage", () => {
       value: originalLocation,
     });
   });
+
+  it("should handle role selection in development mode", () => {
+    render(<LoginPage />);
+
+    // Should show role selection in development mode
+    expect(
+      screen.getByText("Development Mode - Select Role:"),
+    ).toBeInTheDocument();
+
+    const userRadio = screen.getByLabelText("Regular User");
+    const adminRadio = screen.getByLabelText("Admin User");
+
+    expect(userRadio).toBeChecked();
+    expect(adminRadio).not.toBeChecked();
+
+    // Change to admin role
+    fireEvent.click(adminRadio);
+    expect(adminRadio).toBeChecked();
+    expect(userRadio).not.toBeChecked();
+
+    // Change back to user role
+    fireEvent.click(userRadio);
+    expect(userRadio).toBeChecked();
+    expect(adminRadio).not.toBeChecked();
+  });
+
+  it("should store role preference and call login in development mode", () => {
+    const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
+
+    render(<LoginPage />);
+
+    // Select admin role
+    const adminRadio = screen.getByLabelText("Admin User");
+    fireEvent.click(adminRadio);
+
+    // Click sign in button
+    const signInButton = screen.getByRole("button", {
+      name: /Sign in.*Development Mode/i,
+    });
+    fireEvent.click(signInButton);
+
+    expect(setItemSpy).toHaveBeenCalledWith("sutra_demo_role", "admin");
+    expect(mockLogin).toHaveBeenCalledTimes(1);
+
+    setItemSpy.mockRestore();
+  });
+
+  describe("Production authentication flow", () => {
+    let originalEnv: string | undefined;
+    let originalLocation: Location;
+    let mockFetch: jest.Mock;
+
+    beforeEach(() => {
+      // Setup production environment
+      originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "production";
+
+      originalLocation = window.location;
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: {
+          ...originalLocation,
+          hostname: "production.example.com",
+          href: "",
+        },
+      });
+
+      // Mock fetch globally
+      mockFetch = jest.fn();
+      global.fetch = mockFetch;
+
+      // Mock alert
+      global.alert = jest.fn();
+    });
+
+    afterEach(() => {
+      // Restore environment
+      process.env.NODE_ENV = originalEnv;
+      Object.defineProperty(window, "location", {
+        writable: true,
+        value: originalLocation,
+      });
+
+      jest.restoreAllMocks();
+    });
+
+    it("should handle auth system not configured", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+      });
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(global.alert).toHaveBeenCalledWith(
+        "Authentication system is not properly configured.\n\n" +
+          "Please contact the administrator to enable authentication in Azure Static Web Apps.",
+      );
+    });
+
+    it("should redirect to Microsoft provider when found", async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true }) // /.auth/me
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve([{ name: "microsoft" }, { name: "github" }]),
+        }); // /.auth/providers
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(window.location.href).toBe("/.auth/login/microsoft");
+    });
+
+    it("should redirect to Azure AD provider when found", async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true }) // /.auth/me
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve([
+              { name: "azureActiveDirectory" },
+              { name: "github" },
+            ]),
+        }); // /.auth/providers
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(window.location.href).toBe("/.auth/login/azureActiveDirectory");
+    });
+
+    it("should try fallback provider names when providers endpoint fails", async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true }) // /.auth/me
+        .mockResolvedValueOnce({ ok: false }) // /.auth/providers fails
+        .mockResolvedValueOnce({ status: 200 }); // HEAD request for azureActiveDirectory
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(window.location.href).toBe("/.auth/login/azureActiveDirectory");
+    });
+
+    it("should try multiple provider names until one works", async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true }) // /.auth/me
+        .mockResolvedValueOnce({ ok: false }) // /.auth/providers fails
+        .mockResolvedValueOnce({ status: 404 }) // HEAD azureActiveDirectory
+        .mockResolvedValueOnce({ status: 404 }) // HEAD aad
+        .mockResolvedValueOnce({ status: 200 }); // HEAD microsoft
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(window.location.href).toBe("/.auth/login/microsoft");
+    });
+
+    it("should show error when no providers work", async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true }) // /.auth/me
+        .mockResolvedValueOnce({ ok: false }) // /.auth/providers fails
+        .mockResolvedValueOnce({ status: 404 }) // HEAD azureActiveDirectory
+        .mockResolvedValueOnce({ status: 404 }) // HEAD aad
+        .mockResolvedValueOnce({ status: 404 }) // HEAD microsoft
+        .mockResolvedValueOnce({ status: 404 }); // HEAD azuread
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(global.alert).toHaveBeenCalledWith(
+        "Unable to access Microsoft authentication.\n\n" +
+          "The authentication system may not be properly configured.\n" +
+          "Please contact support.",
+      );
+    });
+
+    it("should handle network errors during authentication", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(global.alert).toHaveBeenCalledWith(
+        "Authentication error. Please check your connection and try again.",
+      );
+    });
+
+    it("should handle provider request failures gracefully", async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true }) // /.auth/me
+        .mockResolvedValueOnce({ ok: false }) // /.auth/providers fails
+        .mockRejectedValueOnce(new Error("Network error")) // HEAD azureActiveDirectory
+        .mockRejectedValueOnce(new Error("Network error")) // HEAD aad
+        .mockResolvedValueOnce({ status: 200 }); // HEAD microsoft
+
+      render(<LoginPage />);
+
+      const signInButton = screen.getByRole("button", {
+        name: /Sign in with Microsoft/i,
+      });
+      fireEvent.click(signInButton);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(window.location.href).toBe("/.auth/login/microsoft");
+    });
+  });
 });

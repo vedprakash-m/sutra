@@ -183,6 +183,66 @@ resource usageContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/cont
   }
 }
 
+resource guestSessionsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'GuestSessions'
+  properties: {
+    resource: {
+      id: 'GuestSessions'
+      partitionKey: {
+        paths: ['/ipAddress']
+        kind: 'Hash'
+      }
+      defaultTtl: 86400 // 24 hours - matches PRD guest session lifetime
+    }
+  }
+}
+
+resource guestAnalyticsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'GuestAnalytics'
+  properties: {
+    resource: {
+      id: 'GuestAnalytics'
+      partitionKey: {
+        paths: ['/date']
+        kind: 'Hash'
+      }
+      defaultTtl: 2592000 // 30 days - for conversion analytics
+    }
+  }
+}
+
+resource budgetConfigsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'BudgetConfigs'
+  properties: {
+    resource: {
+      id: 'BudgetConfigs'
+      partitionKey: {
+        paths: ['/entityType']
+        kind: 'Hash'
+      }
+      defaultTtl: -1 // Persistent budget configurations
+    }
+  }
+}
+
+resource usageMetricsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
+  parent: cosmosDatabase
+  name: 'UsageMetrics'
+  properties: {
+    resource: {
+      id: 'UsageMetrics'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      defaultTtl: 7776000 // 90 days - for cost management analytics
+    }
+  }
+}
+
 resource configContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
   parent: cosmosDatabase
   name: 'config'
@@ -309,6 +369,7 @@ resource backupContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
 output cosmosDbAccountName string = cosmosAccount.name
 
 @description('Cosmos DB connection string')
+@secure()
 output cosmosDbConnectionString string = cosmosAccount.listConnectionStrings().connectionStrings[0].connectionString
 
 @description('Key Vault name')
@@ -321,6 +382,7 @@ output keyVaultUri string = keyVault.properties.vaultUri
 output storageAccountName string = storageAccount.name
 
 @description('Storage Account connection string')
+@secure()
 output storageConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
 
 @description('Resource Group ID for persistent resources')

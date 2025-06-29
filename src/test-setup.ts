@@ -15,11 +15,13 @@ const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;
 
 console.error = (...args: any[]) => {
-  // Suppress React Router future flag warnings in tests
+  // Suppress React Router future flag warnings and React act warnings in tests
   if (
     typeof args[0] === "string" &&
     (args[0].includes("React Router Future Flag Warning") ||
-      args[0].includes("ReactDOMTestUtils.act` is deprecated"))
+      args[0].includes("ReactDOMTestUtils.act` is deprecated") ||
+      args[0].includes("Warning: An update to") ||
+      args[0].includes("act(...)"))
   ) {
     return;
   }

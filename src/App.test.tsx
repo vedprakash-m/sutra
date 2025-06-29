@@ -57,9 +57,9 @@ jest.mock("@/components/admin/AdminPanel", () => {
   };
 });
 
-// Mock the AuthProvider and useAuth hook
+// Mock the MSALAuthProvider and useAuth hook
 const mockUseAuth = jest.fn();
-jest.mock("@/components/auth/AuthProvider", () => ({
+jest.mock("@/components/auth/MSALAuthProvider", () => ({
   AuthProvider: ({ children }: { children: any }) => <div>{children}</div>,
   useAuth: () => mockUseAuth(),
 }));

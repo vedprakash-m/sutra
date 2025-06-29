@@ -66,9 +66,9 @@ class TestIntegrationsAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    async def test_main_get_request(self, valid_user_id):
+    async def test_main_get_request(self, valid_user_id, mock_auth_request):
         """Test main endpoint with GET request."""
-        mock_request = create_auth_request(method="GET")
+        mock_request = mock_auth_request
 
         with patch("api.integrations_api.list_llm_integrations") as mock_list:
             mock_response = Mock()
@@ -81,9 +81,9 @@ class TestIntegrationsAPI:
             mock_list.assert_called_once_with(valid_user_id)
 
     @pytest.mark.asyncio
-    async def test_main_post_request(self, valid_user_id):
+    async def test_main_post_request(self, valid_user_id, mock_auth_request):
         """Test main endpoint with POST request."""
-        mock_request = create_auth_request(method="POST")
+        mock_request = mock_auth_request
 
         with patch("api.integrations_api.create_llm_integration") as mock_create:
             mock_response = Mock()
@@ -96,9 +96,9 @@ class TestIntegrationsAPI:
             mock_create.assert_called_once_with(valid_user_id, mock_request)
 
     @pytest.mark.asyncio
-    async def test_main_post_test_connection(self, valid_user_id):
+    async def test_main_post_test_connection(self, valid_user_id, mock_auth_request):
         """Test main endpoint with POST request for test connection."""
-        mock_request = create_auth_request(method="POST")
+        mock_request = mock_auth_request
 
         with patch("api.integrations_api.validate_llm_connection") as mock_test:
             mock_response = Mock()
@@ -111,9 +111,9 @@ class TestIntegrationsAPI:
             mock_test.assert_called_once_with(valid_user_id, "openai", mock_request)
 
     @pytest.mark.asyncio
-    async def test_main_put_request(self, valid_user_id):
+    async def test_main_put_request(self, valid_user_id, mock_auth_request):
         """Test main endpoint with PUT request."""
-        mock_request = create_auth_request(method="PUT")
+        mock_request = mock_auth_request
 
         with patch("api.integrations_api.update_llm_integration") as mock_update:
             mock_response = Mock()
@@ -126,9 +126,9 @@ class TestIntegrationsAPI:
             mock_update.assert_called_once_with(valid_user_id, "openai", mock_request)
 
     @pytest.mark.asyncio
-    async def test_main_delete_request(self, valid_user_id):
+    async def test_main_delete_request(self, valid_user_id, mock_auth_request):
         """Test main endpoint with DELETE request."""
-        mock_request = create_auth_request(method="DELETE")
+        mock_request = mock_auth_request
 
         with patch("api.integrations_api.delete_llm_integration") as mock_delete:
             mock_response = Mock()
@@ -141,9 +141,9 @@ class TestIntegrationsAPI:
             mock_delete.assert_called_once_with(valid_user_id, "openai")
 
     @pytest.mark.asyncio
-    async def test_main_method_not_allowed(self, valid_user_id):
+    async def test_main_method_not_allowed(self, valid_user_id, mock_auth_request):
         """Test main endpoint with unsupported method."""
-        mock_request = create_auth_request(method="PATCH")
+        mock_request = mock_auth_request
 
         response = await main(mock_request)
 
@@ -417,13 +417,13 @@ class TestIntegrationsAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    async def test_main_exception_handling(self):
+    async def test_main_exception_handling(self, mock_auth_request):
         """Test main endpoint exception handling."""
         # Create properly authenticated request
         from . import main
 
         # Create request with authentication
-        req = create_auth_request(method="GET")
+        req = mock_auth_request
 
         # Mock database to raise exception
         with patch("api.integrations_api.get_database_manager") as mock_db:

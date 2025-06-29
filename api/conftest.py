@@ -111,6 +111,14 @@ def mock_non_admin_auth(mock_static_web_apps_auth):
 
 
 @pytest.fixture
+def mock_auth_request(mock_static_web_apps_auth):
+    """General purpose authenticated request fixture."""
+    return mock_static_web_apps_auth(
+        user_id="test-user-123", role="user", user_name="Test User"
+    )
+
+
+@pytest.fixture
 def mock_no_auth():
     """Fixture for requests without authentication."""
     mock_request = Mock()
@@ -290,7 +298,19 @@ def mock_test_user():
         updated_at=datetime.now(timezone.utc),
     )
     # Add permissions attribute for testing using object.__setattr__ to bypass Pydantic validation
-    object.__setattr__(user, "permissions", ["*"])
+    object.__setattr__(
+        user,
+        "permissions",
+        [
+            "*",  # Wildcard permission for testing
+            "cost.read",
+            "cost.manage",  # Cost management permissions
+            "collections.read",
+            "collections.create",
+            "collections.update",
+            "collections.delete",  # Collections permissions
+        ],
+    )
     return user
 
 
@@ -306,7 +326,19 @@ def mock_admin_user():
         updated_at=datetime.now(timezone.utc),
     )
     # Add permissions attribute for testing using object.__setattr__ to bypass Pydantic validation
-    object.__setattr__(user, "permissions", ["*"])
+    object.__setattr__(
+        user,
+        "permissions",
+        [
+            "*",  # Wildcard permission for testing
+            "cost.read",
+            "cost.manage",  # Cost management permissions
+            "collections.read",
+            "collections.create",
+            "collections.update",
+            "collections.delete",  # Collections permissions
+        ],
+    )
     return user
 
 
@@ -340,13 +372,26 @@ def auth_no_user(unified_auth_setup):
 
 # Helper function for creating requests in the new system
 def create_auth_request(
-    method="GET", body=None, headers=None, url="http://localhost/api/test"
+    method="GET",
+    body=None,
+    headers=None,
+    url="http://localhost/api/test",
+    user_id=None,
+    role="user",
 ):
-    """Create a request for use with unified auth system."""
+    """Create a request for use with unified auth system.
+
+    DEPRECATED: Use the proper unified auth fixtures instead.
+    This function is kept for backward compatibility during migration.
+    """
     import azure.functions as func
+    import os
 
     if headers is None:
         headers = {}
+
+    # Ensure we're in testing environment for unified auth
+    os.environ["PYTEST_CURRENT_TEST"] = "true"
 
     return func.HttpRequest(
         method=method,
@@ -396,3 +441,22 @@ def create_mock_request(
     )
 
     return mock_request
+
+
+@pytest.fixture
+def mock_get_user():
+    """Mock get_user function for tests that still reference it."""
+
+    def _mock_get_user(
+        user_id=None, role="user", email="test@example.com", name="Test User"
+    ):
+        return User(
+            id=user_id or "test-user-123",
+            email=email,
+            name=name,
+            role=UserRole.ADMIN if role == "admin" else UserRole.USER,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+
+    return _mock_get_user

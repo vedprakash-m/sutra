@@ -24,22 +24,12 @@ class TestCostManagementAPI:
         return manager
 
     @pytest.mark.asyncio
-    @patch("api.cost_management_api.get_enhanced_budget_manager")
-    @patch("api.shared.unified_auth.require_permissions")
+    @patch("api.shared.budget.get_enhanced_budget_manager")
     async def test_get_budget_status_success(
-        self, mock_require_permissions, mock_get_manager, mock_budget_manager
+        self, mock_get_manager, auth_test_user, mock_budget_manager
     ):
         """Test successful budget status retrieval."""
         # Setup mocks
-        mock_user = User(
-            id="user-123",
-            email="test@example.com",
-            name="Test User",
-            role=UserRole.USER,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
-        mock_require_permissions.return_value = mock_user
         mock_get_manager.return_value = mock_budget_manager
 
         mock_budget_manager.get_real_time_usage = AsyncMock(
@@ -60,11 +50,8 @@ class TestCostManagementAPI:
         )
 
         # Create request
-        req = func.HttpRequest(
-            method="GET",
-            url="http://localhost:7071/api/cost-management/budget/usage",
-            headers={"Content-Type": "application/json"},
-            body=b"",
+        req = create_auth_request(
+            method="GET", url="http://localhost:7071/api/cost-management/budget/usage"
         )
 
         # Call function

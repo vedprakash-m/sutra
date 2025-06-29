@@ -26,7 +26,14 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
-@auth_required(permissions=["collections.read", "collections.create", "collections.update", "collections.delete"])
+@auth_required(
+    permissions=[
+        "collections.read",
+        "collections.create",
+        "collections.update",
+        "collections.delete",
+    ]
+)
 async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     Collections API endpoint for managing prompt collections.
@@ -48,7 +55,8 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
 
         # Track API cost
         cost_manager = get_cost_manager()
-        await cost_manager.track_api_usage(user_id, "collections", method.lower())
+        # Note: API calls don't incur LLM costs, so we skip cost tracking here
+        # Only LLM requests are tracked via track_request_cost
 
         # Route to appropriate handler
         if method == "GET":
@@ -221,7 +229,9 @@ async def create_collection(user: User, req: func.HttpRequest) -> func.HttpRespo
             "userId": user_id,  # Consistent with database partition key
             "name": snake_body["name"],
             "description": snake_body.get("description", ""),
-            "type": snake_body.get("type", "private"),  # private, shared_team, public_marketplace
+            "type": snake_body.get(
+                "type", "private"
+            ),  # private, shared_team, public_marketplace
             "tags": snake_body.get("tags", []),
             "promptIds": [],  # Array of prompt IDs in this collection
             "teamId": body.get("teamId"),  # For shared_team collections
@@ -232,9 +242,7 @@ async def create_collection(user: User, req: func.HttpRequest) -> func.HttpRespo
 
         # Save to database
         created_item = await db_manager.create_item(
-            container_name="Collections",
-            item=collection_data,
-            partition_key=user_id
+            container_name="Collections", item=collection_data, partition_key=user_id
         )
 
         logger.info(f"Created collection {collection_id} for user {user_id}")
@@ -339,20 +347,16 @@ async def update_collection(
         for field in updatable_fields:
             if field in body:
                 existing_collection[field] = body[field]
-                update_operations.append({
-                    "op": "replace",
-                    "path": f"/{field}",
-                    "value": body[field]
-                })
+                update_operations.append(
+                    {"op": "replace", "path": f"/{field}", "value": body[field]}
+                )
 
         # Always update the updatedAt timestamp
         updated_at = datetime.now(timezone.utc).isoformat()
         existing_collection["updatedAt"] = updated_at
-        update_operations.append({
-            "op": "replace",
-            "path": "/updatedAt",
-            "value": updated_at
-        })
+        update_operations.append(
+            {"op": "replace", "path": "/updatedAt", "value": updated_at}
+        )
 
         # Validate updated collection
         validation_result = validate_collection_data(existing_collection)
@@ -373,7 +377,7 @@ async def update_collection(
             container_name="Collections",
             item_id=collection_id,
             partition_key=user_id,
-            operations=update_operations
+            operations=update_operations,
         )
 
         logger.info(f"Updated collection {collection_id} for user {user_id}")

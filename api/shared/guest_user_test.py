@@ -5,7 +5,12 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timezone, timedelta
 
 import azure.functions as func
-from shared.guest_user import GuestUserManager, allow_guest_access, get_guest_usage_stats
+from ..conftest import create_auth_request
+from shared.guest_user import (
+    GuestUserManager,
+    allow_guest_access,
+    get_guest_usage_stats,
+)
 
 
 class TestGuestUserManager:
@@ -45,12 +50,7 @@ class TestGuestUserManager:
     async def test_get_guest_limits_from_config(self, guest_manager):
         """Test getting guest limits from admin configuration."""
         # Arrange
-        config_data = {
-            "limits": {
-                "llm_calls_per_day": 10,
-                "prompts_per_day": 20
-            }
-        }
+        config_data = {"limits": {"llm_calls_per_day": 10, "prompts_per_day": 20}}
         guest_manager.db_manager.read_item.return_value = config_data
 
         # Act
@@ -106,7 +106,7 @@ class TestGuestUserManager:
             "id": "anon_123456",
             "active": True,
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "usage": {"llm_calls": 2}
+            "usage": {"llm_calls": 2},
         }
         guest_manager.get_guest_session = AsyncMock(return_value=existing_session)
 
@@ -121,10 +121,7 @@ class TestGuestUserManager:
     async def test_check_usage_limit_within_limit(self, guest_manager):
         """Test usage limit check when within limits."""
         # Arrange
-        session = {
-            "usage": {"llm_calls": 3},
-            "limits": {"llm_calls_per_day": 5}
-        }
+        session = {"usage": {"llm_calls": 3}, "limits": {"llm_calls_per_day": 5}}
 
         # Act
         result = await guest_manager.check_usage_limit(session, "llm_calls")
@@ -136,10 +133,7 @@ class TestGuestUserManager:
     async def test_check_usage_limit_exceeded(self, guest_manager):
         """Test usage limit check when limit is exceeded."""
         # Arrange
-        session = {
-            "usage": {"llm_calls": 5},
-            "limits": {"llm_calls_per_day": 5}
-        }
+        session = {"usage": {"llm_calls": 5}, "limits": {"llm_calls_per_day": 5}}
 
         # Act
         result = await guest_manager.check_usage_limit(session, "llm_calls")
@@ -151,10 +145,7 @@ class TestGuestUserManager:
     async def test_increment_usage(self, guest_manager):
         """Test incrementing usage counter."""
         # Arrange
-        session = {
-            "id": "test_session",
-            "usage": {"llm_calls": 2}
-        }
+        session = {"id": "test_session", "usage": {"llm_calls": 2}}
 
         # Act
         updated_session = await guest_manager.increment_usage(session, "llm_calls")
@@ -166,10 +157,7 @@ class TestGuestUserManager:
     async def test_update_guest_session(self, guest_manager):
         """Test updating guest session."""
         # Arrange
-        session = {
-            "id": "test_session",
-            "usage": {"llm_calls": 1}
-        }
+        session = {"id": "test_session", "usage": {"llm_calls": 1}}
 
         # Act
         updated_session = await guest_manager.update_guest_session(session)
@@ -194,7 +182,9 @@ class TestGuestUserManager:
 class TestAllowGuestAccessDecorator:
     """Test suite for allow_guest_access decorator."""
 
-    def create_mock_request(self, auth_header=None, guest_session_id=None, ip_address="127.0.0.1"):
+    def create_mock_request(
+        self, auth_header=None, guest_session_id=None, ip_address="127.0.0.1"
+    ):
         """Create mock HTTP request."""
         headers = {"x-forwarded-for": ip_address}
         if auth_header:
@@ -209,6 +199,7 @@ class TestAllowGuestAccessDecorator:
     @pytest.mark.asyncio
     async def test_authenticated_user_bypass(self):
         """Test that authenticated users bypass guest logic."""
+
         # Arrange
         @allow_guest_access(usage_type="llm_calls")
         async def test_function(req):
@@ -226,6 +217,7 @@ class TestAllowGuestAccessDecorator:
     @pytest.mark.asyncio
     async def test_anonymous_user_within_limits(self):
         """Test anonymous user within usage limits."""
+
         # Arrange
         @allow_guest_access(usage_type="llm_calls", allow_anonymous=True)
         async def test_function(req):
@@ -233,7 +225,7 @@ class TestAllowGuestAccessDecorator:
 
         req = self.create_mock_request()
 
-        with patch('shared.database.get_database_manager') as mock_db:
+        with patch("shared.database.get_database_manager") as mock_db:
             mock_db.return_value._development_mode = True
 
             # Act
@@ -241,12 +233,13 @@ class TestAllowGuestAccessDecorator:
 
             # Assert
             assert response.status_code == 200
-            assert hasattr(req, 'current_user')
-            assert req.current_user.role in ['guest', 'anonymous']
+            assert hasattr(req, "current_user")
+            assert req.current_user.role in ["guest", "anonymous"]
 
     @pytest.mark.asyncio
     async def test_anonymous_user_limit_exceeded(self):
         """Test anonymous user with exceeded limits."""
+
         # Arrange
         @allow_guest_access(usage_type="llm_calls", allow_anonymous=True)
         async def test_function(req):
@@ -254,16 +247,18 @@ class TestAllowGuestAccessDecorator:
 
         req = self.create_mock_request()
 
-        with patch('shared.database.get_database_manager') as mock_db, \
-             patch('shared.guest_user.GuestUserManager') as mock_manager_class:
-
+        with patch("shared.database.get_database_manager") as mock_db, patch(
+            "shared.guest_user.GuestUserManager"
+        ) as mock_manager_class:
             mock_db.return_value._development_mode = True
             mock_manager = Mock()
-            mock_manager.get_or_create_anonymous_session = AsyncMock(return_value={
-                "id": "test_session",
-                "usage": {"llm_calls": 5},
-                "limits": {"llm_calls_per_day": 5}
-            })
+            mock_manager.get_or_create_anonymous_session = AsyncMock(
+                return_value={
+                    "id": "test_session",
+                    "usage": {"llm_calls": 5},
+                    "limits": {"llm_calls_per_day": 5},
+                }
+            )
             mock_manager.check_usage_limit = AsyncMock(return_value=False)
             mock_manager_class.return_value = mock_manager
 
@@ -278,6 +273,7 @@ class TestAllowGuestAccessDecorator:
     @pytest.mark.asyncio
     async def test_guest_session_creation(self):
         """Test guest session creation during decorator execution."""
+
         # Arrange
         @allow_guest_access(usage_type="llm_calls", allow_anonymous=True)
         async def test_function(req):
@@ -285,18 +281,20 @@ class TestAllowGuestAccessDecorator:
 
         req = self.create_mock_request()
 
-        with patch('shared.database.get_database_manager') as mock_db, \
-             patch('shared.guest_user.GuestUserManager') as mock_manager_class:
-
+        with patch("shared.database.get_database_manager") as mock_db, patch(
+            "shared.guest_user.GuestUserManager"
+        ) as mock_manager_class:
             mock_db.return_value._development_mode = True
             mock_manager = Mock()
             mock_session = {
                 "id": "new_session",
                 "usage": {"llm_calls": 0},
                 "limits": {"llm_calls_per_day": 5},
-                "active": True
+                "active": True,
             }
-            mock_manager.get_or_create_anonymous_session = AsyncMock(return_value=mock_session)
+            mock_manager.get_or_create_anonymous_session = AsyncMock(
+                return_value=mock_session
+            )
             mock_manager.check_usage_limit = AsyncMock(return_value=True)
             mock_manager.increment_usage = AsyncMock(return_value=mock_session)
             mock_manager_class.return_value = mock_manager
@@ -306,7 +304,7 @@ class TestAllowGuestAccessDecorator:
 
             # Assert
             assert response.status_code == 200
-            assert hasattr(req, 'guest_session')
+            assert hasattr(req, "guest_session")
             assert req.guest_session["id"] == "new_session"
 
 
@@ -320,7 +318,7 @@ class TestGuestUsageStats:
         session_id = "test_stats_session"
         mock_db = Mock()
 
-        with patch('shared.guest_user.GuestUserManager') as mock_manager_class:
+        with patch("shared.guest_user.GuestUserManager") as mock_manager_class:
             mock_manager = Mock()
             mock_session = {
                 "id": session_id,
@@ -328,7 +326,7 @@ class TestGuestUsageStats:
                 "created_at": "2025-06-24T10:00:00Z",
                 "expires_at": "2025-06-25T10:00:00Z",
                 "usage": {"llm_calls": 3, "prompts_created": 2},
-                "limits": {"llm_calls_per_day": 5, "prompts_per_day": 10}
+                "limits": {"llm_calls_per_day": 5, "prompts_per_day": 10},
             }
             mock_manager.get_guest_session = AsyncMock(return_value=mock_session)
             mock_manager_class.return_value = mock_manager
@@ -349,7 +347,7 @@ class TestGuestUsageStats:
         session_id = "nonexistent_session"
         mock_db = Mock()
 
-        with patch('shared.guest_user.GuestUserManager') as mock_manager_class:
+        with patch("shared.guest_user.GuestUserManager") as mock_manager_class:
             mock_manager = Mock()
             mock_manager.get_guest_session = AsyncMock(return_value=None)
             mock_manager_class.return_value = mock_manager

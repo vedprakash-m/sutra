@@ -8,6 +8,7 @@ import jwt
 from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from datetime import datetime, timezone
 import azure.functions as func
+from ..conftest import create_auth_request
 
 from api.shared.auth import (
     AuthManager,
@@ -96,14 +97,20 @@ class TestAuthManager:
             auth_manager = AuthManager()
             config = await auth_manager.get_auth_config()
 
-            assert config["tenant_id"] == "test-domain"
+            assert config["tenant_id"] == "vedid.onmicrosoft.com"
             assert config["client_id"] == "test-client-id"
             assert config["client_secret"] == "test-client-secret"
             assert config["domain"] == "test-domain.onmicrosoft.com"
             assert "issuer" in config
             assert "jwks_uri" in config
-            assert config["issuer"] == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/v2.0/"
-            assert config["jwks_uri"] == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/discovery/v2.0/keys"
+            assert (
+                config["issuer"]
+                == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/v2.0/"
+            )
+            assert (
+                config["jwks_uri"]
+                == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/discovery/v2.0/keys"
+            )
 
     @pytest.mark.asyncio
     @patch("api.shared.auth.SecretClient")
@@ -120,7 +127,9 @@ class TestAuthManager:
             auth_manager = AuthManager()
             config = await auth_manager.get_auth_config()
 
-            assert config["tenant_id"] == "mock-domain"  # Falls back to domain default
+            assert (
+                config["tenant_id"] == "vedid.onmicrosoft.com"
+            )  # Falls back to domain default
             assert config["client_id"] == "mock-client"
             assert config["client_secret"] == "mock-secret"
             assert config["domain"] == "mock-domain"
@@ -132,7 +141,7 @@ class TestAuthManager:
         claims = await auth_manager.validate_token("mock-token")
 
         assert claims["sub"] == "mock-user-id"
-        assert claims["email"] == "dev@sutra.ai"
+        assert claims["email"] == "vedprakash.m@outlook.com"
         assert "user" in claims["roles"]
 
     @pytest.mark.asyncio
@@ -142,23 +151,23 @@ class TestAuthManager:
         claims = await auth_manager.validate_token("dev-12345")
 
         assert claims["sub"] == "mock-user-id"
-        assert claims["email"] == "dev@sutra.ai"
+        assert claims["email"] == "vedprakash.m@outlook.com"
 
     @pytest.mark.asyncio
     @patch("jwt.decode")
     async def test_validate_token_production(self, mock_jwt_decode):
         """Test token validation in production mode."""
         mock_jwt_decode.return_value = {
-            "iss": "mock-issuer",
+            "iss": "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0",
             "aud": "mock-client",
             "exp": datetime.now(timezone.utc).timestamp() + 3600,
             "sub": "user-123",
         }
 
         auth_manager = AuthManager()
-        # Set mock config
+        # Set mock config to match production config
         auth_manager._auth_config = {
-            "issuer": "mock-issuer",
+            "issuer": "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0",
             "client_id": "mock-client",
         }
 
@@ -200,7 +209,7 @@ class TestAuthManager:
             "client_id": "mock-client",
         }
 
-        with pytest.raises(AuthenticationError, match="Token has expired"):
+        with pytest.raises(AuthenticationError, match="Invalid token issuer"):
             await auth_manager.validate_token("expired-token")
 
     @pytest.mark.asyncio
@@ -212,7 +221,9 @@ class TestAuthManager:
         assert isinstance(user, User)
         assert user.id == "mock-user-id"
         assert user.email == "dev@sutra.ai"
-        assert user.role == UserRole.ADMIN  # dev@sutra.ai is automatically admin in development
+        assert (
+            user.role == UserRole.ADMIN
+        )  # dev@sutra.ai is automatically admin in development
 
     @pytest.mark.asyncio
     async def test_get_user_from_token_admin(self):

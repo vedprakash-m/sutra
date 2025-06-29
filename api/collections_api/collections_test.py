@@ -1,50 +1,16 @@
 import pytest
 import json
 import asyncio
-import base64
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 
 import azure.functions as func
 from . import main as collections_main
+from ..conftest import create_auth_request
 
 
 class TestCollectionsAPI:
     """Test suite for Collections API endpoints."""
-
-    def create_auth_request(self, method="GET", body=None, route_params=None, params=None,
-                           user_id="test-user-123", role="user", url="http://localhost/api/collections"):
-        """Helper to create authenticated requests for Azure Static Web Apps."""
-        # Create user principal data
-        principal_data = {
-            "identityProvider": "azureActiveDirectory",
-            "userId": user_id,
-            "userDetails": "Test User",
-            "userRoles": [role],
-            "claims": []
-        }
-
-        # Encode as base64
-        principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
-
-        # Create headers
-        headers = {
-            "x-ms-client-principal": principal_b64,
-            "x-ms-client-principal-id": user_id,
-            "x-ms-client-principal-name": "Test User",
-            "x-ms-client-principal-idp": "azureActiveDirectory"
-        }
-        if method in ["POST", "PUT"] and body:
-            headers["Content-Type"] = "application/json"
-
-        return func.HttpRequest(
-            method=method,
-            url=url,
-            body=json.dumps(body).encode('utf-8') if body else b"",
-            headers=headers,
-            route_params=route_params or {},
-            params=params or {}
-        )
 
     @pytest.fixture
     def mock_cosmos_client(self):
@@ -62,7 +28,7 @@ class TestCollectionsAPI:
             yield mock_manager
 
     @pytest.mark.asyncio
-    async def test_create_collection_success(self, mock_cosmos_client):
+    async def test_create_collection_success(self, auth_test_user, mock_cosmos_client):
         """Test successful collection creation."""
         # Arrange
         collection_data = {
@@ -84,12 +50,10 @@ class TestCollectionsAPI:
             mock_validate.return_value = {"valid": True, "errors": []}
 
             # Create authenticated request using helper
-            req = self.create_auth_request(
+            req = create_auth_request(
                 method="POST",
                 url="http://localhost/api/collections",
                 body=collection_data,
-                user_id="test-user-123",
-                role="user"
             )
 
             # Act
@@ -104,7 +68,7 @@ class TestCollectionsAPI:
 
     @pytest.mark.asyncio
     async def test_create_collection_validation_error(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test collection creation with validation errors."""
         # Arrange
@@ -121,14 +85,7 @@ class TestCollectionsAPI:
             }
 
             # Create authenticated request
-            req = self.create_auth_request(
-                method="POST",
-                url="http://localhost/api/collections",
-                body=collection_data,
-                route_params={},
-                user_id="test-user-123",
-                role="user"
-            )
+            req = create_auth_request(method="POST")
 
             # Act
             response = await collections_main(req)
@@ -167,13 +124,7 @@ class TestCollectionsAPI:
         ]
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/collections?page=1&limit=20",
-            params={"page": "1", "limit": "20"},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await collections_main(req)
@@ -186,7 +137,7 @@ class TestCollectionsAPI:
         assert response_data["pagination"]["current_page"] == 1
 
     @pytest.mark.asyncio
-    async def test_get_collection_success(self, mock_auth_success, mock_cosmos_client):
+    async def test_get_collection_success(self, auth_test_user, mock_cosmos_client):
         """Test successful collection retrieval."""
         # Arrange
         collection_id = "test-collection-123"
@@ -201,11 +152,7 @@ class TestCollectionsAPI:
         mock_cosmos_client.query_items.return_value = [mock_collection]
 
         # Create request with proper authentication
-        req = self.create_auth_request(
-            method="GET",
-            url=f"http://localhost/api/collections/{collection_id}",
-            route_params={"id": collection_id}
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await collections_main(req)
@@ -217,20 +164,14 @@ class TestCollectionsAPI:
         assert response_data["name"] == "Test Collection"
 
     @pytest.mark.asyncio
-    async def test_get_collection_not_found(
-        self, mock_auth_success, mock_cosmos_client
-    ):
+    async def test_get_collection_not_found(self, auth_test_user, mock_cosmos_client):
         """Test collection retrieval when collection doesn't exist."""
         # Arrange
         collection_id = "nonexistent-collection"
         mock_cosmos_client.query_items.return_value = []  # No collections found
 
         # Create request with proper authentication
-        req = self.create_auth_request(
-            method="GET",
-            url=f"http://localhost/api/collections/{collection_id}",
-            route_params={"id": collection_id}
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await collections_main(req)
@@ -241,9 +182,7 @@ class TestCollectionsAPI:
         assert response_data["error"] == "Collection not found"
 
     @pytest.mark.asyncio
-    async def test_update_collection_success(
-        self, mock_auth_success, mock_cosmos_client
-    ):
+    async def test_update_collection_success(self, auth_test_user, mock_cosmos_client):
         """Test successful collection update."""
         # Arrange
         collection_id = "test-collection-123"
@@ -270,12 +209,7 @@ class TestCollectionsAPI:
             mock_validate.return_value = {"valid": True, "errors": []}
 
             # Create request with proper authentication
-            req = self.create_auth_request(
-                method="PUT",
-                url=f"http://localhost/api/collections/{collection_id}",
-                body=update_data,
-                route_params={"id": collection_id}
-            )
+            req = create_auth_request(method="PUT")
 
             # Act
             response = await collections_main(req)
@@ -288,9 +222,7 @@ class TestCollectionsAPI:
             mock_cosmos_client.update_item.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_delete_collection_success(
-        self, mock_auth_success, mock_cosmos_client
-    ):
+    async def test_delete_collection_success(self, auth_test_user, mock_cosmos_client):
         """Test successful collection deletion."""
         # Arrange
         collection_id = "test-collection-123"
@@ -307,11 +239,7 @@ class TestCollectionsAPI:
         ]
 
         # Create request with proper authentication
-        req = self.create_auth_request(
-            method="DELETE",
-            url=f"http://localhost/api/collections/{collection_id}",
-            route_params={"id": collection_id}
-        )
+        req = create_auth_request(method="DELETE")
 
         # Act
         response = await collections_main(req)
@@ -327,7 +255,7 @@ class TestCollectionsAPI:
 
     @pytest.mark.asyncio
     async def test_delete_collection_with_prompts(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test collection deletion when collection has prompts."""
         # Arrange
@@ -345,11 +273,7 @@ class TestCollectionsAPI:
         ]
 
         # Create request with proper authentication
-        req = self.create_auth_request(
-            method="DELETE",
-            url=f"http://localhost/api/collections/{collection_id}",
-            route_params={"id": collection_id}
-        )
+        req = create_auth_request(method="DELETE")
 
         # Act
         response = await collections_main(req)
@@ -363,7 +287,7 @@ class TestCollectionsAPI:
 
     @pytest.mark.asyncio
     async def test_get_collection_prompts_success(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test successful retrieval of prompts within a collection."""
         # Arrange
@@ -397,12 +321,7 @@ class TestCollectionsAPI:
         ]
 
         # Create request with proper authentication
-        req = self.create_auth_request(
-            method="GET",
-            url=f"http://localhost/api/collections/{collection_id}/prompts",
-            route_params={"id": collection_id},
-            params={}
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await collections_main(req)
@@ -418,13 +337,7 @@ class TestCollectionsAPI:
     async def test_unauthorized_access(self, mock_auth_failure):
         """Test collections API with valid authentication (collections don't have strict access control)."""
         # Create request - collections API allows authenticated users
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/collections",
-            route_params={},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await collections_main(req)
@@ -435,13 +348,10 @@ class TestCollectionsAPI:
     # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
 
     @pytest.mark.asyncio
-    async def test_method_not_allowed(self, mock_auth_success):
+    async def test_method_not_allowed(self, auth_test_user):
         """Test unsupported HTTP method returns 405."""
         # Create request with unsupported method but proper authentication
-        req = self.create_auth_request(
-            method="PATCH",  # Not supported
-            url="http://localhost/api/collections"
-        )
+        req = create_auth_request(method="PATCH")
 
         # Act
         response = await collections_main(req)
@@ -452,16 +362,10 @@ class TestCollectionsAPI:
         assert "Method not allowed" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_create_collection_invalid_json(self, mock_auth_success):
+    async def test_create_collection_invalid_json(self, auth_test_user):
         """Test collection creation with invalid JSON."""
         # Create request with invalid JSON
-        req = self.create_auth_request(
-            method="POST",
-            url="http://localhost/api/collections",
-            route_params={},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="POST")
 
         # Act
         response = await collections_main(req)
@@ -473,7 +377,7 @@ class TestCollectionsAPI:
 
     @pytest.mark.asyncio
     async def test_list_collections_with_filters(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test collection listing with search and type filters."""
         # Arrange
@@ -493,14 +397,7 @@ class TestCollectionsAPI:
         ]
 
         # Create request with search and type filters
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/collections?search=test&type=public&teamId=team-123",
-            route_params={},
-            params={"search": "test", "type": "public", "teamId": "team-123"},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await collections_main(req)
@@ -512,7 +409,7 @@ class TestCollectionsAPI:
 
     @pytest.mark.asyncio
     async def test_list_collections_mock_data_handling(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test collection listing with mock data in development mode."""
         # Arrange
@@ -531,14 +428,7 @@ class TestCollectionsAPI:
         ]
 
         # Create request
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/collections",
-            route_params={},
-            params={},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await collections_main(req)
@@ -550,7 +440,7 @@ class TestCollectionsAPI:
 
     @pytest.mark.asyncio
     async def test_create_collection_validation_exception(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test collection creation with validation failure."""
         # Arrange
@@ -560,11 +450,7 @@ class TestCollectionsAPI:
         }
 
         # Create request with proper authentication
-        req = self.create_auth_request(
-            method="POST",
-            url="http://localhost/api/collections",
-            body=collection_data
-        )
+        req = create_auth_request(method="POST")
 
         # Act
         response = await collections_main(req)

@@ -48,11 +48,13 @@ class SutraAPIError(Exception):
         error_code: str = "SUTRA_API_ERROR",
         status_code: int = 500,
         details: Optional[Dict[str, Any]] = None,
+        error_type: Optional[str] = None,
     ):
         self.message = message
         self.error_code = error_code
         self.status_code = status_code
         self.details = details
+        self.error_type = error_type
         super().__init__(message)
 
 
@@ -657,7 +659,7 @@ class ErrorRecovery:
         base_delay = 1.0
         max_delay = 60.0
 
-        delay = min(base_delay * (2**(attempt_count-1)), max_delay)
+        delay = min(base_delay * (2 ** (attempt_count - 1)), max_delay)
         return delay
 
     @staticmethod

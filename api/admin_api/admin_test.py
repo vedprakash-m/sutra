@@ -1,48 +1,16 @@
 import pytest
 import json
-import base64
 import os
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
 
 import azure.functions as func
-from api.admin_api import main as admin_main
+from ..conftest import create_auth_request
+from . import main as admin_main
 
 
 class TestAdminAPI:
     """Test suite for Admin API endpoints."""
-
-    def create_auth_request(self, method="GET", body=None, route_params=None, params=None,
-                           user_id="admin-user-123", role="admin", url="http://localhost/api/admin"):
-        """Helper to create authenticated requests for Azure Static Web Apps."""
-        # Create user principal data
-        principal_data = {
-            "identityProvider": "azureActiveDirectory",
-            "userId": user_id,
-            "userDetails": "Test Admin",
-            "userRoles": [role],
-            "claims": []
-        }
-
-        # Encode as base64
-        principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
-
-        # Create headers
-        headers = {
-            "x-ms-client-principal": principal_b64,
-            "x-ms-client-principal-id": user_id,
-            "x-ms-client-principal-name": "Test Admin",
-            "x-ms-client-principal-idp": "azureActiveDirectory"
-        }
-
-        return func.HttpRequest(
-            method=method,
-            url=url,
-            body=json.dumps(body).encode('utf-8') if body else b"",
-            headers=headers,
-            route_params=route_params or {},
-            params=params or {}
-        )
 
     @pytest.fixture
     def mock_cosmos_client(self):
@@ -59,7 +27,17 @@ class TestAdminAPI:
 
             # Mock container access method
             containers = {}
-            container_names = ["Users", "Prompts", "Collections", "Playbooks", "Executions", "SystemConfig", "AuditLog", "usage", "config"]
+            container_names = [
+                "Users",
+                "Prompts",
+                "Collections",
+                "Playbooks",
+                "Executions",
+                "SystemConfig",
+                "AuditLog",
+                "usage",
+                "config",
+            ]
 
             for name in container_names:
                 container = Mock()
@@ -71,17 +49,23 @@ class TestAdminAPI:
                 container.delete_item = Mock()
                 containers[name] = container
 
-            mock_manager.get_container = Mock(side_effect=lambda name: containers.get(name))
+            mock_manager.get_container = Mock(
+                side_effect=lambda name: containers.get(name)
+            )
 
             # For backwards compatibility with old method names
             for name in container_names:
-                setattr(mock_manager, f"get_{name.lower()}_container", Mock(return_value=containers[name]))
+                setattr(
+                    mock_manager,
+                    f"get_{name.lower()}_container",
+                    Mock(return_value=containers[name]),
+                )
 
             mock_db_manager.return_value = mock_manager
             yield mock_manager
 
     @pytest.mark.asyncio
-    async def test_list_users_success(self, mock_cosmos_client):
+    async def test_list_users_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful user listing by admin."""
         # Arrange
         mock_users = [
@@ -113,14 +97,7 @@ class TestAdminAPI:
         )
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/users?page=1&limit=50",
-            route_params={"resource": "users"},
-            params={"page": "1", "limit": "50"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -138,7 +115,7 @@ class TestAdminAPI:
         assert "kv-ref-key" not in str(user1["llmApiKeys"])
 
     @pytest.mark.asyncio
-    async def test_update_user_role_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_update_user_role_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful user role update by admin."""
         # Arrange
         target_user_id = "user-123"
@@ -165,18 +142,7 @@ class TestAdminAPI:
         )
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="PUT",
-            url=f"http://localhost/api/admin/users/{target_user_id}/role",
-            body=new_role_data,
-            route_params={
-                "resource": "users",
-                "user_id": target_user_id,
-                "action": "role",
-            },
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="PUT")
 
         # Act
         response = await admin_main(req)
@@ -191,7 +157,7 @@ class TestAdminAPI:
 
     @pytest.mark.asyncio
     async def test_update_user_role_invalid_role(
-        self, mock_admin_auth, mock_cosmos_client
+        self, auth_admin_user, mock_cosmos_client
     ):
         """Test user role update with invalid role."""
         # Arrange
@@ -199,18 +165,7 @@ class TestAdminAPI:
         invalid_role_data = {"role": "invalid_role"}
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="PUT",
-            url=f"http://localhost/api/admin/users/{target_user_id}/role",
-            body=invalid_role_data,
-            route_params={
-                "resource": "users",
-                "user_id": target_user_id,
-                "action": "role",
-            },
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="PUT")
 
         # Act
         response = await admin_main(req)
@@ -222,20 +177,14 @@ class TestAdminAPI:
         assert "user, admin" in response_data["message"]
 
     @pytest.mark.asyncio
-    async def test_get_system_health_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_get_system_health_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful system health check."""
         # Arrange
         # Mock successful database query
         mock_cosmos_client.query_items.return_value = [1]  # Successful query
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/system/health",
-            route_params={"resource": "system", "action": "health"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -248,7 +197,7 @@ class TestAdminAPI:
         assert response_data["components"]["api"]["status"] == "healthy"
 
     @pytest.mark.asyncio
-    async def test_get_system_stats_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_get_system_stats_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful system statistics retrieval."""
         # Arrange
         # Mock database responses for different counts
@@ -272,13 +221,7 @@ class TestAdminAPI:
         playbooks_container_mock.query_items.return_value = [8]  # Playbook count
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/system/stats",
-            route_params={"resource": "system", "action": "stats"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -295,7 +238,7 @@ class TestAdminAPI:
 
     @pytest.mark.asyncio
     async def test_set_maintenance_mode_enable(
-        self, mock_admin_auth, mock_cosmos_client
+        self, auth_admin_user, mock_cosmos_client
     ):
         """Test enabling maintenance mode."""
         # Arrange
@@ -312,14 +255,7 @@ class TestAdminAPI:
         }
 
         # Create request
-        req = self.create_auth_request(
-            method="POST",
-            url="http://localhost/api/admin/system/maintenance",
-            body=maintenance_data,
-            route_params={"resource": "system", "action": "maintenance"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="POST")
 
         # Act
         response = await admin_main(req)
@@ -332,7 +268,7 @@ class TestAdminAPI:
         assert response_data["maintenanceMessage"] == "System maintenance in progress"
 
     @pytest.mark.asyncio
-    async def test_get_llm_settings_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_get_llm_settings_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful LLM settings retrieval."""
         # Arrange
         llm_settings = {
@@ -357,14 +293,7 @@ class TestAdminAPI:
         mock_cosmos_client.read_item.return_value = llm_settings
 
         # Create request
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/llm/settings",
-
-            route_params={"resource": "llm", "action": "settings"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -379,7 +308,7 @@ class TestAdminAPI:
 
     @pytest.mark.asyncio
     async def test_update_llm_settings_success(
-        self, mock_admin_auth, mock_cosmos_client
+        self, auth_admin_user, mock_cosmos_client
     ):
         """Test successful LLM settings update."""
         # Arrange
@@ -411,14 +340,7 @@ class TestAdminAPI:
         }
 
         # Create request
-        req = self.create_auth_request(
-            method="PUT",
-            url="http://localhost/api/admin/llm/settings",
-            body=update_data,
-            route_params={"resource": "llm", "action": "settings"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="PUT")
 
         # Act
         response = await admin_main(req)
@@ -434,7 +356,7 @@ class TestAdminAPI:
         mock_cosmos_client.get_config_container().replace_item.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_usage_stats_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_get_usage_stats_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful usage statistics retrieval."""
         # Arrange
         # Mock database responses for usage stats
@@ -448,14 +370,7 @@ class TestAdminAPI:
         ]  # Active users
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/usage?period=day",
-            route_params={"resource": "usage"},
-            params={"period": "day"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -471,16 +386,10 @@ class TestAdminAPI:
         assert response_data["statistics"]["users"]["active"] == 8
 
     @pytest.mark.asyncio
-    async def test_non_admin_access_forbidden(self, mock_non_admin_auth):
+    async def test_non_admin_access_forbidden(self, auth_test_user):
         """Test that non-admin users cannot access admin endpoints."""
         # Create authenticated request using helper with non-admin user
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/users",
-            route_params={"resource": "users"},
-            user_id="non-admin-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Set flag to simulate non-admin user (for TESTING_MODE)
         req._test_admin_required = True
@@ -492,11 +401,14 @@ class TestAdminAPI:
         assert response.status_code == 403
         response_data = json.loads(response.get_body())
         assert response_data["error"] == "access_denied"
-        assert "Insufficient permissions" in response_data["message"] or "Admin privileges required" in response_data["message"]
+        assert (
+            "Insufficient permissions" in response_data["message"]
+            or "Admin privileges required" in response_data["message"]
+        )
 
     @pytest.mark.asyncio
     async def test_get_system_health_database_failure(
-        self, mock_admin_auth, mock_cosmos_client
+        self, auth_admin_user, mock_cosmos_client
     ):
         """Test system health check when database is unavailable."""
         # Arrange
@@ -506,14 +418,7 @@ class TestAdminAPI:
         )
 
         # Create request
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/system/health",
-
-            route_params={"resource": "system", "action": "health"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -526,7 +431,7 @@ class TestAdminAPI:
 
     @pytest.mark.asyncio
     async def test_update_user_role_user_not_found(
-        self, mock_admin_auth, mock_cosmos_client
+        self, auth_admin_user, mock_cosmos_client
     ):
         """Test user role update with non-existent user."""
         # Arrange
@@ -539,18 +444,7 @@ class TestAdminAPI:
         mock_cosmos_client.query_items = AsyncMock(return_value=[])
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="PUT",
-            url=f"http://localhost/api/admin/users/{target_user_id}/role",
-            body=new_role_data,
-            route_params={
-                "resource": "users",
-                "user_id": target_user_id,
-                "action": "role",
-            },
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="PUT")
 
         # Act
         response = await admin_main(req)
@@ -563,7 +457,9 @@ class TestAdminAPI:
     # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
 
     @pytest.mark.asyncio
-    async def test_list_users_with_search_filter(self, mock_admin_auth, mock_cosmos_client):
+    async def test_list_users_with_search_filter(
+        self, auth_admin_user, mock_cosmos_client
+    ):
         """Test user listing with search and role filter."""
         # Arrange
         mock_users = [
@@ -581,14 +477,7 @@ class TestAdminAPI:
         )
 
         # Create authenticated request using helper with search and role filter
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/users?search=john&role=user&page=2&limit=25",
-            route_params={"resource": "users"},
-            params={"search": "john", "role": "user", "page": "2", "limit": "25"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -601,21 +490,12 @@ class TestAdminAPI:
         assert response_data["pagination"]["limit"] == 25
 
     @pytest.mark.asyncio
-    async def test_update_user_role_invalid_json(self, mock_admin_auth, mock_cosmos_client):
+    async def test_update_user_role_invalid_json(
+        self, auth_admin_user, mock_cosmos_client
+    ):
         """Test user role update with invalid JSON."""
         # Create request with invalid JSON
-        req = self.create_auth_request(
-            method="PUT",
-            url="http://localhost/api/admin/users/user-123/role",
-
-            route_params={
-                "resource": "users",
-                "user_id": "user-123",
-                "action": "role",
-            },
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="PUT")
 
         # Act
         response = await admin_main(req)
@@ -626,7 +506,7 @@ class TestAdminAPI:
         assert "Invalid JSON" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_reset_test_data_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_reset_test_data_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful test data reset."""
         # Mock database responses
         mock_cosmos_client.query_items = AsyncMock(return_value=[])
@@ -635,14 +515,7 @@ class TestAdminAPI:
         # Mock environment to allow test data operations
         with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
             # Create authenticated request using helper
-            req = self.create_auth_request(
-                method="POST",
-                url="http://localhost/api/admin/test-data/reset",
-                body={},
-                route_params={"resource": "test-data", "action": "reset"},
-                user_id="admin-user-123",
-                role="admin"
-            )
+            req = create_auth_request(method="POST")
 
             # Act
             response = await admin_main(req)
@@ -655,7 +528,7 @@ class TestAdminAPI:
             assert "containers_reset" in response_data
 
     @pytest.mark.asyncio
-    async def test_seed_test_data_success(self, mock_admin_auth, mock_cosmos_client):
+    async def test_seed_test_data_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful test data seeding."""
         # Mock database responses
         mock_cosmos_client.query_items = AsyncMock(return_value=[])
@@ -664,14 +537,7 @@ class TestAdminAPI:
         # Mock environment to allow test data operations
         with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
             # Create authenticated request using helper
-            req = self.create_auth_request(
-                method="POST",
-                url="http://localhost/api/admin/test-data/seed",
-                body={},
-                route_params={"resource": "test-data", "action": "seed"},
-                user_id="admin-user-123",
-                role="admin"
-            )
+            req = create_auth_request(method="POST")
 
             # Act
             response = await admin_main(req)
@@ -684,17 +550,10 @@ class TestAdminAPI:
             assert "data_created" in response_data
 
     @pytest.mark.asyncio
-    async def test_resource_not_found_error(self, mock_admin_auth):
+    async def test_resource_not_found_error(self, auth_admin_user):
         """Test handling of unknown resource."""
         # Create request for unknown resource
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/unknown-resource",
-
-            route_params={"resource": "unknown-resource"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -705,7 +564,9 @@ class TestAdminAPI:
         assert "Resource not found" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_list_users_with_masked_api_keys(self, mock_admin_auth, mock_cosmos_client):
+    async def test_list_users_with_masked_api_keys(
+        self, auth_admin_user, mock_cosmos_client
+    ):
         """Test that API keys are properly masked in user listing."""
         # Arrange
         mock_users = [
@@ -721,24 +582,16 @@ class TestAdminAPI:
                         "enabled": True,
                         "status": "active",
                         "apiKey": "secret-key",
-                        "lastTested": "2025-06-15T08:00:00Z"
-                    }
+                        "lastTested": "2025-06-15T08:00:00Z",
+                    },
                 },
             }
         ]
 
-        mock_cosmos_client.query_items = AsyncMock(
-            side_effect=[mock_users, [1]]
-        )
+        mock_cosmos_client.query_items = AsyncMock(side_effect=[mock_users, [1]])
 
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/users",
-            route_params={"resource": "users"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await admin_main(req)
@@ -755,21 +608,16 @@ class TestAdminAPI:
         # Check that dict API keys are properly masked
         assert user["llmApiKeys"]["google_gemini"]["enabled"] == True
         assert user["llmApiKeys"]["google_gemini"]["status"] == "active"
-        assert user["llmApiKeys"]["google_gemini"]["lastTested"] == "2025-06-15T08:00:00Z"
+        assert (
+            user["llmApiKeys"]["google_gemini"]["lastTested"] == "2025-06-15T08:00:00Z"
+        )
         assert "apiKey" not in user["llmApiKeys"]["google_gemini"]
 
     @pytest.mark.asyncio
-    async def test_test_data_production_environment_blocked(self, mock_admin_auth):
+    async def test_test_data_production_environment_blocked(self, auth_admin_user):
         """Test that test data operations are blocked in production environment."""
         # Create authenticated request using helper
-        req = self.create_auth_request(
-            method="POST",
-            url="http://localhost/api/admin/test-data/reset",
-            body={},
-            route_params={"resource": "test-data", "action": "reset"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        req = create_auth_request(method="POST")
 
         # Mock production environment
         with patch.dict(os.environ, {"ENVIRONMENT": "production"}):
@@ -782,18 +630,14 @@ class TestAdminAPI:
             assert "only available in test environments" in response_data["message"]
 
     @pytest.mark.asyncio
-    async def test_admin_api_general_exception_handling(self, mock_admin_auth):
+    async def test_admin_api_general_exception_handling(self, auth_admin_user):
         """Test general exception handling in admin API."""
         # Mock an exception in the authentication check
-        with patch("api.admin_api.verify_jwt_token", side_effect=Exception("Database connection failed")):
-            req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/admin/users",
-
-            route_params={"resource": "users"},
-            user_id="admin-user-123",
-            role="admin"
-        )
+        with patch(
+            "api.admin_api.verify_jwt_token",
+            side_effect=Exception("Database connection failed"),
+        ):
+            req = create_auth_request(method="GET")
 
             # Act
             response = await admin_main(req)

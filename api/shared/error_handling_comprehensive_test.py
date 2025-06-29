@@ -8,6 +8,7 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch, MagicMock, PropertyMock
 import azure.functions as func
+from ..conftest import create_auth_request
 import azure.cosmos.exceptions as cosmos_exceptions
 from pydantic import ValidationError, BaseModel
 
@@ -57,7 +58,7 @@ class TestErrorHandlerComprehensive:
         exc = SecurityValidationException("XSS attempt detected", "content")
         request_id = "req-456"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_validation_error(exc, request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -71,6 +72,7 @@ class TestErrorHandlerComprehensive:
 
     def test_handle_validation_error_with_pydantic_validation_error(self):
         """Test handling Pydantic ValidationError."""
+
         # Create a simple Pydantic model for testing
         class TestModel(BaseModel):
             name: str
@@ -81,7 +83,7 @@ class TestErrorHandlerComprehensive:
         except ValidationError as exc:
             request_id = "req-789"
 
-            with patch('api.shared.error_handling.logger') as mock_logger:
+            with patch("api.shared.error_handling.logger") as mock_logger:
                 result = ErrorHandler.handle_validation_error(exc, request_id)
 
                 assert isinstance(result, ErrorResponse)
@@ -95,6 +97,7 @@ class TestErrorHandlerComprehensive:
 
     def test_handle_validation_error_with_multiple_pydantic_errors(self):
         """Test handling Pydantic ValidationError with multiple errors."""
+
         class TestModel(BaseModel):
             name: str
             age: int
@@ -115,7 +118,7 @@ class TestErrorHandlerComprehensive:
         exc = ValueError("Invalid date format")
         request_id = "req-999"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_validation_error(exc, request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -131,7 +134,7 @@ class TestErrorHandlerComprehensive:
         """Test handling authentication error with default message."""
         request_id = "req-auth-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_authentication_error(request_id=request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -148,7 +151,7 @@ class TestErrorHandlerComprehensive:
         message = "Invalid API key"
         request_id = "req-auth-2"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_authentication_error(message, request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -161,7 +164,7 @@ class TestErrorHandlerComprehensive:
         """Test handling authorization error with default message."""
         request_id = "req-authz-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_authorization_error(request_id=request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -190,7 +193,7 @@ class TestErrorHandlerComprehensive:
         """Test handling not found error with basic parameters."""
         request_id = "req-notfound-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_not_found_error(request_id=request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -210,7 +213,9 @@ class TestErrorHandlerComprehensive:
         resource_id = "prompt-123"
         request_id = "req-notfound-2"
 
-        result = ErrorHandler.handle_not_found_error(resource_type, resource_id, request_id)
+        result = ErrorHandler.handle_not_found_error(
+            resource_type, resource_id, request_id
+        )
 
         assert isinstance(result, ErrorResponse)
         assert result.status_code == 404
@@ -224,7 +229,7 @@ class TestErrorHandlerComprehensive:
         exc = RateLimitException("Rate limit exceeded for API calls")
         request_id = "req-rate-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_rate_limit_error(exc, request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -239,10 +244,12 @@ class TestErrorHandlerComprehensive:
 
     def test_handle_business_logic_error(self):
         """Test handling business logic error."""
-        exc = BusinessLogicException("Cannot delete collection with prompts", "collection_id")
+        exc = BusinessLogicException(
+            "Cannot delete collection with prompts", "collection_id"
+        )
         request_id = "req-business-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_business_logic_error(exc, request_id)
 
             assert isinstance(result, ErrorResponse)
@@ -261,7 +268,7 @@ class TestErrorHandlerComprehensive:
         error_message = "API quota exceeded"
         request_id = "req-ext-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             result = ErrorHandler.handle_external_service_error(
                 service_name, error_message, request_id=request_id
             )
@@ -299,13 +306,18 @@ class TestErrorHandlerComprehensive:
         error_message = "Connection timeout"
         request_id = "req-db-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
-            result = ErrorHandler.handle_database_error(operation, error_message, request_id)
+        with patch("api.shared.error_handling.logger") as mock_logger:
+            result = ErrorHandler.handle_database_error(
+                operation, error_message, request_id
+            )
 
             assert isinstance(result, ErrorResponse)
             assert result.status_code == 500
             assert result.error.code == "DATABASE_ERROR"
-            assert result.error.message == "A database error occurred. Please try again later."
+            assert (
+                result.error.message
+                == "A database error occurred. Please try again later."
+            )
             assert result.error.details["operation"] == operation
             assert result.request_id == request_id
 
@@ -317,13 +329,18 @@ class TestErrorHandlerComprehensive:
         exc = Exception("Out of memory")
         request_id = "req-sys-1"
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
-            result = ErrorHandler.handle_system_error(exc, request_id, include_traceback=False)
+        with patch("api.shared.error_handling.logger") as mock_logger:
+            result = ErrorHandler.handle_system_error(
+                exc, request_id, include_traceback=False
+            )
 
             assert isinstance(result, ErrorResponse)
             assert result.status_code == 500
             assert result.error.code == "INTERNAL_SERVER_ERROR"
-            assert result.error.message == "An unexpected error occurred. Please try again later."
+            assert (
+                result.error.message
+                == "An unexpected error occurred. Please try again later."
+            )
             assert result.error.details["error_type"] == "Exception"
             assert result.error.details["error_message"] == str(exc)
             assert "traceback" not in result.error.details
@@ -336,17 +353,22 @@ class TestErrorHandlerComprehensive:
         exc = Exception("Critical failure")
         request_id = "req-sys-2"
 
-        with patch('api.shared.error_handling.logger') as mock_logger, \
-             patch('api.shared.error_handling.traceback.format_exc') as mock_traceback:
-
+        with patch("api.shared.error_handling.logger") as mock_logger, patch(
+            "api.shared.error_handling.traceback.format_exc"
+        ) as mock_traceback:
             mock_traceback.return_value = "Traceback line 1\nTraceback line 2"
 
-            result = ErrorHandler.handle_system_error(exc, request_id, include_traceback=True)
+            result = ErrorHandler.handle_system_error(
+                exc, request_id, include_traceback=True
+            )
 
             assert isinstance(result, ErrorResponse)
             assert result.status_code == 500
             assert result.error.code == "INTERNAL_SERVER_ERROR"
-            assert result.error.details["traceback"] == "Traceback line 1\nTraceback line 2"
+            assert (
+                result.error.details["traceback"]
+                == "Traceback line 1\nTraceback line 2"
+            )
 
 
 class TestErrorDecorator:
@@ -354,6 +376,7 @@ class TestErrorDecorator:
 
     def test_handle_api_errors_decorator_success(self):
         """Test decorator with successful function execution."""
+
         @handle_api_errors
         def successful_function(req):
             return func.HttpResponse("Success", status_code=200)
@@ -366,6 +389,7 @@ class TestErrorDecorator:
 
     def test_handle_api_errors_decorator_with_validation_error(self):
         """Test decorator handling ValidationException."""
+
         @handle_api_errors
         def failing_function(req):
             raise ValidationException("Invalid input", "field1")
@@ -373,7 +397,7 @@ class TestErrorDecorator:
         req = Mock(spec=func.HttpRequest)
         req.headers = {"x-request-id": "req-decorator-1"}
 
-        with patch('api.shared.error_handling.extract_request_id') as mock_extract:
+        with patch("api.shared.error_handling.extract_request_id") as mock_extract:
             mock_extract.return_value = "req-decorator-1"
 
             result = failing_function(req)
@@ -384,6 +408,7 @@ class TestErrorDecorator:
 
     def test_handle_api_errors_decorator_with_generic_exception(self):
         """Test decorator handling generic exception."""
+
         @handle_api_errors
         def failing_function(req):
             raise Exception("Unexpected error")
@@ -402,12 +427,12 @@ class TestErrorMonitor:
 
     def test_record_error_basic(self):
         """Test recording basic error information."""
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             ErrorMonitor.record_error(
                 ErrorCategory.VALIDATION,
                 ErrorSeverity.LOW,
                 "INVALID_EMAIL",
-                "Email format is invalid"
+                "Email format is invalid",
             )
 
             # Verify logging
@@ -417,7 +442,7 @@ class TestErrorMonitor:
         """Test recording error with all parameters."""
         additional_context = {"field": "email", "value": "invalid@"}
 
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             ErrorMonitor.record_error(
                 ErrorCategory.AUTHENTICATION,
                 ErrorSeverity.HIGH,
@@ -425,7 +450,7 @@ class TestErrorMonitor:
                 "XSS script detected",
                 user_id="user123",
                 request_id="req456",
-                additional_context=additional_context
+                additional_context=additional_context,
             )
 
             # Verify logging with appropriate level for HIGH severity
@@ -433,12 +458,12 @@ class TestErrorMonitor:
 
     def test_record_error_critical_severity(self):
         """Test recording critical error."""
-        with patch('api.shared.error_handling.logger') as mock_logger:
+        with patch("api.shared.error_handling.logger") as mock_logger:
             ErrorMonitor.record_error(
                 ErrorCategory.SYSTEM,
                 ErrorSeverity.CRITICAL,
                 "DATABASE_FAILURE",
-                "Database connection lost"
+                "Database connection lost",
             )
 
             # Verify critical logging
@@ -447,25 +472,54 @@ class TestErrorMonitor:
     def test_should_alert_true_cases(self):
         """Test cases where alerts should be triggered."""
         # Critical errors always trigger alerts
-        assert ErrorMonitor.should_alert(ErrorCategory.SYSTEM, ErrorSeverity.CRITICAL) is True
-        assert ErrorMonitor.should_alert(ErrorCategory.DATABASE, ErrorSeverity.CRITICAL) is True
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.SYSTEM, ErrorSeverity.CRITICAL)
+            is True
+        )
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.DATABASE, ErrorSeverity.CRITICAL)
+            is True
+        )
 
         # High severity errors in security and authentication trigger alerts
-        assert ErrorMonitor.should_alert(ErrorCategory.AUTHENTICATION, ErrorSeverity.HIGH) is True
-        assert ErrorMonitor.should_alert(ErrorCategory.AUTHORIZATION, ErrorSeverity.HIGH) is True
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.AUTHENTICATION, ErrorSeverity.HIGH)
+            is True
+        )
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.AUTHORIZATION, ErrorSeverity.HIGH)
+            is True
+        )
 
         # External service high severity errors trigger alerts
-        assert ErrorMonitor.should_alert(ErrorCategory.EXTERNAL_SERVICE, ErrorSeverity.HIGH) is True
+        assert (
+            ErrorMonitor.should_alert(
+                ErrorCategory.EXTERNAL_SERVICE, ErrorSeverity.HIGH
+            )
+            is True
+        )
 
     def test_should_alert_false_cases(self):
         """Test cases where alerts should not be triggered."""
         # Low severity errors generally don't trigger alerts
-        assert ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.LOW) is False
-        assert ErrorMonitor.should_alert(ErrorCategory.BUSINESS_LOGIC, ErrorSeverity.LOW) is False
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.LOW)
+            is False
+        )
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.BUSINESS_LOGIC, ErrorSeverity.LOW)
+            is False
+        )
 
         # Medium severity in most categories don't trigger alerts
-        assert ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.MEDIUM) is False
-        assert ErrorMonitor.should_alert(ErrorCategory.RATE_LIMITING, ErrorSeverity.MEDIUM) is False
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.MEDIUM)
+            is False
+        )
+        assert (
+            ErrorMonitor.should_alert(ErrorCategory.RATE_LIMITING, ErrorSeverity.MEDIUM)
+            is False
+        )
 
 
 class TestErrorRecovery:
@@ -643,7 +697,7 @@ class TestUtilityFunctions:
             "Token abc123def456 is invalid",
             "Password: secret123 is wrong",
             "API_KEY=sk-proj-abcdef123456 failed",
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature authentication failed"
+            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature authentication failed",
         ]
 
         for message in messages:
@@ -653,7 +707,10 @@ class TestUtilityFunctions:
             assert "abc123def456" not in sanitized
             assert "secret123" not in sanitized
             assert "sk-proj-abcdef123456" not in sanitized
-            assert "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature" not in sanitized
+            assert (
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"
+                not in sanitized
+            )
 
 
 class TestErrorResponseIntegration:
@@ -665,19 +722,17 @@ class TestErrorResponseIntegration:
             code="VALIDATION_ERROR",
             message="Invalid input data",
             field="email",
-            details={"pattern": "email", "value": "invalid"}
+            details={"pattern": "email", "value": "invalid"},
         )
         additional_error = ErrorDetail(
-            code="REQUIRED_FIELD",
-            message="Name is required",
-            field="name"
+            code="REQUIRED_FIELD", message="Name is required", field="name"
         )
 
         response = ErrorResponse(
             status_code=400,
             error=error,
             request_id="integration-test-123",
-            additional_errors=[additional_error]
+            additional_errors=[additional_error],
         )
 
         result = response.to_dict()

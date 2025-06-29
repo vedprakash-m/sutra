@@ -51,42 +51,6 @@ def valid_user_id():
 class TestIntegrationsAPI:
     """Test class for integrations API endpoints."""
 
-    def create_auth_request(self, method="GET", body=None, route_params=None, params=None,
-                           user_id="test-user-123", role="user", url="http://localhost/api/integrations"):
-        """Helper to create authenticated requests for Azure Static Web Apps."""
-        import azure.functions as func
-        import base64
-        import json
-
-        # Create user principal data
-        principal_data = {
-            "identityProvider": "azureActiveDirectory",
-            "userId": user_id,
-            "userDetails": "Test User",
-            "userRoles": [role],
-            "claims": []
-        }
-
-        # Encode as base64
-        principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
-
-        # Create headers
-        headers = {
-            "x-ms-client-principal": principal_b64,
-            "x-ms-client-principal-id": user_id,
-            "x-ms-client-principal-name": "Test User",
-            "x-ms-client-principal-idp": "azureActiveDirectory"
-        }
-
-        return func.HttpRequest(
-            method=method,
-            url=url,
-            body=json.dumps(body).encode('utf-8') if body else b"",
-            headers=headers,
-            route_params=route_params or {},
-            params=params or {}
-        )
-
     @pytest.mark.asyncio
     async def test_main_unauthorized(self, mock_request):
         """Test main endpoint without authorization."""
@@ -104,16 +68,9 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     async def test_main_get_request(self, valid_user_id):
         """Test main endpoint with GET request."""
-        mock_request = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/integrations/llm",
-            user_id=valid_user_id,
-            role="user"
-        )
+        mock_request = create_auth_request(method="GET")
 
-        with patch(
-            "api.integrations_api.list_llm_integrations"
-        ) as mock_list:
+        with patch("api.integrations_api.list_llm_integrations") as mock_list:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_list.return_value = mock_response
@@ -126,16 +83,9 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     async def test_main_post_request(self, valid_user_id):
         """Test main endpoint with POST request."""
-        mock_request = self.create_auth_request(
-            method="POST",
-            url="http://localhost/api/integrations/llm",
-            user_id=valid_user_id,
-            role="user"
-        )
+        mock_request = create_auth_request(method="POST")
 
-        with patch(
-            "api.integrations_api.create_llm_integration"
-        ) as mock_create:
+        with patch("api.integrations_api.create_llm_integration") as mock_create:
             mock_response = Mock()
             mock_response.status_code = 201
             mock_create.return_value = mock_response
@@ -148,17 +98,9 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     async def test_main_post_test_connection(self, valid_user_id):
         """Test main endpoint with POST request for test connection."""
-        mock_request = self.create_auth_request(
-            method="POST",
-            url="http://localhost/api/integrations/llm/openai/test",
-            user_id=valid_user_id,
-            role="user",
-            route_params={"provider": "openai", "action": "test"}
-        )
+        mock_request = create_auth_request(method="POST")
 
-        with patch(
-            "api.integrations_api.validate_llm_connection"
-        ) as mock_test:
+        with patch("api.integrations_api.validate_llm_connection") as mock_test:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_test.return_value = mock_response
@@ -171,17 +113,9 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     async def test_main_put_request(self, valid_user_id):
         """Test main endpoint with PUT request."""
-        mock_request = self.create_auth_request(
-            method="PUT",
-            url="http://localhost/api/integrations/llm/openai",
-            user_id=valid_user_id,
-            role="user",
-            route_params={"provider": "openai"}
-        )
+        mock_request = create_auth_request(method="PUT")
 
-        with patch(
-            "api.integrations_api.update_llm_integration"
-        ) as mock_update:
+        with patch("api.integrations_api.update_llm_integration") as mock_update:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_update.return_value = mock_response
@@ -194,17 +128,9 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     async def test_main_delete_request(self, valid_user_id):
         """Test main endpoint with DELETE request."""
-        mock_request = self.create_auth_request(
-            method="DELETE",
-            url="http://localhost/api/integrations/llm/openai",
-            user_id=valid_user_id,
-            role="user",
-            route_params={"provider": "openai"}
-        )
+        mock_request = create_auth_request(method="DELETE")
 
-        with patch(
-            "api.integrations_api.delete_llm_integration"
-        ) as mock_delete:
+        with patch("api.integrations_api.delete_llm_integration") as mock_delete:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_delete.return_value = mock_response
@@ -217,7 +143,7 @@ class TestIntegrationsAPI:
     @pytest.mark.asyncio
     async def test_main_method_not_allowed(self, valid_user_id):
         """Test main endpoint with unsupported method."""
-        mock_request = self.create_auth_request(method="PATCH", user_id=valid_user_id)
+        mock_request = create_auth_request(method="PATCH")
 
         response = await main(mock_request)
 
@@ -497,13 +423,7 @@ class TestIntegrationsAPI:
         from . import main
 
         # Create request with authentication
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/integrations/llm",
-            route_params={},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Mock database to raise exception
         with patch("api.integrations_api.get_database_manager") as mock_db:
@@ -530,7 +450,9 @@ class TestIntegrationsAPI:
             mock_response.json.return_value = {"data": [{"id": "gpt-3.5-turbo"}]}
 
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_context.__aenter__.return_value.get = AsyncMock(
+                return_value=mock_response
+            )
             mock_client.return_value = mock_context
 
             # Act
@@ -552,7 +474,9 @@ class TestIntegrationsAPI:
             mock_response.status_code = 200
 
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_context.__aenter__.return_value.get = AsyncMock(
+                return_value=mock_response
+            )
             mock_client.return_value = mock_context
 
             # Act
@@ -574,7 +498,9 @@ class TestIntegrationsAPI:
             mock_response.status_code = 200
 
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+            mock_context.__aenter__.return_value.post = AsyncMock(
+                return_value=mock_response
+            )
             mock_client.return_value = mock_context
 
             # Act
@@ -596,11 +522,15 @@ class TestIntegrationsAPI:
             mock_response.status_code = 200
 
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_context.__aenter__.return_value.get = AsyncMock(
+                return_value=mock_response
+            )
             mock_client.return_value = mock_context
 
             # Act
-            result = await validate_llm_api_key("custom", "test-api-key", "https://custom-api.com")
+            result = await validate_llm_api_key(
+                "custom", "test-api-key", "https://custom-api.com"
+            )
 
             # Assert
             assert result["valid"] == True
@@ -619,7 +549,9 @@ class TestIntegrationsAPI:
             mock_response.text = "Invalid API key"
 
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_context.__aenter__.return_value.get = AsyncMock(
+                return_value=mock_response
+            )
             mock_client.return_value = mock_context
 
             # Act
@@ -641,7 +573,9 @@ class TestIntegrationsAPI:
             mock_response.text = "API key invalid"
 
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            mock_context.__aenter__.return_value.get = AsyncMock(
+                return_value=mock_response
+            )
             mock_client.return_value = mock_context
 
             # Act
@@ -663,7 +597,9 @@ class TestIntegrationsAPI:
             mock_response.text = "Unauthorized"
 
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+            mock_context.__aenter__.return_value.post = AsyncMock(
+                return_value=mock_response
+            )
             mock_client.return_value = mock_context
 
             # Act
@@ -682,7 +618,9 @@ class TestIntegrationsAPI:
         # Mock timeout error
         with patch("httpx.AsyncClient") as mock_client:
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.get = AsyncMock(side_effect=asyncio.TimeoutError())
+            mock_context.__aenter__.return_value.get = AsyncMock(
+                side_effect=asyncio.TimeoutError()
+            )
             mock_client.return_value = mock_context
 
             # Act
@@ -712,7 +650,9 @@ class TestIntegrationsAPI:
         # Mock connection error
         with patch("httpx.AsyncClient") as mock_client:
             mock_context = AsyncMock()
-            mock_context.__aenter__.return_value.get = AsyncMock(side_effect=Exception("Connection failed"))
+            mock_context.__aenter__.return_value.get = AsyncMock(
+                side_effect=Exception("Connection failed")
+            )
             mock_client.return_value = mock_context
 
             # Act

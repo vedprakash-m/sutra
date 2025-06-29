@@ -8,6 +8,7 @@ import pytest
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from datetime import datetime, timezone, timedelta
 import azure.functions as func
+from ..conftest import create_auth_request
 
 # Add the API directory to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -17,8 +18,15 @@ from guest_api import main as guest_api_main
 
 
 class TestGuestAPI:
-
-    def create_request(self, method="GET", url=None, headers=None, body=None, route_params=None, guest_session_id=None):
+    def create_request(
+        self,
+        method="GET",
+        url=None,
+        headers=None,
+        body=None,
+        route_params=None,
+        guest_session_id=None,
+    ):
         """Helper to create mock Azure Function requests."""
         headers = headers or {}
         if guest_session_id:
@@ -44,20 +52,23 @@ class TestGuestAPI:
             "type": "guest_session",
             "ip_address": "127.0.0.1",
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
-            "active": True
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(hours=24)
+            ).isoformat(),
+            "active": True,
         }
 
         mock_stats = {
             "usage": {"llm_calls": 0, "prompts_created": 0},
             "limits": {"llm_calls_per_day": 5, "prompts_per_day": 10},
-            "remaining": {"llm_calls": 5, "prompts_created": 10}
+            "remaining": {"llm_calls": 5, "prompts_created": 10},
         }
 
-        with patch('guest_api.get_database_manager') as mock_db, \
-             patch('guest_api.GuestUserManager') as mock_manager_class, \
-             patch('guest_api.get_guest_usage_stats') as mock_usage_stats:
-
+        with patch("guest_api.get_database_manager") as mock_db, patch(
+            "guest_api.GuestUserManager"
+        ) as mock_manager_class, patch(
+            "guest_api.get_guest_usage_stats"
+        ) as mock_usage_stats:
             # Set up mocks
             mock_db.return_value = Mock()
             mock_manager = Mock()
@@ -69,7 +80,7 @@ class TestGuestAPI:
             req = self.create_request(
                 method="GET",
                 url="http://localhost/api/guest/session",
-                route_params={"action": "session"}
+                route_params={"action": "session"},
             )
 
             # Act
@@ -92,20 +103,23 @@ class TestGuestAPI:
             "id": session_id,
             "type": "guest_session",
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=12)).isoformat(),
-            "active": True
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(hours=12)
+            ).isoformat(),
+            "active": True,
         }
 
         mock_stats = {
             "usage": {"llm_calls": 2, "prompts_created": 1},
             "limits": {"llm_calls_per_day": 5, "prompts_per_day": 10},
-            "remaining": {"llm_calls": 3, "prompts_created": 9}
+            "remaining": {"llm_calls": 3, "prompts_created": 9},
         }
 
-        with patch('guest_api.get_database_manager') as mock_db, \
-             patch('guest_api.GuestUserManager') as mock_manager_class, \
-             patch('guest_api.get_guest_usage_stats') as mock_usage_stats:
-
+        with patch("guest_api.get_database_manager") as mock_db, patch(
+            "guest_api.GuestUserManager"
+        ) as mock_manager_class, patch(
+            "guest_api.get_guest_usage_stats"
+        ) as mock_usage_stats:
             # Set up mocks
             mock_db.return_value = Mock()
             mock_manager = Mock()
@@ -118,7 +132,7 @@ class TestGuestAPI:
                 method="GET",
                 url="http://localhost/api/guest/session",
                 route_params={"action": "session"},
-                guest_session_id=session_id
+                guest_session_id=session_id,
             )
 
             # Act
@@ -141,26 +155,29 @@ class TestGuestAPI:
         expired_session = {
             "id": session_id,
             "expires_at": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(),
-            "active": False
+            "active": False,
         }
 
         new_session = {
             "id": "guest_new_123",
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
-            "active": True
+            "expires_at": (
+                datetime.now(timezone.utc) + timedelta(hours=24)
+            ).isoformat(),
+            "active": True,
         }
 
         mock_stats = {
             "usage": {"llm_calls": 0, "prompts_created": 0},
             "limits": {"llm_calls_per_day": 5, "prompts_per_day": 10},
-            "remaining": {"llm_calls": 5, "prompts_created": 10}
+            "remaining": {"llm_calls": 5, "prompts_created": 10},
         }
 
-        with patch('guest_api.get_database_manager') as mock_db, \
-             patch('guest_api.GuestUserManager') as mock_manager_class, \
-             patch('guest_api.get_guest_usage_stats') as mock_usage_stats:
-
+        with patch("guest_api.get_database_manager") as mock_db, patch(
+            "guest_api.GuestUserManager"
+        ) as mock_manager_class, patch(
+            "guest_api.get_guest_usage_stats"
+        ) as mock_usage_stats:
             # Set up mocks
             mock_db.return_value = Mock()
             mock_manager = Mock()
@@ -173,7 +190,7 @@ class TestGuestAPI:
                 method="GET",
                 url="http://localhost/api/guest/session",
                 route_params={"action": "session"},
-                guest_session_id=session_id
+                guest_session_id=session_id,
             )
 
             # Act
@@ -196,30 +213,30 @@ class TestGuestAPI:
                 "llm_calls": 3,
                 "prompts_created": 2,
                 "collections_created": 1,
-                "last_activity": datetime.now(timezone.utc).isoformat()
+                "last_activity": datetime.now(timezone.utc).isoformat(),
             },
             "limits": {
                 "llm_calls_per_day": 5,
                 "prompts_per_day": 10,
-                "collections_per_session": 3
+                "collections_per_session": 3,
             },
             "remaining": {
                 "llm_calls": 2,
                 "prompts_created": 8,
-                "collections_created": 2
-            }
+                "collections_created": 2,
+            },
         }
 
-        with patch('guest_api.get_database_manager') as mock_db, \
-             patch('guest_api.get_guest_usage_stats') as mock_usage_stats:
-
+        with patch("guest_api.get_database_manager") as mock_db, patch(
+            "guest_api.get_guest_usage_stats"
+        ) as mock_usage_stats:
             mock_db.return_value = Mock()
             mock_usage_stats.return_value = mock_stats
 
             req = self.create_request(
                 method="GET",
                 url=f"http://localhost/api/guest/{session_id}/stats",
-                route_params={"action": "stats", "session_id": session_id}
+                route_params={"action": "stats", "session_id": session_id},
             )
 
             # Act
@@ -238,19 +255,19 @@ class TestGuestAPI:
         session_id = "guest_nonexistent"
         mock_stats = {
             "error": "session_not_found",
-            "message": "Guest session not found"
+            "message": "Guest session not found",
         }
 
-        with patch('guest_api.get_database_manager') as mock_db, \
-             patch('guest_api.get_guest_usage_stats') as mock_usage_stats:
-
+        with patch("guest_api.get_database_manager") as mock_db, patch(
+            "guest_api.get_guest_usage_stats"
+        ) as mock_usage_stats:
             mock_db.return_value = Mock()
             mock_usage_stats.return_value = mock_stats
 
             req = self.create_request(
                 method="GET",
                 url=f"http://localhost/api/guest/{session_id}/stats",
-                route_params={"action": "stats", "session_id": session_id}
+                route_params={"action": "stats", "session_id": session_id},
             )
 
             # Act
@@ -267,7 +284,7 @@ class TestGuestAPI:
         req = self.create_request(
             method="DELETE",
             url="http://localhost/api/guest/session",
-            route_params={"action": "session"}
+            route_params={"action": "session"},
         )
 
         # Act
@@ -281,20 +298,22 @@ class TestGuestAPI:
     @pytest.mark.asyncio
     async def test_session_creation_error_handling(self):
         """Test error handling during session creation."""
-        with patch('guest_api.get_database_manager') as mock_db, \
-             patch('guest_api.GuestUserManager') as mock_manager_class:
-
+        with patch("guest_api.get_database_manager") as mock_db, patch(
+            "guest_api.GuestUserManager"
+        ) as mock_manager_class:
             # Set up mocks
             mock_db.return_value = Mock()
             mock_manager = Mock()
             mock_manager.get_guest_session = AsyncMock(return_value=None)
-            mock_manager.create_guest_session = AsyncMock(side_effect=Exception("Database error"))
+            mock_manager.create_guest_session = AsyncMock(
+                side_effect=Exception("Database error")
+            )
             mock_manager_class.return_value = mock_manager
 
             req = self.create_request(
                 method="GET",
                 url="http://localhost/api/guest/session",
-                route_params={"action": "session"}
+                route_params={"action": "session"},
             )
 
             # Act
@@ -311,16 +330,16 @@ class TestGuestAPI:
         """Test error handling when getting session stats."""
         session_id = "guest_error_test"
 
-        with patch('guest_api.get_database_manager') as mock_db, \
-             patch('guest_api.get_guest_usage_stats') as mock_usage_stats:
-
+        with patch("guest_api.get_database_manager") as mock_db, patch(
+            "guest_api.get_guest_usage_stats"
+        ) as mock_usage_stats:
             mock_db.return_value = Mock()
             mock_usage_stats.side_effect = Exception("Stats calculation error")
 
             req = self.create_request(
                 method="GET",
                 url=f"http://localhost/api/guest/{session_id}/stats",
-                route_params={"action": "stats", "session_id": session_id}
+                route_params={"action": "stats", "session_id": session_id},
             )
 
             # Act

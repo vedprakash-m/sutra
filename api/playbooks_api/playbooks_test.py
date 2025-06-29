@@ -1,7 +1,6 @@
 import pytest
 import json
 import asyncio
-import base64
 from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 
@@ -12,40 +11,8 @@ from api.playbooks_api import main as playbooks_main
 class TestPlaybooksAPI:
     """Test suite for Playbooks API endpoints."""
 
-    def create_auth_request(self, method="GET", body=None, route_params={}, params=None,
-                           user_id="test-user-123", role="user", url="http://localhost/api/playbooks"):
-        """Helper to create authenticated requests for Azure Static Web Apps."""
-        # Create user principal data
-        principal_data = {
-            "identityProvider": "azureActiveDirectory",
-            "userId": user_id,
-            "userDetails": "Test User",
-            "userRoles": [role],
-            "claims": []
-        }
-
-        # Encode as base64
-        principal_b64 = base64.b64encode(json.dumps(principal_data).encode('utf-8')).decode('utf-8')
-
-        # Create headers
-        headers = {
-            "x-ms-client-principal": principal_b64,
-            "x-ms-client-principal-id": user_id,
-            "x-ms-client-principal-name": "Test User",
-            "x-ms-client-principal-idp": "azureActiveDirectory"
-        }
-
-        return func.HttpRequest(
-            method=method,
-            url=url,
-            body=body if isinstance(body, bytes) else (json.dumps(body).encode('utf-8') if body else b""),
-            headers=headers,
-            route_params=route_params or {},
-            params=params or {}
-        )
-
     @pytest.fixture
-    def mock_auth_success(self):
+    def auth_test_user(self):
         """Mock successful authentication - now compatible with @require_auth decorator."""
         # The new auth system uses headers, so we don't need to patch functions
         # The create_auth_request helper provides the needed headers
@@ -77,17 +44,23 @@ class TestPlaybooksAPI:
                 container.delete_item = Mock()
                 containers[name] = container
 
-            mock_manager.get_container = Mock(side_effect=lambda name: containers.get(name))
+            mock_manager.get_container = Mock(
+                side_effect=lambda name: containers.get(name)
+            )
 
             # For backwards compatibility with old method names
-            mock_manager.get_playbooks_container = Mock(return_value=containers["Playbooks"])
-            mock_manager.get_executions_container = Mock(return_value=containers["Executions"])
+            mock_manager.get_playbooks_container = Mock(
+                return_value=containers["Playbooks"]
+            )
+            mock_manager.get_executions_container = Mock(
+                return_value=containers["Executions"]
+            )
 
             mock_db_manager.return_value = mock_manager
             yield mock_manager
 
     @pytest.mark.asyncio
-    async def test_create_playbook_success(self, mock_auth_success, mock_cosmos_client):
+    async def test_create_playbook_success(self, auth_test_user, mock_cosmos_client):
         """Test successful playbook creation."""
         # Arrange
         playbook_data = {
@@ -124,14 +97,7 @@ class TestPlaybooksAPI:
             mock_validate.return_value = {"valid": True, "errors": []}
 
             # Create request
-            req = self.create_auth_request(
-                method="POST",
-                url="http://localhost/api/playbooks",
-                body=playbook_data,
-                route_params={},
-                user_id="test-user-123",
-                role="user"
-            )
+            req = create_auth_request(method="POST")
 
             # Act
             response = await playbooks_main(req)
@@ -145,7 +111,7 @@ class TestPlaybooksAPI:
             mock_cosmos_client.create_item.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_list_playbooks_success(self, mock_auth_success, mock_cosmos_client):
+    async def test_list_playbooks_success(self, auth_test_user, mock_cosmos_client):
         """Test successful playbook listing."""
         # Arrange
         mock_playbooks = [
@@ -172,14 +138,7 @@ class TestPlaybooksAPI:
         ]
 
         # Create request
-        req = self.create_auth_request(
-            method="GET",
-            url="http://localhost/api/playbooks?page=1&limit=20",
-            route_params={},
-            params={"page": "1", "limit": "20"},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await playbooks_main(req)
@@ -191,7 +150,7 @@ class TestPlaybooksAPI:
         assert response_data["pagination"]["total_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_run_playbook_success(self, mock_auth_success, mock_cosmos_client):
+    async def test_run_playbook_success(self, auth_test_user, mock_cosmos_client):
         """Test successful playbook execution."""
         # Arrange
         playbook_id = "test-playbook-123"
@@ -228,14 +187,7 @@ class TestPlaybooksAPI:
         # Mock async execution
         with patch("asyncio.create_task") as mock_task:
             # Create request
-            req = self.create_auth_request(
-                method="POST",
-                url=f"http://localhost/api/playbooks/{playbook_id}/run",
-                body=execution_input,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+            req = create_auth_request(method="POST")
 
             # Act
             response = await playbooks_main(req)
@@ -249,7 +201,7 @@ class TestPlaybooksAPI:
 
     @pytest.mark.asyncio
     async def test_run_playbook_missing_inputs(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test playbook execution with missing required inputs."""
         # Arrange
@@ -276,14 +228,7 @@ class TestPlaybooksAPI:
         ]
 
         # Create request
-        req = self.create_auth_request(
-                method="POST",
-                url=f"http://localhost/api/playbooks/{playbook_id}/run",
-                body=execution_input,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="POST")
 
         # Act
         response = await playbooks_main(req)
@@ -296,7 +241,7 @@ class TestPlaybooksAPI:
 
     @pytest.mark.asyncio
     async def test_get_execution_status_success(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test successful execution status retrieval."""
         # Arrange
@@ -322,13 +267,7 @@ class TestPlaybooksAPI:
         ]
 
         # Create authenticated request
-        req = self.create_auth_request(
-            method="GET",
-            url=f"http://localhost/api/playbooks/executions/{execution_id}",
-            route_params={"execution_id": execution_id},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await playbooks_main(req)
@@ -341,9 +280,7 @@ class TestPlaybooksAPI:
         assert len(response_data["stepLogs"]) == 1
 
     @pytest.mark.asyncio
-    async def test_continue_execution_success(
-        self, mock_auth_success, mock_cosmos_client
-    ):
+    async def test_continue_execution_success(self, auth_test_user, mock_cosmos_client):
         """Test successful execution continuation after manual review."""
         # Arrange
         execution_id = "execution-123"
@@ -373,22 +310,15 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Playbooks").query_items.return_value = [
             playbook
         ]  # Get playbook for resumption
-        mock_cosmos_client.get_container("Executions").replace_item.return_value = (
-            execution
-        )
+        mock_cosmos_client.get_container(
+            "Executions"
+        ).replace_item.return_value = execution
 
         # Mock async resumption
         with patch(
             "asyncio.create_task"
         ) as mock_task:  # Create request - simulating continue route
-            req = self.create_auth_request(
-                method="POST",
-                url=f"http://localhost/api/playbooks/executions/{execution_id}/continue",
-                body=continue_data,
-                route_params={"execution_id": execution_id},
-                user_id="test-user-123",
-                role="user"
-            )
+            req = create_auth_request(method="POST")
 
             # Act
             response = await playbooks_main(req)
@@ -402,7 +332,7 @@ class TestPlaybooksAPI:
 
     @pytest.mark.asyncio
     async def test_continue_execution_invalid_status(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test execution continuation with invalid status."""
         # Arrange
@@ -421,14 +351,7 @@ class TestPlaybooksAPI:
         ]
 
         # Create request
-        req = self.create_auth_request(
-                method="POST",
-                url=f"http://localhost/api/playbooks/executions/{execution_id}/continue",
-                body={},
-                route_params={"execution_id": execution_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="POST")
 
         # Act
         response = await playbooks_main(req)
@@ -437,11 +360,14 @@ class TestPlaybooksAPI:
         assert response.status_code == 400
         response_data = json.loads(response.get_body())
         # The error message is different than expected due to JSON parsing issue
-        assert "JSON" in response_data["error"] or "Invalid status" in response_data["error"]
+        assert (
+            "JSON" in response_data["error"]
+            or "Invalid status" in response_data["error"]
+        )
 
     @pytest.mark.asyncio
     async def test_delete_playbook_with_active_executions(
-        self, mock_auth_success, mock_cosmos_client
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test playbook deletion when there are active executions."""
         # Arrange
@@ -461,14 +387,7 @@ class TestPlaybooksAPI:
         ]  # 2 active executions
 
         # Create request
-        req = self.create_auth_request(
-                method="DELETE",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=None,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="DELETE")
 
         # Act
         response = await playbooks_main(req)
@@ -481,7 +400,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.delete_item.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_update_playbook_success(self, mock_auth_success, mock_cosmos_client):
+    async def test_update_playbook_success(self, auth_test_user, mock_cosmos_client):
         """Test successful playbook update."""
         # Arrange
         playbook_id = "test-playbook-123"
@@ -521,14 +440,7 @@ class TestPlaybooksAPI:
             mock_validate.return_value = {"valid": True, "errors": []}
 
             # Create request
-            req = self.create_auth_request(
-                method="PUT",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=update_data,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+            req = create_auth_request(method="PUT")
 
             # Act
             response = await playbooks_main(req)
@@ -539,12 +451,14 @@ class TestPlaybooksAPI:
             assert response_data["name"] == "Updated Playbook Name"
             assert response_data["description"] == "Updated description"
             assert len(response_data["steps"]) == 1
-            mock_cosmos_client.get_container("Playbooks").replace_item.assert_called_once()
+            mock_cosmos_client.get_container(
+                "Playbooks"
+            ).replace_item.assert_called_once()
 
     # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
 
     @pytest.mark.asyncio
-    async def test_get_playbook_success(self, mock_auth_success, mock_cosmos_client):
+    async def test_get_playbook_success(self, auth_test_user, mock_cosmos_client):
         """Test successful playbook retrieval."""
         # Arrange
         playbook_id = "test-playbook-123"
@@ -561,14 +475,7 @@ class TestPlaybooksAPI:
         ]
 
         # Create request
-        req = self.create_auth_request(
-                method="GET",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=None,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await playbooks_main(req)
@@ -581,7 +488,7 @@ class TestPlaybooksAPI:
         assert len(response_data["steps"]) == 1
 
     @pytest.mark.asyncio
-    async def test_get_playbook_not_found(self, mock_auth_success, mock_cosmos_client):
+    async def test_get_playbook_not_found(self, auth_test_user, mock_cosmos_client):
         """Test playbook retrieval when playbook doesn't exist."""
         # Arrange
         playbook_id = "non-existent-playbook"
@@ -589,14 +496,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Playbooks").query_items.return_value = []
 
         # Create request
-        req = self.create_auth_request(
-                method="GET",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=None,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await playbooks_main(req)
@@ -607,7 +507,7 @@ class TestPlaybooksAPI:
         assert "Playbook not found" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_delete_playbook_success(self, mock_auth_success, mock_cosmos_client):
+    async def test_delete_playbook_success(self, auth_test_user, mock_cosmos_client):
         """Test successful playbook deletion."""
         # Arrange
         playbook_id = "test-playbook-123"
@@ -626,14 +526,7 @@ class TestPlaybooksAPI:
         ]  # No active executions
 
         # Create request
-        req = self.create_auth_request(
-                method="DELETE",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=None,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="DELETE")
 
         # Act
         response = await playbooks_main(req)
@@ -642,12 +535,14 @@ class TestPlaybooksAPI:
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
         assert "deleted successfully" in response_data["message"]
-        mock_cosmos_client.get_container("Playbooks").delete_item.assert_called_once_with(
+        mock_cosmos_client.get_container(
+            "Playbooks"
+        ).delete_item.assert_called_once_with(
             item=playbook_id, partition_key=playbook_id
         )
 
     @pytest.mark.asyncio
-    async def test_delete_playbook_not_found(self, mock_auth_success, mock_cosmos_client):
+    async def test_delete_playbook_not_found(self, auth_test_user, mock_cosmos_client):
         """Test playbook deletion when playbook doesn't exist."""
         # Arrange
         playbook_id = "non-existent-playbook"
@@ -655,14 +550,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Playbooks").query_items.return_value = []
 
         # Create request
-        req = self.create_auth_request(
-                method="DELETE",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=None,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="DELETE")
 
         # Act
         response = await playbooks_main(req)
@@ -673,7 +561,7 @@ class TestPlaybooksAPI:
         assert "Playbook not found" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_update_playbook_not_found(self, mock_auth_success, mock_cosmos_client):
+    async def test_update_playbook_not_found(self, auth_test_user, mock_cosmos_client):
         """Test playbook update when playbook doesn't exist."""
         # Arrange
         playbook_id = "non-existent-playbook"
@@ -682,14 +570,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Playbooks").query_items.return_value = []
 
         # Create request
-        req = self.create_auth_request(
-                method="PUT",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=update_data,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="PUT")
 
         # Act
         response = await playbooks_main(req)
@@ -700,20 +581,15 @@ class TestPlaybooksAPI:
         assert "Playbook not found" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_update_playbook_invalid_json(self, mock_auth_success, mock_cosmos_client):
+    async def test_update_playbook_invalid_json(
+        self, auth_test_user, mock_cosmos_client
+    ):
         """Test playbook update with invalid JSON."""
         # Arrange
         playbook_id = "test-playbook-123"
 
         # Create request with invalid JSON
-        req = self.create_auth_request(
-                method="PUT",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=b"{invalid json}",
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="PUT")
 
         # Act
         response = await playbooks_main(req)
@@ -724,7 +600,9 @@ class TestPlaybooksAPI:
         assert "Invalid JSON" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_update_playbook_validation_error(self, mock_auth_success, mock_cosmos_client):
+    async def test_update_playbook_validation_error(
+        self, auth_test_user, mock_cosmos_client
+    ):
         """Test playbook update with validation errors."""
         # Arrange
         playbook_id = "test-playbook-123"
@@ -749,14 +627,7 @@ class TestPlaybooksAPI:
             }
 
             # Create request
-            req = self.create_auth_request(
-                method="PUT",
-                url=f"http://localhost/api/playbooks/{playbook_id}",
-                body=update_data,
-                route_params={"id": playbook_id},
-                user_id="test-user-123",
-                role="user"
-            )
+            req = create_auth_request(method="PUT")
 
             # Act
             response = await playbooks_main(req)
@@ -765,20 +636,15 @@ class TestPlaybooksAPI:
             assert response.status_code == 400
             response_data = json.loads(response.get_body())
             assert "Validation failed" in response_data["error"]
-            assert len(response_data["details"]) >= 1  # Could be multiple validation errors
+            assert (
+                len(response_data["details"]) >= 1
+            )  # Could be multiple validation errors
 
     @pytest.mark.asyncio
-    async def test_method_not_allowed(self, mock_auth_success):
+    async def test_method_not_allowed(self, auth_test_user):
         """Test unsupported HTTP method."""
         # Create request with unsupported method
-        req = self.create_auth_request(
-            method="PATCH",  # Not supported
-            url="http://localhost/api/playbooks",
-            body=None,
-            route_params={},
-            user_id="test-user-123",
-            role="user"
-        )
+        req = create_auth_request(method="PATCH")
 
         # Act
         response = await playbooks_main(req)
@@ -789,7 +655,9 @@ class TestPlaybooksAPI:
         assert "Method not allowed" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_continue_execution_not_found(self, mock_auth_success, mock_cosmos_client):
+    async def test_continue_execution_not_found(
+        self, auth_test_user, mock_cosmos_client
+    ):
         """Test execution continuation when execution doesn't exist."""
         # Arrange
         execution_id = "non-existent-execution"
@@ -797,14 +665,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Executions").query_items.return_value = []
 
         # Create request
-        req = self.create_auth_request(
-                method="POST",
-                url=f"http://localhost/api/playbooks/executions/{execution_id}/continue",
-                body={},
-                route_params={"execution_id": execution_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="POST")
 
         # Act
         response = await playbooks_main(req)
@@ -817,7 +678,9 @@ class TestPlaybooksAPI:
         assert "not found" in response_data["error"] or "JSON" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_get_execution_status_not_found(self, mock_auth_success, mock_cosmos_client):
+    async def test_get_execution_status_not_found(
+        self, auth_test_user, mock_cosmos_client
+    ):
         """Test execution status retrieval when execution doesn't exist."""
         # Arrange
         execution_id = "non-existent-execution"
@@ -825,14 +688,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Executions").query_items.return_value = []
 
         # Create request
-        req = self.create_auth_request(
-                method="GET",
-                url=f"http://localhost/api/playbooks/executions/{execution_id}",
-                body=None,
-                route_params={"execution_id": execution_id},
-                user_id="test-user-123",
-                role="user"
-            )
+        req = create_auth_request(method="GET")
 
         # Act
         response = await playbooks_main(req)
@@ -931,18 +787,20 @@ class TestPlaybooksAPI:
             for call in update_calls:
                 # Check both positional and keyword arguments
                 args, kwargs = call
-                if 'body' in kwargs:
-                    execution_data = kwargs['body']
+                if "body" in kwargs:
+                    execution_data = kwargs["body"]
                 elif len(args) >= 2:
                     execution_data = args[1]  # body is second positional argument
                 else:
                     continue
 
-                if execution_data.get('status') == 'paused_for_review':
+                if execution_data.get("status") == "paused_for_review":
                     paused_call = call
                     break
 
-            assert paused_call is not None, "Execution should be paused for manual review"
+            assert (
+                paused_call is not None
+            ), "Execution should be paused for manual review"
 
     @pytest.mark.asyncio
     async def test_execute_playbook_steps_step_failure(self):
@@ -978,6 +836,7 @@ class TestPlaybooksAPI:
 
             # Mock a failure during step execution by making replace_item raise exception on second call
             call_count = 0
+
             def side_effect(*args, **kwargs):
                 nonlocal call_count
                 call_count += 1
@@ -1034,16 +893,16 @@ class TestPlaybooksAPI:
             final_call = mock_container.replace_item.call_args_list[-1]
             # Check both positional and keyword arguments
             args, kwargs = final_call
-            if 'body' in kwargs:
-                final_execution = kwargs['body']
+            if "body" in kwargs:
+                final_execution = kwargs["body"]
             elif len(args) >= 2:
                 final_execution = args[1]  # body is second positional argument
             else:
                 # Fallback - check if it's a different call pattern
                 final_execution = mock_execution
 
-            assert final_execution['status'] == 'completed'
-            assert 'endTime' in final_execution
+            assert final_execution["status"] == "completed"
+            assert "endTime" in final_execution
 
     @pytest.mark.asyncio
     async def test_resume_playbook_execution(self):
@@ -1100,7 +959,9 @@ class TestPlaybooksAPI:
             mock_db_manager.return_value.get_container.return_value = mock_container
 
             # Mock read_item to fail
-            mock_container.read_item.side_effect = Exception("Database connection failed")
+            mock_container.read_item.side_effect = Exception(
+                "Database connection failed"
+            )
 
             # Act - should handle the exception gracefully
             await execute_playbook_steps(execution_id, playbook, initial_inputs)

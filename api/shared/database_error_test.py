@@ -5,6 +5,7 @@ from api.shared.error_handling import SutraAPIError, handle_api_error
 from pydantic import ValidationError
 import azure.cosmos.exceptions as cosmos_exceptions
 import azure.functions as func
+from ..conftest import create_auth_request
 import os
 
 

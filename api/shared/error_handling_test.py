@@ -7,6 +7,7 @@ import json
 from datetime import datetime, timezone
 from unittest.mock import Mock, patch, MagicMock
 import azure.functions as func
+from ..conftest import create_auth_request
 import azure.cosmos.exceptions as cosmos_exceptions
 from pydantic import ValidationError
 

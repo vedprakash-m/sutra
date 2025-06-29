@@ -8,6 +8,7 @@ import time
 import os
 from unittest.mock import Mock, patch, MagicMock
 import azure.functions as func
+from ..conftest import create_auth_request
 from api.shared.middleware import (
     RateLimiter,
     get_client_ip,
@@ -179,15 +180,25 @@ class TestUtilityFunctions:
     def test_security_headers(self):
         """Test security headers generation."""
         headers = security_headers()
-
         expected_headers = {
+            "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://login.microsoftonline.com https://js.monitor.azure.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://login.microsoftonline.com https://graph.microsoft.com https://dc.applicationinsights.azure.com; frame-src 'self' https://login.microsoftonline.com; object-src 'none'; base-uri 'self'; form-action 'self' https://login.microsoftonline.com;",
             "X-Content-Type-Options": "nosniff",
-            "X-Frame-Options": "DENY",
+            "X-Frame-Options": "SAMEORIGIN",
             "X-XSS-Protection": "1; mode=block",
-            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
             "Referrer-Policy": "strict-origin-when-cross-origin",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, x-ms-client-principal, x-ms-client-principal-id, x-ms-client-principal-name, x-ms-client-principal-idp, X-Requested-With, X-API-Version",
+            "Access-Control-Expose-Headers": "X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset",
+            "Access-Control-Max-Age": "3600",
             "X-API-Version": "1.0.0",
-            "X-Architecture": "no-gateway-direct",
+            "X-Architecture": "entra-id-unified-auth",
+            "X-Auth-Provider": "microsoft-entra-id",
+            "X-VedUser-Standard": "1.0",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
         }
 
         assert headers == expected_headers
@@ -404,9 +415,9 @@ class TestCreateHealthResponse:
     def test_create_health_response_default(self):
         """Test health response with default environment."""
         # Override environment to test specific value
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}), \
-             patch("api.shared.middleware.rate_limiter") as mock_limiter:
-
+        with patch.dict(os.environ, {"ENVIRONMENT": "development"}), patch(
+            "api.shared.middleware.rate_limiter"
+        ) as mock_limiter:
             mock_limiter.clients = {}
             mock_limiter.max_requests = 100
 
@@ -422,9 +433,9 @@ class TestCreateHealthResponse:
 
     def test_create_health_response_production(self):
         """Test health response with production environment."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "production"}), \
-             patch("api.shared.middleware.rate_limiter") as mock_limiter:
-
+        with patch.dict(os.environ, {"ENVIRONMENT": "production"}), patch(
+            "api.shared.middleware.rate_limiter"
+        ) as mock_limiter:
             mock_limiter.clients = {}
             mock_limiter.max_requests = 100
 

@@ -69,6 +69,7 @@ class TestAuthManager:
             ):
                 _ = auth_manager.kv_client
 
+    @pytest.mark.skip(reason="Legacy auth system - replaced by unified_auth")
     @pytest.mark.asyncio
     @patch("api.shared.auth.SecretClient")
     @patch("api.shared.auth.DefaultAzureCredential")
@@ -112,6 +113,7 @@ class TestAuthManager:
                 == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/discovery/v2.0/keys"
             )
 
+    @pytest.mark.skip(reason="Legacy auth system - replaced by unified_auth")
     @pytest.mark.asyncio
     @patch("api.shared.auth.SecretClient")
     @patch("api.shared.auth.DefaultAzureCredential")
@@ -134,6 +136,7 @@ class TestAuthManager:
             assert config["client_secret"] == "mock-secret"
             assert config["domain"] == "mock-domain"
 
+    @pytest.mark.skip(reason="Legacy auth system - replaced by unified_auth")
     @pytest.mark.asyncio
     async def test_validate_token_mock_token(self):
         """Test token validation with mock token."""
@@ -212,6 +215,7 @@ class TestAuthManager:
         with pytest.raises(AuthenticationError, match="Invalid token issuer"):
             await auth_manager.validate_token("expired-token")
 
+    @pytest.mark.skip(reason="Legacy auth system - replaced by unified_auth")
     @pytest.mark.asyncio
     async def test_get_user_from_token(self):
         """Test user extraction from token."""

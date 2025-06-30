@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from shared.auth_static_web_apps import require_admin, get_current_user, verify_jwt_token, get_user_id_from_token, check_admin_role
+from shared.unified_auth import auth_required
 from shared.database import get_database_manager
 from shared.models import ValidationError
 from shared.error_handling import handle_api_error, SutraAPIError
@@ -21,8 +21,8 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
-@require_admin
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+@auth_required(admin_only=True)
+async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
     """
     Admin API endpoint for system administration and management.
 
@@ -37,8 +37,8 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - GET /api/admin/usage - Get usage statistics and monitoring
     """
     try:
-        # Get authenticated user from request context
-        user_id = req.current_user.id
+        # Get authenticated user from decorator parameter
+        user_id = user.id
 
         method = req.method
         route_params = req.route_params
@@ -1007,7 +1007,7 @@ async def get_guest_settings() -> func.HttpResponse:
                     "collections_per_session": 3,
                     "playbooks_per_session": 2,
                     "session_duration_hours": 24,
-                    "enabled": True
+                    "enabled": True,
                 },
                 "created_at": datetime.now(timezone.utc).isoformat(),
                 "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -1046,21 +1046,25 @@ async def update_guest_settings(
             existing_config = await db_manager.read_item(
                 container_name="SystemConfig",
                 item_id="guest_user_limits",
-                partition_key="guest_user_limits"
+                partition_key="guest_user_limits",
             )
         except:
             existing_config = {
                 "id": "guest_user_limits",
                 "limits": {},
-                "created_at": datetime.now(timezone.utc).isoformat()
+                "created_at": datetime.now(timezone.utc).isoformat(),
             }
 
         # Update settings
         if "limits" in body:
             # Validate limits
             valid_limit_keys = [
-                "llm_calls_per_day", "prompts_per_day", "collections_per_session",
-                "playbooks_per_session", "session_duration_hours", "enabled"
+                "llm_calls_per_day",
+                "prompts_per_day",
+                "collections_per_session",
+                "playbooks_per_session",
+                "session_duration_hours",
+                "enabled",
             ]
 
             for key, value in body["limits"].items():
@@ -1080,14 +1084,13 @@ async def update_guest_settings(
         else:
             try:
                 updated_config = await db_manager.update_item(
-                    container_name="SystemConfig",
-                    item=existing_config
+                    container_name="SystemConfig", item=existing_config
                 )
             except:
                 updated_config = await db_manager.create_item(
                     container_name="SystemConfig",
                     item=existing_config,
-                    partition_key="guest_user_limits"
+                    partition_key="guest_user_limits",
                 )
 
         logger.info(f"Admin {admin_user_id} updated guest user settings")
@@ -1139,7 +1142,7 @@ async def get_guest_usage_stats_admin(req: func.HttpRequest) -> func.HttpRespons
                 "total_playbooks_created": 12,
                 "avg_calls_per_session": 3.7,
                 "conversion_rate": 0.15,  # Percentage of guests who signed up
-                "_mock": True
+                "_mock": True,
             }
         else:
             # Get real statistics from database
@@ -1158,9 +1161,7 @@ async def get_guest_usage_stats_admin(req: func.HttpRequest) -> func.HttpRespons
             parameters = [{"name": "@start_date", "value": start_iso}]
 
             result = await db_manager.query_items(
-                container_name="GuestSessions",
-                query=query,
-                parameters=parameters
+                container_name="GuestSessions", query=query, parameters=parameters
             )
 
             stats_data = result[0] if result else {}
@@ -1172,13 +1173,17 @@ async def get_guest_usage_stats_admin(req: func.HttpRequest) -> func.HttpRespons
                 "total_sessions": stats_data.get("total_sessions", 0),
                 "total_llm_calls": stats_data.get("total_llm_calls", 0),
                 "total_prompts_created": stats_data.get("total_prompts_created", 0),
-                "total_collections_created": stats_data.get("total_collections_created", 0),
+                "total_collections_created": stats_data.get(
+                    "total_collections_created", 0
+                ),
                 "total_playbooks_created": stats_data.get("total_playbooks_created", 0),
                 "avg_calls_per_session": 0,
             }
 
             if stats["total_sessions"] > 0:
-                stats["avg_calls_per_session"] = round(stats["total_llm_calls"] / stats["total_sessions"], 2)
+                stats["avg_calls_per_session"] = round(
+                    stats["total_llm_calls"] / stats["total_sessions"], 2
+                )
 
         return func.HttpResponse(
             json.dumps(stats, default=str),

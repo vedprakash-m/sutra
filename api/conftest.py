@@ -203,11 +203,48 @@ def mock_cosmos_client():
 
 
 @pytest.fixture
-def mock_database_manager(mock_cosmos_client):
-    """Fixture that provides a mocked database manager."""
-    with patch("shared.database.get_database_manager") as mock_get_db:
-        mock_get_db.return_value = mock_cosmos_client
-        yield mock_cosmos_client
+def mock_database_manager():
+    """Global fixture for database manager mocking."""
+    # Reset the global database manager to ensure clean state
+    import shared.database
+
+    shared.database._db_manager = None
+
+    with patch("shared.database.get_database_manager") as mock_db_manager:
+        mock_manager = Mock()
+        # Make database methods async
+        mock_manager.query_items = AsyncMock()
+        mock_manager.create_item = AsyncMock()
+        mock_manager.replace_item = AsyncMock()
+        mock_manager.update_item = AsyncMock()
+        mock_manager.delete_item = AsyncMock()
+        mock_manager.read_item = AsyncMock()
+        mock_manager.upsert_item = AsyncMock()
+
+        # Add container getter methods for backward compatibility
+        mock_manager.get_collections_container = Mock(return_value=mock_manager)
+        mock_manager.get_users_container = Mock(return_value=mock_manager)
+        mock_manager.get_prompts_container = Mock(return_value=mock_manager)
+        mock_manager.get_playbooks_container = Mock(return_value=mock_manager)
+        mock_manager.get_integrations_container = Mock(return_value=mock_manager)
+        mock_manager.get_costs_container = Mock(return_value=mock_manager)
+        mock_manager.get_usage_container = Mock(return_value=mock_manager)
+
+        mock_db_manager.return_value = mock_manager
+        yield mock_manager
+
+
+# Global Database Mocking Fixtures
+@pytest.fixture(autouse=True)
+def reset_database_manager():
+    """Reset the global database manager before each test."""
+    import shared.database
+
+    # Reset the global database manager instance
+    shared.database._db_manager = None
+    yield
+    # Clean up after test
+    shared.database._db_manager = None
 
 
 # Environment setup fixtures
@@ -378,6 +415,7 @@ def create_auth_request(
     url="http://localhost/api/test",
     user_id=None,
     role="user",
+    route_params=None,
 ):
     """Create a request for use with unified auth system.
 
@@ -389,16 +427,23 @@ def create_auth_request(
 
     if headers is None:
         headers = {}
+    if route_params is None:
+        route_params = {}
 
     # Ensure we're in testing environment for unified auth
     os.environ["PYTEST_CURRENT_TEST"] = "true"
+
+    # Add test headers for the new authentication system
+    headers["X-Test-User-Type"] = role
+    if user_id:
+        headers["X-Test-User-ID"] = user_id
 
     return func.HttpRequest(
         method=method,
         url=url,
         body=json.dumps(body).encode("utf-8") if body else b"",
         headers=headers,
-        route_params={},
+        route_params=route_params,
         params={},
     )
 

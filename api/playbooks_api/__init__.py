@@ -27,7 +27,15 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
-@auth_required(permissions=["playbooks.read", "playbooks.create", "playbooks.update", "playbooks.delete", "playbooks.execute"])
+@auth_required(
+    permissions=[
+        "playbooks.read",
+        "playbooks.create",
+        "playbooks.update",
+        "playbooks.delete",
+        "playbooks.execute",
+    ]
+)
 async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     Playbooks API endpoint for managing AI workflow playbooks.
@@ -44,7 +52,7 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     try:
         # Get authenticated user from request context
-        user_id = req.current_user.id
+        user_id = user.id  # Fixed: use the user parameter from auth decorator
         method = req.method
         route_params = req.route_params
         playbook_id = route_params.get("id")
@@ -154,7 +162,19 @@ async def list_playbooks(user_id: str, req: func.HttpRequest) -> func.HttpRespon
         else:
             total_count = count_result[0] if count_result else 0
 
+        # Ensure total_count is an integer for calculation
+        if not isinstance(total_count, int):
+            total_count = 0
+
+        # Ensure limit is an integer for calculation
+        if not isinstance(limit, int):
+            limit = 10
+
         total_pages = (total_count + limit - 1) // limit
+
+        # Ensure page is an integer for comparison
+        if not isinstance(page, int):
+            page = 1
 
         response_data = {
             "playbooks": items,
@@ -278,9 +298,7 @@ async def create_playbook(user_id: str, req: func.HttpRequest) -> func.HttpRespo
         }
 
         created_item = await db_manager.create_item(
-            container_name="Playbooks",
-            item=db_data,
-            partition_key=user_id
+            container_name="Playbooks", item=db_data, partition_key=user_id
         )
 
         logger.info(f"Created playbook {playbook_id} for user {user_id}")

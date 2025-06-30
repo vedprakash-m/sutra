@@ -28,7 +28,14 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
-@auth_required(permissions=["integrations.read", "integrations.create", "integrations.update", "integrations.delete"])
+@auth_required(
+    permissions=[
+        "integrations.read",
+        "integrations.create",
+        "integrations.update",
+        "integrations.delete",
+    ]
+)
 async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     Integrations API endpoint for managing LLM provider integrations.
@@ -41,8 +48,8 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     - POST /api/integrations/llm/{provider}/test - Test LLM connection
     """
     try:
-        # Get authenticated user from request context (set by @require_auth decorator)
-        user_id = req.current_user.id
+        # Get authenticated user from unified auth decorator parameter
+        user_id = user.id
         method = req.method
         route_params = req.route_params
         provider = route_params.get("provider")
@@ -80,43 +87,49 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
         if not db_manager.client:
             # Return mock data for development mode
             return func.HttpResponse(
-                json.dumps({
-                    "integrations": {
-                        "openai": {
-                            "keyRef": "***masked***",
-                            "enabled": False,
-                            "status": "disconnected",
-                            "lastTested": None
+                json.dumps(
+                    {
+                        "integrations": {
+                            "openai": {
+                                "keyRef": "***masked***",
+                                "enabled": False,
+                                "status": "disconnected",
+                                "lastTested": None,
+                            },
+                            "anthropic": {
+                                "keyRef": "***masked***",
+                                "enabled": False,
+                                "status": "disconnected",
+                                "lastTested": None,
+                            },
                         },
-                        "anthropic": {
-                            "keyRef": "***masked***",
-                            "enabled": False,
-                            "status": "disconnected",
-                            "lastTested": None
-                        }
-                    },
-                    "supportedProviders": [
-                        {
-                            "id": "openai",
-                            "name": "OpenAI",
-                            "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
-                            "requiresUrl": False,
-                        },
-                        {
-                            "id": "anthropic",
-                            "name": "Anthropic",
-                            "models": ["claude-3-opus", "claude-3-sonnet", "claude-3-haiku"],
-                            "requiresUrl": False,
-                        },
-                        {
-                            "id": "google",
-                            "name": "Google",
-                            "models": ["gemini-pro", "gemini-pro-vision"],
-                            "requiresUrl": False,
-                        }
-                    ],
-                    "_mock": True
-                }),
+                        "supportedProviders": [
+                            {
+                                "id": "openai",
+                                "name": "OpenAI",
+                                "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+                                "requiresUrl": False,
+                            },
+                            {
+                                "id": "anthropic",
+                                "name": "Anthropic",
+                                "models": [
+                                    "claude-3-opus",
+                                    "claude-3-sonnet",
+                                    "claude-3-haiku",
+                                ],
+                                "requiresUrl": False,
+                            },
+                            {
+                                "id": "google",
+                                "name": "Google",
+                                "models": ["gemini-pro", "gemini-pro-vision"],
+                                "requiresUrl": False,
+                            },
+                        ],
+                        "_mock": True,
+                    }
+                ),
                 status_code=200,
                 mimetype="application/json",
             )

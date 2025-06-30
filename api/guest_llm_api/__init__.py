@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.guest_user import allow_guest_access
-from shared.auth_static_web_apps import require_auth
+from shared.unified_auth import auth_required
 from shared.database import get_database_manager
 from shared.error_handling import handle_api_error, SutraAPIError
 
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 @allow_guest_access(usage_type="llm_calls", allow_anonymous=True)
-@require_auth(resource="llm")
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+@auth_required(permissions=["llm"])
+async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
     """
     LLM Execution API with guest access support
 
@@ -38,7 +38,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Method not allowed"}),
                 status_code=405,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
     except Exception as e:
@@ -60,7 +60,7 @@ async def execute_llm_prompt(req: func.HttpRequest) -> func.HttpResponse:
 
         # Get user (authenticated or guest)
         user = req.current_user
-        is_guest = getattr(user, 'role', None) == 'guest'
+        is_guest = getattr(user, "role", None) == "guest"
 
         # Validate required fields
         prompt = body.get("prompt")
@@ -68,12 +68,16 @@ async def execute_llm_prompt(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Prompt is required"}),
                 status_code=400,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Get model preference
-        model = body.get("model", "gpt-3.5-turbo")  # Default to cheaper model for guests
-        max_tokens = body.get("max_tokens", 150 if is_guest else 1000)  # Limit tokens for guests
+        model = body.get(
+            "model", "gpt-3.5-turbo"
+        )  # Default to cheaper model for guests
+        max_tokens = body.get(
+            "max_tokens", 150 if is_guest else 1000
+        )  # Limit tokens for guests
 
         # For guests, limit to specific models and parameters
         if is_guest:
@@ -90,36 +94,42 @@ async def execute_llm_prompt(req: func.HttpRequest) -> func.HttpResponse:
             "usage": {
                 "prompt_tokens": len(prompt.split()),
                 "completion_tokens": 50,
-                "total_tokens": len(prompt.split()) + 50
+                "total_tokens": len(prompt.split()) + 50,
             },
             "choices": [
                 {
                     "text": f"This is a mock response to your prompt: '{prompt[:50]}...' \n\nIn a real implementation, this would be the actual LLM response. The system is working correctly and would integrate with OpenAI, Anthropic, or other LLM providers.",
                     "index": 0,
-                    "finish_reason": "stop"
+                    "finish_reason": "stop",
                 }
             ],
             "created": 1703123456,
             "user_type": "guest" if is_guest else "authenticated",
-            "_mock": True
+            "_mock": True,
         }
 
         # Add guest-specific information
         if is_guest:
-            guest_session = getattr(req, 'guest_session', {})
-            remaining_calls = guest_session.get('limits', {}).get('llm_calls_per_day', 5) - guest_session.get('usage', {}).get('llm_calls', 0) - 1
+            guest_session = getattr(req, "guest_session", {})
+            remaining_calls = (
+                guest_session.get("limits", {}).get("llm_calls_per_day", 5)
+                - guest_session.get("usage", {}).get("llm_calls", 0)
+                - 1
+            )
 
             mock_response["guest_info"] = {
                 "remaining_calls": max(0, remaining_calls),
-                "upgrade_message": f"You have {max(0, remaining_calls)} LLM calls remaining today. Sign up for unlimited access!"
+                "upgrade_message": f"You have {max(0, remaining_calls)} LLM calls remaining today. Sign up for unlimited access!",
             }
 
-        logger.info(f"LLM execution for user {user.id} ({'guest' if is_guest else 'authenticated'})")
+        logger.info(
+            f"LLM execution for user {user.id} ({'guest' if is_guest else 'authenticated'})"
+        )
 
         return func.HttpResponse(
             json.dumps(mock_response, default=str),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:
@@ -131,7 +141,7 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
     """List available LLM models."""
     try:
         user = req.current_user
-        is_guest = getattr(user, 'role', None) == 'guest'
+        is_guest = getattr(user, "role", None) == "guest"
 
         if is_guest:
             # Limited models for guest users
@@ -142,7 +152,7 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
                     "provider": "openai",
                     "description": "Fast and efficient for most tasks",
                     "max_tokens": 150,
-                    "available_for_guests": True
+                    "available_for_guests": True,
                 },
                 {
                     "id": "gpt-4o-mini",
@@ -150,8 +160,8 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
                     "provider": "openai",
                     "description": "Smaller version of GPT-4o",
                     "max_tokens": 150,
-                    "available_for_guests": True
-                }
+                    "available_for_guests": True,
+                },
             ]
         else:
             # Full model list for authenticated users
@@ -162,7 +172,7 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
                     "provider": "openai",
                     "description": "Fast and efficient for most tasks",
                     "max_tokens": 4000,
-                    "available_for_guests": True
+                    "available_for_guests": True,
                 },
                 {
                     "id": "gpt-4",
@@ -170,7 +180,7 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
                     "provider": "openai",
                     "description": "Most capable model for complex tasks",
                     "max_tokens": 8000,
-                    "available_for_guests": False
+                    "available_for_guests": False,
                 },
                 {
                     "id": "gpt-4o-mini",
@@ -178,7 +188,7 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
                     "provider": "openai",
                     "description": "Smaller version of GPT-4o",
                     "max_tokens": 4000,
-                    "available_for_guests": True
+                    "available_for_guests": True,
                 },
                 {
                     "id": "claude-3-sonnet",
@@ -186,20 +196,22 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
                     "provider": "anthropic",
                     "description": "Balanced performance and speed",
                     "max_tokens": 4000,
-                    "available_for_guests": False
-                }
+                    "available_for_guests": False,
+                },
             ]
 
         response_data = {
             "models": models,
             "user_type": "guest" if is_guest else "authenticated",
-            "note": "Guest users have access to limited models with reduced token limits" if is_guest else None
+            "note": "Guest users have access to limited models with reduced token limits"
+            if is_guest
+            else None,
         }
 
         return func.HttpResponse(
             json.dumps(response_data, default=str),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:

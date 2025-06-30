@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.database import get_database_manager
 from shared.models import UserRole
-from shared.auth_static_web_apps import require_admin, get_current_user
+from shared.unified_auth import auth_required
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ class RoleManager:
             RolePermission.ADMIN_SYSTEM,
             RolePermission.ADMIN_INTEGRATIONS,
             RolePermission.ADMIN_ANALYTICS,
-        ]
+        ],
     }
 
     def __init__(self):
@@ -109,11 +109,15 @@ class RoleManager:
         user_permissions = self.get_user_permissions(user_role)
         return permission in user_permissions
 
-    async def assign_role(self, user_id: str, new_role: UserRole, assigned_by: str) -> Dict[str, Any]:
+    async def assign_role(
+        self, user_id: str, new_role: UserRole, assigned_by: str
+    ) -> Dict[str, Any]:
         """Assign a new role to a user"""
         try:
             # Get user document
-            user_doc = self.users_container.read_item(item=user_id, partition_key=user_id)
+            user_doc = self.users_container.read_item(
+                item=user_id, partition_key=user_id
+            )
 
             old_role = user_doc.get("role", "user")
 
@@ -133,7 +137,7 @@ class RoleManager:
                 "oldRole": old_role,
                 "newRole": new_role.value,
                 "assignedBy": assigned_by,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
 
             # Store in audit log (if exists)
@@ -147,20 +151,19 @@ class RoleManager:
                 "success": True,
                 "message": f"Role updated from {old_role} to {new_role.value}",
                 "user_id": user_id,
-                "new_role": new_role.value
+                "new_role": new_role.value,
             }
 
         except Exception as e:
             logger.error(f"Failed to assign role: {e}")
-            return {
-                "success": False,
-                "message": f"Failed to assign role: {str(e)}"
-            }
+            return {"success": False, "message": f"Failed to assign role: {str(e)}"}
 
     async def get_user_role_info(self, user_id: str) -> Dict[str, Any]:
         """Get comprehensive role information for a user"""
         try:
-            user_doc = self.users_container.read_item(item=user_id, partition_key=user_id)
+            user_doc = self.users_container.read_item(
+                item=user_id, partition_key=user_id
+            )
 
             user_role = UserRole(user_doc.get("role", "user"))
             permissions = self.get_user_permissions(user_role)
@@ -170,7 +173,7 @@ class RoleManager:
                 "role": user_role.value,
                 "permissions": [perm.value for perm in permissions],
                 "role_updated_at": user_doc.get("roleUpdatedAt"),
-                "role_updated_by": user_doc.get("roleUpdatedBy")
+                "role_updated_by": user_doc.get("roleUpdatedBy"),
             }
 
         except Exception as e:
@@ -178,21 +181,26 @@ class RoleManager:
             return {
                 "user_id": user_id,
                 "role": "user",
-                "permissions": [perm.value for perm in self.get_user_permissions(UserRole.USER)],
-                "error": str(e)
+                "permissions": [
+                    perm.value for perm in self.get_user_permissions(UserRole.USER)
+                ],
+                "error": str(e),
             }
 
-    async def list_users_by_role(self, role: Optional[UserRole] = None) -> List[Dict[str, Any]]:
+    async def list_users_by_role(
+        self, role: Optional[UserRole] = None
+    ) -> List[Dict[str, Any]]:
         """List all users, optionally filtered by role"""
         try:
             query = "SELECT * FROM c WHERE c.type = 'user'"
             if role:
                 query += f" AND c.role = '{role.value}'"
 
-            users = list(self.users_container.query_items(
-                query=query,
-                enable_cross_partition_query=True
-            ))
+            users = list(
+                self.users_container.query_items(
+                    query=query, enable_cross_partition_query=True
+                )
+            )
 
             return [
                 {
@@ -202,7 +210,9 @@ class RoleManager:
                     "role": user.get("role", "user"),
                     "created_at": user.get("createdAt"),
                     "last_login": user.get("lastLoginAt"),
-                    "identity_provider": user.get("identityProvider", "azureActiveDirectory")
+                    "identity_provider": user.get(
+                        "identityProvider", "azureActiveDirectory"
+                    ),
                 }
                 for user in users
             ]
@@ -224,8 +234,8 @@ def get_role_manager() -> RoleManager:
     return _role_manager
 
 
-@require_admin
-async def main(req: func.HttpRequest) -> func.HttpResponse:
+@auth_required(admin_only=True)
+async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
     """
     Advanced Role Management API
 
@@ -244,9 +254,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             if user_id:
                 role_info = await role_manager.get_user_role_info(user_id)
                 return func.HttpResponse(
-                    json.dumps(role_info),
-                    status_code=200,
-                    mimetype="application/json"
+                    json.dumps(role_info), status_code=200, mimetype="application/json"
                 )
 
             # List users by role
@@ -259,7 +267,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 return func.HttpResponse(
                     json.dumps({"users": users}),
                     status_code=200,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
 
             # Return role permissions info
@@ -271,14 +279,17 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 "current_user": {
                     "id": current_user.id,
                     "role": current_user.role.value,
-                    "permissions": [perm.value for perm in role_manager.get_user_permissions(current_user.role)]
-                }
+                    "permissions": [
+                        perm.value
+                        for perm in role_manager.get_user_permissions(current_user.role)
+                    ],
+                },
             }
 
             return func.HttpResponse(
                 json.dumps(permissions_info),
                 status_code=200,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         elif req.method == "PUT":
@@ -292,7 +303,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                     return func.HttpResponse(
                         json.dumps({"error": "user_id and role are required"}),
                         status_code=400,
-                        mimetype="application/json"
+                        mimetype="application/json",
                     )
 
                 # Validate role
@@ -302,35 +313,33 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                     return func.HttpResponse(
                         json.dumps({"error": f"Invalid role: {new_role}"}),
                         status_code=400,
-                        mimetype="application/json"
+                        mimetype="application/json",
                     )
 
                 # Assign role
                 result = await role_manager.assign_role(
-                    user_id=user_id,
-                    new_role=role_enum,
-                    assigned_by=current_user.id
+                    user_id=user_id, new_role=role_enum, assigned_by=current_user.id
                 )
 
                 status_code = 200 if result["success"] else 400
                 return func.HttpResponse(
                     json.dumps(result),
                     status_code=status_code,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
 
             except Exception as e:
                 return func.HttpResponse(
                     json.dumps({"error": f"Invalid request body: {str(e)}"}),
                     status_code=400,
-                    mimetype="application/json"
+                    mimetype="application/json",
                 )
 
         else:
             return func.HttpResponse(
                 json.dumps({"error": "Method not allowed"}),
                 status_code=405,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
     except Exception as e:
@@ -338,5 +347,5 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": "Internal server error", "details": str(e)}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )

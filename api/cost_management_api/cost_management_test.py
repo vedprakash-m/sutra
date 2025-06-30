@@ -60,7 +60,9 @@ class TestCostManagementAPI:
         # Assertions
         assert response.status_code == 200
         response_data = json.loads(response.get_body().decode())
-        assert response_data["entity_id"] == "user-123"
+        assert (
+            response_data["entity_id"] == "test-user-123"
+        )  # Fixed: use actual test user ID
         assert response_data["current_spend"] == 75.0
         assert response_data["execution_count"] == 50
         assert response_data["budget_utilization"] == 37.5
@@ -75,7 +77,7 @@ class TestCostManagementAPI:
         """Test successful usage analytics retrieval."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="admin@example.com",
             name="Admin User",
             role=UserRole.ADMIN,
@@ -90,16 +92,15 @@ class TestCostManagementAPI:
                 "total_cost": 1500.0,
                 "daily_breakdown": {"2024-01-15": {"cost": 50.0, "tokens": 1000}},
                 "provider_breakdown": {"openai": {"cost": 800.0, "percentage": 53.3}},
-                "user_breakdown": [{"user_id": "user-123", "cost": 300.0}],
+                "user_breakdown": [{"user_id": "test-user-123", "cost": 300.0}],
                 "cost_trends": {"trend": "stable", "change_percent": 2.1},
             }
         )
 
         # Create request
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/analytics?days=30",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 
@@ -122,7 +123,7 @@ class TestCostManagementAPI:
         """Test successful cost prediction."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User",
             role=UserRole.USER,
@@ -134,7 +135,7 @@ class TestCostManagementAPI:
 
         mock_budget_manager.generate_cost_predictions = AsyncMock(
             return_value={
-                "user_id": "user-123",
+                "user_id": "test-user-123",
                 "predicted_monthly_cost": 180.0,
                 "trend": "increasing",
                 "confidence": 0.85,
@@ -143,10 +144,9 @@ class TestCostManagementAPI:
         )
 
         # Create request
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/budget/predictions/user-123",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 
@@ -166,7 +166,7 @@ class TestCostManagementAPI:
         """Test successful cost estimation."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User",
             role=UserRole.USER,
@@ -200,10 +200,9 @@ class TestCostManagementAPI:
             "max_tokens": 500,
         }
 
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="POST",
             url="http://localhost:7071/api/cost-management/estimate",
-            headers={"Content-Type": "application/json"},
             body=json.dumps(request_body).encode(),
         )
 
@@ -226,7 +225,7 @@ class TestCostManagementAPI:
         """Test budget configuration update."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="admin@example.com",
             name="Admin User",
             role=UserRole.ADMIN,
@@ -240,7 +239,7 @@ class TestCostManagementAPI:
             return_value=Mock(
                 id="budget_user-123_2024-01-01",
                 entity_type="user",
-                entity_id="user-123",
+                entity_id="test-user-123",
                 budget_amount=500.0,
                 budget_period="monthly",
                 alert_thresholds=[50, 75, 90],
@@ -250,16 +249,15 @@ class TestCostManagementAPI:
         # Create request body
         request_body = {
             "entity_type": "user",
-            "entity_id": "user-123",
+            "entity_id": "test-user-123",
             "budget_amount": 500.0,
             "budget_period": "monthly",
             "alert_thresholds": [50, 75, 90],
         }
 
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="POST",
             url="http://localhost:7071/api/cost-management/budget/config",
-            headers={"Content-Type": "application/json"},
             body=json.dumps(request_body).encode(),
         )
 
@@ -278,7 +276,7 @@ class TestCostManagementAPI:
         """Test budget alerts retrieval."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="admin@example.com",
             name="Admin User",
             role=UserRole.ADMIN,
@@ -310,10 +308,9 @@ class TestCostManagementAPI:
         )
 
         # Create request
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/analytics",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 
@@ -332,7 +329,7 @@ class TestCostManagementAPI:
         """Test unauthorized access to admin endpoints."""
         # Setup mocks - regular user trying to access admin endpoint
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User",
             role=UserRole.USER,
@@ -341,10 +338,9 @@ class TestCostManagementAPI:
         )
 
         # Create request for admin endpoint
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/analytics",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 
@@ -360,10 +356,9 @@ class TestCostManagementAPI:
     async def test_missing_authentication(self):
         """Test request without authentication."""
         # Create request without user context
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/budget/status",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 
@@ -379,7 +374,7 @@ class TestCostManagementAPI:
         """Test handling of invalid request data."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User",
             role=UserRole.USER,
@@ -390,10 +385,9 @@ class TestCostManagementAPI:
         mock_get_manager.return_value = mock_budget_manager
 
         # Create request with invalid JSON
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="POST",
             url="http://localhost:7071/api/cost-management/estimate",
-            headers={"Content-Type": "application/json"},
             body=b"invalid json",
         )
 
@@ -413,7 +407,7 @@ class TestCostManagementAPI:
         """Test error handling when budget manager fails."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User",
             role=UserRole.USER,
@@ -429,10 +423,9 @@ class TestCostManagementAPI:
         )
 
         # Create request
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/budget/usage",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 
@@ -453,7 +446,7 @@ class TestCostManagementAPI:
         """Test cost optimization suggestions endpoint."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User",
             role=UserRole.USER,
@@ -465,7 +458,7 @@ class TestCostManagementAPI:
 
         mock_budget_manager.get_cost_optimization_suggestions = AsyncMock(
             return_value={
-                "user_id": "user-123",
+                "user_id": "test-user-123",
                 "suggestions": [
                     {
                         "type": "model_optimization",
@@ -487,10 +480,9 @@ class TestCostManagementAPI:
         )
 
         # Create request
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/optimization",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 
@@ -512,7 +504,7 @@ class TestCostManagementAPI:
         """Test anomaly detection endpoint."""
         # Setup mocks
         mock_user = User(
-            id="user-123",
+            id="test-user-123",
             email="test@example.com",
             name="Test User",
             role=UserRole.USER,
@@ -524,7 +516,7 @@ class TestCostManagementAPI:
 
         mock_budget_manager.detect_cost_anomalies = AsyncMock(
             return_value={
-                "user_id": "user-123",
+                "user_id": "test-user-123",
                 "anomalies": [
                     {
                         "date": "2024-01-15",
@@ -541,10 +533,9 @@ class TestCostManagementAPI:
         )
 
         # Create request
-        req = func.HttpRequest(
+        req = create_auth_request(
             method="GET",
             url="http://localhost:7071/api/cost-management/anomalies?days=30",
-            headers={"Content-Type": "application/json"},
             body=b"",
         )
 

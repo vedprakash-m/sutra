@@ -375,9 +375,8 @@ async def update_collection(
         # Update in database
         updated_item = await db_manager.update_item(
             container_name="Collections",
-            item_id=collection_id,
+            item=existing_collection,
             partition_key=user_id,
-            operations=update_operations,
         )
 
         logger.info(f"Updated collection {collection_id} for user {user_id}")
@@ -426,7 +425,15 @@ async def delete_collection(user: User, collection_id: str) -> func.HttpResponse
         prompt_count_result = await db_manager.query_items(
             container_name="Prompts", query=prompts_query, parameters=prompts_params
         )
-        prompt_count = prompt_count_result[0] if prompt_count_result else 0
+
+        # Handle both direct count and dict responses
+        if prompt_count_result:
+            if isinstance(prompt_count_result[0], dict):
+                prompt_count = prompt_count_result[0].get("count", 0)
+            else:
+                prompt_count = prompt_count_result[0]
+        else:
+            prompt_count = 0
 
         if prompt_count > 0:
             return func.HttpResponse(

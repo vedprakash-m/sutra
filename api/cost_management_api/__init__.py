@@ -30,9 +30,9 @@ async def main(req: HttpRequest, user: User) -> HttpResponse:
     try:
         # User is already authenticated via decorator
         user_info = {
-            "user_id": user.user_id,
+            "user_id": user.id,  # Fixed: use user.id instead of user.user_id
             "email": user.email,
-            "role": user.roles[0].value if user.roles else "user",
+            "role": user.role,  # Fixed: use user.role instead of user.roles[0].value
             "user_tier": "premium",  # Default for now
         }
         budget_manager = get_enhanced_budget_manager()

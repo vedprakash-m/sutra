@@ -385,14 +385,76 @@ class TestingAuthProvider(AuthProvider):
     def __init__(self):
         self.mock_provider = MockAuthProvider()
         self._current_user: Optional[User] = None
+        self._request_users: Dict[str, User] = {}
 
     def set_test_user(self, user: Optional[User]):
         """Set current test user (for test setup)"""
         self._current_user = user
 
+    def set_request_user(self, request_id: str, user: User):
+        """Associate user with specific request for testing"""
+        self._request_users[request_id] = user
+
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
-        """Return configured test user"""
-        return self._current_user
+        """Return configured test user based on request or global setting"""
+        # First check if this request has a specific user
+        request_id = getattr(req, "_test_request_id", None)
+        if request_id and request_id in self._request_users:
+            return self._request_users[request_id]
+
+        # Then check for global test user
+        if self._current_user:
+            return self._current_user
+
+        # Finally, check for special test headers that indicate user type
+        headers = dict(req.headers) if hasattr(req, "headers") else {}
+        # Headers are converted to lowercase by Azure Functions
+        test_user_type = headers.get("x-test-user-type")
+        test_user_id = headers.get("x-test-user-id", "test-user-123")
+
+        if test_user_type:
+            from datetime import datetime, timezone
+            from .models import User, UserRole
+
+            now = datetime.now(timezone.utc)
+            role = UserRole.ADMIN if test_user_type == "admin" else UserRole.USER
+
+            user = User(
+                id=test_user_id,
+                email=f"{test_user_id}@test.example.com",
+                name=f"Test {test_user_type.title()} User",
+                role=role,
+                created_at=now,
+                updated_at=now,
+            )
+
+            # Add permissions for testing
+            permissions = (
+                ["*"]
+                if role == UserRole.ADMIN
+                else [
+                    "collections.read",
+                    "collections.create",
+                    "collections.update",
+                    "collections.delete",
+                    "cost.read",
+                    "cost.manage",
+                    "playbooks.read",
+                    "playbooks.create",
+                    "playbooks.update",
+                    "playbooks.delete",
+                    "playbooks.execute",
+                    "llm.execute",
+                    "integrations.read",
+                    "integrations.write",
+                    "admin.read",  # Add some admin perms for regular users in testing
+                ]
+            )
+            object.__setattr__(user, "permissions", permissions)
+
+            return user
+
+        return None
 
     async def validate_user_permissions(
         self, user: User, required_permissions: List[str]

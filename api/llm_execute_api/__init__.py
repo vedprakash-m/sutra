@@ -38,7 +38,7 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     """
     try:
         # Get authenticated user from request context
-        user_id = req.current_user.id
+        user_id = user.id  # Fixed: use the user parameter from auth decorator
         method = req.method
         route_params = req.route_params
         action = route_params.get("action")

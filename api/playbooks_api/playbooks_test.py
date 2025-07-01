@@ -17,7 +17,7 @@ class TestPlaybooksAPI:
         """Mock successful authentication - now compatible with @require_auth decorator."""
         # The new auth system uses headers, so we don't need to patch functions
         # The create_auth_request helper provides the needed headers
-        yield
+        return {"id": "test-user-123", "name": "Test User", "role": "user"}
 
     @pytest.fixture
     def mock_cosmos_client(self):
@@ -254,7 +254,7 @@ class TestPlaybooksAPI:
 
     @pytest.mark.asyncio
     async def test_get_execution_status_success(
-        self, auth_test_user, mock_cosmos_client, mock_auth_request
+        self, auth_test_user, mock_cosmos_client
     ):
         """Test successful execution status retrieval."""
         # Arrange
@@ -280,7 +280,12 @@ class TestPlaybooksAPI:
         ]
 
         # Create authenticated request
-        req = mock_auth_request
+        req = create_auth_request(
+            method="GET",
+            url=f"https://localhost/api/playbooks/executions/{execution_id}",
+            route_params={"execution_id": execution_id},
+            user_id=auth_test_user["id"],
+        )
 
         # Act
         response = await playbooks_main(req)
@@ -333,7 +338,13 @@ class TestPlaybooksAPI:
         with patch(
             "asyncio.create_task"
         ) as mock_task:  # Create request - simulating continue route
-            req = mock_auth_request
+            req = create_auth_request(
+                method="POST",
+                url=f"https://localhost/api/playbooks/executions/{execution_id}/continue",
+                route_params={"execution_id": execution_id},
+                body=continue_data,
+                user_id="test-user-123",
+            )
 
             # Act
             response = await playbooks_main(req)
@@ -366,7 +377,13 @@ class TestPlaybooksAPI:
         ]
 
         # Create request
-        req = mock_auth_request
+        req = create_auth_request(
+            method="POST",
+            url=f"https://localhost/api/playbooks/executions/{execution_id}/continue",
+            route_params={"execution_id": execution_id},
+            body={"editedOutput": "some output"},
+            user_id="test-user-123",
+        )
 
         # Act
         response = await playbooks_main(req)
@@ -402,7 +419,12 @@ class TestPlaybooksAPI:
         ]  # 2 active executions
 
         # Create request
-        req = mock_auth_request
+        req = create_auth_request(
+            method="DELETE",
+            url=f"https://localhost/api/playbooks/{playbook_id}",
+            route_params={"id": playbook_id},
+            user_id="test-user-123",
+        )
 
         # Act
         response = await playbooks_main(req)
@@ -589,7 +611,13 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Playbooks").query_items.return_value = []
 
         # Create request
-        req = mock_auth_request
+        req = create_auth_request(
+            method="PUT",
+            url=f"https://localhost/api/playbooks/{playbook_id}",
+            route_params={"id": playbook_id},
+            body=update_data,
+            user_id="test-user-123",
+        )
 
         # Act
         response = await playbooks_main(req)
@@ -607,8 +635,16 @@ class TestPlaybooksAPI:
         # Arrange
         playbook_id = "test-playbook-123"
 
-        # Create request with invalid JSON
-        req = mock_auth_request
+        # Create request with invalid JSON by mocking get_json method
+        req = create_auth_request(
+            method="PUT",
+            route_params={"id": playbook_id},
+            body='{"invalid": json}',  # This will cause JSON parsing to fail
+        )
+
+        # Override get_json to simulate JSON parsing error
+        original_get_json = req.get_json
+        req.get_json = Mock(side_effect=ValueError("Invalid JSON"))
 
         # Act
         response = await playbooks_main(req)
@@ -646,7 +682,13 @@ class TestPlaybooksAPI:
             }
 
             # Create request
-            req = mock_auth_request
+            req = create_auth_request(
+                method="PUT",
+                url=f"https://localhost/api/playbooks/{playbook_id}",
+                route_params={"id": playbook_id},
+                body=update_data,
+                user_id="test-user-123",
+            )
 
             # Act
             response = await playbooks_main(req)
@@ -663,7 +705,11 @@ class TestPlaybooksAPI:
     async def test_method_not_allowed(self, auth_test_user, mock_auth_request):
         """Test unsupported HTTP method."""
         # Create request with unsupported method
-        req = mock_auth_request
+        req = create_auth_request(
+            method="PATCH",
+            url="https://localhost/api/playbooks",
+            user_id="test-user-123",
+        )
 
         # Act
         response = await playbooks_main(req)
@@ -684,7 +730,13 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Executions").query_items.return_value = []
 
         # Create request
-        req = mock_auth_request
+        req = create_auth_request(
+            method="POST",
+            url=f"https://localhost/api/playbooks/executions/{execution_id}/continue",
+            route_params={"execution_id": execution_id},
+            body={"editedOutput": "some output"},
+            user_id="test-user-123",
+        )
 
         # Act
         response = await playbooks_main(req)
@@ -707,7 +759,12 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Executions").query_items.return_value = []
 
         # Create request
-        req = mock_auth_request
+        req = create_auth_request(
+            method="GET",
+            url=f"https://localhost/api/playbooks/executions/{execution_id}",
+            route_params={"execution_id": execution_id},
+            user_id="test-user-123",
+        )
 
         # Act
         response = await playbooks_main(req)

@@ -11,6 +11,7 @@ from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to
 from shared.real_time_cost import get_cost_manager
 from shared.models import UserRole, User
 from shared.budget import get_enhanced_budget_manager, BudgetConfig
+from shared.error_handling import handle_api_error, SutraAPIError
 
 
 @auth_required(permissions=["cost.read", "cost.manage"])

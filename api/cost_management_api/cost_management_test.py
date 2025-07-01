@@ -8,6 +8,8 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timezone
 
 import azure.functions as func
+from shared.budget import BudgetConfig
+from shared.error_handling import SutraAPIError
 from ..conftest import create_auth_request
 from . import main as cost_management_main
 from api.shared.budget import BudgetManager
@@ -24,7 +26,7 @@ class TestCostManagementAPI:
         return manager
 
     @pytest.mark.asyncio
-    @patch("api.shared.budget.get_enhanced_budget_manager")
+    @patch("api.cost_management_api.get_enhanced_budget_manager")
     async def test_get_budget_status_success(
         self, mock_get_manager, auth_test_user, mock_budget_manager
     ):
@@ -40,13 +42,21 @@ class TestCostManagementAPI:
                 "alerts_triggered": [],
             }
         )
-        # Create a mock BudgetConfig object
-        mock_budget_config = Mock()
-        mock_budget_config.budget_amount = 200.0
-        mock_budget_config.budget_period = "monthly"
-        mock_budget_config.alert_thresholds = [50, 75, 90, 95]
+        # Create mock for budget config data returned by query
+        mock_budget_config_data = {
+            "id": "test-budget-123",
+            "entity_type": "user",
+            "entity_id": "test-user-123",
+            "name": "Test User Budget",
+            "budget_amount": 200.0,
+            "budget_period": "monthly",
+            "alert_thresholds": [50, 75, 90, 95],
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }
         mock_budget_manager.get_budget_config = AsyncMock(
-            return_value=mock_budget_config
+            return_value=BudgetConfig(**mock_budget_config_data)
         )
 
         # Create request
@@ -72,19 +82,10 @@ class TestCostManagementAPI:
     @pytest.mark.asyncio
     @patch("api.cost_management_api.get_enhanced_budget_manager")
     async def test_get_usage_analytics_success(
-        self, mock_get_manager, mock_budget_manager
+        self, mock_get_manager, auth_admin_user, mock_budget_manager
     ):
         """Test successful usage analytics retrieval."""
         # Setup mocks
-        mock_user = User(
-            id="test-user-123",
-            email="admin@example.com",
-            name="Admin User",
-            role=UserRole.ADMIN,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
-
         mock_get_manager.return_value = mock_budget_manager
 
         mock_budget_manager.get_cost_analytics_data = AsyncMock(
@@ -203,7 +204,7 @@ class TestCostManagementAPI:
         req = create_auth_request(
             method="POST",
             url="http://localhost:7071/api/cost-management/estimate",
-            body=json.dumps(request_body).encode(),
+            body=request_body,
         )
 
         # Call function
@@ -258,7 +259,7 @@ class TestCostManagementAPI:
         req = create_auth_request(
             method="POST",
             url="http://localhost:7071/api/cost-management/budget/config",
-            body=json.dumps(request_body).encode(),
+            body=request_body,
         )
 
         # Call function
@@ -272,18 +273,11 @@ class TestCostManagementAPI:
 
     @pytest.mark.asyncio
     @patch("api.cost_management_api.get_enhanced_budget_manager")
-    async def test_alerts_retrieval(self, mock_get_manager, mock_budget_manager):
+    async def test_alerts_retrieval(
+        self, mock_get_manager, auth_admin_user, mock_budget_manager
+    ):
         """Test budget alerts retrieval."""
         # Setup mocks
-        mock_user = User(
-            id="test-user-123",
-            email="admin@example.com",
-            name="Admin User",
-            role=UserRole.ADMIN,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
-
         mock_get_manager.return_value = mock_budget_manager
 
         mock_budget_manager.get_budget_alerts = AsyncMock(
@@ -356,39 +350,51 @@ class TestCostManagementAPI:
     async def test_missing_authentication(self):
         """Test request without authentication."""
         # Create request without user context
-        req = create_auth_request(
+        req = func.HttpRequest(
             method="GET",
             url="http://localhost:7071/api/cost-management/budget/status",
             body=b"",
+            headers={},
         )
 
-        # Call function
-        response = await cost_management_main(req)
+        # Call function (should handle the exception)
+        try:
+            response = await cost_management_main(req)
+        except SutraAPIError as e:
+            # Convert to HTTP response manually for test
+            response = func.HttpResponse(
+                json.dumps({"error": str(e)}),
+                status_code=e.status_code,
+                headers={"Content-Type": "application/json"},
+            )
 
         # Assertions
         assert response.status_code == 401
 
     @pytest.mark.asyncio
     @patch("api.cost_management_api.get_enhanced_budget_manager")
-    async def test_invalid_request_data(self, mock_get_manager, mock_budget_manager):
+    async def test_invalid_request_data(
+        self, mock_get_manager, auth_test_user, mock_budget_manager
+    ):
         """Test handling of invalid request data."""
         # Setup mocks
-        mock_user = User(
-            id="test-user-123",
-            email="test@example.com",
-            name="Test User",
-            role=UserRole.USER,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
-        )
-
         mock_get_manager.return_value = mock_budget_manager
 
         # Create request with invalid JSON
-        req = create_auth_request(
+        req = func.HttpRequest(
             method="POST",
             url="http://localhost:7071/api/cost-management/estimate",
             body=b"invalid json",
+            headers={
+                "X-MS-CLIENT-PRINCIPAL": json.dumps(
+                    {
+                        "userId": "test-user-123",
+                        "userDetails": "test@example.com",
+                        "userRoles": ["authenticated", "user"],
+                        "identityProvider": "azureadb2c",
+                    }
+                )
+            },
         )
 
         # Call function

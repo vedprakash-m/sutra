@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Configuration
 TENANT_DOMAIN="vedid.onmicrosoft.com"
-APP_NAME="sutra-prod"
+APP_NAME="sutra"
 RESOURCE_GROUP="sutra-rg"
 LOCATION="eastus2"
 
@@ -17,7 +17,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 Configuring Azure App Registration for Sutra Production${NC}"
+echo -e "${GREEN}🚀 Configuring Azure App Registration for Sutra${NC}"
 echo "Tenant: ${TENANT_DOMAIN}"
 echo "App Name: ${APP_NAME}"
 echo "Resource Group: ${RESOURCE_GROUP}"

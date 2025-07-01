@@ -55,10 +55,14 @@ class TestLLMExecuteAPI:
     @pytest.mark.asyncio
     async def test_main_post_compare(self, valid_user_id, auth_test_user):
         """Test main endpoint with POST request for compare."""
-        mock_request = create_auth_request(method="POST")
-        mock_request.url = "https://localhost:7071/api/llm/compare"
+        mock_request = create_auth_request(
+            method="POST",
+            url="https://localhost:7071/api/llm/compare",
+            route_params={"action": "compare"},
+            body={"outputs": [{"provider": "openai", "response": "test"}]},
+        )
 
-        with patch("llm_execute_api.compare_llm_outputs") as mock_compare:
+        with patch("api.llm_execute_api.compare_llm_outputs") as mock_compare:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_compare.return_value = mock_response
@@ -66,14 +70,16 @@ class TestLLMExecuteAPI:
             response = await llm_execute_main(mock_request)
 
             assert response.status_code == 200
-            mock_compare.assert_called_once_with(valid_user_id, mock_request)
+            mock_compare.assert_called_once_with(auth_test_user.id, mock_request)
 
     @pytest.mark.asyncio
     async def test_main_get_providers(self, valid_user_id, auth_test_user):
         """Test main endpoint with GET request for providers."""
-        mock_request = create_auth_request(method="GET")
+        mock_request = create_auth_request(
+            method="GET", route_params={"action": "providers"}
+        )
 
-        with patch("llm_execute_api.get_available_providers") as mock_providers:
+        with patch("api.llm_execute_api.get_available_providers") as mock_providers:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_providers.return_value = mock_response
@@ -81,7 +87,7 @@ class TestLLMExecuteAPI:
             response = await llm_execute_main(mock_request)
 
             assert response.status_code == 200
-            mock_providers.assert_called_once_with(valid_user_id)
+            mock_providers.assert_called_once_with(auth_test_user.id)
 
     @pytest.mark.asyncio
     async def test_main_method_not_allowed(self, valid_user_id, auth_test_user):
@@ -95,8 +101,8 @@ class TestLLMExecuteAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    @patch("llm_execute_api.get_database_manager")
-    @patch("llm_execute_api.get_llm_client")
+    @patch("api.llm_execute_api.get_database_manager")
+    @patch("api.llm_execute_api.get_llm_client")
     async def test_execute_llm_prompt_success(
         self,
         mock_get_llm_client,
@@ -145,7 +151,7 @@ class TestLLMExecuteAPI:
     @pytest.mark.asyncio
     async def test_execute_llm_prompt_invalid_json(self, valid_user_id, auth_test_user):
         """Test execution with invalid JSON."""
-        mock_request = create_auth_request(user_id=valid_user_id)
+        mock_request = Mock()
         mock_request.get_json.side_effect = ValueError("Invalid JSON")
 
         response = await execute_llm_prompt(valid_user_id, mock_request)
@@ -170,7 +176,7 @@ class TestLLMExecuteAPI:
         assert "promptText is required" in response_data["error"]
 
     @pytest.mark.asyncio
-    @patch("llm_execute_api.get_database_manager")
+    @patch("api.llm_execute_api.get_database_manager")
     async def test_execute_llm_prompt_user_not_found(
         self, mock_get_db_manager, sample_execute_data, valid_user_id, auth_test_user
     ):
@@ -193,7 +199,7 @@ class TestLLMExecuteAPI:
         assert "User not found" in response_data["error"]
 
     @pytest.mark.asyncio
-    @patch("llm_execute_api.get_database_manager")
+    @patch("api.llm_execute_api.get_database_manager")
     async def test_compare_llm_outputs_success(
         self, mock_get_db_manager, valid_user_id, auth_test_user
     ):
@@ -228,7 +234,7 @@ class TestLLMExecuteAPI:
         self, valid_user_id, auth_test_user
     ):
         """Test comparison with invalid JSON."""
-        mock_request = create_auth_request(user_id=valid_user_id)
+        mock_request = Mock()
         mock_request.get_json.side_effect = ValueError("Invalid JSON")
 
         response = await compare_llm_outputs(valid_user_id, mock_request)
@@ -238,8 +244,8 @@ class TestLLMExecuteAPI:
         assert "error" in response_data
 
     @pytest.mark.asyncio
-    @patch("llm_execute_api.get_provider_models")
-    @patch("llm_execute_api.get_database_manager")
+    @patch("api.llm_execute_api.get_provider_models")
+    @patch("api.llm_execute_api.get_database_manager")
     async def test_get_available_providers_success(
         self, mock_get_db_manager, mock_get_provider_models, valid_user_id
     ):
@@ -288,8 +294,8 @@ class TestLLMExecuteAPI:
         assert len(response_data["providers"]) > 0
 
     @pytest.mark.asyncio
-    @patch("llm_execute_api.get_provider_models")
-    @patch("llm_execute_api.get_database_manager")
+    @patch("api.llm_execute_api.get_provider_models")
+    @patch("api.llm_execute_api.get_database_manager")
     async def test_get_available_providers_user_not_found(
         self, mock_get_db_manager, mock_get_provider_models, valid_user_id
     ):
@@ -334,10 +340,10 @@ class TestLLMExecuteAPI:
     @pytest.mark.asyncio
     async def test_main_exception_handling(self, auth_test_user):
         """Test main endpoint exception handling."""
-        mock_request = create_auth_request(user_id="test-user-123")
+        mock_request = create_auth_request(method="POST", user_id="test-user-123")
 
         # Simulate an exception in the main logic
-        with patch("llm_execute_api.execute_llm_prompt") as mock_execute:
+        with patch("api.llm_execute_api.execute_llm_prompt") as mock_execute:
             mock_execute.side_effect = Exception("Test exception")
 
             response = await llm_execute_main(mock_request)

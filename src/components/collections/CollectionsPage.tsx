@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/components/auth/MSALAuthProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useApi } from "@/hooks/useApi";
 import { collectionsApi } from "@/services/api";
 import VersionHistory from "./VersionHistory";

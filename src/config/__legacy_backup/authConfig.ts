@@ -6,10 +6,10 @@
  */
 
 import { PublicClientApplication } from "@azure/msal-browser";
-import { getUnifiedAuthConfig, getLoginRequestConfig, getSilentTokenRequestConfig } from "./unifiedAuthConfig";
+import { getMSALConfig, getLoginRequestConfig, getSilentTokenRequestConfig } from "./index";
 
 // Use the unified configuration
-const msalConfig = getUnifiedAuthConfig();
+const msalConfig = getMSALConfig();
 
 // Create MSAL instance
 export const msalInstance = new PublicClientApplication(msalConfig);

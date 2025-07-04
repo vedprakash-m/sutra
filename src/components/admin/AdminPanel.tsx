@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@/components/auth/MSALAuthProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useApi } from "@/hooks/useApi";
 import { adminApi } from "@/services/api";
 import CostManagementAdmin from "./CostManagementAdmin";

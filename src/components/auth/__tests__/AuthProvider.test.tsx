@@ -5,7 +5,7 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
-import { AuthProvider, useAuth } from "../MSALAuthProvider";
+import { AuthProvider, useAuth } from "../AuthProvider";
 
 // Mock fetch for Static Web Apps auth endpoint
 const mockFetch = jest.fn();

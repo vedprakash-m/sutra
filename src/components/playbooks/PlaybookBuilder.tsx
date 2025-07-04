@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/components/auth/MSALAuthProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { playbooksApi } from "@/services/api";
 
 interface PlaybookStep {

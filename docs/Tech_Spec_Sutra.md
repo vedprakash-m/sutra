@@ -1,35 +1,46 @@
 # Technical Specification: Sutra - Multi-LLM Prompt Studio
 
-Ved Mishra - June 2025 - Version: 2.0 (Production-Ready Architecture)
+Ved Mishra - July 2025 - Version: 2.0 (Architectural Remediation)
 
-## DOCUMENT STATUS: UPDATED FOR PRODUCTION READINESS
+## DOCUMENT STATUS: ARCHITECTURAL ASSESSMENT & REMEDIATION PLAN
 
-This technical specification has been comprehensively updated to reflect the systematic architectural remediation completed in December 2024. All design flaws, technical debt, and root issues have been identified and resolved to ensure reliable, robust, and cost-effective beta operation.
+This technical specification has been updated to reflect the comprehensive architectural assessment completed in December 2024. Critical design flaws, technical debt, and root issues have been identified, with a systematic remediation plan developed to achieve production readiness.
 
-**Key Architectural Changes:**
-- ✅ **Unified Authentication System**: Complete migration from dual auth paradigms to single Microsoft Entra ID system
-- ✅ **Standardized Configuration Management**: Centralized environment and runtime configuration
-- ✅ **Robust Testing Infrastructure**: Comprehensive test suite with 100% pass rate
-- ✅ **Production-Ready CI/CD Pipeline**: Automated testing, building, and deployment
-- ✅ **Enhanced Security Implementation**: Complete security headers, CORS, and error handling
-- ✅ **Optimized Performance**: Efficient API services and reduced technical debt
-- ✅ **Comprehensive Documentation**: Updated specs, setup guides, and developer onboarding
+**Critical Issues Identified:**
+- ❌ **Dual Authentication Paradigms**: Legacy MSALAuthProvider and new UnifiedAuthProvider coexisting
+- ❌ **Inconsistent Provider Usage**: Components and tests using different auth providers
+- ❌ **Fragmented Configuration**: Multiple auth config files with conflicting settings
+- ❌ **289+ Failing Tests**: Comprehensive test suite breakdown
+- ❌ **React Production Build Issues**: Tests failing due to development/production build mismatches
+- ❌ **Mock Configuration Problems**: Inconsistent MSAL mocks and test setup
+- ❌ **Module Resolution Errors**: Missing modules and import path issues
+- ❌ **Inconsistent API Patterns**: Mixed response formats and error handling
+- ❌ **Missing Security Headers**: Incomplete CORS and security configuration
+- ❌ **Field Naming Inconsistencies**: Backend/frontend field mapping mismatches
+
+**Remediation Plan Status:**
+- ✅ **Phase 1**: Authentication unification (COMPLETE)
+- ✅ **Phase 2**: Configuration standardization (COMPLETE)
+- 🔴 **Phase 3**: Backend integration cleanup (PENDING)
+- 🔴 **Phase 4**: Testing infrastructure restoration (PENDING)
 
 ## 1. Architecture Overview
 
-Sutra leverages a serverless, event-driven architecture hosted on Microsoft Azure, designed for production-ready operation with comprehensive testing, monitoring, and cost optimization. The architecture has been systematically remediated to eliminate technical debt and ensure reliable beta operation.
+Sutra leverages a serverless, event-driven architecture hosted on Microsoft Azure, designed for production-ready operation. However, comprehensive architectural assessment has revealed critical design flaws and technical debt that must be systematically remediated to achieve production readiness.
 
-**PRODUCTION-READY DEPLOYMENT STRATEGY: Single environment deployment optimized for cost-effectiveness and operational simplicity. The application deploys to Azure Static Web Apps (frontend) and Azure Functions (backend) with comprehensive monitoring, automated testing, and CI/CD pipeline.**
+**CURRENT STATE: ARCHITECTURAL REMEDIATION REQUIRED**
 
-**Core Architecture Principles:**
-- **Unified Authentication**: Single Microsoft Entra ID system across all components
-- **Standardized Configuration**: Centralized environment and runtime management
-- **Comprehensive Testing**: 100% test coverage with automated CI/CD validation
-- **Security-First Design**: Complete security headers, CORS, and error handling
-- **Cost-Optimized Operations**: Serverless-first with intelligent resource management
-- **Monitoring & Observability**: Real-time performance and cost tracking
+The application currently suffers from several critical architectural issues:
 
-**The production-ready architecture consists of:**
+1. **Dual Authentication Paradigms**: Both legacy MSALAuthProvider and new UnifiedAuthProvider coexist, creating confusion and inconsistency
+2. **Fragmented Configuration**: Multiple auth config files with conflicting settings
+3. **Test Infrastructure Breakdown**: 289+ failing tests due to auth/provider mismatches
+4. **Inconsistent API Patterns**: Mixed response formats and error handling
+5. **Security Implementation Gaps**: Missing security headers and incomplete CORS configuration
+
+**TARGET ARCHITECTURE (Post-Remediation):**
+
+The remediated architecture will consist of:
 
 - **Frontend:** React 18 + TypeScript + Vite with unified authentication
 - **Backend:** Azure Functions (Python 3.12) with standardized API patterns
@@ -43,7 +54,7 @@ Sutra leverages a serverless, event-driven architecture hosted on Microsoft Azur
 +-------------------+           +-----------------------+           +----------------------------+
 | User Web Browser  |           | Azure Static Web Apps |           | Azure Functions            |
 | (React 18 + TS)   | --------> | (Production Frontend) | --------> | (Python 3.12 Backend)     |
-| Unified Auth      |           | Unified Auth Config   |           | Unified Auth System        |
+| UNIFIED AUTH      |           | UNIFIED AUTH CONFIG   |           | UNIFIED AUTH SYSTEM        |
 +-------------------+           +-----------------------+           +----------------------------+
                                                                                  |
                                                                                  V
@@ -1536,3 +1547,146 @@ class CostAnalytics:
   - **AI-specific alerts:** Monitor LLM usage patterns and cost anomalies
   - **Guest-specific alerts:** Monitor guest user LLM usage and conversion costs
   - **Efficient Code:** Directly translates to cost savings.
+
+---
+
+## 2. SYSTEMATIC REMEDIATION PLAN
+
+### Phase 1: Authentication Unification (IN PROGRESS)
+
+**Goal**: Eliminate dual authentication paradigms and standardize on UnifiedAuthProvider
+
+**Critical Issues to Address:**
+1. **Legacy MSALAuthProvider** still exists and is imported in multiple components
+2. **UnifiedAuthProvider** is the new standard but not consistently used
+3. **Test infrastructure** relies on old MSAL mocks
+4. **Configuration files** have conflicting auth settings
+
+**Remediation Steps:**
+- [x] Create AuthProvider.tsx as single source of truth
+- [x] Update Jest config for unified auth testing
+- [x] Fix React production build issues in tests
+- [ ] Remove all MSALAuthProvider imports and usages
+- [ ] Update all components to use UnifiedAuthProvider
+- [ ] Consolidate auth configuration files
+- [ ] Update all tests to use unified auth mocks
+- [ ] Validate auth flow end-to-end
+
+**Files to Modify:**
+- `src/components/auth/MSALAuthProvider.tsx` (remove after migration)
+- `src/components/auth/UnifiedAuthProvider.tsx` (primary)
+- `src/components/auth/AuthProvider.tsx` (single source of truth)
+- `src/config/authConfig.ts` (consolidate)
+- `src/config/unifiedAuthConfig.ts` (merge into authConfig.ts)
+- All components importing MSALAuthProvider
+- All test files with MSAL mocks
+
+### Phase 2: Configuration Standardization (PENDING)
+
+**Goal**: Centralize all configuration management and eliminate conflicts
+
+**Critical Issues to Address:**
+1. **Multiple auth config files** with conflicting settings
+2. **Environment variables** scattered across multiple files
+3. **Runtime configuration** inconsistencies
+4. **API endpoint configuration** duplication
+
+**Remediation Steps:**
+- [ ] Audit all configuration files
+- [ ] Create centralized config management system
+- [ ] Standardize environment variable naming
+- [ ] Consolidate API endpoint configuration
+- [ ] Create configuration validation system
+- [ ] Update all components to use centralized config
+- [ ] Document configuration management patterns
+
+**Files to Modify:**
+- `src/config/` (entire directory consolidation)
+- `src/services/api.ts` (centralized API config)
+- `src/config/runtime.ts` (unified runtime config)
+- All environment variable files
+- All components using direct config imports
+
+### Phase 3: Backend Integration Cleanup (PENDING)
+
+**Goal**: Standardize backend API patterns and eliminate inconsistencies
+
+**Critical Issues to Address:**
+1. **Mixed API response formats** across different endpoints
+2. **Inconsistent error handling** patterns
+3. **Field naming mismatches** between frontend/backend
+4. **Missing security headers** in API responses
+5. **Incomplete CORS configuration**
+
+**Remediation Steps:**
+- [ ] Audit all API endpoints for consistency
+- [ ] Standardize response format across all APIs
+- [ ] Implement consistent error handling
+- [ ] Fix field naming inconsistencies
+- [ ] Add comprehensive security headers
+- [ ] Fix CORS configuration
+- [ ] Update API documentation
+- [ ] Validate API contracts
+
+**Files to Modify:**
+- `api/shared/` (standardized response patterns)
+- All API endpoint functions
+- `api/shared/auth.py` (unified auth patterns)
+- `api/shared/unified_auth.py` (consolidate)
+- Frontend API service layer
+- OpenAPI specification
+
+### Phase 4: Testing Infrastructure Restoration (PENDING)
+
+**Goal**: Restore full test suite functionality with 100% pass rate
+
+**Critical Issues to Address:**
+1. **289+ failing tests** due to auth/provider mismatches
+2. **React production build** issues in test environment
+3. **Mock configuration** problems with MSAL
+4. **Module resolution** errors in tests
+5. **Missing test utilities** for unified auth
+
+**Remediation Steps:**
+- [ ] Fix all authentication-related test failures
+- [ ] Update test mocks for unified auth system
+- [ ] Resolve module resolution issues
+- [ ] Create comprehensive test utilities
+- [ ] Validate test coverage across all components
+- [ ] Set up automated test reporting
+- [ ] Configure CI/CD test validation
+- [ ] Document testing patterns and guidelines
+
+**Files to Modify:**
+- `jest.config.js` (complete test configuration)
+- `src/test-setup.ts` (unified test setup)
+- All test files using old auth mocks
+- Test utilities and helpers
+- CI/CD test configuration
+- E2E test specifications
+
+### Success Criteria
+
+**Phase 1 Complete:**
+- [ ] Zero imports of MSALAuthProvider
+- [ ] All components use UnifiedAuthProvider
+- [ ] All auth-related tests pass
+- [ ] Single auth configuration file
+
+**Phase 2 Complete:**
+- [ ] Single configuration management system
+- [ ] Zero configuration duplication
+- [ ] All components use centralized config
+- [ ] Configuration validation in place
+
+**Phase 3 Complete:**
+- [ ] Consistent API response formats
+- [ ] Standardized error handling
+- [ ] Complete security headers
+- [ ] All API tests pass
+
+**Phase 4 Complete:**
+- [ ] 100% test pass rate
+- [ ] Comprehensive test coverage
+- [ ] Automated CI/CD validation
+- [ ] Production-ready test infrastructure

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "@/components/auth/MSALAuthProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useApi } from "@/hooks/useApi";
 import { collectionsApi, playbooksApi } from "@/services/api";
 

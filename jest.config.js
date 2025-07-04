@@ -49,7 +49,7 @@ export default {
     "!src/test-utils/**",
     "!src/config/authConfig.ts",
     // Exclude MSAL provider as it's mostly Azure MSAL wrapper code
-    "!src/components/auth/MSALAuthProvider.tsx",
+    "!src/components/auth/MSALAuthProvider.tsx", // Legacy compatibility file
   ],
   coverageReporters: ["text", "lcov", "html"],
   coverageDirectory: "coverage",

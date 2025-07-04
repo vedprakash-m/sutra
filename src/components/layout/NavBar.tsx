@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "@/components/auth/MSALAuthProvider";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function NavBar() {
   const { isAuthenticated, user, logout, isAdmin } = useAuth();

@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "@/components/auth/MSALAuthProvider";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import Dashboard from "@/components/dashboard/Dashboard";
 
 // Mock the API services first

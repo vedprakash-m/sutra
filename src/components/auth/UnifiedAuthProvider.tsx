@@ -9,18 +9,41 @@ import {
   useMsal,
   MsalProvider,
 } from "@azure/msal-react";
-import { AccountInfo } from "@azure/msal-browser";
+import { AccountInfo, PublicClientApplication } from "@azure/msal-browser";
 import {
-  msalInstance,
-  loginRequest,
-  silentRequest,
-  ensureMsalInitialized,
-} from "@/config/authConfig";
+  getMSALConfig,
+  getLoginRequestConfig,
+  getSilentTokenRequestConfig,
+  validateConfig,
+} from "@/config";
 import {
   VedUser,
   AuthContextType,
   EntraIdClaims,
 } from "@/types/auth";
+
+// Initialize MSAL with consolidated configuration
+const msalConfig = getMSALConfig();
+const msalInstance = new PublicClientApplication(msalConfig);
+
+// Initialize MSAL
+const ensureMsalInitialized = async (): Promise<void> => {
+  if (!msalInstance.getActiveAccount()) {
+    await msalInstance.initialize();
+  }
+};
+
+// Validate configuration on module load
+if (!validateConfig()) {
+  console.error("Configuration validation failed");
+}
+
+// Initialize MSAL on module load
+ensureMsalInitialized().catch(console.error);
+
+// Request configurations
+const loginRequest = getLoginRequestConfig();
+const silentRequest = getSilentTokenRequestConfig();
 
 // Create the context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

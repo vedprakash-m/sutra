@@ -3,7 +3,7 @@ import {
   convertObjectToCamelCase,
   convertObjectToSnakeCase,
 } from "../utils/fieldConverter";
-import { getAppConfig } from "../config/unifiedAuthConfig";
+import { getAppConfig } from "../config";
 
 const getApiBaseUrl = () => {
   // Handle test environment where window might not be available
@@ -12,7 +12,7 @@ const getApiBaseUrl = () => {
   }
 
   const config = getAppConfig();
-  return config.apiBaseUrl;
+  return config.api.baseUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();

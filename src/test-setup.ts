@@ -11,7 +11,7 @@ process.env.VITE_AUTH_CLIENT_ID = "test-client-id";
 process.env.NODE_ENV = "test";
 
 // Force React development mode in tests to avoid act() warnings
-if (typeof global !== 'undefined') {
+if (typeof global !== "undefined") {
   (global as any).__DEV__ = true;
 }
 

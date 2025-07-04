@@ -5,10 +5,7 @@ import {
   useState,
   useEffect,
 } from "react";
-import {
-  useMsal,
-  MsalProvider,
-} from "@azure/msal-react";
+import { useMsal, MsalProvider } from "@azure/msal-react";
 import { AccountInfo, PublicClientApplication } from "@azure/msal-browser";
 import {
   getMSALConfig,
@@ -16,11 +13,7 @@ import {
   getSilentTokenRequestConfig,
   validateConfig,
 } from "@/config";
-import {
-  VedUser,
-  AuthContextType,
-  EntraIdClaims,
-} from "@/types/auth";
+import { VedUser, AuthContextType, EntraIdClaims } from "@/types/auth";
 
 // Initialize MSAL with consolidated configuration
 const msalConfig = getMSALConfig();
@@ -71,14 +64,17 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
-  const isAuthenticated = !!user && user.vedProfile.subscriptionTier !== "guest";
+  const isAuthenticated =
+    !!user && user.vedProfile.subscriptionTier !== "guest";
   const isGuest = user?.vedProfile.subscriptionTier === "guest";
   const isAdmin = user?.permissions.includes("admin") || false;
 
   /**
    * Extract VedUser from MSAL account - Apps_Auth_Requirement.md Compliant
    */
-  const createVedUserFromAccount = async (account: AccountInfo): Promise<VedUser> => {
+  const createVedUserFromAccount = async (
+    account: AccountInfo,
+  ): Promise<VedUser> => {
     try {
       const idTokenClaims = account.idTokenClaims as unknown as EntraIdClaims;
 
@@ -163,7 +159,7 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
         await ensureMsalInitialized();
 
         // Wait for any redirect handling
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Check for existing accounts
         const currentAccounts = instance.getAllAccounts();
@@ -190,7 +186,9 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 
           // For local development, create a mock authenticated user
           if (window.location.hostname === "localhost") {
-            console.log("🔧 Local development: creating mock authenticated user");
+            console.log(
+              "🔧 Local development: creating mock authenticated user",
+            );
 
             const mockUser: VedUser = {
               id: "admin-user-local-dev",
@@ -209,7 +207,9 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
 
             setUser(mockUser);
             setToken("mock-access-token-local-dev");
-            console.log("✅ Mock authentication successful for local development");
+            console.log(
+              "✅ Mock authentication successful for local development",
+            );
           } else {
             setUser(null);
             setToken(null);

@@ -5,7 +5,7 @@
  */
 
 // Re-export everything from UnifiedAuthProvider
-export { AuthProvider, useAuth } from './UnifiedAuthProvider';
+export { AuthProvider, useAuth } from "./UnifiedAuthProvider";
 
 // This is a temporary compatibility shim
 // All components should eventually import directly from UnifiedAuthProvider

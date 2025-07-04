@@ -1,51 +1,21 @@
 # Technical Specification: Sutra - Multi-LLM Prompt Studio
 
-Ved Mishra - July 2025 - Version: 2.0 (Architectural Remediation)
+Ved Mishra - July 2025 - Version: 2.0
 
-## DOCUMENT STATUS: ARCHITECTURAL ASSESSMENT & REMEDIATION PLAN
+## Overview
 
-This technical specification has been updated to reflect the comprehensive architectural assessment completed in December 2024. Critical design flaws, technical debt, and root issues have been identified, with a systematic remediation plan developed to achieve production readiness.
-
-**Critical Issues Identified:**
-- ❌ **Dual Authentication Paradigms**: Legacy MSALAuthProvider and new UnifiedAuthProvider coexisting
-- ❌ **Inconsistent Provider Usage**: Components and tests using different auth providers
-- ❌ **Fragmented Configuration**: Multiple auth config files with conflicting settings
-- ❌ **289+ Failing Tests**: Comprehensive test suite breakdown
-- ❌ **React Production Build Issues**: Tests failing due to development/production build mismatches
-- ❌ **Mock Configuration Problems**: Inconsistent MSAL mocks and test setup
-- ❌ **Module Resolution Errors**: Missing modules and import path issues
-- ❌ **Inconsistent API Patterns**: Mixed response formats and error handling
-- ❌ **Missing Security Headers**: Incomplete CORS and security configuration
-- ❌ **Field Naming Inconsistencies**: Backend/frontend field mapping mismatches
-
-**Remediation Plan Status:**
-- ✅ **Phase 1**: Authentication unification (COMPLETE)
-- ✅ **Phase 2**: Configuration standardization (COMPLETE)
-- 🔴 **Phase 3**: Backend integration cleanup (PENDING)
-- 🔴 **Phase 4**: Testing infrastructure restoration (PENDING)
+Sutra is a multi-LLM prompt studio that enables users to create, test, and manage prompts across multiple AI language models. The platform provides a unified interface for comparing responses from different LLM providers while maintaining cost control and user management capabilities.
 
 ## 1. Architecture Overview
 
-Sutra leverages a serverless, event-driven architecture hosted on Microsoft Azure, designed for production-ready operation. However, comprehensive architectural assessment has revealed critical design flaws and technical debt that must be systematically remediated to achieve production readiness.
+Sutra leverages a serverless, event-driven architecture hosted on Microsoft Azure. The system provides a React-based frontend with Azure Functions backend, utilizing Microsoft Entra ID for authentication and Azure Cosmos DB for data persistence.
 
-**CURRENT STATE: ARCHITECTURAL REMEDIATION REQUIRED**
+**Core Architecture Components:**
 
-The application currently suffers from several critical architectural issues:
-
-1. **Dual Authentication Paradigms**: Both legacy MSALAuthProvider and new UnifiedAuthProvider coexist, creating confusion and inconsistency
-2. **Fragmented Configuration**: Multiple auth config files with conflicting settings
-3. **Test Infrastructure Breakdown**: 289+ failing tests due to auth/provider mismatches
-4. **Inconsistent API Patterns**: Mixed response formats and error handling
-5. **Security Implementation Gaps**: Missing security headers and incomplete CORS configuration
-
-**TARGET ARCHITECTURE (Post-Remediation):**
-
-The remediated architecture will consist of:
-
-- **Frontend:** React 18 + TypeScript + Vite with unified authentication
-- **Backend:** Azure Functions (Python 3.12) with standardized API patterns
-- **Database:** Azure Cosmos DB (serverless) with optimized queries
-- **Identity:** Microsoft Entra ID with unified user management
+- **Frontend:** React 18 + TypeScript + Vite with Microsoft Entra ID authentication
+- **Backend:** Azure Functions (Python 3.12) with RESTful API design
+- **Database:** Azure Cosmos DB (serverless) with NoSQL API
+- **Identity:** Microsoft Entra ID (vedid.onmicrosoft.com)
 - **Storage:** Azure Blob Storage for assets and large data
 - **Monitoring:** Azure Application Insights with comprehensive telemetry
 - **CI/CD:** GitHub Actions with automated testing and deployment
@@ -54,167 +24,62 @@ The remediated architecture will consist of:
 +-------------------+           +-----------------------+           +----------------------------+
 | User Web Browser  |           | Azure Static Web Apps |           | Azure Functions            |
 | (React 18 + TS)   | --------> | (Production Frontend) | --------> | (Python 3.12 Backend)     |
-| UNIFIED AUTH      |           | UNIFIED AUTH CONFIG   |           | UNIFIED AUTH SYSTEM        |
+| Microsoft Entra   |           | Static Web Apps       |           | RESTful APIs               |
 +-------------------+           +-----------------------+           +----------------------------+
                                                                                  |
                                                                                  V
                                 +-------------------+               +----------------------------+
                                 | Microsoft Entra ID|               | Azure Cosmos DB (NoSQL)   |
-                                | (Unified Auth)    |               | (Optimized Queries)        |
+                                | (Authentication)  |               | (NoSQL Database)           |
                                 | vedid.onmicrosoft |               +----------------------------+
                                 +-------------------+                            |
                                                                                  V
                                                                     +----------------------------+
                                                                     | External LLM Providers     |
                                                                     | (OpenAI, Gemini, Claude)   |
-                                                                    | Cost Management System     |
+                                                                    | API Integration            |
                                                                     +----------------------------+
                                                                                  |
                                                                                  V
                                                                     +----------------------------+
                                                                     | Azure Application Insights |
-                                                                    | (Comprehensive Monitoring) |
                                                                     | Azure Blob Storage         |
+                                                                    | Monitoring & Analytics     |
                                                                     +----------------------------+
 ```
 
-**Production-Ready Quality Assurance:**
-- ✅ **100% Test Coverage**: All components tested with Jest, Pytest, and Playwright
-- ✅ **CI/CD Pipeline**: Automated testing and deployment with GitHub Actions
-- ✅ **Security Hardened**: Complete security headers, CORS, and error handling
-- ✅ **Performance Optimized**: Efficient API patterns and reduced latency
-- ✅ **Cost Monitored**: Real-time cost tracking with automated controls
-- ✅ **Documentation Complete**: Updated technical specs and developer guides
+## 2. Technology Stack
 
----
+### 2.1. Frontend Architecture
 
-## 1.1. Architectural Remediation Summary
-
-This section documents the comprehensive architectural remediation completed to transform Sutra from a prototype with significant technical debt into a production-ready application.
-
-### 1.1.1. Root Issues Identified and Resolved
-
-**Authentication Architecture Issues:**
-- ❌ **Dual Authentication Paradigms**: Legacy MSALAuthProvider and new UnifiedAuthProvider coexisting
-- ❌ **Inconsistent Provider Usage**: Components and tests using different auth providers
-- ❌ **Fragmented Configuration**: Multiple auth config files with conflicting settings
-- ✅ **Resolution**: Unified to single Microsoft Entra ID system with canonical UnifiedAuthProvider
-
-**Configuration Management Issues:**
-- ❌ **Environment Configuration Fragmentation**: Multiple config files with inconsistent formats
-- ❌ **Runtime Configuration Gaps**: Missing environment-specific settings
-- ❌ **API Service Configuration**: Inconsistent base URLs and headers across environments
-- ✅ **Resolution**: Centralized configuration management with environment-specific overrides
-
-**Testing Infrastructure Issues:**
-- ❌ **289+ Failing Tests**: Comprehensive test suite breakdown
-- ❌ **React Production Build Issues**: Tests failing due to development/production build mismatches
-- ❌ **Mock Configuration Problems**: Inconsistent MSAL mocks and test setup
-- ❌ **Module Resolution Errors**: Missing modules and import path issues
-- ✅ **Resolution**: Complete test infrastructure rebuild with 100% pass rate
-
-**API Integration Issues:**
-- ❌ **Inconsistent API Patterns**: Mixed response formats and error handling
-- ❌ **Missing Security Headers**: Incomplete CORS and security configuration
-- ❌ **Field Naming Inconsistencies**: Backend/frontend field mapping mismatches
-- ✅ **Resolution**: Standardized API patterns with comprehensive security implementation
-
-### 1.1.2. Systematic Remediation Approach
-
-**Phase 1: Authentication Unification (Completed)**
-1. **Analysis**: Identified all auth provider usages across codebase
-2. **Compatibility Layer**: Created MSALAuthProvider as re-export shim
-3. **Canonical Provider**: Established UnifiedAuthProvider as single source of truth
-4. **Test Updates**: Updated all test mocks and configurations
-5. **Legacy Cleanup**: Removed all legacy auth files and references
-
-**Phase 2: Configuration Standardization (Completed)**
-1. **Environment Management**: Unified environment configuration system
-2. **Runtime Configuration**: Centralized runtime settings management
-3. **API Service Configuration**: Standardized base URLs and headers
-4. **Development/Production Parity**: Consistent configuration across environments
-
-**Phase 3: Testing Infrastructure Rebuild (Completed)**
-1. **Jest Configuration**: Updated for React development build in tests
-2. **Mock Standardization**: Unified MSAL mocks and test utilities
-3. **Test Setup**: Comprehensive test environment configuration
-4. **Coverage Validation**: Achieved 100% test pass rate
-
-**Phase 4: Production Hardening (Completed)**
-1. **Security Implementation**: Complete security headers and CORS
-2. **Error Handling**: Comprehensive error handling and logging
-3. **Performance Optimization**: Efficient API patterns and caching
-4. **Monitoring Integration**: Full observability and cost tracking
-
-### 1.1.3. Quality Assurance Metrics
-
-**Before Remediation:**
-- 289+ failing tests (Jest, Pytest, Playwright)
-- Dual authentication systems causing confusion
-- Fragmented configuration management
-- Inconsistent API patterns and error handling
-- Missing security headers and CORS configuration
-
-**After Remediation:**
-- ✅ **100% Test Pass Rate**: All unit, integration, and E2E tests passing
-- ✅ **Unified Authentication**: Single Microsoft Entra ID system
-- ✅ **Centralized Configuration**: Consistent environment management
-- ✅ **Standardized APIs**: Uniform response formats and error handling
-- ✅ **Security Hardened**: Complete security headers and CORS
-- ✅ **CI/CD Pipeline**: Automated testing and deployment
-- ✅ **Cost Optimized**: Real-time monitoring and budget controls
-
-### 1.1.4. Developer Experience Improvements
-
-**Before:**
-- Complex multi-provider auth setup
-- Inconsistent development environment setup
-- Frequent test failures blocking development
-- Manual configuration management
-
-**After:**
-- Single unified authentication system
-- Streamlined developer onboarding
-- Reliable test suite with fast feedback
-- Automated configuration management
-- Comprehensive documentation and guides
-
----
-
-## 2. Production-Ready Tech Stack (Azure Services)
-
-### 2.1. Frontend Architecture & Framework
-
-- **Azure Static Web Apps (ASWA):** Production-ready frontend hosting with global CDN
-  - _Implementation_: Complete CI/CD integration with GitHub Actions
+- **Azure Static Web Apps:** Frontend hosting
   - _Features_: Custom domains, automatic SSL, integrated authentication
-  - _Performance_: Global distribution with edge caching
+  - _Performance_: Static file hosting and delivery
 - **Framework Stack:**
-  - **React 18**: Latest stable version with Concurrent Features
-  - **TypeScript 5.0+**: Strict typing with comprehensive type definitions
-  - **Vite**: Fast build tool with HMR for development
+  - **React 18**: Component-based UI framework with Concurrent Features
+  - **TypeScript**: Static typing with comprehensive type definitions
+  - **Vite**: Build tool with hot module replacement for development
   - **Tailwind CSS**: Utility-first CSS framework
   - **React Router**: Client-side routing with lazy loading
 - **State Management:**
   - **React Query (TanStack Query)**: Server state management with caching
   - **Zustand**: Client state management for UI state
   - **React Hook Form**: Form management with validation
-- **Authentication Integration:**
+- **Authentication:**
   - **@azure/msal-react**: Microsoft Authentication Library
-  - **UnifiedAuthProvider**: Single canonical authentication provider
-  - **Automatic token refresh**: Seamless session management
+  - **AuthProvider**: Unified authentication provider
+  - **JWT Token Management**: Automatic token refresh and secure storage
 
-### 2.2. Backend API & Logic Architecture
+### 2.2. Backend Architecture
 
-- **Azure Functions (Python 3.12):** Production-grade serverless backend
+- **Azure Functions (Python 3.12):** Serverless backend architecture
   - _Runtime_: Python 3.12 with async/await patterns
-  - _Deployment_: Single production slot with automated deployment
-  - _Scaling_: Auto-scaling with cold start optimization
-  - _Security_: Complete RBAC with Microsoft Entra ID integration
-- **API Architecture:**
-  - **Unified Authentication**: Single auth system across all endpoints
-  - **Standardized Response Format**: Consistent JSON API responses
-  - **Comprehensive Error Handling**: Structured error responses with logging
+  - _Deployment_: Consumption plan with auto-scaling
+  - _Security_: Role-based access control with Microsoft Entra ID integration
+- **API Design:**
+  - **RESTful APIs**: Standardized HTTP methods and status codes
+  - **JSON Response Format**: Consistent API response structure
+  - **Error Handling**: Structured error responses with logging
   - **Input Validation**: Pydantic models for request validation
   - **Rate Limiting**: Function-level rate limiting with quota management
 - **Function Categories:**
@@ -223,46 +88,46 @@ This section documents the comprehensive architectural remediation completed to 
   - **Collections API**: Organization and sharing of prompts
   - **Playbooks API**: Multi-step prompt orchestration
   - **LLM Execute API**: Multi-LLM orchestration and execution
-  - **Cost Management API**: Real-time budget tracking and controls
+  - **Cost Management API**: Budget tracking and controls
   - **Admin API**: Administrative functions and analytics
 
 ### 2.3. Database Architecture
 
-- **Azure Cosmos DB (NoSQL API, Serverless Mode):** Production-optimized database
+- **Azure Cosmos DB (NoSQL API, Serverless Mode):** NoSQL database
   - _Configuration_: Serverless billing with auto-scaling
   - _Performance_: Optimized queries with proper indexing
   - _Consistency_: Session consistency for cost optimization
   - _Partitioning_: Efficient partition key strategy
 - **Data Models:**
-  - **User Profiles**: Unified user object with team integration
+  - **User Profiles**: User data with team integration
   - **Prompts & Versions**: Versioned prompt management
   - **Collections**: Organized prompt collections with permissions
   - **Playbooks**: Multi-step automation workflows
   - **Execution Logs**: Comprehensive audit trail
-  - **Cost Tracking**: Real-time usage and budget monitoring
+  - **Cost Tracking**: Usage and budget monitoring
 
-### 2.4. Identity & Access Management (Production Implementation)
+### 2.4. Identity & Access Management
 
-- **Microsoft Entra ID (vedid.onmicrosoft.com):** Single source of truth for authentication
+- **Microsoft Entra ID (vedid.onmicrosoft.com):** Authentication provider
   - _Authority_: `https://login.microsoftonline.com/vedid.onmicrosoft.com`
   - _Implementation_: Unified authentication system across all components
-  - _Benefits_: Enterprise-grade security, cost elimination, unified audit trails
+  - _Features_: Microsoft Entra ID integration, unified audit trails
 - **Authentication Libraries:**
-  - **Frontend**: `@azure/msal-react` with UnifiedAuthProvider
+  - **Frontend**: `@azure/msal-react` with AuthProvider
   - **Backend**: `msal` Python library with JWKS validation
   - **Token Management**: JWT with automatic refresh and secure storage
-- **VedUser Standard Implementation:**
-  - **Unified User Object**: Consistent user data across all applications
-  - **Cross-Domain SSO**: Seamless authentication across vedprakash.net subdomains
-  - **Security Features**: Complete security headers, JWKS caching, signature verification
+- **User Management:**
+  - **User Object**: Consistent user data across all applications
+  - **Cross-Domain SSO**: Authentication across vedprakash.net subdomains
+  - **Security Features**: Security headers, JWKS caching, signature verification
 - **Access Control:**
   - **Role-Based Access Control (RBAC)**: Agent, Contributor, PromptManager, Admin, Guest
   - **Entity-Level Permissions**: Fine-grained access control on resources
-  - **Guest User System**: IP-based rate limiting with trial experience preservation
+  - **Guest User System**: IP-based rate limiting with trial experience
 
-### 2.5. External LLM Integration Architecture
+### 2.5. External LLM Integration
 
-- **Direct API Integration**: Optimized HTTP API calls to LLM providers
+- **Direct API Integration**: HTTP API calls to LLM providers
   - _Providers_: OpenAI GPT models, Google Gemini, Anthropic Claude
   - _Cost Management_: Real-time cost tracking with predictive analytics
   - _Rate Limiting_: Provider-specific rate limiting and quota management
@@ -270,22 +135,22 @@ This section documents the comprehensive architectural remediation completed to 
 - **Multi-LLM Orchestration:**
   - **Parallel Execution**: Concurrent API calls for comparison
   - **Cost Optimization**: Smart model selection based on complexity
-  - **Response Caching**: Intelligent caching for repeated queries
+  - **Response Caching**: Basic caching for repeated queries
   - **Quality Scoring**: Automated response quality assessment
 
 ### 2.6. Storage Architecture
 
-- **Azure Blob Storage:** Scalable file storage with lifecycle management
+- **Azure Blob Storage:** Scalable file storage
   - _Use Cases_: Chat histories, exports, large prompt outputs
   - _Configuration_: Hot, cool, and archive tiers for cost optimization
   - _Security_: Secure access with SAS tokens and encryption
-  - _Performance_: CDN integration for global access
+  - _Performance_: Standard blob storage performance
 
-### 2.7. Monitoring & Observability (Production Implementation)
+### 2.7. Monitoring & Observability
 
-- **Azure Application Insights:** Comprehensive application monitoring
-  - _Telemetry_: Real-time performance metrics and error tracking
-  - _Distributed Tracing_: End-to-end request tracking
+- **Azure Application Insights:** Application monitoring
+  - _Telemetry_: Performance metrics and error tracking
+  - _Request Tracking_: End-to-end request monitoring
   - _Custom Events_: Business metrics and user behavior analytics
   - _Adaptive Sampling_: Cost-optimized telemetry collection
 - **Azure Monitor Logs:** Centralized logging and analytics
@@ -295,11 +160,11 @@ This section documents the comprehensive architectural remediation completed to 
   - _Alerting_: Proactive alerting on performance and cost thresholds
 - **Cost Management Integration:**
   - **Real-time Cost Tracking**: Live monitoring of LLM usage costs
-  - **Predictive Analytics**: ML-powered cost forecasting
+  - **Predictive Analytics**: Historical trend analysis and cost forecasting
   - **Budget Controls**: Automated cost controls with smart fallbacks
   - **Usage Analytics**: Detailed cost attribution and optimization recommendations
 
-### 2.8. CI/CD Pipeline (Production Implementation)
+### 2.8. CI/CD Pipeline
 
 - **GitHub Actions:** Automated build, test, and deployment pipeline
   - _Testing_: Comprehensive test suite with Jest, Pytest, and Playwright
@@ -307,7 +172,7 @@ This section documents the comprehensive architectural remediation completed to 
   - _Deployment_: Automated deployment to Azure with rollback capabilities
   - _Security_: SAST scanning and dependency vulnerability checks
 - **Quality Gates:**
-  - **Unit Tests**: 100% test pass rate requirement
+  - **Unit Tests**: Test pass rate requirements
   - **Integration Tests**: API contract validation
   - **E2E Tests**: Full user journey validation
   - **Performance Tests**: Load testing and performance benchmarks
@@ -317,7 +182,7 @@ This section documents the comprehensive architectural remediation completed to 
   - **Environment Management**: Consistent environment provisioning
   - **Secret Management**: Secure handling of API keys and certificates
 
-### 2.9. Testing Infrastructure (Production Implementation)
+### 2.9. Testing Infrastructure
 
 - **Frontend Testing:**
   - **Jest**: Unit testing with comprehensive mocking
@@ -335,12 +200,12 @@ This section documents the comprehensive architectural remediation completed to 
   - **Coverage Reporting**: Comprehensive coverage metrics
   - **Automated Testing**: CI/CD integration with quality gates
 
-### 2.10. Development Tools & Utilities
+### 2.10. Development Tools
 
 - **Code Quality:**
   - **ESLint**: JavaScript/TypeScript linting with custom rules
   - **Prettier**: Code formatting with consistent style
-  - **TypeScript**: Strict type checking with comprehensive type definitions
+  - **TypeScript**: Static type checking with comprehensive type definitions
   - **Flake8**: Python code linting and style checking
 - **Development Environment:**
   - **VS Code**: Recommended IDE with extensions
@@ -349,6 +214,7 @@ This section documents the comprehensive architectural remediation completed to 
   - **Environment Variables**: Secure configuration management
 
 ---
+
 ## 3. Data Models (Simplified)
 
 All GUIDs are UUID v4. Timestamps are ISO 8601.
@@ -582,13 +448,13 @@ All GUIDs are UUID v4. Timestamps are ISO 8601.
   },
   "timestamp": "2025-06-14T22:00:00Z"
 }
-````
+```
 
 ---
 
 ## 4. API Endpoints (Examples)
 
-All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses AAD B2C tokens.
+All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses Microsoft Entra ID tokens.
 
 - `POST /api/prompts` – Create a new prompt
 - `GET /api/prompts/{id}` – Get prompt details and current version
@@ -596,7 +462,6 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 - `DELETE /api/prompts/{id}` – Delete a prompt
 - `GET /api/prompts/{id}/versions` – Get all versions of a prompt (pagination)
 - `POST /api/prompts/{id}/run` – Execute a specific prompt version against selected LLMs (Multi-LLM Compare)
-
   - **Request Body:**
     ```json
     {
@@ -721,49 +586,42 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
 
 ---
 
-## 5. Security Considerations
+## 5. Security Architecture
 
-- **Direct Azure Functions Access:** Simplified security model without API gateway overhead.
-- **Function-Level Security:** Built-in Azure Functions authentication and authorization.
-- **DDoS Protection:** Azure's built-in DDoS protection on Functions and Static Web Apps.
-- **Rate Limiting:** Function-level implementation with Azure storage for state tracking.
-- **Authentication & Authorization:**
-  - AAD B2C for user authentication.
-  - Guest users receive temporary JWT tokens with limited claims and short expiration.
-  - Azure Functions validate JWT tokens for all API access (signature, expiration, issuer/audience, claims).
-  - **Dual Authentication System:**
-    - **Registered Users:** Full AAD B2C integration with persistent identity
-    - **Guest Users:** Temporary session-based authentication with usage tracking
-  - **Role-Based Access Control (RBAC):**
-    - **Roles:** Agent, Contributor, PromptManager, Admin, Guest (new)
-    - **Guest Role Restrictions:** Read-only access to public content, limited creation rights
-    - **Entity-Level RBAC:** Permissions (read, write, execute, manage) on Collections, Prompts, Playbooks.
-    - **Guest Permissions:** Limited to personal temporary workspace with automatic cleanup
-- **Data Encryption:**
-  - At rest (Cosmos DB, Blob Storage) and in transit (HTTPS/TLS).
-  - LLM API Keys stored in Azure Key Vault, accessed via Managed Identities.
-  - Least privilege for Azure Functions.
-- **Input Validation & Output Sanitization:**
-  - Robust input validation (schema/type/length/regex).
-  - Output sanitization (HTML escaping, PII redaction/masking).
-- **Guest User Security:**
-  - **Session-based Authentication:** JWT tokens for guest sessions with short expiration (24 hours)
-  - **IP-based Rate Limiting:** Prevent abuse from single IP addresses
-  - **Content Restrictions:** Guest users cannot access private/team content
-  - **Data Isolation:** Guest and registered user data clearly separated
-  - **Abuse Prevention:** Monitoring for suspicious patterns, CAPTCHA for high-frequency requests
-  - **Limited LLM Access:** Guest users restricted to demo LLM keys with usage quotas
-  - **Session Cleanup:** Automatic deletion of expired guest sessions and associated data after 7 days
-  - **Content Filtering & LLM Guardrails:**
-    - **Input Validation:** Enhanced filtering for guest user prompts to prevent misuse
-    - **Output Monitoring:** Automated scanning of LLM responses for inappropriate content
-    - **Prompt Safety Checks:** Pre-execution validation against known harmful patterns
-    - **Usage Pattern Analysis:** Machine learning models to detect and prevent abuse
-    - **Content Moderation:** Integration with Azure Content Moderator for text analysis
-    - **Compliance Controls:** Automatic logging and reporting of safety violations
-- **Network Security:**
-  - CORS configured to allow only frontend domain.
-  - NSGs for VNet deployments (future consideration).
+### 5.1. Authentication & Authorization
+
+- **Microsoft Entra ID Integration:** Primary authentication provider for registered users
+- **Guest Session Management:** Temporary JWT tokens for anonymous users
+- **Role-Based Access Control:** Agent, Contributor, PromptManager, Admin, Guest roles
+- **Token Validation:** JWT signature verification, expiration checks, claim validation
+
+### 5.2. Data Protection
+
+- **Encryption:** Data encrypted at rest (Cosmos DB, Blob Storage) and in transit (HTTPS/TLS)
+- **API Key Management:** LLM API keys stored securely in Azure Key Vault
+- **PII Handling:** Automatic redaction and masking of sensitive data
+- **Access Control:** Least privilege principle for all Azure Functions
+
+### 5.3. Input Validation & Security
+
+- **Request Validation:** Schema validation, type checking, length limits
+- **Content Filtering:** Safety checks for prompts and LLM responses
+- **Rate Limiting:** Function-level rate limiting with IP-based controls
+- **CORS Configuration:** Restricted to authorized frontend domains
+
+### 5.4. Guest User Security
+
+- **Session Isolation:** Guest data separated from registered user data
+- **Usage Limitations:** Rate limits and quotas for guest sessions
+- **Content Restrictions:** Limited access to public content only
+- **Automatic Cleanup:** Expired session data removed automatically
+
+### 5.5. Infrastructure Security
+
+- **Azure Functions Security:** Built-in authentication and authorization
+- **DDoS Protection:** Azure platform-level protection
+- **Network Security:** CORS policies and secure communication protocols
+- **Monitoring:** Comprehensive logging and alerting for security events
 
 ---
 
@@ -783,11 +641,11 @@ The guest user system enables anonymous users to trial Sutra's core functionalit
 
 ### 7.2. Guest Session Lifecycle
 
-````
+```
 
 1. Anonymous User Visits → 2. Guest Session Created → 3. Usage Tracking → 4. Conversion Triggers → 5. Session Expiry/Conversion
 
-````
+```
 
 **Technical Flow:**
 
@@ -853,7 +711,7 @@ The guest user system enables anonymous users to trial Sutra's core functionalit
     "step6": "Send welcome email with migration summary"
   }
 }
-````
+```
 
 ### 7.5. Monitoring & Analytics
 
@@ -1069,9 +927,8 @@ The AI Cost Management system provides comprehensive real-time budget tracking, 
 ```python
 # Azure Function: Real-time cost tracking
 class CostTracker:
-    def __init__(self, cosmos_client, cache_client):
+    def __init__(self, cosmos_client):
         self.cosmos_client = cosmos_client
-        self.cache_client = cache_client
         self.model_pricing = self._load_model_pricing()
 
     async def track_execution_cost(self, execution_data):
@@ -1244,12 +1101,12 @@ class AutomatedCostControls:
 
 ```python
 class CostPredictionEngine:
-    def __init__(self, ml_client):
-        self.ml_client = ml_client
-        self.prediction_models = self._load_prediction_models()
+    def __init__(self, analytics_client):
+        self.analytics_client = analytics_client
+        self.prediction_algorithms = self._load_prediction_algorithms()
 
     async def generate_predictions(self, user_id, prediction_horizon="monthly"):
-        """Generate cost predictions using historical data and ML models"""
+        """Generate cost predictions using historical data and trend analysis"""
 
         # Gather historical usage data
         historical_data = await self._get_historical_usage(
@@ -1269,8 +1126,8 @@ class CostPredictionEngine:
         # Seasonal pattern prediction
         predictions["seasonal"] = self._calculate_seasonal_prediction(features)
 
-        # ML model prediction
-        predictions["ml"] = await self._ml_prediction(features)
+        # Statistical prediction
+        predictions["statistical"] = await self._statistical_prediction(features)
 
         # Ensemble prediction
         final_prediction = self._ensemble_prediction(predictions)
@@ -1523,7 +1380,7 @@ class CostAnalytics:
   - **Efficient Code:** Optimize for speed and minimal memory.
 - **Azure Cosmos DB (Serverless):** Pay-per-operation, no minimum throughput.
   - **Query Optimization:** Efficient queries, indexing, partitioning.
-- **Azure Static Web Apps:** Free tier for basic hosting.
+- **Azure Static Web Apps:** Standard tier hosting for frontend delivery.
 - **Azure Blob Storage:** Low-cost, scalable object storage.
   - **Data Lifecycle Management:** Move old outputs/logs to archive or delete per retention policy.
 - **Azure Functions (Consumption Plan):** Pay-per-execution, single production slot.
@@ -1538,7 +1395,7 @@ class CostAnalytics:
   - **Smart Model Selection:** Automatic fallback to cheaper models for guests
 - **AI Cost Management Integration:**
   - **Real-time Cost Monitoring:** Live tracking of LLM usage costs
-  - **Predictive Budget Analytics:** ML-powered cost forecasting
+  - **Predictive Budget Analytics:** Historical trend analysis and cost forecasting
   - **Automated Cost Controls:** Multi-tier enforcement with smart fallbacks
   - **Cost Allocation Tracking:** Detailed attribution across users and teams
 - **Monitoring & Alerts:**
@@ -1550,143 +1407,73 @@ class CostAnalytics:
 
 ---
 
-## 2. SYSTEMATIC REMEDIATION PLAN
+## 10. Development Tools & Utilities
 
-### Phase 1: Authentication Unification (IN PROGRESS)
+- **Code Quality:**
+  - **ESLint**: JavaScript/TypeScript linting with custom rules
+  - **Prettier**: Code formatting with consistent style
+  - **TypeScript**: Strict type checking with comprehensive type definitions
+  - **Flake8**: Python code linting and style checking
+- **Development Environment:**
+  - **VS Code**: Recommended IDE with extensions
+  - **Docker**: Containerized development environment
+  - **Local Development**: Hot reload and efficient development workflow
+  - **Environment Variables**: Secure configuration management
 
-**Goal**: Eliminate dual authentication paradigms and standardize on UnifiedAuthProvider
+---
 
-**Critical Issues to Address:**
-1. **Legacy MSALAuthProvider** still exists and is imported in multiple components
-2. **UnifiedAuthProvider** is the new standard but not consistently used
-3. **Test infrastructure** relies on old MSAL mocks
-4. **Configuration files** have conflicting auth settings
+## 11. Deployment Architecture
 
-**Remediation Steps:**
-- [x] Create AuthProvider.tsx as single source of truth
-- [x] Update Jest config for unified auth testing
-- [x] Fix React production build issues in tests
-- [ ] Remove all MSALAuthProvider imports and usages
-- [ ] Update all components to use UnifiedAuthProvider
-- [ ] Consolidate auth configuration files
-- [ ] Update all tests to use unified auth mocks
-- [ ] Validate auth flow end-to-end
+### 11.1. Production Environment
 
-**Files to Modify:**
-- `src/components/auth/MSALAuthProvider.tsx` (remove after migration)
-- `src/components/auth/UnifiedAuthProvider.tsx` (primary)
-- `src/components/auth/AuthProvider.tsx` (single source of truth)
-- `src/config/authConfig.ts` (consolidate)
-- `src/config/unifiedAuthConfig.ts` (merge into authConfig.ts)
-- All components importing MSALAuthProvider
-- All test files with MSAL mocks
+- **Azure Static Web Apps**: Frontend hosting with automatic SSL
+- **Azure Functions**: Serverless backend with consumption-based pricing
+- **Azure Cosmos DB**: NoSQL database with serverless billing
+- **Azure Blob Storage**: File storage with lifecycle management
+- **Azure Application Insights**: Monitoring and telemetry
+- **Azure Key Vault**: Secure storage for API keys and secrets
 
-### Phase 2: Configuration Standardization (PENDING)
+### 11.2. Development Environment
 
-**Goal**: Centralize all configuration management and eliminate conflicts
+- **Local Development**: Vite dev server with hot reload
+- **Azure Functions Core Tools**: Local backend development
+- **Cosmos DB Emulator**: Local database for development
+- **Docker**: Containerized development environment
+- **GitHub Actions**: CI/CD pipeline for automated testing and deployment
 
-**Critical Issues to Address:**
-1. **Multiple auth config files** with conflicting settings
-2. **Environment variables** scattered across multiple files
-3. **Runtime configuration** inconsistencies
-4. **API endpoint configuration** duplication
+### 11.3. Security Implementation
 
-**Remediation Steps:**
-- [ ] Audit all configuration files
-- [ ] Create centralized config management system
-- [ ] Standardize environment variable naming
-- [ ] Consolidate API endpoint configuration
-- [ ] Create configuration validation system
-- [ ] Update all components to use centralized config
-- [ ] Document configuration management patterns
+- **Authentication**: Microsoft Entra ID with JWT tokens
+- **Authorization**: Role-based access control (RBAC)
+- **API Security**: Input validation, rate limiting, and secure headers
+- **Data Protection**: Encryption at rest and in transit
+- **Secret Management**: Azure Key Vault for sensitive data
+- **Network Security**: CORS configuration and secure communication
 
-**Files to Modify:**
-- `src/config/` (entire directory consolidation)
-- `src/services/api.ts` (centralized API config)
-- `src/config/runtime.ts` (unified runtime config)
-- All environment variable files
-- All components using direct config imports
+---
 
-### Phase 3: Backend Integration Cleanup (PENDING)
+## 12. Performance Considerations
 
-**Goal**: Standardize backend API patterns and eliminate inconsistencies
+### 12.1. Frontend Performance
 
-**Critical Issues to Address:**
-1. **Mixed API response formats** across different endpoints
-2. **Inconsistent error handling** patterns
-3. **Field naming mismatches** between frontend/backend
-4. **Missing security headers** in API responses
-5. **Incomplete CORS configuration**
+- **Code Splitting**: Dynamic imports for route-based splitting
+- **Lazy Loading**: Components loaded on demand
+- **Caching**: Service worker and browser caching strategies
+- **Bundle Optimization**: Tree shaking and minification
+- **Static Assets**: Optimized delivery of static assets
 
-**Remediation Steps:**
-- [ ] Audit all API endpoints for consistency
-- [ ] Standardize response format across all APIs
-- [ ] Implement consistent error handling
-- [ ] Fix field naming inconsistencies
-- [ ] Add comprehensive security headers
-- [ ] Fix CORS configuration
-- [ ] Update API documentation
-- [ ] Validate API contracts
+### 12.2. Backend Performance
 
-**Files to Modify:**
-- `api/shared/` (standardized response patterns)
-- All API endpoint functions
-- `api/shared/auth.py` (unified auth patterns)
-- `api/shared/unified_auth.py` (consolidate)
-- Frontend API service layer
-- OpenAPI specification
+- **Serverless Architecture**: Auto-scaling based on demand
+- **Database Optimization**: Efficient queries and indexing
+- **Caching**: Response caching for frequently accessed data
+- **Connection Pooling**: Efficient database connections
+- **Monitoring**: Real-time performance metrics and alerting
 
-### Phase 4: Testing Infrastructure Restoration (PENDING)
+### 12.3. Cost Optimization
 
-**Goal**: Restore full test suite functionality with 100% pass rate
-
-**Critical Issues to Address:**
-1. **289+ failing tests** due to auth/provider mismatches
-2. **React production build** issues in test environment
-3. **Mock configuration** problems with MSAL
-4. **Module resolution** errors in tests
-5. **Missing test utilities** for unified auth
-
-**Remediation Steps:**
-- [ ] Fix all authentication-related test failures
-- [ ] Update test mocks for unified auth system
-- [ ] Resolve module resolution issues
-- [ ] Create comprehensive test utilities
-- [ ] Validate test coverage across all components
-- [ ] Set up automated test reporting
-- [ ] Configure CI/CD test validation
-- [ ] Document testing patterns and guidelines
-
-**Files to Modify:**
-- `jest.config.js` (complete test configuration)
-- `src/test-setup.ts` (unified test setup)
-- All test files using old auth mocks
-- Test utilities and helpers
-- CI/CD test configuration
-- E2E test specifications
-
-### Success Criteria
-
-**Phase 1 Complete:**
-- [ ] Zero imports of MSALAuthProvider
-- [ ] All components use UnifiedAuthProvider
-- [ ] All auth-related tests pass
-- [ ] Single auth configuration file
-
-**Phase 2 Complete:**
-- [ ] Single configuration management system
-- [ ] Zero configuration duplication
-- [ ] All components use centralized config
-- [ ] Configuration validation in place
-
-**Phase 3 Complete:**
-- [ ] Consistent API response formats
-- [ ] Standardized error handling
-- [ ] Complete security headers
-- [ ] All API tests pass
-
-**Phase 4 Complete:**
-- [ ] 100% test pass rate
-- [ ] Comprehensive test coverage
-- [ ] Automated CI/CD validation
-- [ ] Production-ready test infrastructure
+- **Serverless Billing**: Pay-per-use pricing model
+- **Resource Optimization**: Efficient resource utilization
+- **Automated Scaling**: Scale to zero when not in use
+- **Cost Monitoring**: Real-time cost tracking and alerts
+- **Budget Controls**: Automated cost controls and limits

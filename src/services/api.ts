@@ -58,7 +58,7 @@ class ApiService {
   setToken(token: string | null) {
     if (token) {
       this.tokenProvider = {
-        getAccessToken: async () => token
+        getAccessToken: async () => token,
       };
     } else {
       this.tokenProvider = null;

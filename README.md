@@ -225,12 +225,12 @@ Sutra implements a **two-tier architecture** that separates persistent data from
 
 ### **🎯 Exceptional Test Coverage**
 
-| **Component**        | **Coverage** | **Tests**     | **Status**               |
-| -------------------- | ------------ | ------------- | ------------------------ |
-| **Frontend (Jest)**  | Rebuilt      | Infrastructure rebuilt | ✅ Functional            |
-| **Backend (Pytest)** | 98.7%        | 453/459       | ✅ Production ready      |
-| **E2E (Playwright)** | Available    | Critical paths | ✅ Core flows validated  |
-| **Total Backend**    | **98.7%**    | **453 passing** | **✅ Production Ready** |
+| **Component**        | **Coverage** | **Tests**              | **Status**              |
+| -------------------- | ------------ | ---------------------- | ----------------------- |
+| **Frontend (Jest)**  | Rebuilt      | Infrastructure rebuilt | ✅ Functional           |
+| **Backend (Pytest)** | 98.7%        | 453/459                | ✅ Production ready     |
+| **E2E (Playwright)** | Available    | Critical paths         | ✅ Core flows validated |
+| **Total Backend**    | **98.7%**    | **453 passing**        | **✅ Production Ready** |
 
 ### **🏆 Quality Metrics**
 

@@ -88,7 +88,6 @@ Successfully migrated the majority of the backend test suite from legacy authent
 #### Immediate (High Priority)
 
 1. **Fix remaining admin_api tests** (4 failures):
-
    - `test_seed_test_data_success` - Action parameter fix needed
    - `test_update_user_role_invalid_json` - JSON parsing with proper routing
    - `test_admin_api_general_exception_handling` - Exception handling assertion

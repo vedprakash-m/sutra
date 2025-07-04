@@ -3,6 +3,7 @@
 export class PublicClientApplication {
   constructor(_config: any) {}
 
+  initialize = jest.fn().mockResolvedValue(undefined);
   loginPopup = jest.fn();
   loginRedirect = jest.fn();
   logoutPopup = jest.fn();

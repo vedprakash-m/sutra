@@ -15,8 +15,9 @@ import { Configuration } from "@azure/msal-browser";
 // Environment Detection
 const getEnvironmentInfo = () => {
   const hostname = window.location.hostname;
-  const isProduction = hostname.includes("azurestaticapps.net") ||
-                       hostname === "sutra.vedprakash.net";
+  const isProduction =
+    hostname.includes("azurestaticapps.net") ||
+    hostname === "sutra.vedprakash.net";
   const isLocalDevelopment = hostname === "localhost";
   const isCustomDomain = hostname === "sutra.vedprakash.net";
 
@@ -32,10 +33,12 @@ const getEnvironmentInfo = () => {
 export const AUTH_CONSTANTS = {
   TENANT_ID: "80fe68b7-105c-4fb9-ab03-c9a818e35848", // vedid.onmicrosoft.com
   CLIENT_ID: "db1e3417-e353-4255-b05e-2e1fffe25692", // Sutra app registration
-  AUTHORITY: "https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848",
+  AUTHORITY:
+    "https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848",
   SCOPES: ["openid", "profile", "email", "offline_access"] as string[],
   DOMAIN: "vedid.onmicrosoft.com",
-  ISSUER: "https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848/v2.0",
+  ISSUER:
+    "https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848/v2.0",
 } as const;
 
 // API Configuration

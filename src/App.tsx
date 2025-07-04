@@ -32,7 +32,7 @@ function AppContent() {
             console.error("❌ Error getting token for API service:", error);
             return null;
           }
-        }
+        },
       });
     } else {
       // Clear token provider when not authenticated

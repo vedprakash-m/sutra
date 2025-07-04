@@ -59,9 +59,16 @@ jest.mock("@/components/admin/AdminPanel", () => {
 
 // Mock the AuthProvider and useAuth hook
 const mockUseAuth = jest.fn();
-jest.mock("@/components/auth/AuthProvider", () => ({
+jest.mock("@/components/auth/UnifiedAuthProvider", () => ({
   AuthProvider: ({ children }: { children: any }) => <div>{children}</div>,
   useAuth: () => mockUseAuth(),
+}));
+
+// Mock the API service
+jest.mock("@/services/api", () => ({
+  apiService: {
+    setTokenProvider: jest.fn(),
+  },
 }));
 
 // Mock the LoadingSpinner component
@@ -94,6 +101,8 @@ describe("App", () => {
       login: jest.fn(),
       loginAsGuest: jest.fn(),
       logout: jest.fn(),
+      getAccessToken: jest.fn().mockResolvedValue(null),
+      refreshAuth: jest.fn(),
       ...authState,
     });
   };

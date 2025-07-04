@@ -885,14 +885,12 @@ My Workspace
 **🎯 Essential for Beta Testing**
 
 1. **Onboarding Experience - Essential Only**
-
    - **Beta Scope:** Basic welcome flow and core feature introduction
    - **Essential Elements:** Account setup, first prompt creation, save to collection
    - **Post-Beta:** Interactive tutorials, role-based personalization, success celebrations
    - **Timeline:** Include in beta release
 
 2. **Collaborative Features - Core Functionality**
-
    - **Beta Scope:** Basic prompt sharing, collection sharing, team workspaces
    - **Essential Elements:** Share prompts, invite team members, basic permissions
    - **Post-Beta:** Real-time collaborative editing, conflict resolution, advanced workflows

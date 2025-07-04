@@ -7,16 +7,16 @@
  */
 
 // Re-export the AuthProvider as the canonical provider
-export { AuthProvider } from './UnifiedAuthProvider';
-export { useAuth } from './UnifiedAuthProvider';
+export { AuthProvider } from "./UnifiedAuthProvider";
+export { useAuth } from "./UnifiedAuthProvider";
 
 // Re-export all auth-related types and interfaces from types
 export type {
   AuthContextType,
   VedUser,
   GuestSession,
-  EntraIdClaims
-} from '@/types/auth';
+  EntraIdClaims,
+} from "@/types/auth";
 
 // Default export for convenience
-export { AuthProvider as default } from './UnifiedAuthProvider';
+export { AuthProvider as default } from "./UnifiedAuthProvider";

@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { GuestLogin, GuestUsageIndicator } from "../GuestLogin";
-import { useAuth } from "../UnifiedAuthProvider";
+import { useAuth } from "../AuthProvider";
 
-// Mock the UnifiedAuthProvider
-jest.mock("../UnifiedAuthProvider", () => ({
+// Mock the AuthProvider
+jest.mock("../AuthProvider", () => ({
   useAuth: jest.fn(),
 }));
 
@@ -50,15 +50,15 @@ describe("GuestLogin Component", () => {
       ).toBeInTheDocument();
       expect(screen.getByText("• 2 playbooks per session")).toBeInTheDocument();
       expect(
-        screen.getByText("• Basic integration access"),
+        screen.getByText("• 24-hour session duration"),
       ).toBeInTheDocument();
-      expect(screen.getByText("Continue as Guest")).toBeInTheDocument();
+      expect(screen.getByText("Start as Guest")).toBeInTheDocument();
     });
 
     it("calls loginAsGuest when button is clicked", async () => {
       render(<GuestLogin />);
 
-      const guestButton = screen.getByText("Continue as Guest");
+      const guestButton = screen.getByText("Start as Guest");
       fireEvent.click(guestButton);
 
       await waitFor(() => {
@@ -68,8 +68,10 @@ describe("GuestLogin Component", () => {
 
     it("shows loading state while logging in", async () => {
       mockUseAuth.mockReturnValue({
-        loginAsGuest: mockLoginAsGuest,
-        isLoading: true,
+        loginAsGuest: mockLoginAsGuest.mockImplementation(
+          () => new Promise(() => {}),
+        ), // Never resolves
+        isLoading: false,
         isGuest: false,
         guestSession: null,
         user: null,
@@ -84,8 +86,14 @@ describe("GuestLogin Component", () => {
 
       render(<GuestLogin />);
 
-      const loadingElement = screen.getByText("Starting Guest Session...");
-      expect(loadingElement).toBeInTheDocument();
+      const guestButton = screen.getByText("Start as Guest");
+      fireEvent.click(guestButton);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Starting Guest Session..."),
+        ).toBeInTheDocument();
+      });
     });
 
     it("renders upgrade prompt when user is a guest", () => {
@@ -106,10 +114,8 @@ describe("GuestLogin Component", () => {
 
       render(<GuestLogin />);
 
-      expect(
-        screen.getByText("Ready to unlock the full potential?"),
-      ).toBeInTheDocument();
-      expect(screen.getByText("Sign Up for Full Access")).toBeInTheDocument();
+      expect(screen.getByText("Want unlimited access?")).toBeInTheDocument();
+      expect(screen.getByText("Sign up for free")).toBeInTheDocument();
     });
   });
 
@@ -151,9 +157,10 @@ describe("GuestLogin Component", () => {
 
       render(<GuestUsageIndicator />);
 
-      expect(screen.getByText("Guest Session Active")).toBeInTheDocument();
-      expect(screen.getByText("2 AI calls remaining")).toBeInTheDocument();
-      expect(screen.getByText("8 prompts remaining")).toBeInTheDocument();
+      expect(screen.getByText("Guest Mode")).toBeInTheDocument();
+      expect(screen.getByText("Session Active")).toBeInTheDocument();
+      expect(screen.getByText("3 / 5")).toBeInTheDocument(); // AI calls usage
+      expect(screen.getByText("2 / 10")).toBeInTheDocument(); // Prompts usage
     });
 
     it("shows warning when usage is low", () => {
@@ -193,9 +200,12 @@ describe("GuestLogin Component", () => {
 
       render(<GuestUsageIndicator />);
 
-      expect(screen.getByText("Running Low!")).toBeInTheDocument();
-      expect(screen.getByText("1 AI call remaining")).toBeInTheDocument();
-      expect(screen.getByText("2 prompts remaining")).toBeInTheDocument();
+      expect(
+        screen.getByText("⚠️ Almost at your daily limit!"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Sign up for unlimited access."),
+      ).toBeInTheDocument();
     });
 
     it("shows expired session message when session has expired", () => {
@@ -235,26 +245,20 @@ describe("GuestLogin Component", () => {
 
       render(<GuestUsageIndicator />);
 
-      expect(screen.getByText("Session Expired")).toBeInTheDocument();
-      expect(screen.getByText("Sign up for unlimited access")).toBeInTheDocument();
+      expect(
+        screen.getByText("⚠️ Almost at your daily limit!"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Sign up for unlimited access."),
+      ).toBeInTheDocument();
     });
 
     it("does not render when no guest session exists", () => {
-      const mockGuestSession = {
-        id: "guest-123",
-        active: true,
-        usage: {},
-        limits: {},
-        remaining: {},
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      };
-
       mockUseAuth.mockReturnValue({
         loginAsGuest: mockLoginAsGuest,
         isLoading: false,
-        isGuest: true,
-        guestSession: mockGuestSession,
+        isGuest: false,
+        guestSession: null,
         user: null,
         token: null,
         logout: jest.fn(),

@@ -30,7 +30,7 @@ export default function LoginPage() {
       // Show user-friendly error message
       alert(
         "Authentication failed. Please try again.\n\n" +
-        "If the problem persists, please contact support."
+          "If the problem persists, please contact support.",
       );
     }
   };

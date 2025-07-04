@@ -17,7 +17,9 @@ export default defineConfig(async () => {
       if (response.ok) {
         useLocalAPI = true;
         localAPIPort = port;
-        console.log(`🚀 Local API detected on port ${port}, using local backend`);
+        console.log(
+          `🚀 Local API detected on port ${port}, using local backend`,
+        );
         break;
       }
     } catch (error) {

@@ -6,16 +6,24 @@ import azure.functions as func
 from azure.functions import HttpRequest, HttpResponse
 
 # NEW: Use unified authentication and validation systems
-from shared.unified_auth import auth_required, get_user_from_request
+from shared.unified_auth import require_authentication, get_user_from_request
 from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
 from shared.real_time_cost import get_cost_manager
 from shared.models import UserRole, User
 from shared.budget import get_enhanced_budget_manager, BudgetConfig
 from shared.error_handling import handle_api_error, SutraAPIError
+import traceback
+import sys
+import os
+
+# Add the root directory to Python path for proper imports
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
+# Initialize logging
+logger = logging.getLogger(__name__)
 
 
-@auth_required(permissions=["cost.read", "cost.manage"])
-async def main(req: HttpRequest, user: User) -> HttpResponse:
+async def main(req: HttpRequest) -> HttpResponse:
     """
     Cost Management API endpoint.
 
@@ -29,7 +37,8 @@ async def main(req: HttpRequest, user: User) -> HttpResponse:
     """
 
     try:
-        # User is already authenticated via decorator
+        # Manual authentication - no decorator
+        user = await require_authentication(req)
         user_info = {
             "user_id": user.id,  # Fixed: use user.id instead of user.user_id
             "email": user.email,
@@ -71,12 +80,29 @@ async def main(req: HttpRequest, user: User) -> HttpResponse:
             )
 
     except Exception as e:
-        logging.error(f"Cost management API error: {e}")
-        return HttpResponse(
-            json.dumps({"error": "Internal server error"}),
-            status_code=500,
-            headers={"Content-Type": "application/json"},
-        )
+        logger.error(f"Cost Management API error: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        if "Authentication required" in str(e) or "401" in str(e):
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "authentication_required",
+                        "message": "Please log in to access this resource",
+                    }
+                ),
+                status_code=401,
+                mimetype="application/json",
+            )
+        else:
+            return func.HttpResponse(
+                json.dumps(
+                    {"error": "internal_error", "message": "An internal error occurred"}
+                ),
+                status_code=500,
+                mimetype="application/json",
+            )
 
 
 async def handle_create_budget_config(

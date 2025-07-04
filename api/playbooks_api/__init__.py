@@ -14,7 +14,7 @@ import uuid
 import asyncio
 
 # NEW: Use unified authentication and validation systems
-from shared.unified_auth import auth_required, get_user_from_request
+from shared.unified_auth import require_authentication, get_user_from_request
 from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
 from shared.utils.schemaValidator import validate_entity
 from shared.real_time_cost import get_cost_manager
@@ -22,21 +22,13 @@ from shared.validation import validate_playbook_data
 from shared.database import get_database_manager
 from shared.models import Playbook, PlaybookExecution, ValidationError, User
 from shared.error_handling import handle_api_error, SutraAPIError
+import traceback
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
-@auth_required(
-    permissions=[
-        "playbooks.read",
-        "playbooks.create",
-        "playbooks.update",
-        "playbooks.delete",
-        "playbooks.execute",
-    ]
-)
-async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Playbooks API endpoint for managing AI workflow playbooks.
 
@@ -51,10 +43,14 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     - POST /api/playbooks/executions/{execution_id}/continue - Continue paused execution
     """
     try:
-        # Get authenticated user from request context
-        user_id = user.id  # Fixed: use the user parameter from auth decorator
+        # Manual authentication - no decorator
+        user = await require_authentication(req)
+        user_id = user.id
         method = req.method
         route_params = req.route_params
+
+        logger.info(f"Playbooks API called by {user.email}: {method} {req.url}")
+
         playbook_id = route_params.get("id")
         execution_id = route_params.get("execution_id")
 
@@ -86,7 +82,29 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
             )
 
     except Exception as e:
-        return handle_api_error(e)
+        logger.error(f"Playbooks API error: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        if "Authentication required" in str(e) or "401" in str(e):
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "authentication_required",
+                        "message": "Please log in to access this resource",
+                    }
+                ),
+                status_code=401,
+                mimetype="application/json",
+            )
+        else:
+            return func.HttpResponse(
+                json.dumps(
+                    {"error": "internal_error", "message": "An internal error occurred"}
+                ),
+                status_code=500,
+                mimetype="application/json",
+            )
 
 
 async def list_playbooks(user_id: str, req: func.HttpRequest) -> func.HttpResponse:
@@ -854,7 +872,7 @@ async def execute_playbook_steps(
             )
             execution["error"] = str(e)
             container.replace_item(item=execution_id, body=execution)
-        except:
+        except Exception:
             pass
 
 

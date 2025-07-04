@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/MSALAuthProvider";
 import { integrationsApi } from "@/services/api";
 
 interface Integration {

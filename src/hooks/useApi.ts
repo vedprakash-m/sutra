@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiService } from "../services/api";
-import { useAuth } from "../components/auth/AuthProvider";
+import { useAuth } from "../components/auth/MSALAuthProvider";
 
 export interface UseApiState<T> {
   data: T | null;

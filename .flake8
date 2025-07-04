@@ -1,0 +1,28 @@
+[flake8]
+max-line-length = 88
+exclude =
+    .venv,
+    .venv-test,
+    node_modules,
+    __pycache__,
+    *.pyc,
+    .git,
+    htmlcov,
+    coverage,
+    .pytest_cache,
+    dist,
+    build
+ignore =
+    # Black handles whitespace around operators
+    E203,
+    # Black handles line breaks before binary operators
+    W503
+per-file-ignores =
+    # Tests can have longer lines and unused imports for fixtures
+    *test*.py:E501,F401,F811
+    # Config files can have long lines
+    */conftest.py:E501,F401
+    # Fix scripts can be longer and have unused imports
+    fix_*.py:E501,F401
+    # Init files can have unused imports (for re-exports)
+    __init__.py:F401

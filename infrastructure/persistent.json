@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "18122428891359839212"
+      "templateHash": "15999453441953018740"
     }
   },
   "parameters": {
@@ -83,10 +83,10 @@
     "promptsContainer": {
       "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
       "apiVersion": "2023-04-15",
-      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'prompts')]",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'Prompts')]",
       "properties": {
         "resource": {
-          "id": "prompts",
+          "id": "Prompts",
           "partitionKey": {
             "paths": [
               "/userId"
@@ -103,10 +103,10 @@
     "collectionsContainer": {
       "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
       "apiVersion": "2023-04-15",
-      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'collections')]",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'Collections')]",
       "properties": {
         "resource": {
-          "id": "collections",
+          "id": "Collections",
           "partitionKey": {
             "paths": [
               "/userId"
@@ -123,10 +123,10 @@
     "playbooksContainer": {
       "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
       "apiVersion": "2023-04-15",
-      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'playbooks')]",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'Playbooks')]",
       "properties": {
         "resource": {
-          "id": "playbooks",
+          "id": "Playbooks",
           "partitionKey": {
             "paths": [
               "/userId"
@@ -134,6 +134,86 @@
             "kind": "Hash"
           },
           "defaultTtl": -1
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "usersContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'Users')]",
+      "properties": {
+        "resource": {
+          "id": "Users",
+          "partitionKey": {
+            "paths": [
+              "/id"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": -1
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "executionsContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'Executions')]",
+      "properties": {
+        "resource": {
+          "id": "Executions",
+          "partitionKey": {
+            "paths": [
+              "/userId"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": -1
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "systemConfigContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'SystemConfig')]",
+      "properties": {
+        "resource": {
+          "id": "SystemConfig",
+          "partitionKey": {
+            "paths": [
+              "/type"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": -1
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "auditLogContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'AuditLog')]",
+      "properties": {
+        "resource": {
+          "id": "AuditLog",
+          "partitionKey": {
+            "paths": [
+              "/userId"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": 7776000
         }
       },
       "dependsOn": [
@@ -154,6 +234,86 @@
             "kind": "Hash"
           },
           "defaultTtl": 2592000
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "guestSessionsContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'GuestSessions')]",
+      "properties": {
+        "resource": {
+          "id": "GuestSessions",
+          "partitionKey": {
+            "paths": [
+              "/ipAddress"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": 86400
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "guestAnalyticsContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'GuestAnalytics')]",
+      "properties": {
+        "resource": {
+          "id": "GuestAnalytics",
+          "partitionKey": {
+            "paths": [
+              "/date"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": 2592000
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "budgetConfigsContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'BudgetConfigs')]",
+      "properties": {
+        "resource": {
+          "id": "BudgetConfigs",
+          "partitionKey": {
+            "paths": [
+              "/entityType"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": -1
+        }
+      },
+      "dependsOn": [
+        "cosmosDatabase"
+      ]
+    },
+    "usageMetricsContainer": {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}/{2}', 'sutra-db', 'sutra', 'UsageMetrics')]",
+      "properties": {
+        "resource": {
+          "id": "UsageMetrics",
+          "partitionKey": {
+            "paths": [
+              "/userId"
+            ],
+            "kind": "Hash"
+          },
+          "defaultTtl": 7776000
         }
       },
       "dependsOn": [
@@ -197,7 +357,7 @@
         "enabledForTemplateDeployment": true,
         "enableSoftDelete": true,
         "softDeleteRetentionInDays": 7,
-        "enablePurgeProtection": false,
+        "enablePurgeProtection": true,
         "networkAcls": {
           "bypass": "AzureServices",
           "defaultAction": "Allow"
@@ -295,7 +455,7 @@
       "value": "sutra-db"
     },
     "cosmosDbConnectionString": {
-      "type": "string",
+      "type": "securestring",
       "metadata": {
         "description": "Cosmos DB connection string"
       },
@@ -323,7 +483,7 @@
       "value": "sutrasa99"
     },
     "storageConnectionString": {
-      "type": "string",
+      "type": "securestring",
       "metadata": {
         "description": "Storage Account connection string"
       },

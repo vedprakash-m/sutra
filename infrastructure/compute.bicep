@@ -258,7 +258,7 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
   properties: {
     repositoryUrl: ''
     branch: ''
-    stagingEnvironmentPolicy: 'Enabled'
+    stagingEnvironmentPolicy: 'Disabled' // Single environment deployment for cost optimization
     allowConfigFileUpdates: true
     provider: 'None'
     enterpriseGradeCdnStatus: 'Enabled' // Use built-in CDN

@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { AuthProvider, useAuth } from "@/components/auth/MSALAuthProvider";
+import { useEffect } from "react";
+import { AuthProvider, useAuth } from "@/components/auth/UnifiedAuthProvider";
+import { apiService } from "@/services/api";
 import LoginPage from "@/components/auth/LoginPage";
 import NavBar from "@/components/layout/NavBar";
 import Dashboard from "@/components/dashboard/Dashboard";
@@ -14,7 +16,29 @@ import AdminPanel from "@/components/admin/AdminPanel";
 const queryClient = new QueryClient();
 
 function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, getAccessToken } = useAuth();
+
+  // Initialize API service with auth token provider
+  useEffect(() => {
+    if (isAuthenticated && getAccessToken) {
+      console.log("🔗 Connecting API service to MSAL auth provider");
+      apiService.setTokenProvider({
+        getAccessToken: async () => {
+          try {
+            const token = await getAccessToken();
+            console.log("🔑 API service got token:", token ? "✓" : "✗");
+            return token;
+          } catch (error) {
+            console.error("❌ Error getting token for API service:", error);
+            return null;
+          }
+        }
+      });
+    } else {
+      // Clear token provider when not authenticated
+      apiService.setTokenProvider(null);
+    }
+  }, [isAuthenticated, getAccessToken]);
 
   if (isLoading) {
     return (

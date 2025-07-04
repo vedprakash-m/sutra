@@ -6,11 +6,12 @@
     "FUNCTIONS_EXTENSION_VERSION": "~4",
     "COSMOS_DB_ENDPOINT": "https://localhost:8081",
     "COSMOS_DB_KEY": "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-    "COSMOS_DB_DATABASE": "sutra-dev",
-    "KEY_VAULT_URL": "https://sutra-kv-dev.vault.azure.net/",
-    "STORAGE_ACCOUNT_URL": "https://sutrasa99dev.blob.core.windows.net/",
-    "AZURE_CLIENT_ID": "dev-client-id",
-    "AZURE_CLIENT_SECRET": "dev-client-secret",
-    "AZURE_TENANT_ID": "dev-tenant-id"
+    "COSMOS_DB_DATABASE": "sutra",
+    "KEY_VAULT_URL": "https://sutra-kv.vault.azure.net/",
+    "STORAGE_ACCOUNT_URL": "https://sutrasa99.blob.core.windows.net/",
+    "AZURE_CLIENT_ID": "production-client-id",
+    "AZURE_CLIENT_SECRET": "production-client-secret",
+    "AZURE_TENANT_ID": "80fe68b7-105c-4fb9-ab03-c9a818e35848",
+    "SUTRA_ENVIRONMENT": "production"
   }
 }

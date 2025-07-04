@@ -8,16 +8,15 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.guest_user import allow_guest_access
-from shared.unified_auth import auth_required
+from shared.unified_auth import require_authentication
 from shared.database import get_database_manager
 from shared.error_handling import handle_api_error, SutraAPIError
+import traceback
 
 logger = logging.getLogger(__name__)
 
 
-@allow_guest_access(usage_type="llm_calls", allow_anonymous=True)
-@auth_required(permissions=["llm"])
-async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     LLM Execution API with guest access support
 
@@ -26,9 +25,21 @@ async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
     - GET /api/llm/models - List available models
     """
     try:
+        # Manual authentication - allow guest access
+        user = None
+        try:
+            user = await require_authentication(req)
+        except Exception:
+            # Allow guest access for this endpoint
+            pass
+
         method = req.method
         route_params = req.route_params
         action = route_params.get("action", "execute")
+
+        logger.info(
+            f"Guest LLM API called by {user.email if user else 'guest'}: {method} {req.url}"
+        )
 
         if method == "POST" and action == "execute":
             return await execute_llm_prompt(req)
@@ -42,7 +53,17 @@ async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
             )
 
     except Exception as e:
-        return handle_api_error(e)
+        logger.error(f"Guest LLM API error: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        return func.HttpResponse(
+            json.dumps(
+                {"error": "internal_error", "message": "An internal error occurred"}
+            ),
+            status_code=500,
+            mimetype="application/json",
+        )
 
 
 async def execute_llm_prompt(req: func.HttpRequest) -> func.HttpResponse:

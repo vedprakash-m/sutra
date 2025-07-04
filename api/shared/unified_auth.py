@@ -55,9 +55,40 @@ class EntraIdAuthProvider(AuthProvider):
     """Microsoft Entra ID authentication provider"""
 
     def __init__(self):
-        self.tenant_id = os.getenv("ENTRA_TENANT_ID", "common")
-        self.client_id = os.getenv("ENTRA_CLIENT_ID")
-        logger.info(f"✅ EntraIdAuthProvider initialized (tenant: {self.tenant_id})")
+        # Support both old and new environment variable names
+        self.tenant_id = (
+            os.getenv("ENTRA_TENANT_ID")
+            or os.getenv("SUTRA_ENTRA_ID_TENANT_ID")
+            or self._extract_tenant_from_authority()
+            or "80fe68b7-105c-4fb9-ab03-c9a818e35848"  # Default to specific tenant
+        )
+        self.client_id = os.getenv("ENTRA_CLIENT_ID") or os.getenv(
+            "SUTRA_ENTRA_ID_CLIENT_ID"
+        )
+        logger.info(
+            f"✅ EntraIdAuthProvider initialized (tenant: {self.tenant_id}, client_id: {'***' if self.client_id else 'None'})"
+        )
+
+        # Validate configuration
+        if not self.client_id:
+            logger.error(
+                "❌ CRITICAL: No client ID configured for Entra ID authentication"
+            )
+
+        # Log the extracted tenant for debugging
+        logger.info(
+            f"🔍 Tenant extracted from authority: {self._extract_tenant_from_authority()}"
+        )
+
+    def _extract_tenant_from_authority(self):
+        """Extract tenant ID from SUTRA_ENTRA_ID_AUTHORITY"""
+        authority = os.getenv("SUTRA_ENTRA_ID_AUTHORITY")
+        if authority:
+            # Extract tenant ID from URL like https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848
+            parts = authority.split("/")
+            if len(parts) >= 4:
+                return parts[4]
+        return None
 
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         """Extract and validate user from request using Entra ID"""
@@ -528,8 +559,8 @@ def auth_required(permissions: Optional[List[str]] = None, admin_only: bool = Fa
                 else:
                     user = await require_authentication(req)
 
-                # Add user to kwargs for the function
-                kwargs["user"] = user
+                # Set user as request attribute for the function
+                req.user = user
                 return await handler_func(req, *args, **kwargs)
 
             except SutraAPIError:

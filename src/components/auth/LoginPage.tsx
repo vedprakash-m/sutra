@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./MSALAuthProvider";
 import { AnonymousLLMTest } from "./AnonymousLLMTest";
 
 export default function LoginPage() {
@@ -13,81 +13,25 @@ export default function LoginPage() {
     window.location.hostname === "127.0.0.1";
 
   const handleLogin = async () => {
-    if (isDevelopment) {
-      // Store role preference for development mode only
-      localStorage.setItem("sutra_demo_role", selectedRole);
-      login();
-    } else {
-      // Production: Try to determine the correct authentication provider
-      try {
-        // First check if auth system is available
-        const authTestResponse = await fetch("/.auth/me");
+    try {
+      // Apps_Auth_Requirement.md Compliance: Always use MSAL (Microsoft Entra ID) authentication
+      console.log("🔐 Starting Microsoft Entra ID authentication...");
 
-        if (!authTestResponse.ok) {
-          // Authentication system is not configured
-          alert(
-            "Authentication system is not properly configured.\n\n" +
-              "Please contact the administrator to enable authentication in Azure Static Web Apps.",
-          );
-          return;
-        }
-
-        // Try to get available providers
-        const authProvidersResponse = await fetch("/.auth/providers");
-        if (authProvidersResponse.ok) {
-          const providers = await authProvidersResponse.json();
-          console.log("Available auth providers:", providers);
-
-          // Look for Microsoft/Azure AD provider
-          const microsoftProvider = providers.find(
-            (p: any) =>
-              p.name?.toLowerCase().includes("microsoft") ||
-              p.name?.toLowerCase().includes("aad") ||
-              p.name?.toLowerCase().includes("azure"),
-          );
-
-          if (microsoftProvider) {
-            window.location.href = `/.auth/login/${microsoftProvider.name}`;
-            return;
-          }
-        }
-
-        // Try different provider names based on configuration
-        const providerNames = [
-          "azureActiveDirectory", // From staticwebapp.config.json
-          "aad",
-          "microsoft",
-          "azuread",
-        ];
-
-        // Try each provider name
-        for (const providerName of providerNames) {
-          try {
-            const testResponse = await fetch(`/.auth/login/${providerName}`, {
-              method: "HEAD",
-            });
-
-            if (testResponse.status !== 404) {
-              window.location.href = `/.auth/login/${providerName}`;
-              return;
-            }
-          } catch (e) {
-            continue;
-          }
-        }
-
-        // If all fail, show error
-        alert(
-          "Unable to access Microsoft authentication.\n\n" +
-            "The authentication system may not be properly configured.\n" +
-            "Please contact support.",
-        );
-      } catch (error) {
-        console.error("Error determining auth provider:", error);
-        alert(
-          "Authentication error. Please check your connection and try again.",
-        );
+      if (isDevelopment) {
+        // Store role preference for development mode only
+        localStorage.setItem("sutra_demo_role", selectedRole);
       }
+
+      // Use MSAL authentication for all environments per Apps_Auth_Requirement.md
+      await login();
+    } catch (error) {
+      console.error("❌ Authentication failed:", error);
+
+      // Show user-friendly error message
+      alert(
+        "Authentication failed. Please try again.\n\n" +
+        "If the problem persists, please contact support."
+      );
     }
   };
 

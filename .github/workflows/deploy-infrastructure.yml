@@ -6,11 +6,10 @@ on:
       environment:
         description: "Environment to deploy"
         required: true
-        default: "dev"
+        default: "production"
         type: choice
         options:
-          - dev
-          - prod
+          - production
 
 jobs:
   deploy-persistent:

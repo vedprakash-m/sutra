@@ -1,25 +1,36 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { localAuthPlugin, getMockAuthHeaders } from "./src/dev/localAuthPlugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => {
   // Check if local API is available
   let useLocalAPI = false;
-  try {
-    const response = await fetch("http://localhost:7071/api/health", {
-      signal: AbortSignal.timeout(2000),
-    });
-    useLocalAPI = response.ok;
-    console.log("🚀 Local API detected, using local backend");
-  } catch (error) {
+  let localAPIPort = 7071;
+  const localPorts = [7071, 7072, 7073]; // Try multiple ports
+
+  for (const port of localPorts) {
+    try {
+      const response = await fetch(`http://localhost:${port}/api/health`, {
+        signal: AbortSignal.timeout(2000),
+      });
+      if (response.ok) {
+        useLocalAPI = true;
+        localAPIPort = port;
+        console.log(`🚀 Local API detected on port ${port}, using local backend`);
+        break;
+      }
+    } catch (error) {
+      // Continue to next port
+    }
+  }
+
+  if (!useLocalAPI) {
     console.log("⚠️ Local API not available, using production backend");
-    useLocalAPI = false;
   }
 
   const baseConfig: any = {
-    plugins: [react(), localAuthPlugin()],
+    plugins: [react()],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
@@ -42,26 +53,9 @@ export default defineConfig(async () => {
   if (useLocalAPI) {
     baseConfig.server.proxy = {
       "/api": {
-        target: "http://localhost:7071",
+        target: `http://localhost:${localAPIPort}`,
         changeOrigin: true,
         secure: false,
-        configure: (proxy) => {
-          proxy.on("proxyReq", (proxyReq, req) => {
-            // Forward all x-ms-* headers (Azure Static Web Apps headers)
-            Object.keys(req.headers).forEach((header) => {
-              if (header.startsWith("x-ms-")) {
-                proxyReq.setHeader(header, req.headers[header]);
-              }
-            });
-
-            // Add mock authentication headers for local development
-            const authMode = process.env.VITE_LOCAL_AUTH_MODE || "admin";
-            const mockHeaders = getMockAuthHeaders(authMode);
-            Object.entries(mockHeaders).forEach(([key, value]) => {
-              proxyReq.setHeader(key, value);
-            });
-          });
-        },
       },
     };
   } else {

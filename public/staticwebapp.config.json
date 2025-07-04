@@ -6,9 +6,9 @@
     "identityProviders": {
       "azureActiveDirectory": {
         "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/common/v2.0",
-          "clientIdSettingName": "VED_EXTERNAL_ID_CLIENT_ID",
-          "clientSecretSettingName": "VED_EXTERNAL_ID_CLIENT_SECRET"
+          "openIdIssuer": "https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848/v2.0",
+          "clientIdSettingName": "AZURE_CLIENT_ID",
+          "clientSecretSettingName": "AZURE_CLIENT_SECRET"
         }
       }
     },

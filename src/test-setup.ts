@@ -10,6 +10,11 @@ process.env.VITE_AUTH_DOMAIN = "test-domain";
 process.env.VITE_AUTH_CLIENT_ID = "test-client-id";
 process.env.NODE_ENV = "test";
 
+// Force React development mode in tests to avoid act() warnings
+if (typeof global !== 'undefined') {
+  (global as any).__DEV__ = true;
+}
+
 // Suppress specific console warnings in tests
 const originalConsoleError = console.error;
 const originalConsoleWarn = console.warn;

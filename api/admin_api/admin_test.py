@@ -429,13 +429,13 @@ class TestAdminAPI:
         # Set flag to simulate non-admin user (for TESTING_MODE)
         req._test_admin_required = True
 
-        # Act - This should raise an exception for non-admin
-        with pytest.raises(SutraAPIError) as exc_info:
-            await admin_main(req)
+        # Act - This should return 403 for non-admin
+        response = await admin_main(req)
 
         # Assert
-        assert exc_info.value.status_code == 403
-        assert "Admin role required" in str(exc_info.value)
+        assert response.status_code == 403
+        response_data = json.loads(response.get_body().decode())
+        assert "Admin access required" in response_data["error"]
 
     @pytest.mark.asyncio
     async def test_get_system_health_database_failure(

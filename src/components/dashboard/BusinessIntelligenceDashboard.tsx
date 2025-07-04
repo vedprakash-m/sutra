@@ -12,7 +12,7 @@ import {
   CurrencyDollarIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/MSALAuthProvider";
 import EnhancedMonitoring from "@/services/enhancedMonitoring";
 import AdvancedAnalytics from "@/services/advancedAnalytics";
 

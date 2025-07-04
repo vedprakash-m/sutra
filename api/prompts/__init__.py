@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional
 import uuid
 
 # Updated imports for unified auth and validation
-from shared.unified_auth import require_authentication, require_permissions, auth_required
+from shared.unified_auth import require_authentication, require_permissions
 from shared.real_time_cost import get_real_time_cost_manager
 from shared.database import get_database_manager
 from shared.models import (
@@ -31,7 +31,7 @@ from shared.error_handling import (
     handle_api_errors,
     extract_request_id,
     SutraError,
-    ErrorType
+    ErrorType,
 )
 from shared.validation import (
     validate_pagination_params,
@@ -39,6 +39,7 @@ from shared.validation import (
     validate_resource_ownership,
     RateLimitValidator,
 )
+import traceback
 
 # Import schema validation
 try:
@@ -52,33 +53,67 @@ except ImportError:
         return lambda req, res, next: next()
 
 
-@auth_required(permissions=["prompts.create", "prompts.read"])
-@handle_api_errors
-async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
+# Initialize logging
+logger = logging.getLogger(__name__)
+
+
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """Handle prompts API requests with unified auth and validation."""
-    logging.info("Prompts API function processed a request.")
+    try:
+        logging.info("Prompts API function processed a request.")
 
-    request_id = extract_request_id(req)
-    cost_manager = get_real_time_cost_manager()
+        # Manual authentication - no decorator
+        user = await require_authentication(req)
+        user_id = user.id
 
-    # Store user in request for consistency with existing code
-    req.current_user = user
+        logger.info(f"Prompts API called by {user.email}: {req.method} {req.url}")
 
-    # Route based on HTTP method
-    method = req.method.upper()
+        request_id = extract_request_id(req)
+        cost_manager = get_real_time_cost_manager()
 
-    if method == "GET":
-        return await handle_get_prompts(req, request_id)
-    elif method == "POST":
-        return await handle_create_prompt(req, request_id)
-    elif method == "PUT":
-        return await handle_update_prompt(req, request_id)
-    elif method == "DELETE":
-        return await handle_delete_prompt(req, request_id)
-    else:
-        return ErrorHandler.handle_not_found_error(
-            "endpoint", f"{method} /prompts", request_id
-        ).to_azure_response()
+        # Store user in request for consistency with existing code
+        req.current_user = user
+
+        # Route based on HTTP method
+        method = req.method.upper()
+
+        if method == "GET":
+            return await handle_get_prompts(req, request_id)
+        elif method == "POST":
+            return await handle_create_prompt(req, request_id)
+        elif method == "PUT":
+            return await handle_update_prompt(req, request_id)
+        elif method == "DELETE":
+            return await handle_delete_prompt(req, request_id)
+        else:
+            return ErrorHandler.handle_not_found_error(
+                "endpoint", f"{method} /prompts", request_id
+            ).to_azure_response()
+
+    except Exception as e:
+        logger.error(f"Prompts API error: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        if "Authentication required" in str(e) or "401" in str(e):
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "authentication_required",
+                        "message": "Please log in to access this resource",
+                    }
+                ),
+                status_code=401,
+                mimetype="application/json",
+            )
+        else:
+            return func.HttpResponse(
+                json.dumps(
+                    {"error": "internal_error", "message": "An internal error occurred"}
+                ),
+                status_code=500,
+                mimetype="application/json",
+            )
 
 
 async def handle_get_prompts(
@@ -221,9 +256,7 @@ async def handle_create_prompt(
 
         # Save to database
         created_prompt = await db_manager.create_item(
-            container_name="Prompts",
-            item=prompt_data,
-            partition_key=user.id
+            container_name="Prompts", item=prompt_data, partition_key=user.id
         )
 
         logging.info(f"Created prompt {prompt_id} for user {user.id}")

@@ -14,20 +14,20 @@ import asyncio
 import httpx
 
 # NEW: Use unified authentication and validation systems
-from shared.unified_auth import auth_required
+from shared.unified_auth import require_authentication
 from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
 from shared.real_time_cost import get_cost_manager
 from shared.database import get_database_manager
 from shared.llm_client import get_llm_client, LLMProvider
 from shared.models import User
 from shared.error_handling import handle_api_error, SutraAPIError
+import traceback
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
-@auth_required(permissions=["llm.execute"])
-async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     LLM Execution API endpoint for Multi-LLM optimization and comparison.
 
@@ -37,11 +37,14 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     - GET /api/llm/providers - Get available LLM providers
     """
     try:
-        # Get authenticated user from request context
-        user_id = user.id  # Fixed: use the user parameter from auth decorator
+        # Manual authentication - no decorator
+        user = await require_authentication(req)
+        user_id = user.id
         method = req.method
         route_params = req.route_params
         action = route_params.get("action")
+
+        logger.info(f"LLM Execute API called by {user.email}: {method} {req.url}")
 
         # Route to appropriate handler
         if method == "POST":
@@ -59,7 +62,29 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
             )
 
     except Exception as e:
-        return handle_api_error(e)
+        logger.error(f"LLM Execute API error: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        if "Authentication required" in str(e) or "401" in str(e):
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "authentication_required",
+                        "message": "Please log in to access this resource",
+                    }
+                ),
+                status_code=401,
+                mimetype="application/json",
+            )
+        else:
+            return func.HttpResponse(
+                json.dumps(
+                    {"error": "internal_error", "message": "An internal error occurred"}
+                ),
+                status_code=500,
+                mimetype="application/json",
+            )
 
 
 async def execute_llm_prompt(user_id: str, req: func.HttpRequest) -> func.HttpResponse:
@@ -401,7 +426,7 @@ async def get_available_providers(user_id: str) -> func.HttpResponse:
                 item="llm_settings", partition_key="llm_settings"
             )
             system_providers = llm_settings.get("providers", {})
-        except:
+        except Exception:
             system_providers = {}
 
         # Build provider list

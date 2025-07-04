@@ -11,13 +11,13 @@ import sys
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from enum import Enum
+import traceback
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.database import get_database_manager
 from shared.models import UserRole
-from shared.unified_auth import auth_required
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -234,8 +234,7 @@ def get_role_manager() -> RoleManager:
     return _role_manager
 
 
-@auth_required(admin_only=True)
-async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Advanced Role Management API
 
@@ -245,8 +244,21 @@ async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
     """
 
     try:
+        # Manual authentication - no decorator - admin only
+        from shared.unified_auth import require_authentication
+
+        user = await require_authentication(req)
+
+        # Check if user is admin
+        if not user.is_admin:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
         role_manager = get_role_manager()
-        current_user = req.current_user
+        current_user = user
 
         if req.method == "GET":
             # Get specific user role info
@@ -344,8 +356,31 @@ async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
 
     except Exception as e:
         logger.error(f"Role management error: {e}")
-        return func.HttpResponse(
-            json.dumps({"error": "Internal server error", "details": str(e)}),
-            status_code=500,
-            mimetype="application/json",
-        )
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        if "Authentication required" in str(e) or "401" in str(e):
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "authentication_required",
+                        "message": "Please log in to access this resource",
+                    }
+                ),
+                status_code=401,
+                mimetype="application/json",
+            )
+        elif "Admin access required" in str(e) or "403" in str(e):
+            return func.HttpResponse(
+                json.dumps({"error": "forbidden", "message": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+        else:
+            return func.HttpResponse(
+                json.dumps(
+                    {"error": "internal_error", "message": "An internal error occurred"}
+                ),
+                status_code=500,
+                mimetype="application/json",
+            )

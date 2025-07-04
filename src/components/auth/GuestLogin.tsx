@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./MSALAuthProvider";
 
 export function GuestLogin() {
   const { loginAsGuest, isLoading } = useAuth();

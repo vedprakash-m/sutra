@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/MSALAuthProvider";
 import { useApi } from "@/hooks/useApi";
 import { collectionsApi, playbooksApi } from "@/services/api";
 import EnhancedMonitoring from "@/services/enhancedMonitoring";

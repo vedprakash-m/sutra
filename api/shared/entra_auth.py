@@ -1,9 +1,20 @@
 """
-Microsoft Entra ID Authentication Module
+Miimport os
+import json
+import time
+from typing import Optional, Dict, Any, List
+from cachetools import TTLCache
+import jwt
+import requests
+from pydantic import BaseModel
+import logging
+
+logger = logging.getLogger(__name__)tra ID Authentication Module
 Provides JWT token validation with JWKS caching and VedUser standard compliance
 """
 
 import json
+import os
 import time
 from typing import Optional, Dict, Any, List
 from cachetools import TTLCache
@@ -14,8 +25,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class VedUser(BaseModel):
     """VedUser Standard - Unified user object across all Vedprakash applications"""
+
     id: str
     email: str
     name: str
@@ -29,17 +42,18 @@ class VedUser(BaseModel):
     tenant: Optional[Dict[str, str]] = None
     cross_app_roles: Optional[Dict[str, List[str]]] = None
 
+
 class JWKSCache:
     """JWKS caching for efficient token validation"""
 
     def __init__(self, cache_ttl: int = 3600):  # 1 hour default
         self.cache = TTLCache(maxsize=10, ttl=cache_ttl)
         self.jwks_endpoints = {
-            'common': 'https://login.microsoftonline.com/common/discovery/v2.0/keys',
-            'consumers': 'https://login.microsoftonline.com/consumers/discovery/v2.0/keys'
+            "common": "https://login.microsoftonline.com/common/discovery/v2.0/keys",
+            "consumers": "https://login.microsoftonline.com/consumers/discovery/v2.0/keys",
         }
 
-    def get_jwks(self, tenant_id: str = 'common') -> Dict[str, Any]:
+    def get_jwks(self, tenant_id: str = "common") -> Dict[str, Any]:
         """Get JWKS from cache or fetch from Microsoft"""
         cache_key = f"jwks_{tenant_id}"
 
@@ -51,7 +65,9 @@ class JWKSCache:
         if tenant_id in self.jwks_endpoints:
             jwks_url = self.jwks_endpoints[tenant_id]
         else:
-            jwks_url = f'https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys'
+            jwks_url = (
+                f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys"
+            )
 
         try:
             logger.info(f"Fetching JWKS from: {jwks_url}")
@@ -67,15 +83,18 @@ class JWKSCache:
             logger.error(f"Failed to fetch JWKS for tenant {tenant_id}: {e}")
             raise
 
-    def get_signing_key(self, token_kid: str, tenant_id: str = 'common') -> Optional[str]:
+    def get_signing_key(
+        self, token_kid: str, tenant_id: str = "common"
+    ) -> Optional[str]:
         """Get signing key for token validation"""
         try:
             jwks = self.get_jwks(tenant_id)
 
-            for key in jwks.get('keys', []):
-                if key.get('kid') == token_kid:
+            for key in jwks.get("keys", []):
+                if key.get("kid") == token_kid:
                     # Convert JWK to PEM format
                     from jwt.algorithms import RSAAlgorithm
+
                     public_key = RSAAlgorithm.from_jwk(json.dumps(key))
                     return public_key
 
@@ -86,27 +105,60 @@ class JWKSCache:
             logger.error(f"Error getting signing key: {e}")
             return None
 
+
 class EntraIdAuth:
     """Microsoft Entra ID authentication handler"""
 
-    def __init__(self, tenant_id: str = 'common', client_id: Optional[str] = None):
-        self.tenant_id = tenant_id
-        self.client_id = client_id
+    def __init__(self, tenant_id: str = None, client_id: Optional[str] = None):
+        # Support environment variable configuration
+        self.tenant_id = (
+            tenant_id
+            or os.getenv("ENTRA_TENANT_ID")
+            or os.getenv("SUTRA_ENTRA_ID_TENANT_ID")
+            or self._extract_tenant_from_authority()
+            or "80fe68b7-105c-4fb9-ab03-c9a818e35848"  # Default to specific tenant
+        )
+        self.client_id = (
+            client_id
+            or os.getenv("ENTRA_CLIENT_ID")
+            or os.getenv("SUTRA_ENTRA_ID_CLIENT_ID")
+        )
+
+        logger.info(
+            f"✅ EntraIdAuth initialized (tenant: {self.tenant_id}, client_id: {'***' if self.client_id else 'None'})"
+        )
+
+        # Validate configuration
+        if not self.client_id:
+            logger.error(
+                "❌ CRITICAL: No client ID configured for Entra ID authentication"
+            )
+
         self.jwks_cache = JWKSCache()
 
         # Valid issuers for token validation
         self.valid_issuers = [
-            f'https://login.microsoftonline.com/{tenant_id}/v2.0',
-            f'https://sts.windows.net/{tenant_id}/',
-            'https://login.microsoftonline.com/common/v2.0',
+            f"https://login.microsoftonline.com/{self.tenant_id}/v2.0",
+            f"https://sts.windows.net/{self.tenant_id}/",
+            "https://login.microsoftonline.com/common/v2.0",
         ]
+
+    def _extract_tenant_from_authority(self):
+        """Extract tenant ID from SUTRA_ENTRA_ID_AUTHORITY"""
+        authority = os.getenv("SUTRA_ENTRA_ID_AUTHORITY")
+        if authority:
+            # Extract tenant ID from URL like https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848
+            parts = authority.split("/")
+            if len(parts) >= 4:
+                return parts[4]
+        return None
 
     def validate_token(self, token: str) -> Optional[VedUser]:
         """Validate Microsoft Entra ID JWT token and return VedUser"""
         try:
             # Decode token header to get key ID
             unverified_header = jwt.get_unverified_header(token)
-            kid = unverified_header.get('kid')
+            kid = unverified_header.get("kid")
 
             if not kid:
                 logger.error("Token missing kid in header")
@@ -118,25 +170,57 @@ class EntraIdAuth:
                 logger.error(f"No signing key found for kid: {kid}")
                 return None
 
-            # Validate and decode token
-            payload = jwt.decode(
-                token,
-                signing_key,
-                algorithms=['RS256'],
-                audience=self.client_id,
-                issuer=self.valid_issuers,
-                options={
-                    "verify_signature": True,
-                    "verify_exp": True,
-                    "verify_nbf": True,
-                    "verify_iat": True,
-                    "verify_aud": self.client_id is not None,
-                    "verify_iss": True,
-                }
+            # First, decode without verification to inspect the token
+            unverified_payload = jwt.decode(token, options={"verify_signature": False})
+            logger.debug(f"Token payload preview: {unverified_payload.keys()}")
+
+            # Determine if this is an access token or ID token
+            token_type = (
+                "access"
+                if "scp" in unverified_payload or "roles" in unverified_payload
+                else "id"
             )
+            logger.info(f"Detected token type: {token_type}")
+
+            # For access tokens, we need different validation
+            if token_type == "access":
+                # Access tokens may have different audience validation requirements
+                payload = jwt.decode(
+                    token,
+                    signing_key,
+                    algorithms=["RS256"],
+                    issuer=self.valid_issuers,
+                    options={
+                        "verify_signature": True,
+                        "verify_exp": True,
+                        "verify_nbf": True,
+                        "verify_iat": True,
+                        "verify_aud": False,  # Access tokens may not have client_id as audience
+                        "verify_iss": True,
+                    },
+                )
+            else:
+                # ID tokens should have client_id as audience
+                payload = jwt.decode(
+                    token,
+                    signing_key,
+                    algorithms=["RS256"],
+                    audience=self.client_id if self.client_id else None,
+                    issuer=self.valid_issuers,
+                    options={
+                        "verify_signature": True,
+                        "verify_exp": True,
+                        "verify_nbf": True,
+                        "verify_iat": True,
+                        "verify_aud": self.client_id is not None,
+                        "verify_iss": True,
+                    },
+                )
 
             # Extract user information
-            return self._create_ved_user_from_token(payload)
+            ved_user = self._create_ved_user_from_token(payload)
+            logger.info(f"✅ Token validation successful for user: {ved_user.email}")
+            return ved_user
 
         except jwt.ExpiredSignatureError:
             logger.error("Token has expired")
@@ -151,23 +235,27 @@ class EntraIdAuth:
     def _create_ved_user_from_token(self, payload: Dict[str, Any]) -> VedUser:
         """Create VedUser from JWT token payload"""
         # Extract user information from token claims
-        user_id = payload.get('oid') or payload.get('sub')
-        email = payload.get('email') or payload.get('preferred_username') or payload.get('upn')
-        name = payload.get('name', '')
-        given_name = payload.get('given_name')
-        family_name = payload.get('family_name')
+        user_id = payload.get("oid") or payload.get("sub")
+        email = (
+            payload.get("email")
+            or payload.get("preferred_username")
+            or payload.get("upn")
+        )
+        name = payload.get("name", "")
+        given_name = payload.get("given_name")
+        family_name = payload.get("family_name")
 
         # If no name, construct from email
         if not name and email:
-            name = email.split('@')[0].replace('.', ' ').replace('_', ' ').title()
+            name = email.split("@")[0].replace(".", " ").replace("_", " ").title()
 
         # Determine user role
         role = self._determine_user_role(email, payload)
 
         # Extract tenant information
         tenant_info = {
-            'id': payload.get('tid', ''),
-            'name': payload.get('tenant_name', 'Microsoft Entra ID')
+            "id": payload.get("tid", ""),
+            "name": payload.get("tenant_name", "Microsoft Entra ID"),
         }
 
         return VedUser(
@@ -178,55 +266,83 @@ class EntraIdAuth:
             given_name=given_name,
             family_name=family_name,
             tenant=tenant_info,
-            created_at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-            updated_at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+            created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            updated_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         )
 
     def _determine_user_role(self, email: str, payload: Dict[str, Any]) -> str:
         """Determine user role from token claims and business logic"""
         # Check for roles in token
-        roles = payload.get('roles', [])
-        app_roles = payload.get('app_roles', [])
+        roles = payload.get("roles", [])
+        app_roles = payload.get("app_roles", [])
 
-        if 'admin' in roles or 'admin' in app_roles:
-            return 'admin'
+        if "admin" in roles or "admin" in app_roles:
+            return "admin"
 
         # Check for specific admin users
         admin_emails = [
-            'vedprakash.m@outlook.com',
+            "vedprakash.m@outlook.com",
             # Add other admin emails here
         ]
 
         if email in admin_emails:
-            return 'admin'
+            return "admin"
 
-        return 'user'
+        return "user"
+
 
 # Global instance for reuse
 _entra_auth_instance: Optional[EntraIdAuth] = None
 
-def get_entra_auth(tenant_id: str = 'common', client_id: Optional[str] = None) -> EntraIdAuth:
+
+def get_entra_auth(tenant_id: str = None, client_id: str = None) -> EntraIdAuth:
     """Get or create EntraIdAuth instance (singleton pattern)"""
     global _entra_auth_instance
 
     if _entra_auth_instance is None:
+        # Use provided parameters or fallback to environment variables
+        if not tenant_id:
+            tenant_id = (
+                os.getenv("ENTRA_TENANT_ID")
+                or os.getenv("SUTRA_ENTRA_ID_TENANT_ID")
+                or _extract_tenant_from_authority()
+                or "80fe68b7-105c-4fb9-ab03-c9a818e35848"  # Default to specific tenant
+            )
+        if not client_id:
+            client_id = os.getenv("ENTRA_CLIENT_ID") or os.getenv(
+                "SUTRA_ENTRA_ID_CLIENT_ID"
+            )
+
         _entra_auth_instance = EntraIdAuth(tenant_id, client_id)
 
     return _entra_auth_instance
 
+
+def _extract_tenant_from_authority():
+    """Extract tenant ID from SUTRA_ENTRA_ID_AUTHORITY"""
+    authority = os.getenv("SUTRA_ENTRA_ID_AUTHORITY")
+    if authority:
+        # Extract tenant ID from URL like https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848
+        parts = authority.split("/")
+        if len(parts) >= 4:
+            return parts[4]
+    return None
+
+
 def validate_bearer_token(authorization_header: str) -> Optional[VedUser]:
     """Validate Bearer token from Authorization header"""
-    if not authorization_header or not authorization_header.startswith('Bearer '):
+    if not authorization_header or not authorization_header.startswith("Bearer "):
         return None
 
     token = authorization_header[7:]  # Remove 'Bearer ' prefix
     auth = get_entra_auth()
     return auth.validate_token(token)
 
+
 def validate_request_headers(headers: Dict[str, str]) -> Optional[VedUser]:
     """Validate authentication from request headers (supports multiple auth methods)"""
     # Try Bearer token first (MSAL authentication)
-    auth_header = headers.get('Authorization') or headers.get('authorization')
+    auth_header = headers.get("Authorization") or headers.get("authorization")
     if auth_header:
         user = validate_bearer_token(auth_header)
         if user:
@@ -234,26 +350,31 @@ def validate_request_headers(headers: Dict[str, str]) -> Optional[VedUser]:
             return user
 
     # Fallback to Azure Static Web Apps authentication
-    principal_header = headers.get('x-ms-client-principal')
+    principal_header = headers.get("x-ms-client-principal")
     if principal_header:
         try:
             import base64
+
             principal_data = json.loads(base64.b64decode(principal_header))
 
-            user_id = principal_data.get('userId')
-            email = principal_data.get('userDetails')
-            roles = principal_data.get('userRoles', [])
+            user_id = principal_data.get("userId")
+            email = principal_data.get("userDetails")
+            roles = principal_data.get("userRoles", [])
 
             if user_id and email:
-                role = 'admin' if 'admin' in roles or email == 'vedprakash.m@outlook.com' else 'user'
+                role = (
+                    "admin"
+                    if "admin" in roles or email == "vedprakash.m@outlook.com"
+                    else "user"
+                )
 
                 ved_user = VedUser(
                     id=user_id,
                     email=email,
-                    name=email.split('@')[0].title(),
+                    name=email.split("@")[0].title(),
                     role=role,
-                    created_at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-                    updated_at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                    created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    updated_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 )
 
                 logger.info(f"✅ SWA authentication successful: {ved_user.email}")

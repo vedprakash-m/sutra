@@ -1,39 +1,18 @@
-// API Configuration - Enhanced with Field Conversion and Unified Auth
+// API Configuration - Unified with Entra ID Authentication
 import {
   convertObjectToCamelCase,
   convertObjectToSnakeCase,
 } from "../utils/fieldConverter";
+import { getAppConfig } from "../config/unifiedAuthConfig";
 
 const getApiBaseUrl = () => {
-  // Handle test environment where import.meta might not be available
+  // Handle test environment where window might not be available
   if (typeof window === "undefined" && typeof global !== "undefined") {
     return "http://localhost:7071/api"; // Test environment default
   }
 
-  // Handle import.meta safely for Jest
-  const importMeta =
-    typeof window !== "undefined" || typeof global === "undefined"
-      ? (globalThis as any).import?.meta || { env: {} }
-      : { env: {} };
-
-  // Check if we have an explicit API URL override
-  if (importMeta.env.VITE_API_URL) {
-    return importMeta.env.VITE_API_URL;
-  }
-
-  // In development, check if local API is available via Vite config
-  if (importMeta.env.NODE_ENV === "development") {
-    const useLocalAPI = importMeta.env.VITE_USE_LOCAL_API === "true";
-    if (useLocalAPI) {
-      return "/api"; // Use proxy when local API is available
-    } else {
-      // Use production API directly when local API is not available
-      return "https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api";
-    }
-  }
-
-  // Production default
-  return "https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api";
+  const config = getAppConfig();
+  return config.apiBaseUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -57,111 +36,80 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// Token provider type for dependency injection
+export interface TokenProvider {
+  getAccessToken(): Promise<string | null>;
+}
+
 class ApiService {
   private baseUrl: string;
-  private token: string | null = null;
+  private tokenProvider: TokenProvider | null = null;
 
-  // Initialize with auth token on construction
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
-    // Try to get auth token on initialization
-    this.getAuthToken()
-      .then((token) => {
-        if (token) {
-          this.setToken(token);
-        }
-      })
-      .catch(() => {
-        // Ignore auth errors during initialization
-      });
   }
 
+  // Set token provider for dependency injection
+  setTokenProvider(provider: TokenProvider | null) {
+    this.tokenProvider = provider;
+  }
+
+  // Legacy method for backward compatibility
   setToken(token: string | null) {
-    this.token = token;
+    if (token) {
+      this.tokenProvider = {
+        getAccessToken: async () => token
+      };
+    } else {
+      this.tokenProvider = null;
+    }
   }
 
-  // Static Web App authentication integration
-  private async getAuthToken(): Promise<string | null> {
-    try {
-      // Static Web App provides auth info at /.auth/me
-      const response = await fetch("/.auth/me");
-      if (response.ok) {
-        const authInfo = await response.json();
-        if (authInfo.clientPrincipal) {
-          // User is authenticated, get access token if available
-          return authInfo.clientPrincipal.accessToken || null;
-        }
-      }
-    } catch (error) {
-      console.debug("Auth token not available:", error);
+  // Get current access token
+  private async getAccessToken(): Promise<string | null> {
+    if (this.tokenProvider) {
+      return await this.tokenProvider.getAccessToken();
     }
+
+    // For local development, return null to allow backend to handle SWA headers
+    if (window.location.hostname === "localhost") {
+      return null;
+    }
+
     return null;
   }
 
   private async getHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
 
-    // In development connecting to production API, use minimal headers to avoid CORS preflight
-    if (
-      process.env.NODE_ENV === "development" &&
-      this.baseUrl.includes("azurewebsites.net")
-    ) {
-      // Use only simple headers that don't trigger CORS preflight
-      headers["Accept"] = "application/json";
-    } else {
-      // For local development or production, use full headers
-      headers["Content-Type"] = "application/json";
-    }
+    // Set content type for all requests
+    headers["Content-Type"] = "application/json";
+    headers["Accept"] = "application/json";
 
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
+    // Get access token
+    const accessToken = await this.getAccessToken();
+    if (accessToken) {
+      if (accessToken === "mock-access-token-local-dev") {
+        // For local development with mock token, use SWA headers
+        const principal = {
+          identityProvider: "aad",
+          userId: "admin-user-local-dev",
+          userDetails: "vedprakash.m@outlook.com",
+          userRoles: ["authenticated"],
+        };
+        headers["x-ms-client-principal"] = btoa(JSON.stringify(principal));
+        headers["x-ms-client-principal-id"] = principal.userId;
+        headers["x-ms-client-principal-name"] = principal.userDetails;
+        headers["x-ms-client-principal-idp"] = principal.identityProvider;
+      } else {
+        // For production or real MSAL tokens, use Bearer authentication
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
     }
 
     // Add client info for rate limiting and analytics
     headers["X-Client-Name"] = "sutra-web";
     headers["X-Client-Version"] = "1.0.0";
-
-    // Development mode: Add Azure Static Web Apps headers
-    if (
-      process.env.NODE_ENV === "development" ||
-      window.location.hostname === "localhost"
-    ) {
-      try {
-        // Try to get user info from /.auth/me endpoint (mock auth)
-        const authResponse = await fetch("/.auth/me");
-        if (authResponse.ok) {
-          const authData = await authResponse.json();
-          if (authData.clientPrincipal) {
-            const principal = authData.clientPrincipal;
-            headers["x-ms-client-principal"] = btoa(JSON.stringify(principal));
-            headers["x-ms-client-principal-id"] = principal.userId;
-            headers["x-ms-client-principal-name"] = principal.userDetails;
-            headers["x-ms-client-principal-idp"] = principal.identityProvider;
-          }
-        } else {
-          // Fallback to localStorage if /.auth/me doesn't work
-          const demoUser = localStorage.getItem("sutra_demo_user");
-          if (demoUser) {
-            const user = JSON.parse(demoUser);
-            const principal = {
-              userId: user.id,
-              userDetails: user.email,
-              identityProvider: "azureActiveDirectory",
-              userRoles: user.role === "admin" ? ["admin", "user"] : ["user"],
-            };
-            headers["x-ms-client-principal"] = btoa(JSON.stringify(principal));
-            headers["x-ms-client-principal-id"] = user.id;
-            headers["x-ms-client-principal-name"] = user.email;
-            headers["x-ms-client-principal-idp"] = "azureActiveDirectory";
-          }
-        }
-
-        // For requests to production API from localhost, don't send Origin header to avoid CORS
-        // The backend allows requests without Origin header
-      } catch (e) {
-        console.warn("Failed to get auth headers for development:", e);
-      }
-    }
 
     return headers;
   }

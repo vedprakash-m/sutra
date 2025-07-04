@@ -1,6 +1,7 @@
 import azure.functions as func
 import json
-
+import logging
+import traceback
 import sys
 import os
 
@@ -15,7 +16,7 @@ import httpx
 import asyncio
 
 # NEW: Use unified authentication and validation systems
-from shared.unified_auth import auth_required
+from shared.unified_auth import require_authentication
 from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
 from shared.utils.schemaValidator import validate_entity
 from shared.validation import validate_llm_integration_data
@@ -28,15 +29,7 @@ from shared.error_handling import handle_api_error, SutraAPIError
 logger = logging.getLogger(__name__)
 
 
-@auth_required(
-    permissions=[
-        "integrations.read",
-        "integrations.create",
-        "integrations.update",
-        "integrations.delete",
-    ]
-)
-async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Integrations API endpoint for managing LLM provider integrations.
 
@@ -48,12 +41,15 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
     - POST /api/integrations/llm/{provider}/test - Test LLM connection
     """
     try:
-        # Get authenticated user from unified auth decorator parameter
+        # Manual authentication - no decorator
+        user = await require_authentication(req)
         user_id = user.id
         method = req.method
         route_params = req.route_params
         provider = route_params.get("provider")
         action = route_params.get("action")
+
+        logger.info(f"Integrations API called by {user.email}: {method} {req.url}")
 
         # Route to appropriate handler
         if method == "GET":
@@ -75,7 +71,29 @@ async def main(req: func.HttpRequest, user: User) -> func.HttpResponse:
             )
 
     except Exception as e:
-        return handle_api_error(e)
+        logger.error(f"Integrations API error: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        if "Authentication required" in str(e) or "401" in str(e):
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "authentication_required",
+                        "message": "Please log in to access this resource",
+                    }
+                ),
+                status_code=401,
+                mimetype="application/json",
+            )
+        else:
+            return func.HttpResponse(
+                json.dumps(
+                    {"error": "internal_error", "message": "An internal error occurred"}
+                ),
+                status_code=500,
+                mimetype="application/json",
+            )
 
 
 async def list_llm_integrations(user_id: str) -> func.HttpResponse:
@@ -91,13 +109,13 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
                     {
                         "integrations": {
                             "openai": {
-                                "keyRef": "***masked***",
+                                "keyRe": "***masked***",
                                 "enabled": False,
                                 "status": "disconnected",
                                 "lastTested": None,
                             },
                             "anthropic": {
-                                "keyRef": "***masked***",
+                                "keyRe": "***masked***",
                                 "enabled": False,
                                 "status": "disconnected",
                                 "lastTested": None,
@@ -158,14 +176,14 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
             if isinstance(config, dict):
                 masked_integrations[provider] = {
                     "url": config.get("url"),
-                    "keyRef": "***masked***",
+                    "keyRe": "***masked***",
                     "enabled": config.get("enabled", True),
                     "lastTested": config.get("lastTested"),
                     "status": config.get("status", "unknown"),
                 }
             else:
                 masked_integrations[provider] = {
-                    "keyRef": "***masked***",
+                    "keyRe": "***masked***",
                     "enabled": True,
                     "status": "unknown",
                 }
@@ -294,7 +312,7 @@ async def create_llm_integration(
         if custom_url:
             user_data["llmApiKeys"][provider] = {
                 "url": custom_url,
-                "keyRef": key_ref,
+                "keyRe": key_ref,
                 "enabled": True,
                 "lastTested": datetime.utcnow().isoformat() + "Z",
                 "status": "active",
@@ -400,7 +418,7 @@ async def update_llm_integration(
             key_ref = f"kv-ref-{provider}-{user_id[:8]}"
 
             if isinstance(user_data["llmApiKeys"][provider], dict):
-                user_data["llmApiKeys"][provider]["keyRef"] = key_ref
+                user_data["llmApiKeys"][provider]["keyRe"] = key_ref
                 if custom_url:
                     user_data["llmApiKeys"][provider]["url"] = custom_url
                 user_data["llmApiKeys"][provider]["lastTested"] = (

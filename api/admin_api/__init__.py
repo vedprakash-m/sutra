@@ -12,17 +12,17 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 import uuid
 
-from shared.unified_auth import auth_required
+from shared.unified_auth import require_authentication
 from shared.database import get_database_manager
-from shared.models import ValidationError
+from shared.models import ValidationError, UserRole
 from shared.error_handling import handle_api_error, SutraAPIError
+import traceback
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
-@auth_required(admin_only=True)
-async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Admin API endpoint for system administration and management.
 
@@ -37,8 +37,20 @@ async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
     - GET /api/admin/usage - Get usage statistics and monitoring
     """
     try:
-        # Get authenticated user from decorator parameter
+        # Manual authentication - no decorator - admin only
+        user = await require_authentication(req)
+
+        # Check if user is admin
+        if user.role != UserRole.ADMIN:
+            return func.HttpResponse(
+                json.dumps({"error": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+
         user_id = user.id
+
+        logger.info(f"Admin API called by {user.email}: {req.method} {req.url}")
 
         method = req.method
         route_params = req.route_params
@@ -87,7 +99,35 @@ async def main(req: func.HttpRequest, user=None) -> func.HttpResponse:
             )
 
     except Exception as e:
-        return handle_api_error(e)
+        logger.error(f"Admin API error: {str(e)}")
+        logger.error(traceback.format_exc())
+
+        # Return proper error response
+        if "Authentication required" in str(e) or "401" in str(e):
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "authentication_required",
+                        "message": "Please log in to access this resource",
+                    }
+                ),
+                status_code=401,
+                mimetype="application/json",
+            )
+        elif "Admin access required" in str(e) or "403" in str(e):
+            return func.HttpResponse(
+                json.dumps({"error": "forbidden", "message": "Admin access required"}),
+                status_code=403,
+                mimetype="application/json",
+            )
+        else:
+            return func.HttpResponse(
+                json.dumps(
+                    {"error": "internal_error", "message": "An internal error occurred"}
+                ),
+                status_code=500,
+                mimetype="application/json",
+            )
 
 
 async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
@@ -447,7 +487,7 @@ async def set_maintenance_mode(
         try:
             # Try to update existing config
             config_container.replace_item(item="maintenance_mode", body=config_data)
-        except:
+        except Exception:
             # Create new config if it doesn't exist
             config_container.create_item(config_data)
 
@@ -482,7 +522,7 @@ async def get_llm_settings() -> func.HttpResponse:
                 item_id="llm_settings",
                 partition_key="llm_settings",
             )
-        except:
+        except Exception:
             # Default settings if not configured
             config = {
                 "id": "llm_settings",
@@ -546,7 +586,7 @@ async def update_llm_settings(
             existing_config = config_container.read_item(
                 item="llm_settings", partition_key="llm_settings"
             )
-        except:
+        except Exception:
             existing_config = {"id": "llm_settings", "providers": {}}
 
         # Update settings
@@ -566,7 +606,7 @@ async def update_llm_settings(
             updated_config = config_container.replace_item(
                 item="llm_settings", body=existing_config
             )
-        except:
+        except Exception:
             updated_config = config_container.create_item(existing_config)
 
         logger.info(f"Admin {admin_user_id} updated LLM settings")
@@ -720,7 +760,7 @@ async def reset_test_data(
         for container_name in containers_to_reset:
             try:
                 # Delete all documents in container
-                query = f"SELECT * FROM c"
+                query = "SELECT * FROM c"
                 items = await db_manager.query_items(container_name, query)
 
                 deleted_count = 0
@@ -802,7 +842,7 @@ async def seed_test_data(
         try:
             body = req.get_json()
             seed_options = body if body else {}
-        except:
+        except Exception:
             seed_options = {}
 
         db_manager = get_database_manager()
@@ -997,7 +1037,7 @@ async def get_guest_settings() -> func.HttpResponse:
                 item_id="guest_user_limits",
                 partition_key="guest_user_limits",
             )
-        except:
+        except Exception:
             # Default settings if not configured
             config = {
                 "id": "guest_user_limits",
@@ -1048,7 +1088,7 @@ async def update_guest_settings(
                 item_id="guest_user_limits",
                 partition_key="guest_user_limits",
             )
-        except:
+        except Exception:
             existing_config = {
                 "id": "guest_user_limits",
                 "limits": {},
@@ -1086,7 +1126,7 @@ async def update_guest_settings(
                 updated_config = await db_manager.update_item(
                     container_name="SystemConfig", item=existing_config
                 )
-            except:
+            except Exception:
                 updated_config = await db_manager.create_item(
                     container_name="SystemConfig",
                     item=existing_config,
@@ -1146,7 +1186,7 @@ async def get_guest_usage_stats_admin(req: func.HttpRequest) -> func.HttpRespons
             }
         else:
             # Get real statistics from database
-            query = f"""
+            query = """
             SELECT
                 COUNT(1) as total_sessions,
                 SUM(c.usage.llm_calls) as total_llm_calls,

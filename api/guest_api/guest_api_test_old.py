@@ -11,13 +11,17 @@ from . import main as guest_api_main
 class TestGuestAPI:
     """Test suite for Guest API endpoints."""
 
-    def create_request(self, method="GET", body=None, route_params=None, params=None,
-                      url="http://localhost/api/guest", guest_session_id=None):
+    def create_request(
+        self,
+        method="GET",
+        body=None,
+        route_params=None,
+        params=None,
+        url="http://localhost/api/guest",
+        guest_session_id=None,
+    ):
         """Helper to create requests for guest API."""
-        headers = {
-            "x-forwarded-for": "127.0.0.1",
-            "user-agent": "test-browser/1.0"
-        }
+        headers = {"x-forwarded-for": "127.0.0.1", "user-agent": "test-browser/1.0"}
 
         if guest_session_id:
             headers["x-guest-session-id"] = guest_session_id
@@ -28,10 +32,10 @@ class TestGuestAPI:
         return func.HttpRequest(
             method=method,
             url=url,
-            body=json.dumps(body).encode('utf-8') if body else b"",
+            body=json.dumps(body).encode("utf-8") if body else b"",
             headers=headers,
             route_params=route_params or {},
-            params=params or {}
+            params=params or {},
         )
 
     @pytest.fixture
@@ -58,7 +62,7 @@ class TestGuestAPI:
             "created_at": datetime.now(timezone.utc).isoformat(),
             "usage": {"llm_calls": 0, "prompts_created": 0},
             "limits": {"llm_calls_per_day": 5, "prompts_per_day": 10},
-            "active": True
+            "active": True,
         }
 
         mock_guest_manager.create_guest_session.return_value = mock_session
@@ -66,7 +70,7 @@ class TestGuestAPI:
         req = self.create_request(
             method="POST",
             url="http://localhost/api/guest/session",
-            route_params={"action": "session"}
+            route_params={"action": "session"},
         )
 
         # Act
@@ -91,16 +95,16 @@ class TestGuestAPI:
             "type": "guest_session",
             "usage": {"llm_calls": 2, "prompts_created": 1},
             "limits": {"llm_calls_per_day": 5, "prompts_per_day": 10},
-            "active": True
+            "active": True,
         }
 
         mock_guest_manager.get_guest_session.return_value = mock_session
 
         req = self.create_request(
             method="GET",
-            url=f"http://localhost/api/guest/session",
+            url="http://localhost/api/guest/session",
             route_params={"action": "session"},
-            guest_session_id=session_id
+            guest_session_id=session_id,
         )
 
         # Act
@@ -122,9 +126,9 @@ class TestGuestAPI:
 
         req = self.create_request(
             method="GET",
-            url=f"http://localhost/api/guest/session",
+            url="http://localhost/api/guest/session",
             route_params={"action": "session"},
-            guest_session_id=session_id
+            guest_session_id=session_id,
         )
 
         # Act
@@ -146,16 +150,16 @@ class TestGuestAPI:
             "expires_at": expired_time.isoformat(),
             "active": False,
             "usage": {"llm_calls": 3},
-            "limits": {"llm_calls_per_day": 5}
+            "limits": {"llm_calls_per_day": 5},
         }
 
         mock_guest_manager.get_guest_session.return_value = mock_session
 
         req = self.create_request(
             method="GET",
-            url=f"http://localhost/api/guest/session",
+            url="http://localhost/api/guest/session",
             route_params={"action": "session"},
-            guest_session_id=session_id
+            guest_session_id=session_id,
         )
 
         # Act
@@ -170,8 +174,7 @@ class TestGuestAPI:
     async def test_method_not_allowed(self):
         """Test unsupported HTTP method."""
         req = self.create_request(
-            method="DELETE",  # Not supported
-            url="http://localhost/api/guest/session"
+            method="DELETE", url="http://localhost/api/guest/session"  # Not supported
         )
 
         # Act
@@ -193,23 +196,23 @@ class TestGuestAPI:
                 "llm_calls": 3,
                 "prompts_created": 2,
                 "collections_created": 1,
-                "last_activity": datetime.now(timezone.utc).isoformat()
+                "last_activity": datetime.now(timezone.utc).isoformat(),
             },
             "limits": {
                 "llm_calls_per_day": 5,
                 "prompts_per_day": 10,
-                "collections_per_session": 3
+                "collections_per_session": 3,
             },
-            "active": True
+            "active": True,
         }
 
         mock_guest_manager.get_guest_session.return_value = mock_session
 
         req = self.create_request(
             method="GET",
-            url=f"http://localhost/api/guest/session",
+            url="http://localhost/api/guest/session",
             route_params={"action": "session"},
-            guest_session_id=session_id
+            guest_session_id=session_id,
         )
 
         # Act
@@ -226,12 +229,14 @@ class TestGuestAPI:
     async def test_create_session_error_handling(self, mock_guest_manager):
         """Test error handling during session creation."""
         # Arrange
-        mock_guest_manager.create_guest_session.side_effect = Exception("Database error")
+        mock_guest_manager.create_guest_session.side_effect = Exception(
+            "Database error"
+        )
 
         req = self.create_request(
             method="POST",
             url="http://localhost/api/guest/session",
-            route_params={"action": "session"}
+            route_params={"action": "session"},
         )
 
         # Act

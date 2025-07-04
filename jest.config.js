@@ -28,6 +28,10 @@ export default {
   transformIgnorePatterns: ["node_modules/(?!(.*\\.mjs$))"],
   // Add environment setup to handle import.meta
   setupFiles: ["<rootDir>/src/setupTests.js"],
+  // Set up test environment globals
+  globals: {
+    __DEV__: true,
+  },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",

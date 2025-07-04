@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "@/components/auth/AuthProvider";
+import { AuthProvider } from "@/components/auth/MSALAuthProvider";
 import CollectionsPage from "../CollectionsPage";
 import { collectionsApi } from "@/services/api";
 

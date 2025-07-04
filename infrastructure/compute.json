@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "14560871252369452240"
+      "templateHash": "16501239054136143123"
     }
   },
   "parameters": {
@@ -119,7 +119,7 @@
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2023-12-01",
-      "name": "sutra-api",
+      "name": "[format('sutra-api-{0}', uniqueString(resourceGroup().id))]",
       "location": "[parameters('location')]",
       "tags": "[parameters('tags')]",
       "kind": "functionapp,linux",
@@ -151,7 +151,7 @@
             },
             {
               "name": "WEBSITE_CONTENTSHARE",
-              "value": "[toLower('sutra-api')]"
+              "value": "[toLower(format('sutra-api-{0}', uniqueString(resourceGroup().id)))]"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
@@ -188,14 +188,47 @@
             {
               "name": "SUTRA_MAX_REQUESTS_PER_MINUTE",
               "value": "100"
+            },
+            {
+              "name": "SUTRA_GUEST_DAILY_LIMIT",
+              "value": "5"
+            },
+            {
+              "name": "SUTRA_GUEST_MODEL_RESTRICTION",
+              "value": "gpt-3.5-turbo"
+            },
+            {
+              "name": "SUTRA_GUEST_PROMPT_MAX_LENGTH",
+              "value": "500"
+            },
+            {
+              "name": "SUTRA_GUEST_RESPONSE_MAX_TOKENS",
+              "value": "100"
+            },
+            {
+              "name": "SUTRA_ENABLE_ANONYMOUS_ACCESS",
+              "value": "true"
+            },
+            {
+              "name": "SUTRA_ENTRA_ID_AUTHORITY",
+              "value": "[format('https://{0}vedid.onmicrosoft.com', environment().authentication.loginEndpoint)]"
+            },
+            {
+              "name": "SUTRA_ENTRA_ID_CLIENT_ID",
+              "value": "[format('@Microsoft.KeyVault(VaultName={0};SecretName=entra-id-client-id)', last(split(parameters('keyVaultUri'), '/')))]"
             }
           ],
           "cors": {
             "allowedOrigins": [
-              "https://sutra-web.azurestaticapps.net",
+              "[format('https://sutra-web-{0}.azurestaticapps.net', uniqueString(resourceGroup().id))]",
               "https://localhost:5173",
               "https://localhost:3000",
-              "[if(empty(parameters('customDomain')), '', format('https://{0}', parameters('customDomain')))]"
+              "[if(empty(parameters('customDomain')), '', format('https://{0}', parameters('customDomain')))]",
+              "https://sutra.vedprakash.net",
+              "https://vimarsh.vedprakash.net",
+              "https://vigor.vedprakash.net",
+              "https://pathfinder.vedprakash.net",
+              "https://carpool.vedprakash.net"
             ],
             "supportCredentials": true
           },
@@ -239,7 +272,7 @@
     {
       "type": "Microsoft.Web/staticSites",
       "apiVersion": "2023-12-01",
-      "name": "sutra-web",
+      "name": "[format('sutra-web-{0}', uniqueString(resourceGroup().id))]",
       "location": "West US 2",
       "tags": "[parameters('tags')]",
       "sku": {
@@ -249,7 +282,7 @@
       "properties": {
         "repositoryUrl": "",
         "branch": "",
-        "stagingEnvironmentPolicy": "Enabled",
+        "stagingEnvironmentPolicy": "Disabled",
         "allowConfigFileUpdates": true,
         "provider": "None",
         "enterpriseGradeCdnStatus": "Enabled",
@@ -264,42 +297,34 @@
       "condition": "[not(empty(parameters('customDomain')))]",
       "type": "Microsoft.Web/staticSites/customDomains",
       "apiVersion": "2023-12-01",
-      "name": "[format('{0}/{1}', 'sutra-web', parameters('customDomain'))]",
+      "name": "[format('{0}/{1}', format('sutra-web-{0}', uniqueString(resourceGroup().id)), parameters('customDomain'))]",
       "properties": {},
       "dependsOn": [
-        "[resourceId('Microsoft.Web/staticSites', 'sutra-web')]"
+        "[resourceId('Microsoft.Web/staticSites', format('sutra-web-{0}', uniqueString(resourceGroup().id)))]"
       ]
     },
     {
       "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2021-05-01-preview",
-      "scope": "[format('Microsoft.Web/sites/{0}', 'sutra-api')]",
+      "scope": "[format('Microsoft.Web/sites/{0}', format('sutra-api-{0}', uniqueString(resourceGroup().id)))]",
       "name": "sutra-api-diagnostics",
       "properties": {
         "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', 'sutra-logs')]",
         "logs": [
           {
             "categoryGroup": "allLogs",
-            "enabled": true,
-            "retentionPolicy": {
-              "enabled": true,
-              "days": 30
-            }
+            "enabled": true
           }
         ],
         "metrics": [
           {
             "category": "AllMetrics",
-            "enabled": true,
-            "retentionPolicy": {
-              "enabled": true,
-              "days": 30
-            }
+            "enabled": true
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', 'sutra-api')]",
+        "[resourceId('Microsoft.Web/sites', format('sutra-api-{0}', uniqueString(resourceGroup().id)))]",
         "[resourceId('Microsoft.OperationalInsights/workspaces', 'sutra-logs')]"
       ]
     },
@@ -372,30 +397,6 @@
       "dependsOn": [
         "[resourceId('Microsoft.Insights/components', 'sutra-ai')]"
       ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/accessPolicies",
-      "apiVersion": "2023-07-01",
-      "name": "sutra-kv/add",
-      "properties": {
-        "accessPolicies": [
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[reference(resourceId('Microsoft.Web/sites', 'sutra-api'), '2023-12-01', 'full').identity.principalId]",
-            "permissions": {
-              "keys": [],
-              "secrets": [
-                "get",
-                "list"
-              ],
-              "certificates": []
-            }
-          }
-        ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Web/sites', 'sutra-api')]"
-      ]
     }
   ],
   "outputs": {
@@ -404,42 +405,42 @@
       "metadata": {
         "description": "Function App name"
       },
-      "value": "sutra-api"
+      "value": "[format('sutra-api-{0}', uniqueString(resourceGroup().id))]"
     },
     "functionAppUrl": {
       "type": "string",
       "metadata": {
         "description": "Function App URL (direct access)"
       },
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', 'sutra-api'), '2023-12-01').defaultHostName)]"
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('sutra-api-{0}', uniqueString(resourceGroup().id))), '2023-12-01').defaultHostName)]"
     },
     "apiBaseUrl": {
       "type": "string",
       "metadata": {
         "description": "Function App API base URL"
       },
-      "value": "[format('https://{0}/api', reference(resourceId('Microsoft.Web/sites', 'sutra-api'), '2023-12-01').defaultHostName)]"
+      "value": "[format('https://{0}/api', reference(resourceId('Microsoft.Web/sites', format('sutra-api-{0}', uniqueString(resourceGroup().id))), '2023-12-01').defaultHostName)]"
     },
     "staticWebAppName": {
       "type": "string",
       "metadata": {
         "description": "Static Web App name"
       },
-      "value": "sutra-web"
+      "value": "[format('sutra-web-{0}', uniqueString(resourceGroup().id))]"
     },
     "staticWebAppUrl": {
       "type": "string",
       "metadata": {
         "description": "Static Web App URL"
       },
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', 'sutra-web'), '2023-12-01').defaultHostname)]"
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', format('sutra-web-{0}', uniqueString(resourceGroup().id))), '2023-12-01').defaultHostname)]"
     },
     "staticWebAppHostname": {
       "type": "string",
       "metadata": {
         "description": "Static Web App default hostname"
       },
-      "value": "[reference(resourceId('Microsoft.Web/staticSites', 'sutra-web'), '2023-12-01').defaultHostname]"
+      "value": "[reference(resourceId('Microsoft.Web/staticSites', format('sutra-web-{0}', uniqueString(resourceGroup().id))), '2023-12-01').defaultHostname]"
     },
     "applicationInsightsName": {
       "type": "string",

@@ -10,7 +10,6 @@ on:
         type: choice
         options:
           - production
-          - staging
       configure_auth:
         description: "Configure authentication"
         required: true

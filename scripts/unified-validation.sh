@@ -192,7 +192,10 @@ if should_run_frontend; then
     fi
 
     # TypeScript compilation check
-    run_check "TypeScript Compilation" "npm run build" "true"
+    run_check "TypeScript Compilation" "npx tsc --noEmit" "true"
+
+    # Build check
+    run_check "Frontend Build" "npm run build" "true"
 
     # Run frontend tests
     run_check "Frontend Test Suite" "npm test -- --passWithNoTests --watchAll=false" "true"

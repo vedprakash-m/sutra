@@ -17,13 +17,11 @@ from api.shared.validation import (
     validate_json_field,
     validate_pagination_params,
     validate_search_query,
-
     # Model validators
     PromptTemplateValidator,
     CollectionValidator,
     PlaybookValidator,
     RateLimitValidator,
-
     # Business logic validators
     validate_user_permissions,
     validate_resource_ownership,
@@ -31,13 +29,11 @@ from api.shared.validation import (
     validate_pydantic_model,
     validate_execution_input,
     _validate_playbook_step,
-
     # Exceptions
     ValidationException,
     SecurityValidationException,
     BusinessLogicException,
     RateLimitException,
-
     # Constants
     MAX_STRING_LENGTH,
     MAX_CONTENT_LENGTH,
@@ -67,9 +63,9 @@ class TestPromptTemplateValidator:
                     "description": "Test variable",
                     "type": "string",
                     "required": True,
-                    "default_value": "default"
+                    "default_value": "default",
                 }
-            ]
+            ],
         }
         user_id = "test-user-123"
 
@@ -102,12 +98,11 @@ class TestPromptTemplateValidator:
 
     def test_validate_create_request_too_many_variables(self):
         """Test validation with too many variables."""
-        variables = [{"name": f"var{i}", "type": "string"} for i in range(MAX_VARIABLES_COUNT + 1)]
-        data = {
-            "title": "Test",
-            "content": "Test content",
-            "variables": variables
-        }
+        variables = [
+            {"name": f"var{i}", "type": "string"}
+            for i in range(MAX_VARIABLES_COUNT + 1)
+        ]
+        data = {"title": "Test", "content": "Test content", "variables": variables}
         user_id = "test-user"
 
         with pytest.raises(ValidationException, match="Too many variables"):
@@ -119,12 +114,8 @@ class TestPromptTemplateValidator:
             "title": "Test",
             "content": "Test content",
             "variables": [
-                {
-                    "name": "test_var",
-                    "type": "invalid_type",
-                    "description": "Test"
-                }
-            ]
+                {"name": "test_var", "type": "invalid_type", "description": "Test"}
+            ],
         }
         user_id = "test-user"
 
@@ -137,11 +128,8 @@ class TestPromptTemplateValidator:
             "title": "Test",
             "content": "Test content",
             "variables": [
-                {
-                    "name": "123invalid",  # Can't start with number
-                    "type": "string"
-                }
-            ]
+                {"name": "123invalid", "type": "string"}  # Can't start with number
+            ],
         }
         user_id = "test-user"
 
@@ -150,11 +138,7 @@ class TestPromptTemplateValidator:
 
     def test_validate_create_request_variable_not_dict(self):
         """Test validation with variable that's not a dictionary."""
-        data = {
-            "title": "Test",
-            "content": "Test content",
-            "variables": ["not_a_dict"]
-        }
+        data = {"title": "Test", "content": "Test content", "variables": ["not_a_dict"]}
         user_id = "test-user"
 
         with pytest.raises(ValidationException, match="Variable 0 must be an object"):
@@ -175,9 +159,9 @@ class TestPromptTemplateValidator:
                     "type": "string",
                     "description": "New variable",
                     "required": False,
-                    "default_value": "test"
+                    "default_value": "test",
                 }
-            ]
+            ],
         }
 
         result = PromptTemplateValidator.validate_update_request(data, existing_prompt)
@@ -210,14 +194,7 @@ class TestPromptTemplateValidator:
     def test_validate_update_request_variables_validation(self):
         """Test update validation with invalid variables."""
         existing_prompt = Mock(spec=PromptTemplate)
-        data = {
-            "variables": [
-                {
-                    "name": "123invalid",  # Invalid name
-                    "type": "string"
-                }
-            ]
-        }
+        data = {"variables": [{"name": "123invalid", "type": "string"}]}  # Invalid name
 
         with pytest.raises(ValidationException):
             PromptTemplateValidator.validate_update_request(data, existing_prompt)
@@ -225,7 +202,10 @@ class TestPromptTemplateValidator:
     def test_validate_update_request_too_many_variables(self):
         """Test update validation with too many variables."""
         existing_prompt = Mock(spec=PromptTemplate)
-        variables = [{"name": f"var{i}", "type": "string"} for i in range(MAX_VARIABLES_COUNT + 1)]
+        variables = [
+            {"name": f"var{i}", "type": "string"}
+            for i in range(MAX_VARIABLES_COUNT + 1)
+        ]
         data = {"variables": variables}
 
         with pytest.raises(ValidationException, match="Too many variables"):
@@ -242,7 +222,7 @@ class TestCollectionValidator:
             "description": "Test description",
             "tags": ["test", "collection"],
             "is_public": True,
-            "prompt_ids": ["prompt1", "prompt2"]
+            "prompt_ids": ["prompt1", "prompt2"],
         }
         user_id = "test-user-123"
 
@@ -273,10 +253,7 @@ class TestCollectionValidator:
 
     def test_validate_create_request_invalid_prompt_ids(self):
         """Test validation with invalid prompt_ids."""
-        data = {
-            "name": "Test Collection",
-            "prompt_ids": "not_a_list"  # Should be list
-        }
+        data = {"name": "Test Collection", "prompt_ids": "not_a_list"}  # Should be list
         user_id = "test-user"
 
         with pytest.raises(ValidationException, match="prompt_ids must be a list"):
@@ -286,7 +263,7 @@ class TestCollectionValidator:
         """Test that invalid prompt IDs are filtered out."""
         data = {
             "name": "Test Collection",
-            "prompt_ids": ["valid-id", "", None, "  ", "another-valid-id"]
+            "prompt_ids": ["valid-id", "", None, "  ", "another-valid-id"],
         }
         user_id = "test-user"
 
@@ -323,16 +300,10 @@ class TestPlaybookValidator:
                     "type": "prompt",
                     "stepId": "step1",
                     "promptId": "prompt-123",
-                    "config": {
-                        "temperature": 0.7,
-                        "maxTokens": 1000
-                    }
+                    "config": {"temperature": 0.7, "maxTokens": 1000},
                 },
-                {
-                    "type": "manual_review",
-                    "stepId": "review1"
-                }
-            ]
+                {"type": "manual_review", "stepId": "review1"},
+            ],
         }
         user_id = "test-user-123"
 
@@ -374,10 +345,7 @@ class TestPlaybookStepValidation:
 
     def test_validate_step_invalid_step_id(self):
         """Test step validation with invalid step ID."""
-        step = {
-            "type": "prompt",
-            "stepId": "123invalid"  # Can't start with number
-        }
+        step = {"type": "prompt", "stepId": "123invalid"}  # Can't start with number
 
         errors = _validate_playbook_step(step, 0)
 
@@ -391,14 +359,16 @@ class TestPlaybookStepValidation:
         errors = _validate_playbook_step(step, 0)
 
         assert len(errors) > 0
-        assert any("must have either promptId or promptText" in error for error in errors)
+        assert any(
+            "must have either promptId or promptText" in error for error in errors
+        )
 
     def test_validate_prompt_step_invalid_temperature(self):
         """Test prompt step with invalid temperature."""
         step = {
             "type": "prompt",
             "promptId": "test",
-            "config": {"temperature": 3.0}  # Too high
+            "config": {"temperature": 3.0},  # Too high
         }
 
         errors = _validate_playbook_step(step, 0)
@@ -411,35 +381,37 @@ class TestPlaybookStepValidation:
         step = {
             "type": "prompt",
             "promptId": "test",
-            "config": {"maxTokens": 20000}  # Too high
+            "config": {"maxTokens": 20000},  # Too high
         }
 
         errors = _validate_playbook_step(step, 0)
 
         assert len(errors) > 0
-        assert any("Max tokens must be between 1 and 10000" in error for error in errors)
+        assert any(
+            "Max tokens must be between 1 and 10000" in error for error in errors
+        )
 
     def test_validate_step_invalid_parsing_rules(self):
         """Test step with invalid output parsing rules."""
         step = {
             "type": "prompt",
             "promptId": "test",
-            "outputParsingRules": "not_a_dict"  # Should be dict
+            "outputParsingRules": "not_a_dict",  # Should be dict
         }
 
         errors = _validate_playbook_step(step, 0)
 
         assert len(errors) > 0
-        assert any("Output parsing rules must be a dictionary" in error for error in errors)
+        assert any(
+            "Output parsing rules must be a dictionary" in error for error in errors
+        )
 
     def test_validate_step_invalid_regex(self):
         """Test step with invalid regex pattern."""
         step = {
             "type": "prompt",
             "promptId": "test",
-            "outputParsingRules": {
-                "regex": "[invalid regex"  # Invalid regex
-            }
+            "outputParsingRules": {"regex": "[invalid regex"},  # Invalid regex
         }
 
         errors = _validate_playbook_step(step, 0)
@@ -453,13 +425,8 @@ class TestPlaybookStepValidation:
             "type": "prompt",
             "stepId": "valid_step",
             "promptId": "test-prompt",
-            "config": {
-                "temperature": 0.7,
-                "maxTokens": 1000
-            },
-            "outputParsingRules": {
-                "regex": r"\d+"
-            }
+            "config": {"temperature": 0.7, "maxTokens": 1000},
+            "outputParsingRules": {"regex": r"\d+"},
         }
 
         errors = _validate_playbook_step(step, 0)
@@ -468,10 +435,7 @@ class TestPlaybookStepValidation:
 
     def test_validate_step_prompt_with_text(self):
         """Test prompt step with promptText instead of promptId."""
-        step = {
-            "type": "prompt",
-            "promptText": "This is prompt text"
-        }
+        step = {"type": "prompt", "promptText": "This is prompt text"}
 
         errors = _validate_playbook_step(step, 0)
 
@@ -526,7 +490,7 @@ class TestRateLimitValidator:
             "prompt_creations",
             "collection_operations",
             "playbook_executions",
-            "admin_operations"
+            "admin_operations",
         ]
 
         for operation in expected_operations:
@@ -605,13 +569,7 @@ class TestExecutionInputValidation:
 
     def test_validate_execution_input_success(self):
         """Test successful execution input validation."""
-        data = {
-            "initialInputs": {
-                "var1": "value1",
-                "var2": "value2",
-                "var3": 123
-            }
-        }
+        data = {"initialInputs": {"var1": "value1", "var2": "value2", "var3": 123}}
 
         result = validate_execution_input(data)
 
@@ -625,30 +583,30 @@ class TestExecutionInputValidation:
         result = validate_execution_input(data)
 
         assert result["valid"] is False
-        assert any("Initial inputs must be a dictionary" in error for error in result["errors"])
+        assert any(
+            "Initial inputs must be a dictionary" in error for error in result["errors"]
+        )
 
     def test_validate_execution_input_invalid_variable_name(self):
         """Test execution input validation with invalid variable name."""
         data = {
             "initialInputs": {
                 "123invalid": "value",  # Can't start with number
-                "valid_var": "value"
+                "valid_var": "value",
             }
         }
 
         result = validate_execution_input(data)
 
         assert result["valid"] is False
-        assert any("Invalid variable name '123invalid'" in error for error in result["errors"])
+        assert any(
+            "Invalid variable name '123invalid'" in error for error in result["errors"]
+        )
 
     def test_validate_execution_input_value_too_long(self):
         """Test execution input validation with value too long."""
         long_value = "a" * (MAX_CONTENT_LENGTH + 1)
-        data = {
-            "initialInputs": {
-                "test_var": long_value
-            }
-        }
+        data = {"initialInputs": {"test_var": long_value}}
 
         result = validate_execution_input(data)
 
@@ -690,7 +648,10 @@ class TestCoreValidationEdgeCases:
         ]
 
         for dangerous_string in dangerous_strings:
-            with pytest.raises(SecurityValidationException, match="Potentially dangerous content detected"):
+            with pytest.raises(
+                SecurityValidationException,
+                match="Potentially dangerous content detected",
+            ):
                 validate_safe_string(dangerous_string)
 
     def test_validate_safe_string_empty_input(self):
@@ -711,7 +672,9 @@ class TestCoreValidationEdgeCases:
         ]
 
         for content in dangerous_content:
-            with pytest.raises(SecurityValidationException, match="Script injection detected"):
+            with pytest.raises(
+                SecurityValidationException, match="Script injection detected"
+            ):
                 validate_content(content)
 
     def test_validate_tags_too_many(self):
@@ -740,12 +703,16 @@ class TestCoreValidationEdgeCases:
 
     def test_validate_pagination_params_negative_skip(self):
         """Test pagination validation with negative skip."""
-        with pytest.raises(ValidationException, match="Skip parameter must be non-negative"):
+        with pytest.raises(
+            ValidationException, match="Skip parameter must be non-negative"
+        ):
             validate_pagination_params(-1, 10)
 
     def test_validate_pagination_params_zero_limit(self):
         """Test pagination validation with zero limit."""
-        with pytest.raises(ValidationException, match="Limit parameter must be positive"):
+        with pytest.raises(
+            ValidationException, match="Limit parameter must be positive"
+        ):
             validate_pagination_params(0, 0)
 
     def test_validate_pagination_params_limit_too_high(self):

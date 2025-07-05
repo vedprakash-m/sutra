@@ -16,11 +16,13 @@ from .models import User, UserRole
 
 class AuthenticationError(Exception):
     """Authentication related errors."""
+
     pass
 
 
 class AuthorizationError(Exception):
     """Authorization related errors."""
+
     pass
 
 
@@ -48,12 +50,14 @@ class StaticWebAppsAuthManager:
             if principal_header:
                 try:
                     # Decode base64 JSON
-                    principal_data = base64.b64decode(principal_header).decode('utf-8')
+                    principal_data = base64.b64decode(principal_header).decode("utf-8")
                     principal = json.loads(principal_data)
 
                     user_id = principal.get("userId") or principal.get("sub")
                     user_name = principal.get("userDetails") or principal.get("name")
-                    identity_provider = principal.get("identityProvider", "azureActiveDirectory")
+                    identity_provider = principal.get(
+                        "identityProvider", "azureActiveDirectory"
+                    )
                     user_roles = principal.get("userRoles", ["user"])
 
                     # Determine primary role (Azure Static Web Apps can have multiple roles)
@@ -69,7 +73,7 @@ class StaticWebAppsAuthManager:
                         name=user_name,
                         role=role,
                         created_at=datetime.now(timezone.utc),
-                        updated_at=datetime.now(timezone.utc)
+                        updated_at=datetime.now(timezone.utc),
                     )
 
                 except (ValueError, json.JSONDecodeError) as e:
@@ -78,7 +82,9 @@ class StaticWebAppsAuthManager:
             # Method 2: Try individual headers (fallback)
             user_id = req.headers.get("x-ms-client-principal-id")
             user_name = req.headers.get("x-ms-client-principal-name")
-            identity_provider = req.headers.get("x-ms-client-principal-idp", "azureActiveDirectory")
+            identity_provider = req.headers.get(
+                "x-ms-client-principal-idp", "azureActiveDirectory"
+            )
 
             if user_id:
                 # Default to user role, but check for special admin users
@@ -94,7 +100,7 @@ class StaticWebAppsAuthManager:
                     name=user_name or "Unknown User",
                     role=role,
                     created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
+                    updated_at=datetime.now(timezone.utc),
                 )
 
             return None
@@ -170,18 +176,21 @@ def require_auth(func_or_resource=None, *, resource: str = None, action: str = "
     Works with Azure Static Web Apps authentication by reading user info
     from headers instead of validating JWT tokens.
     """
+
     def decorator_impl(func_to_decorate):
         async def wrapper(req: func.HttpRequest) -> func.HttpResponse:
             try:
                 # Skip authentication in testing mode
                 if TESTING_MODE:
                     # Check if test wants to simulate auth failure
-                    if hasattr(req, '_test_auth_fail') and req._test_auth_fail:
+                    if hasattr(req, "_test_auth_fail") and req._test_auth_fail:
                         return func.HttpResponse(
-                            json.dumps({
-                                "error": "Unauthorized",
-                                "message": "User not authenticated via Azure Static Web Apps"
-                            }),
+                            json.dumps(
+                                {
+                                    "error": "Unauthorized",
+                                    "message": "User not authenticated via Azure Static Web Apps",
+                                }
+                            ),
                             status_code=401,
                             headers={"Content-Type": "application/json"},
                         )
@@ -194,22 +203,34 @@ def require_auth(func_or_resource=None, *, resource: str = None, action: str = "
                         req.current_user = user
                     else:
                         # Check if test wants to simulate authorization failure
-                        if hasattr(req, '_test_admin_required') and req._test_admin_required:
-                            user_id = getattr(req, '_test_user_id', 'test-user-123')
-                            req.current_user = create_mock_user(user_id, "user")  # Non-admin user
+                        if (
+                            hasattr(req, "_test_admin_required")
+                            and req._test_admin_required
+                        ):
+                            user_id = getattr(req, "_test_user_id", "test-user-123")
+                            req.current_user = create_mock_user(
+                                user_id, "user"
+                            )  # Non-admin user
                         else:
                             # Create a mock user for testing (fallback)
-                            user_id = getattr(req, '_test_user_id', 'test-user-123')
+                            user_id = getattr(req, "_test_user_id", "test-user-123")
                             req.current_user = create_mock_user(user_id, "admin")
 
                     # Check permissions if resource and action specified for non-admin user
-                    if (hasattr(req, '_test_admin_required') and req._test_admin_required and
-                        resource and action and resource == "admin"):
+                    if (
+                        hasattr(req, "_test_admin_required")
+                        and req._test_admin_required
+                        and resource
+                        and action
+                        and resource == "admin"
+                    ):
                         return func.HttpResponse(
-                            json.dumps({
-                                "error": "access_denied",
-                                "message": "Admin privileges required"
-                            }),
+                            json.dumps(
+                                {
+                                    "error": "access_denied",
+                                    "message": "Admin privileges required",
+                                }
+                            ),
                             status_code=403,
                             headers={"Content-Type": "application/json"},
                         )
@@ -222,10 +243,12 @@ def require_auth(func_or_resource=None, *, resource: str = None, action: str = "
 
                 if not user:
                     return func.HttpResponse(
-                        json.dumps({
-                            "error": "authentication_required",
-                            "message": "User not authenticated via Azure Static Web Apps"
-                        }),
+                        json.dumps(
+                            {
+                                "error": "authentication_required",
+                                "message": "User not authenticated via Azure Static Web Apps",
+                            }
+                        ),
                         status_code=401,
                         headers={"Content-Type": "application/json"},
                     )
@@ -234,10 +257,12 @@ def require_auth(func_or_resource=None, *, resource: str = None, action: str = "
                 if resource and action:
                     if not auth_mgr.check_permission(user, resource, action):
                         return func.HttpResponse(
-                            json.dumps({
-                                "error": "access_denied",
-                                "message": "Insufficient permissions"
-                            }),
+                            json.dumps(
+                                {
+                                    "error": "access_denied",
+                                    "message": "Insufficient permissions",
+                                }
+                            ),
                             status_code=403,
                             headers={"Content-Type": "application/json"},
                         )
@@ -250,37 +275,33 @@ def require_auth(func_or_resource=None, *, resource: str = None, action: str = "
 
             except AuthenticationError as e:
                 return func.HttpResponse(
-                    json.dumps({
-                        "error": "authentication_failed",
-                        "message": str(e)
-                    }),
+                    json.dumps({"error": "authentication_failed", "message": str(e)}),
                     status_code=401,
                     headers={"Content-Type": "application/json"},
                 )
             except AuthorizationError as e:
                 return func.HttpResponse(
-                    json.dumps({
-                        "error": "authorization_failed",
-                        "message": str(e)
-                    }),
+                    json.dumps({"error": "authorization_failed", "message": str(e)}),
                     status_code=403,
                     headers={"Content-Type": "application/json"},
                 )
             except Exception as e:
                 logging.error(f"Authentication error: {e}")
                 return func.HttpResponse(
-                    json.dumps({
-                        "error": "internal_error",
-                        "message": "Authentication system error"
-                    }),
+                    json.dumps(
+                        {
+                            "error": "internal_error",
+                            "message": "Authentication system error",
+                        }
+                    ),
                     status_code=500,
                     headers={"Content-Type": "application/json"},
                 )
 
         # Copy function metadata manually to avoid Mock attribute issues
-        wrapper.__name__ = getattr(func_to_decorate, '__name__', 'wrapper')
-        wrapper.__module__ = getattr(func_to_decorate, '__module__', None)
-        wrapper.__doc__ = getattr(func_to_decorate, '__doc__', None)
+        wrapper.__name__ = getattr(func_to_decorate, "__name__", "wrapper")
+        wrapper.__module__ = getattr(func_to_decorate, "__module__", None)
+        wrapper.__doc__ = getattr(func_to_decorate, "__doc__", None)
 
         return wrapper
 
@@ -338,19 +359,13 @@ def verify_jwt_token(req: func.HttpRequest) -> Dict[str, Any]:
                     "email": user.email,
                     "name": user.name,
                     "role": user.role.value,
-                }
+                },
             }
         else:
-            return {
-                "valid": False,
-                "message": "No authenticated user found in headers"
-            }
+            return {"valid": False, "message": "No authenticated user found in headers"}
     except Exception as e:
         logging.error(f"Error in verify_jwt_token compatibility function: {e}")
-        return {
-            "valid": False,
-            "message": "Authentication verification failed"
-        }
+        return {"valid": False, "message": "Authentication verification failed"}
 
 
 def get_user_id_from_token(req: func.HttpRequest) -> Optional[str]:
@@ -369,6 +384,7 @@ def get_user_id_from_token(req: func.HttpRequest) -> Optional[str]:
 # Testing support - environment variable to disable decorators during testing
 TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
 
+
 def create_mock_user(user_id: str = "test-user-123", role: str = "user"):
     """Create a mock user object for testing."""
     return User(
@@ -377,5 +393,5 @@ def create_mock_user(user_id: str = "test-user-123", role: str = "user"):
         name=f"Test User {user_id}",
         role=UserRole(role),
         created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc)
+        updated_at=datetime.now(timezone.utc),
     )

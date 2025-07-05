@@ -7,8 +7,10 @@ from enum import Enum
 class UserRole(str, Enum):
     """User roles in the system - simplified to match UX specification."""
 
-    USER = "user"      # Standard user role for all personas (Content Creator, Developer, PM, CS)
-    ADMIN = "admin"    # System administrator role for LLM config, budgets, user management
+    USER = "user"  # Standard user role for all personas (Content Creator, Developer, PM, CS)
+    ADMIN = (
+        "admin"  # System administrator role for LLM config, budgets, user management
+    )
 
 
 class PromptStatus(str, Enum):
@@ -274,7 +276,9 @@ class CreatePromptRequest(BaseModel):
     content: str = Field(..., min_length=1)
     variables: List[PromptVariable] = []
     tags: List[str] = []
-    collection_id: Optional[str] = None  # Allow prompts to be created in specific collections
+    collection_id: Optional[
+        str
+    ] = None  # Allow prompts to be created in specific collections
 
     @field_validator("tags")
     @classmethod

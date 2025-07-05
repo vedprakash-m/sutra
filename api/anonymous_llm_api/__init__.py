@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Simple rate limiting based on IP
 ip_usage = {}
 
+
 async def get_admin_configured_limits():
     """Get admin-configured limits for anonymous users."""
     try:
@@ -29,7 +30,7 @@ async def get_admin_configured_limits():
         config = await db_manager.read_item(
             container_name="SystemConfig",
             item_id="guest_user_limits",
-            partition_key="guest_user_limits"
+            partition_key="guest_user_limits",
         )
 
         if config and config.get("limits"):
@@ -39,6 +40,7 @@ async def get_admin_configured_limits():
 
     # Default fallback
     return {"llm_calls_per_day": 5}
+
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
@@ -55,7 +57,11 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         action = route_params.get("action", "execute")
 
         # Get IP address for rate limiting
-        ip_address = req.headers.get("x-forwarded-for") or req.headers.get("x-real-ip") or "127.0.0.1"
+        ip_address = (
+            req.headers.get("x-forwarded-for")
+            or req.headers.get("x-real-ip")
+            or "127.0.0.1"
+        )
 
         if method == "POST" and action == "execute":
             return await execute_anonymous_llm(req, ip_address)
@@ -67,7 +73,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Method not allowed"}),
                 status_code=405,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
     except Exception as e:
@@ -75,11 +81,13 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": f"Internal error: {str(e)}"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
-async def execute_anonymous_llm(req: func.HttpRequest, ip_address: str) -> func.HttpResponse:
+async def execute_anonymous_llm(
+    req: func.HttpRequest, ip_address: str
+) -> func.HttpResponse:
     """Execute LLM prompt for anonymous users."""
     try:
         # Get admin-configured limits
@@ -93,16 +101,18 @@ async def execute_anonymous_llm(req: func.HttpRequest, ip_address: str) -> func.
         # Check if it's a new day (simple check for demo)
         if ip_usage[ip_address]["calls"] >= daily_limit:
             return func.HttpResponse(
-                json.dumps({
-                    "error": "daily_limit_exceeded",
-                    "message": f"Anonymous users are limited to {daily_limit} calls per day. Please sign up for unlimited access.",
-                    "daily_limit": daily_limit,
-                    "calls_used": ip_usage[ip_address]["calls"],
-                    "remaining": 0,
-                    "note": "This limit is configurable by administrators"
-                }),
+                json.dumps(
+                    {
+                        "error": "daily_limit_exceeded",
+                        "message": f"Anonymous users are limited to {daily_limit} calls per day. Please sign up for unlimited access.",
+                        "daily_limit": daily_limit,
+                        "calls_used": ip_usage[ip_address]["calls"],
+                        "remaining": 0,
+                        "note": "This limit is configurable by administrators",
+                    }
+                ),
                 status_code=429,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Parse request body
@@ -121,20 +131,22 @@ async def execute_anonymous_llm(req: func.HttpRequest, ip_address: str) -> func.
             return func.HttpResponse(
                 json.dumps({"error": "Prompt is required"}),
                 status_code=400,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Validate prompt length for anonymous users
         if len(prompt) > 500:
             return func.HttpResponse(
-                json.dumps({
-                    "error": "prompt_too_long",
-                    "message": "Anonymous users are limited to 500 characters per prompt. Please shorten your prompt or sign up for a free account.",
-                    "max_length": 500,
-                    "current_length": len(prompt)
-                }),
+                json.dumps(
+                    {
+                        "error": "prompt_too_long",
+                        "message": "Anonymous users are limited to 500 characters per prompt. Please shorten your prompt or sign up for a free account.",
+                        "max_length": 500,
+                        "current_length": len(prompt),
+                    }
+                ),
                 status_code=400,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         # Mock LLM execution for development
@@ -145,18 +157,18 @@ async def execute_anonymous_llm(req: func.HttpRequest, ip_address: str) -> func.
             "usage": {
                 "prompt_tokens": len(prompt.split()),
                 "completion_tokens": 35,
-                "total_tokens": len(prompt.split()) + 35
+                "total_tokens": len(prompt.split()) + 35,
             },
             "choices": [
                 {
                     "text": f"🤖 AI Response to '{prompt[:30]}...'\n\nThis is a demo response from Sutra AI. In production, this would be generated by GPT-3.5 Turbo. Anonymous users get limited responses - sign up for full access to all models and unlimited calls!",
                     "index": 0,
-                    "finish_reason": "stop"
+                    "finish_reason": "stop",
                 }
             ],
             "created": 1703123456,
             "user_type": "anonymous",
-            "_mock": True
+            "_mock": True,
         }
 
         # Increment usage
@@ -168,15 +180,17 @@ async def execute_anonymous_llm(req: func.HttpRequest, ip_address: str) -> func.
             "remaining_calls": max(0, remaining_calls),
             "daily_limit": daily_limit,
             "calls_used": ip_usage[ip_address]["calls"],
-            "signup_message": f"You have {max(0, remaining_calls)} free calls remaining today. Sign up for unlimited access!"
+            "signup_message": f"You have {max(0, remaining_calls)} free calls remaining today. Sign up for unlimited access!",
         }
 
-        logger.info(f"Anonymous LLM execution for IP: {ip_address}, remaining: {remaining_calls}")
+        logger.info(
+            f"Anonymous LLM execution for IP: {ip_address}, remaining: {remaining_calls}"
+        )
 
         return func.HttpResponse(
             json.dumps(mock_response, default=str),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:
@@ -184,7 +198,7 @@ async def execute_anonymous_llm(req: func.HttpRequest, ip_address: str) -> func.
         return func.HttpResponse(
             json.dumps({"error": f"Failed to execute prompt: {str(e)}"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
@@ -200,7 +214,7 @@ async def list_anonymous_models(req: func.HttpRequest) -> func.HttpResponse:
                 "description": "Fast and efficient for basic tasks",
                 "max_tokens": 100,
                 "available_for_anonymous": True,
-                "note": "Limited to 100 tokens for anonymous users"
+                "note": "Limited to 100 tokens for anonymous users",
             }
         ]
 
@@ -211,15 +225,15 @@ async def list_anonymous_models(req: func.HttpRequest) -> func.HttpResponse:
                 "max_prompt_length": 500,
                 "max_tokens_per_response": 100,
                 "models_available": 1,
-                "calls_per_day": 5
+                "calls_per_day": 5,
             },
-            "upgrade_message": "Sign up for access to more models and higher limits!"
+            "upgrade_message": "Sign up for access to more models and higher limits!",
         }
 
         return func.HttpResponse(
             json.dumps(response_data, default=str),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:
@@ -227,11 +241,13 @@ async def list_anonymous_models(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"error": f"Failed to list models: {str(e)}"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
-async def get_anonymous_usage(req: func.HttpRequest, ip_address: str) -> func.HttpResponse:
+async def get_anonymous_usage(
+    req: func.HttpRequest, ip_address: str
+) -> func.HttpResponse:
     """Get usage information for anonymous user (IP-based)."""
     try:
         # Get admin-configured limits
@@ -247,20 +263,14 @@ async def get_anonymous_usage(req: func.HttpRequest, ip_address: str) -> func.Ht
         usage_data = {
             "session_type": "anonymous",
             "ip_based": True,
-            "daily_limits": {
-                "llm_calls": daily_limit
-            },
-            "current_usage": {
-                "llm_calls": calls_used
-            },
-            "remaining": {
-                "llm_calls": remaining
-            },
+            "daily_limits": {"llm_calls": daily_limit},
+            "current_usage": {"llm_calls": calls_used},
+            "remaining": {"llm_calls": remaining},
             "resets_at": "2025-06-26T00:00:00Z",  # Next day
             "limitations": {
                 "max_prompt_length": 500,
                 "max_tokens_per_response": 100,
-                "model_restrictions": ["gpt-3.5-turbo only"]
+                "model_restrictions": ["gpt-3.5-turbo only"],
             },
             "admin_note": "Anonymous user limits are configurable by administrators",
             "upgrade_benefits": [
@@ -269,14 +279,14 @@ async def get_anonymous_usage(req: func.HttpRequest, ip_address: str) -> func.Ht
                 "Longer prompts (no 500 char limit)",
                 "More tokens per response",
                 "Save prompts and create collections",
-                "Build and save playbooks"
-            ]
+                "Build and save playbooks",
+            ],
         }
 
         return func.HttpResponse(
             json.dumps(usage_data, default=str),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
     except Exception as e:
@@ -284,5 +294,5 @@ async def get_anonymous_usage(req: func.HttpRequest, ip_address: str) -> func.Ht
         return func.HttpResponse(
             json.dumps({"error": f"Failed to get usage data: {str(e)}"}),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )

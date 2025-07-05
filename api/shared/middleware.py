@@ -137,14 +137,12 @@ def security_headers() -> Dict[str, str]:
             "base-uri 'self'; "
             "form-action 'self' https://login.microsoftonline.com;"
         ),
-
         # Security headers
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "SAMEORIGIN",  # Allow embedding from same origin for MSAL
         "X-XSS-Protection": "1; mode=block",
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
         "Referrer-Policy": "strict-origin-when-cross-origin",
-
         # Microsoft Entra ID specific headers
         "Access-Control-Allow-Origin": "*",  # Will be restricted in production
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -155,13 +153,11 @@ def security_headers() -> Dict[str, str]:
         ),
         "Access-Control-Expose-Headers": "X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset",
         "Access-Control-Max-Age": "3600",
-
         # API information
         "X-API-Version": "1.0.0",
         "X-Architecture": "entra-id-unified-auth",
         "X-Auth-Provider": "microsoft-entra-id",
         "X-VedUser-Standard": "1.0",
-
         # Cache control for sensitive endpoints
         "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
@@ -347,7 +343,7 @@ def create_health_response() -> func.HttpResponse:
             "status": "healthy",
             "timestamp": time.time(),
             "service": "sutra-api",
-            "message": "basic health check"
+            "message": "basic health check",
         }
 
         return func.HttpResponse(

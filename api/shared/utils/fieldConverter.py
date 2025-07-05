@@ -11,16 +11,16 @@ from typing import Any, Dict, List, Union
 def to_snake_case(camel_str: str) -> str:
     """Convert camelCase string to snake_case"""
     # Insert an underscore before any capital letter that follows a lowercase letter
-    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', camel_str)
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_str)
     # Insert an underscore before any capital letter that follows a lowercase letter or number
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
 def to_camel_case(snake_str: str) -> str:
     """Convert snake_case string to camelCase"""
-    components = snake_str.split('_')
+    components = snake_str.split("_")
     # First component stays lowercase, subsequent components are capitalized
-    return components[0] + ''.join(word.capitalize() for word in components[1:])
+    return components[0] + "".join(word.capitalize() for word in components[1:])
 
 
 def convert_camel_to_snake(obj: Any) -> Any:
@@ -67,7 +67,9 @@ def convert_snake_to_camel(obj: Any) -> Any:
         return obj
 
 
-def batch_convert_requests(requests: List[Dict[str, Any]], to_format: str = "snake") -> List[Dict[str, Any]]:
+def batch_convert_requests(
+    requests: List[Dict[str, Any]], to_format: str = "snake"
+) -> List[Dict[str, Any]]:
     """
     Convert a batch of request objects
 
@@ -78,11 +80,15 @@ def batch_convert_requests(requests: List[Dict[str, Any]], to_format: str = "sna
     Returns:
         List of converted request objects
     """
-    converter = convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
+    converter = (
+        convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
+    )
     return [converter(req) for req in requests]
 
 
-def batch_convert_responses(responses: List[Dict[str, Any]], to_format: str = "camel") -> List[Dict[str, Any]]:
+def batch_convert_responses(
+    responses: List[Dict[str, Any]], to_format: str = "camel"
+) -> List[Dict[str, Any]]:
     """
     Convert a batch of response objects
 
@@ -93,16 +99,18 @@ def batch_convert_responses(responses: List[Dict[str, Any]], to_format: str = "c
     Returns:
         List of converted response objects
     """
-    converter = convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
+    converter = (
+        convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
+    )
     return [converter(resp) for resp in responses]
 
 
 # Export commonly used functions
 __all__ = [
-    'to_snake_case',
-    'to_camel_case',
-    'convert_camel_to_snake',
-    'convert_snake_to_camel',
-    'batch_convert_requests',
-    'batch_convert_responses'
+    "to_snake_case",
+    "to_camel_case",
+    "convert_camel_to_snake",
+    "convert_snake_to_camel",
+    "batch_convert_requests",
+    "batch_convert_responses",
 ]

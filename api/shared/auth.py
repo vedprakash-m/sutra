@@ -96,7 +96,11 @@ class AuthManager:
         """
         try:
             # For development, use a simple mock validation
-            if token == "mock-token" or token.startswith("dev-") or token.startswith("local-dev"):
+            if (
+                token == "mock-token"
+                or token.startswith("dev-")
+                or token.startswith("local-dev")
+            ):
                 return {
                     "sub": "mock-user-id",
                     "email": "vedprakash.m@outlook.com",
@@ -107,7 +111,7 @@ class AuthManager:
                     "iat": datetime.now(timezone.utc).timestamp(),
                     "exp": (datetime.now(timezone.utc).timestamp() + 3600),
                     "aud": "sutra-app-client-id",
-                    "iss": "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0"
+                    "iss": "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0",
                 }
 
             # Get auth configuration
@@ -121,17 +125,25 @@ class AuthManager:
                 decoded = self.validate_jwt_signature(token, jwks_uri)
             except AuthenticationError:
                 # Fallback: decode without verification for development/testing
-                logging.warning("JWKS validation failed, falling back to unverified decode")
+                logging.warning(
+                    "JWKS validation failed, falling back to unverified decode"
+                )
                 decoded = jwt.decode(token, options={"verify_signature": False})
 
             # Validate issuer (required by Apps_Auth_Requirement.md)
-            expected_issuer = "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0"
+            expected_issuer = (
+                "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0"
+            )
             if decoded.get("iss") != expected_issuer:
-                raise AuthenticationError(f"Invalid token issuer. Expected: {expected_issuer}")
+                raise AuthenticationError(
+                    f"Invalid token issuer. Expected: {expected_issuer}"
+                )
 
             # Validate audience (optional for development)
             if config.get("client_id") and decoded.get("aud") != config["client_id"]:
-                logging.warning(f"Token audience mismatch: {decoded.get('aud')} != {config['client_id']}")
+                logging.warning(
+                    f"Token audience mismatch: {decoded.get('aud')} != {config['client_id']}"
+                )
 
             # Check expiration
             if decoded.get("exp", 0) < datetime.now(timezone.utc).timestamp():
@@ -163,15 +175,15 @@ class AuthManager:
         This function MUST be used consistently across all authentication implementations.
         """
         # Validate required claims per Apps_Auth_Requirement.md
-        if not token_claims.get('sub') or not token_claims.get('email'):
-            raise AuthenticationError('Invalid token: missing required claims')
+        if not token_claims.get("sub") or not token_claims.get("email"):
+            raise AuthenticationError("Invalid token: missing required claims")
 
         # Extract basic user information
-        user_id = token_claims['sub']
-        email = token_claims['email']
-        name = token_claims.get('name') or token_claims.get('preferred_username', '')
-        given_name = token_claims.get('given_name', '')
-        family_name = token_claims.get('family_name', '')
+        user_id = token_claims["sub"]
+        email = token_claims["email"]
+        name = token_claims.get("name") or token_claims.get("preferred_username", "")
+        given_name = token_claims.get("given_name", "")
+        family_name = token_claims.get("family_name", "")
 
         # If no name claim, derive from given_name and family_name
         if not name:
@@ -179,16 +191,16 @@ class AuthManager:
 
         # If still no name, use email prefix
         if not name:
-            name = email.split('@')[0]
+            name = email.split("@")[0]
 
         # Extract permissions from roles claim
-        permissions = token_claims.get('roles', [])
+        permissions = token_claims.get("roles", [])
         if isinstance(permissions, str):
             permissions = [permissions]
 
         # Determine user role (maintain compatibility with existing model)
         role = UserRole.USER  # Default role
-        if 'admin' in permissions or 'Administrator' in permissions:
+        if "admin" in permissions or "Administrator" in permissions:
             role = UserRole.ADMIN
 
         # For development, make certain users admin
@@ -197,10 +209,14 @@ class AuthManager:
 
         # Extract vedProfile information with defaults
         ved_profile = {
-            'profileId': token_claims.get('ved_profile_id', user_id),
-            'subscriptionTier': token_claims.get('ved_subscription_tier', 'free'),
-            'appsEnrolled': self._parse_apps_enrolled(token_claims.get('ved_apps_enrolled', [])),
-            'preferences': self._parse_preferences(token_claims.get('ved_preferences', '{}'))
+            "profileId": token_claims.get("ved_profile_id", user_id),
+            "subscriptionTier": token_claims.get("ved_subscription_tier", "free"),
+            "appsEnrolled": self._parse_apps_enrolled(
+                token_claims.get("ved_apps_enrolled", [])
+            ),
+            "preferences": self._parse_preferences(
+                token_claims.get("ved_preferences", "{}")
+            ),
         }
 
         return User(
@@ -214,7 +230,7 @@ class AuthManager:
             ved_profile=ved_profile,
             given_name=given_name,
             family_name=family_name,
-            permissions=permissions
+            permissions=permissions,
         )
 
     def _parse_apps_enrolled(self, apps_enrolled) -> List[str]:
@@ -223,7 +239,11 @@ class AuthManager:
             return apps_enrolled
         elif isinstance(apps_enrolled, str):
             try:
-                return eval(apps_enrolled) if apps_enrolled.startswith('[') else [apps_enrolled]
+                return (
+                    eval(apps_enrolled)
+                    if apps_enrolled.startswith("[")
+                    else [apps_enrolled]
+                )
             except:
                 return [apps_enrolled] if apps_enrolled else []
         return []
@@ -235,6 +255,7 @@ class AuthManager:
         elif isinstance(preferences, str):
             try:
                 import json
+
                 return json.loads(preferences)
             except:
                 return {}
@@ -314,8 +335,8 @@ class AuthManager:
             jwks = self._jwks_cache[jwks_uri]
 
         # Find the specific key
-        for key in jwks.get('keys', []):
-            if key.get('kid') == kid:
+        for key in jwks.get("keys", []):
+            if key.get("kid") == kid:
                 self._jwks_keys_cache[cache_key] = key
                 return key
 
@@ -328,7 +349,7 @@ class AuthManager:
         try:
             # Decode header to get key ID
             header = jwt.get_unverified_header(token)
-            kid = header.get('kid')
+            kid = header.get("kid")
 
             if not kid:
                 raise AuthenticationError("Token header missing key ID")
@@ -343,8 +364,12 @@ class AuthManager:
             decoded = jwt.decode(
                 token,
                 public_key,
-                algorithms=['RS256'],
-                options={"verify_signature": True, "verify_exp": True, "verify_aud": True}
+                algorithms=["RS256"],
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_aud": True,
+                },
             )
 
             return decoded
@@ -356,6 +381,7 @@ class AuthManager:
         except Exception as e:
             logging.error(f"JWT signature validation error: {e}")
             raise AuthenticationError("Token signature validation failed")
+
 
 # Global auth manager instance
 _auth_manager = None
@@ -639,7 +665,9 @@ def verify_jwt_token(req: func.HttpRequest) -> Dict[str, Any]:
         environment = os.getenv("ENVIRONMENT", "").lower()
         if environment == "development":
             auth_header = req.headers.get("Authorization", "")
-            if auth_header.startswith("Bearer dev-") or auth_header.startswith("Bearer demo-"):
+            if auth_header.startswith("Bearer dev-") or auth_header.startswith(
+                "Bearer demo-"
+            ):
                 role = "admin" if "admin" in auth_header else "user"
                 return {
                     "valid": True,
@@ -724,22 +752,22 @@ def add_security_headers(response: func.HttpResponse) -> func.HttpResponse:
     This function adds all mandatory security headers to API responses.
     """
     headers = {
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block',
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Content-Security-Policy': (
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "X-XSS-Protection": "1; mode=block",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Content-Security-Policy": (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://login.microsoftonline.com; "
             "connect-src 'self' https://login.microsoftonline.com https://*.vedprakash.net; "
             "img-src 'self' data: https:; "
             "style-src 'self' 'unsafe-inline'"
         ),
-        'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+        "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
     }
 
     # Add headers to response
@@ -748,38 +776,37 @@ def add_security_headers(response: func.HttpResponse) -> func.HttpResponse:
 
     return response
 
+
 def standardized_auth_error(error_code: str, message: str) -> func.HttpResponse:
     """
     Return standardized authentication error responses - Apps_Auth_Requirement.md compliance
     """
     error_responses = {
-        'AUTH_TOKEN_MISSING': {
-            'status_code': 401,
-            'error': 'Access token required',
-            'code': 'AUTH_TOKEN_MISSING'
+        "AUTH_TOKEN_MISSING": {
+            "status_code": 401,
+            "error": "Access token required",
+            "code": "AUTH_TOKEN_MISSING",
         },
-        'AUTH_TOKEN_INVALID': {
-            'status_code': 401,
-            'error': 'Invalid or expired token',
-            'code': 'AUTH_TOKEN_INVALID'
+        "AUTH_TOKEN_INVALID": {
+            "status_code": 401,
+            "error": "Invalid or expired token",
+            "code": "AUTH_TOKEN_INVALID",
         },
-        'AUTH_PERMISSION_DENIED': {
-            'status_code': 403,
-            'error': 'Insufficient permissions',
-            'code': 'AUTH_PERMISSION_DENIED'
-        }
+        "AUTH_PERMISSION_DENIED": {
+            "status_code": 403,
+            "error": "Insufficient permissions",
+            "code": "AUTH_PERMISSION_DENIED",
+        },
     }
 
-    error_info = error_responses.get(error_code, {
-        'status_code': 500,
-        'error': message,
-        'code': 'AUTH_ERROR'
-    })
+    error_info = error_responses.get(
+        error_code, {"status_code": 500, "error": message, "code": "AUTH_ERROR"}
+    )
 
     response = func.HttpResponse(
         json.dumps(error_info),
-        status_code=error_info['status_code'],
-        headers={'Content-Type': 'application/json'}
+        status_code=error_info["status_code"],
+        headers={"Content-Type": "application/json"},
     )
 
     return add_security_headers(response)

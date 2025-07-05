@@ -36,18 +36,20 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"error": "Method not allowed"}),
                 status_code=405,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
     except Exception as e:
         logger.error(f"Error in guest API: {str(e)}")
         return func.HttpResponse(
-            json.dumps({
-                "error": "internal_error",
-                "message": "Failed to process guest request"
-            }),
+            json.dumps(
+                {
+                    "error": "internal_error",
+                    "message": "Failed to process guest request",
+                }
+            ),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
@@ -55,7 +57,11 @@ async def get_or_create_session(req: func.HttpRequest) -> func.HttpResponse:
     """Get existing guest session or create a new one."""
     try:
         # Get IP address and user agent
-        ip_address = req.headers.get("x-forwarded-for") or req.headers.get("x-real-ip") or "127.0.0.1"
+        ip_address = (
+            req.headers.get("x-forwarded-for")
+            or req.headers.get("x-real-ip")
+            or "127.0.0.1"
+        )
         user_agent = req.headers.get("user-agent", "unknown")
         existing_session_id = req.headers.get("x-guest-session-id")
 
@@ -74,7 +80,9 @@ async def get_or_create_session(req: func.HttpRequest) -> func.HttpResponse:
 
         # Create new session if needed
         if not guest_session:
-            guest_session = await guest_manager.create_guest_session(ip_address, user_agent)
+            guest_session = await guest_manager.create_guest_session(
+                ip_address, user_agent
+            )
 
         # Get usage stats
         stats = await get_guest_usage_stats(guest_session["id"], db_manager)
@@ -84,15 +92,15 @@ async def get_or_create_session(req: func.HttpRequest) -> func.HttpResponse:
                 "id": guest_session["id"],
                 "created_at": guest_session.get("created_at"),
                 "expires_at": guest_session.get("expires_at"),
-                "active": guest_session.get("active", True)
+                "active": guest_session.get("active", True),
             },
             "usage": stats.get("usage", {}),
             "limits": stats.get("limits", {}),
             "remaining": stats.get("remaining", {}),
             "info": {
                 "message": "Welcome! You can test Sutra with limited usage as a guest user.",
-                "upgrade_message": "Sign up for a free account to get unlimited access to all features."
-            }
+                "upgrade_message": "Sign up for a free account to get unlimited access to all features.",
+            },
         }
 
         return func.HttpResponse(
@@ -100,19 +108,18 @@ async def get_or_create_session(req: func.HttpRequest) -> func.HttpResponse:
             status_code=200,
             headers={
                 "Content-Type": "application/json",
-                "X-Guest-Session-Id": guest_session["id"]
-            }
+                "X-Guest-Session-Id": guest_session["id"],
+            },
         )
 
     except Exception as e:
         logger.error(f"Error getting/creating guest session: {str(e)}")
         return func.HttpResponse(
-            json.dumps({
-                "error": "session_error",
-                "message": "Could not create guest session"
-            }),
+            json.dumps(
+                {"error": "session_error", "message": "Could not create guest session"}
+            ),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )
 
 
@@ -124,9 +131,7 @@ async def get_session_stats(session_id: str) -> func.HttpResponse:
 
         if "error" in stats:
             return func.HttpResponse(
-                json.dumps(stats),
-                status_code=404,
-                mimetype="application/json"
+                json.dumps(stats), status_code=404, mimetype="application/json"
             )
 
         return func.HttpResponse(
@@ -134,17 +139,19 @@ async def get_session_stats(session_id: str) -> func.HttpResponse:
             status_code=200,
             headers={
                 "Content-Type": "application/json",
-                "X-Guest-Session-Id": session_id
-            }
+                "X-Guest-Session-Id": session_id,
+            },
         )
 
     except Exception as e:
         logger.error(f"Error getting session stats: {str(e)}")
         return func.HttpResponse(
-            json.dumps({
-                "error": "stats_error",
-                "message": "Could not retrieve session statistics"
-            }),
+            json.dumps(
+                {
+                    "error": "stats_error",
+                    "message": "Could not retrieve session statistics",
+                }
+            ),
             status_code=500,
-            mimetype="application/json"
+            mimetype="application/json",
         )

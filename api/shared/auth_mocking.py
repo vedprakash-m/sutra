@@ -15,10 +15,13 @@ from .models import User, UserRole
 class MockAuthManager:
     """Mock AuthManager for testing purposes."""
 
-    def __init__(self, user_id: str = "test-user-123",
-                 email: str = "test@sutra.ai",
-                 name: str = "Test User",
-                 role: UserRole = None):
+    def __init__(
+        self,
+        user_id: str = "test-user-123",
+        email: str = "test@sutra.ai",
+        name: str = "Test User",
+        role: UserRole = None,
+    ):
         """Initialize mock auth manager with default test user."""
         self.user_id = user_id
         self.email = email
@@ -40,6 +43,7 @@ class MockAuthManager:
         """Mock token validation."""
         if token == "invalid-token":
             from .auth import AuthenticationError
+
             raise AuthenticationError("Invalid token")
 
         return {
@@ -79,7 +83,7 @@ class AuthMockingHelper:
     def create_mock_request(
         user_id: str = "test-user-123",
         token: str = "test-token",
-        headers: Optional[Dict[str, str]] = None
+        headers: Optional[Dict[str, str]] = None,
     ) -> Mock:
         """Create a mock HTTP request with authentication headers."""
         mock_req = Mock()
@@ -119,7 +123,7 @@ class AuthMockingHelper:
                 "valid": True,
                 "sub": "test-user-123",
                 "email": "test@sutra.ai",
-                "roles": ["user"]
+                "roles": ["user"],
             }
 
         return Mock(return_value=return_value, side_effect=side_effect)
@@ -139,7 +143,7 @@ def mock_admin_auth_manager():
         user_id="admin-user-123",
         email="admin@sutra.ai",
         name="Admin User",
-        roles=[UserRole.USER, UserRole.ADMIN]
+        roles=[UserRole.USER, UserRole.ADMIN],
     )
 
 
@@ -148,18 +152,20 @@ def mock_auth_success():
     """Fixture for successful authentication mocking."""
     mock_auth_manager = MockAuthManager()
 
-    with patch("api.shared.auth.get_auth_manager") as mock_get_auth, \
-         patch("api.shared.auth.extract_token_from_request") as mock_extract_token, \
-         patch("api.shared.auth.verify_jwt_token") as mock_verify_jwt, \
-         patch("api.shared.auth.get_user_id_from_token") as mock_get_user_id:
-
+    with patch("api.shared.auth.get_auth_manager") as mock_get_auth, patch(
+        "api.shared.auth.extract_token_from_request"
+    ) as mock_extract_token, patch(
+        "api.shared.auth.verify_jwt_token"
+    ) as mock_verify_jwt, patch(
+        "api.shared.auth.get_user_id_from_token"
+    ) as mock_get_user_id:
         # Configure mocks
         mock_get_auth.return_value = mock_auth_manager
         mock_extract_token.return_value = "test-token"
         mock_verify_jwt.return_value = {
             "valid": True,
             "sub": "test-user-123",
-            "email": "test@sutra.ai"
+            "email": "test@sutra.ai",
         }
         mock_get_user_id.return_value = "test-user-123"
 
@@ -167,7 +173,7 @@ def mock_auth_success():
             "auth_manager": mock_auth_manager,
             "extract_token": mock_extract_token,
             "verify_jwt": mock_verify_jwt,
-            "get_user_id": mock_get_user_id
+            "get_user_id": mock_get_user_id,
         }
 
 
@@ -178,15 +184,18 @@ def mock_admin_auth_success():
         user_id="admin-user-123",
         email="admin@sutra.ai",
         name="Admin User",
-        roles=[UserRole.USER, UserRole.ADMIN]
+        roles=[UserRole.USER, UserRole.ADMIN],
     )
 
-    with patch("api.shared.auth.get_auth_manager") as mock_get_auth, \
-         patch("api.shared.auth.extract_token_from_request") as mock_extract_token, \
-         patch("api.shared.auth.verify_jwt_token") as mock_verify_jwt, \
-         patch("api.shared.auth.get_user_id_from_token") as mock_get_user_id, \
-         patch("api.shared.auth.check_admin_role") as mock_check_admin:
-
+    with patch("api.shared.auth.get_auth_manager") as mock_get_auth, patch(
+        "api.shared.auth.extract_token_from_request"
+    ) as mock_extract_token, patch(
+        "api.shared.auth.verify_jwt_token"
+    ) as mock_verify_jwt, patch(
+        "api.shared.auth.get_user_id_from_token"
+    ) as mock_get_user_id, patch(
+        "api.shared.auth.check_admin_role"
+    ) as mock_check_admin:
         # Configure mocks
         mock_get_auth.return_value = mock_auth_manager
         mock_extract_token.return_value = "admin-token"
@@ -194,7 +203,7 @@ def mock_admin_auth_success():
             "valid": True,
             "sub": "admin-user-123",
             "email": "admin@sutra.ai",
-            "roles": ["user", "admin"]
+            "roles": ["user", "admin"],
         }
         mock_get_user_id.return_value = "admin-user-123"
         mock_check_admin.return_value = True
@@ -204,23 +213,22 @@ def mock_admin_auth_success():
             "extract_token": mock_extract_token,
             "verify_jwt": mock_verify_jwt,
             "get_user_id": mock_get_user_id,
-            "check_admin": mock_check_admin
+            "check_admin": mock_check_admin,
         }
 
 
 @pytest.fixture
 def mock_auth_failure():
     """Fixture for authentication failure mocking."""
-    with patch("api.shared.auth.extract_token_from_request") as mock_extract_token, \
-         patch("api.shared.auth.verify_jwt_token") as mock_verify_jwt:
-
+    with patch(
+        "api.shared.auth.extract_token_from_request"
+    ) as mock_extract_token, patch(
+        "api.shared.auth.verify_jwt_token"
+    ) as mock_verify_jwt:
         mock_extract_token.return_value = None
         mock_verify_jwt.side_effect = Exception("Authentication failed")
 
-        yield {
-            "extract_token": mock_extract_token,
-            "verify_jwt": mock_verify_jwt
-        }
+        yield {"extract_token": mock_extract_token, "verify_jwt": mock_verify_jwt}
 
 
 class StandardAuthMocks:
@@ -230,11 +238,10 @@ class StandardAuthMocks:
     def patch_auth_success(module_name: str, user_id: str = "test-user-123"):
         """Standard successful authentication patching for a specific module."""
         return [
-            patch(f"{module_name}.verify_jwt_token", return_value={
-                "valid": True,
-                "sub": user_id,
-                "email": "test@sutra.ai"
-            }),
+            patch(
+                f"{module_name}.verify_jwt_token",
+                return_value={"valid": True, "sub": user_id, "email": "test@sutra.ai"},
+            ),
             patch(f"{module_name}.get_user_id_from_token", return_value=user_id),
         ]
 
@@ -242,12 +249,15 @@ class StandardAuthMocks:
     def patch_admin_auth_success(module_name: str, user_id: str = "admin-user-123"):
         """Standard admin authentication patching for a specific module."""
         return [
-            patch(f"{module_name}.verify_jwt_token", return_value={
-                "valid": True,
-                "sub": user_id,
-                "email": "admin@sutra.ai",
-                "roles": ["user", "admin"]
-            }),
+            patch(
+                f"{module_name}.verify_jwt_token",
+                return_value={
+                    "valid": True,
+                    "sub": user_id,
+                    "email": "admin@sutra.ai",
+                    "roles": ["user", "admin"],
+                },
+            ),
             patch(f"{module_name}.get_user_id_from_token", return_value=user_id),
             patch(f"{module_name}.check_admin_role", return_value=True),
         ]
@@ -256,10 +266,10 @@ class StandardAuthMocks:
     def patch_auth_failure(module_name: str):
         """Standard authentication failure patching for a specific module."""
         return [
-            patch(f"{module_name}.verify_jwt_token", return_value={
-                "valid": False,
-                "message": "Authentication failed"
-            }),
+            patch(
+                f"{module_name}.verify_jwt_token",
+                return_value={"valid": False, "message": "Authentication failed"},
+            ),
             patch(f"{module_name}.get_user_id_from_token", return_value=None),
         ]
 
@@ -273,6 +283,7 @@ def with_auth_mocking(auth_type: str = "success", user_type: str = "regular"):
         auth_type: "success", "failure", or "admin"
         user_type: "regular" or "admin"
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             if auth_type == "success":
@@ -280,7 +291,7 @@ def with_auth_mocking(auth_type: str = "success", user_type: str = "regular"):
                     with patch("api.shared.auth.get_auth_manager") as mock_auth:
                         mock_auth.return_value = MockAuthManager(
                             user_id="admin-user-123",
-                            roles=[UserRole.USER, UserRole.ADMIN]
+                            roles=[UserRole.USER, UserRole.ADMIN],
                         )
                         return func(*args, **kwargs)
                 else:
@@ -293,7 +304,9 @@ def with_auth_mocking(auth_type: str = "success", user_type: str = "regular"):
                     return func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -312,7 +325,7 @@ class MockAuthContext:
                 auth_manager = MockAuthManager(
                     user_id="admin-user-123",
                     email="admin@sutra.ai",
-                    roles=[UserRole.USER, UserRole.ADMIN]
+                    roles=[UserRole.USER, UserRole.ADMIN],
                 )
             else:
                 auth_manager = MockAuthManager()
@@ -320,14 +333,20 @@ class MockAuthContext:
             # Patch common auth functions
             self.patches = [
                 patch("api.shared.auth.get_auth_manager", return_value=auth_manager),
-                patch("api.shared.auth.extract_token_from_request", return_value="test-token"),
+                patch(
+                    "api.shared.auth.extract_token_from_request",
+                    return_value="test-token",
+                ),
                 patch("api.shared.auth.verify_jwt_token", return_value={"valid": True}),
             ]
         else:
             # Mock authentication failure
             self.patches = [
                 patch("api.shared.auth.extract_token_from_request", return_value=None),
-                patch("api.shared.auth.verify_jwt_token", side_effect=Exception("Auth failed")),
+                patch(
+                    "api.shared.auth.verify_jwt_token",
+                    side_effect=Exception("Auth failed"),
+                ),
             ]
 
         for p in self.patches:

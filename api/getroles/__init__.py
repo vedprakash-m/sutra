@@ -45,7 +45,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"roles": ["user"]}),  # Default to user role
                 status_code=200,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
         try:
@@ -57,7 +57,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 user_items = await db_manager.query_items(
                     container_name="Users",
                     query="SELECT * FROM c WHERE c.id = @user_id",
-                    parameters=[{"name": "@user_id", "value": user_id}]
+                    parameters=[{"name": "@user_id", "value": user_id}],
                 )
 
                 if user_items:
@@ -73,7 +73,9 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                             user_doc["approvalStatus"] = "approved"
                             user_doc["updatedAt"] = datetime.now().isoformat()
                             # In development mode, just log the change (since database is mocked)
-                            logger.info(f"DEVELOPMENT: Setting {user_name} as admin user")
+                            logger.info(
+                                f"DEVELOPMENT: Setting {user_name} as admin user"
+                            )
 
                     logger.info(f"Found existing user {user_id} with role: {user_role}")
 
@@ -83,8 +85,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                         user_doc["updatedAt"] = datetime.now().isoformat()
 
                         await db_manager.update_item(
-                            container_name="Users",
-                            item=user_doc
+                            container_name="Users", item=user_doc
                         )
                 else:
                     # User doesn't exist - implement approval system
@@ -94,7 +95,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                     admin_users = await db_manager.query_items(
                         container_name="Users",
                         query="SELECT * FROM c WHERE c.role = 'admin'",
-                        parameters=[]
+                        parameters=[],
                     )
 
                     # Special case: Make vedprakash.m@outlook.com admin regardless
@@ -104,11 +105,15 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                     elif not admin_users:
                         # No admin users exist, make this user an admin (first user)
                         user_role = "admin"
-                        logger.info(f"No admin users found, making {user_id} the first admin")
+                        logger.info(
+                            f"No admin users found, making {user_id} the first admin"
+                        )
                     else:
                         # Admin users exist, new users need approval
                         user_role = "pending_approval"
-                        logger.info(f"Admin users exist, new user {user_id} requires approval")
+                        logger.info(
+                            f"Admin users exist, new user {user_id} requires approval"
+                        )
 
                     user_doc = {
                         "id": user_id,
@@ -120,13 +125,13 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                         "lastLoginAt": datetime.now().isoformat(),
                         "updatedAt": datetime.now().isoformat(),
                         "type": "user",
-                        "approvalStatus": "pending" if user_role == "pending_approval" else "approved"
+                        "approvalStatus": "pending"
+                        if user_role == "pending_approval"
+                        else "approved",
                     }
 
                     await db_manager.create_item(
-                        container_name="Users",
-                        item=user_doc,
-                        partition_key=user_id
+                        container_name="Users", item=user_doc, partition_key=user_id
                     )
                     logger.info(f"Created new user {user_id} with role: {user_role}")
             except Exception as user_error:
@@ -148,9 +153,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             logger.info(f"Returning roles for user {user_id}: {roles}")
 
             return func.HttpResponse(
-                json.dumps(response_data),
-                status_code=200,
-                mimetype="application/json"
+                json.dumps(response_data), status_code=200, mimetype="application/json"
             )
 
         except Exception as db_error:
@@ -159,7 +162,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(
                 json.dumps({"roles": ["user"]}),
                 status_code=200,
-                mimetype="application/json"
+                mimetype="application/json",
             )
 
     except Exception as e:
@@ -168,5 +171,5 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({"roles": ["user"]}),
             status_code=200,
-            mimetype="application/json"
+            mimetype="application/json",
         )

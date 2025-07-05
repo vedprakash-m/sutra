@@ -181,7 +181,9 @@ class TestBudgetManager:
     async def test_check_user_budget_within_limit(self, mock_get_db_manager):
         """Test user budget check within limit."""
         mock_db_manager = Mock()
-        mock_db_manager.query_items = AsyncMock(return_value=[])  # No budget config found
+        mock_db_manager.query_items = AsyncMock(
+            return_value=[]
+        )  # No budget config found
         mock_get_db_manager.return_value = mock_db_manager
 
         budget_manager = BudgetManager()
@@ -204,7 +206,9 @@ class TestBudgetManager:
     async def test_check_user_budget_over_limit(self, mock_get_db_manager):
         """Test user budget check over limit."""
         mock_db_manager = Mock()
-        mock_db_manager.query_items = AsyncMock(return_value=[])  # No budget config found
+        mock_db_manager.query_items = AsyncMock(
+            return_value=[]
+        )  # No budget config found
         mock_get_db_manager.return_value = mock_db_manager
 
         budget_manager = BudgetManager()
@@ -459,11 +463,13 @@ class TestCostManagementFeatures:
         mock_get_db_manager.return_value = mock_db_manager
 
         budget_manager = BudgetManager()
-        budget_manager.get_user_usage = AsyncMock(return_value={
-            "total_cost": 75.0,
-            "total_tokens": 1500,
-            "total_requests": 30
-        })
+        budget_manager.get_user_usage = AsyncMock(
+            return_value={
+                "total_cost": 75.0,
+                "total_tokens": 1500,
+                "total_requests": 30,
+            }
+        )
 
         result = await budget_manager.get_real_time_budget_status("user-123")
 
@@ -489,12 +495,14 @@ class TestCostManagementFeatures:
         base_date = datetime.now(timezone.utc) - timedelta(days=7)
         for i in range(7):
             date = base_date + timedelta(days=i)
-            historical_usage.append({
-                "user_id": "user-123",
-                "cost": 5.0 + (i * 0.5),  # Increasing trend
-                "date": date.strftime("%Y-%m-%d"),
-                "timestamp": date.isoformat()
-            })
+            historical_usage.append(
+                {
+                    "user_id": "user-123",
+                    "cost": 5.0 + (i * 0.5),  # Increasing trend
+                    "date": date.strftime("%Y-%m-%d"),
+                    "timestamp": date.isoformat(),
+                }
+            )
 
         mock_db_manager.query_items = AsyncMock(return_value=historical_usage)
 
@@ -521,7 +529,7 @@ class TestCostManagementFeatures:
                 "operation": "completion",
                 "input_tokens": 1000,
                 "expected_output_tokens": 500,
-                "expected_min_cost": 0.03  # Should be reasonable for GPT-4
+                "expected_min_cost": 0.03,  # Should be reasonable for GPT-4
             },
             {
                 "provider": LLMProvider.ANTHROPIC,
@@ -529,8 +537,8 @@ class TestCostManagementFeatures:
                 "operation": "completion",
                 "input_tokens": 1000,
                 "expected_output_tokens": 500,
-                "expected_min_cost": 0.02
-            }
+                "expected_min_cost": 0.02,
+            },
         ]
 
         for test_case in test_cases:
@@ -539,7 +547,7 @@ class TestCostManagementFeatures:
                 model=test_case["model"],
                 operation=test_case["operation"],
                 input_tokens=test_case["input_tokens"],
-                expected_output_tokens=test_case["expected_output_tokens"]
+                expected_output_tokens=test_case["expected_output_tokens"],
             )
 
             assert result["provider"] == test_case["provider"]
@@ -594,7 +602,7 @@ class TestCostManagementFeatures:
             "daily_limit": 25.0,
             "monthly_limit": 500.0,
             "alert_thresholds": [50, 75, 90],
-            "auto_block": True
+            "auto_block": True,
         }
 
         result = await budget_manager.set_user_budget_config(config)
@@ -617,17 +625,19 @@ class TestCostManagementFeatures:
         usage_data = []
         for i in range(30):
             date = datetime.now(timezone.utc) - timedelta(days=i)
-            usage_data.extend([
-                {
-                    "user_id": f"user-{j}",
-                    "provider": "openai",
-                    "cost": 2.0 + (i * 0.1),
-                    "tokens_used": 400,
-                    "date": date.strftime("%Y-%m-%d"),
-                    "timestamp": date.isoformat()
-                }
-                for j in range(1, 4)  # 3 users per day
-            ])
+            usage_data.extend(
+                [
+                    {
+                        "user_id": f"user-{j}",
+                        "provider": "openai",
+                        "cost": 2.0 + (i * 0.1),
+                        "tokens_used": 400,
+                        "date": date.strftime("%Y-%m-%d"),
+                        "timestamp": date.isoformat(),
+                    }
+                    for j in range(1, 4)  # 3 users per day
+                ]
+            )
 
         mock_db_manager.query_items = AsyncMock(return_value=usage_data)
 
@@ -655,22 +665,26 @@ class TestCostManagementFeatures:
 
         # Normal usage: $5/day for 28 days
         for i in range(28):
-            date = datetime.now(timezone.utc) - timedelta(days=29-i)
-            normal_usage.append({
-                "user_id": "user-123",
-                "cost": 5.0,
-                "date": date.strftime("%Y-%m-%d"),
-                "timestamp": date.isoformat()
-            })
+            date = datetime.now(timezone.utc) - timedelta(days=29 - i)
+            normal_usage.append(
+                {
+                    "user_id": "user-123",
+                    "cost": 5.0,
+                    "date": date.strftime("%Y-%m-%d"),
+                    "timestamp": date.isoformat(),
+                }
+            )
 
         # Anomaly: $50 in one day
         anomaly_date = datetime.now(timezone.utc) - timedelta(days=1)
-        anomaly_usage.append({
-            "user_id": "user-123",
-            "cost": 50.0,
-            "date": anomaly_date.strftime("%Y-%m-%d"),
-            "timestamp": anomaly_date.isoformat()
-        })
+        anomaly_usage.append(
+            {
+                "user_id": "user-123",
+                "cost": 50.0,
+                "date": anomaly_date.strftime("%Y-%m-%d"),
+                "timestamp": anomaly_date.isoformat(),
+            }
+        )
 
         all_usage = normal_usage + anomaly_usage
         mock_db_manager.query_items = AsyncMock(return_value=all_usage)
@@ -694,20 +708,20 @@ class TestCostManagementFeatures:
                 "user_tier": "basic",
                 "current_usage": 40.0,
                 "additional_cost": 5.0,
-                "expected_action": "warn"  # 45.0 <= 50.0 but > 45.0 (90% of 50.0)
+                "expected_action": "warn",  # 45.0 <= 50.0 but > 45.0 (90% of 50.0)
             },
             {
                 "user_tier": "premium",
                 "current_usage": 170.0,
                 "additional_cost": 20.0,
-                "expected_action": "warn"  # 190.0 <= 200.0 but > 180.0 (90% of 200.0)
+                "expected_action": "warn",  # 190.0 <= 200.0 but > 180.0 (90% of 200.0)
             },
             {
                 "user_tier": "basic",
                 "current_usage": 48.0,
                 "additional_cost": 5.0,
-                "expected_action": "block"  # 53.0 > 50.0
-            }
+                "expected_action": "block",  # 53.0 > 50.0
+            },
         ]
 
         for test_case in test_cases:
@@ -718,7 +732,7 @@ class TestCostManagementFeatures:
             result = await budget_manager.check_tier_based_budget(
                 user_id="user-123",
                 user_tier=test_case["user_tier"],
-                additional_cost=test_case["additional_cost"]
+                additional_cost=test_case["additional_cost"],
             )
 
             assert result["action"] == test_case["expected_action"]
@@ -741,7 +755,7 @@ class TestCostManagementFeatures:
                 "model": "gpt-4",
                 "operation": "completion",
                 "tokens_used": 500,
-                "date": "2024-01-15"
+                "date": "2024-01-15",
             },
             {
                 "user_id": "user-123",
@@ -750,8 +764,8 @@ class TestCostManagementFeatures:
                 "model": "gpt-3.5-turbo",
                 "operation": "completion",
                 "tokens_used": 500,
-                "date": "2024-01-15"
-            }
+                "date": "2024-01-15",
+            },
         ]
 
         mock_db_manager.query_items = AsyncMock(return_value=usage_data)
@@ -783,7 +797,7 @@ class TestCostManagementFeatures:
             operation_id=operation_id,
             user_id="user-123",
             provider=LLMProvider.OPENAI,
-            model="gpt-4"
+            model="gpt-4",
         )
 
         assert result["success"] is True
@@ -797,17 +811,18 @@ class TestCostManagementFeatures:
         budget_manager = BudgetManager()
 
         # Mock high usage scenario
-        budget_manager.get_system_usage = AsyncMock(return_value={
-            "top_users": [
-                {"user_id": "user-123", "cost": 95.0},
-                {"user_id": "user-456", "cost": 85.0}
-            ]
-        })
+        budget_manager.get_system_usage = AsyncMock(
+            return_value={
+                "top_users": [
+                    {"user_id": "user-123", "cost": 95.0},
+                    {"user_id": "user-456", "cost": 85.0},
+                ]
+            }
+        )
 
-        budget_manager.check_user_budget = AsyncMock(return_value={
-            "utilization_percent": 95.0,
-            "remaining_budget": 5.0
-        })
+        budget_manager.check_user_budget = AsyncMock(
+            return_value={"utilization_percent": 95.0, "remaining_budget": 5.0}
+        )
 
         # Mock notification sending
         with patch("api.shared.budget.send_notification") as mock_send:
@@ -831,7 +846,7 @@ class TestCostManagementFeatures:
             model="gpt-4",
             operation="completion",
             input_tokens=0,
-            expected_output_tokens=0
+            expected_output_tokens=0,
         )
 
         assert result["estimated_cost"] == 0.0
@@ -842,7 +857,7 @@ class TestCostManagementFeatures:
             model="unknown-model",
             operation="completion",
             input_tokens=1000,
-            expected_output_tokens=500
+            expected_output_tokens=500,
         )
 
         assert result["estimated_cost"] > 0.0

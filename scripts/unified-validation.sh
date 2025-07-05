@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# Unified Full-Stack Validation Script
+# Enhanced Unified Full-Stack Validation Script
 # Provides comprehensive validation for the Sutra project (Frontend + Backend)
+# Ensures 100% parity between local development and CI/CD environments
 # Usage: ./unified-validation.sh [mode] [scope]
 # Modes: local, ci, strict
-# Scopes: core, all, frontend-only, backend-only
+# Scopes: core, all, frontend-only, backend-only, e2e
 
 set -e
 
@@ -21,30 +22,47 @@ MODE=${1:-local}
 SCOPE=${2:-core}
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-echo -e "${BLUE}🔍 Unified Full-Stack Validation - Sutra Project${NC}"
+# Validation counters
+TOTAL_CHECKS=0
+PASSED_CHECKS=0
+FAILED_CHECKS=0
+
+echo -e "${BLUE}🔍 Enhanced Unified Full-Stack Validation - Sutra Project${NC}"
 echo -e "Mode: ${YELLOW}$MODE${NC} | Scope: ${YELLOW}$SCOPE${NC}"
 echo -e "${CYAN}Architecture: Frontend (React/TypeScript) + Backend (Python/Azure Functions)${NC}"
+echo -e "${CYAN}Focus: 100% CI/CD Parity + E2E Validation${NC}"
 echo ""
 
 cd "$PROJECT_ROOT"
 
-# Function to run with error handling
+# Function to run with enhanced error handling and logging
 run_check() {
     local check_name="$1"
     local command="$2"
     local required="${3:-true}"
     local working_dir="${4:-$PROJECT_ROOT}"
 
+    ((TOTAL_CHECKS++))
+
     echo -e "${BLUE}🔍 $check_name${NC}"
 
-    if cd "$working_dir" && eval "$command"; then
+    if cd "$working_dir" && eval "$command" > /tmp/unified_validation_output 2>&1; then
         echo -e "${GREEN}✅ $check_name passed${NC}"
+        ((PASSED_CHECKS++))
         echo ""
         cd "$PROJECT_ROOT"
         return 0
     else
         echo -e "${RED}❌ $check_name failed${NC}"
-        echo ""
+        ((FAILED_CHECKS++))
+
+        # Show relevant error output
+        if [ -f /tmp/unified_validation_output ]; then
+            echo -e "${YELLOW}Error output:${NC}"
+            head -10 /tmp/unified_validation_output
+            echo ""
+        fi
+
         cd "$PROJECT_ROOT"
         if [[ "$required" == "true" ]]; then
             return 1
@@ -84,6 +102,66 @@ check_python_env() {
     fi
 }
 
+# Function to validate E2E environment
+validate_e2e_environment() {
+    echo -e "${BLUE}🧪 E2E Environment Validation${NC}"
+    echo -e "${CYAN}=============================${NC}"
+
+    # Check if E2E scripts exist
+    run_check "E2E setup script exists" "test -f scripts/e2e-setup.sh"
+    run_check "E2E cleanup script exists" "test -f scripts/e2e-cleanup.sh"
+    run_check "E2E enhanced setup exists" "test -f scripts/e2e-setup-enhanced.sh"
+
+    # Check if E2E validation script exists
+    run_check "E2E validation script exists" "test -f scripts/validate-e2e.sh"
+
+    # Check Docker Compose configurations
+    run_check "Docker Compose files exist" "test -f docker-compose.yml && test -f docker-compose.e2e-no-cosmos.yml"
+
+    # Check Playwright configuration
+    run_check "Playwright config exists" "test -f playwright.config.ts"
+    run_check "Playwright tests exist" "test -d tests/e2e && find tests/e2e -name '*.spec.ts' | head -1"
+
+    echo ""
+}
+
+# Function to run E2E validation
+run_e2e_validation() {
+    echo -e "${BLUE}🚀 E2E Validation Execution${NC}"
+    echo -e "${CYAN}===========================${NC}"
+
+    # Run E2E validation script
+    if [ -f scripts/validate-e2e.sh ]; then
+        run_check "E2E environment validation" "./scripts/validate-e2e.sh quick"
+    else
+        echo -e "${RED}❌ E2E validation script not found${NC}"
+        return 1
+    fi
+
+    # If in CI or strict mode, also validate E2E setup works
+    if [[ "$MODE" == "ci" || "$MODE" == "strict" ]]; then
+        echo -e "${BLUE}🔧 Testing E2E setup process...${NC}"
+
+        # Test that E2E setup script runs without errors
+        if timeout 60 ./scripts/e2e-setup.sh > /tmp/e2e_setup_test.log 2>&1; then
+            echo -e "${GREEN}✅ E2E setup process: Success${NC}"
+
+            # Cleanup after test
+            ./scripts/e2e-cleanup.sh > /dev/null 2>&1 || true
+        else
+            echo -e "${RED}❌ E2E setup process: Failed${NC}"
+            echo -e "${YELLOW}E2E setup log:${NC}"
+            head -20 /tmp/e2e_setup_test.log
+
+            # Cleanup after test
+            ./scripts/e2e-cleanup.sh > /dev/null 2>&1 || true
+            return 1
+        fi
+    fi
+
+    echo ""
+}
+
 # Skip certain validations based on scope
 should_run_frontend() {
     [[ "$SCOPE" != "backend-only" ]]
@@ -91,6 +169,10 @@ should_run_frontend() {
 
 should_run_backend() {
     [[ "$SCOPE" != "frontend-only" ]]
+}
+
+should_run_e2e() {
+    [[ "$SCOPE" == "all" || "$SCOPE" == "e2e" ]]
 }
 
 # Core validations (always run)
@@ -271,14 +353,44 @@ if [[ "$SCOPE" == "all" ]]; then
     fi
 fi
 
-# Summary
-echo -e "${GREEN}🎉 All validations completed successfully!${NC}"
-if should_run_frontend && should_run_backend; then
-    echo -e "${GREEN}✅ Full-stack validation passed - Frontend (508 tests) + Backend (459 tests)${NC}"
-elif should_run_frontend; then
-    echo -e "${GREEN}✅ Frontend validation passed (508 tests)${NC}"
-elif should_run_backend; then
-    echo -e "${GREEN}✅ Backend validation passed (459 tests)${NC}"
+# E2E Validations (when requested)
+if should_run_e2e; then
+    echo -e "${BLUE}=== E2E Validations ===${NC}"
+
+    # First validate E2E environment
+    validate_e2e_environment
+
+    # Then run E2E validation
+    run_e2e_validation
 fi
-echo -e "${GREEN}✅ Ready for commit/push${NC}"
+
+# Summary
+echo -e "${BLUE}📊 Validation Summary${NC}"
+echo -e "${CYAN}===================${NC}"
+echo -e "Total checks: $TOTAL_CHECKS"
+echo -e "${GREEN}Passed: $PASSED_CHECKS${NC}"
+echo -e "${RED}Failed: $FAILED_CHECKS${NC}"
 echo ""
+
+if [ $FAILED_CHECKS -eq 0 ]; then
+    echo -e "${GREEN}🎉 All validations completed successfully!${NC}"
+    if should_run_frontend && should_run_backend; then
+        echo -e "${GREEN}✅ Full-stack validation passed - Frontend + Backend${NC}"
+    elif should_run_frontend; then
+        echo -e "${GREEN}✅ Frontend validation passed${NC}"
+    elif should_run_backend; then
+        echo -e "${GREEN}✅ Backend validation passed${NC}"
+    fi
+
+    if should_run_e2e; then
+        echo -e "${GREEN}✅ E2E validation passed${NC}"
+    fi
+
+    echo -e "${GREEN}✅ Ready for commit/push${NC}"
+    echo ""
+    exit 0
+else
+    echo -e "${RED}❌ Some validations failed. Please review and fix the issues above.${NC}"
+    echo ""
+    exit 1
+fi

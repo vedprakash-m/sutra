@@ -9,7 +9,7 @@ import os
 import sys
 
 # Add the root directory to Python path for proper imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.middleware import enhanced_security_middleware, create_health_response
 

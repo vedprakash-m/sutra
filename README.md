@@ -231,6 +231,23 @@ pre-commit run --all-files
 - 🐛 **Linting**: ESLint, flake8, TypeScript type checking
 - 📋 **Validation**: YAML/JSON syntax, Bicep templates, shell scripts
 - 📦 **Dependencies**: NPM and Python package validation
+- 🖥️ **Cross-Platform**: Platform compatibility checks for CI/CD
+
+**Cross-Platform Validation:**
+
+```bash
+# Check for platform-specific issues before pushing
+./scripts/cross-platform-validation.sh
+
+# Full validation with Docker simulation (slower)
+./scripts/cross-platform-validation.sh --full
+
+# Detects:
+# - Virtual environments in git tracking
+# - Platform-specific symlinks and binaries
+# - OS-specific paths in configuration files
+# - Windows line endings (CRLF) in source files
+```
   npm run e2e:services # Manage individual services
   npm run e2e:validate # Validate E2E environment
 

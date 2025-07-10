@@ -7,15 +7,16 @@ Part of systematic resolution for cost management architecture gap
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional, List, Tuple
-from dataclasses import dataclass, asdict
-from enum import Enum
-import aiohttp
 import os
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
-from .models import User, LLMProvider
+import aiohttp
+
 from .error_handling import SutraAPIError
+from .models import LLMProvider, User
 from .unified_auth import get_auth_provider
 
 # Configure logging
@@ -102,16 +103,12 @@ class ProviderCostCalculator:
     }
 
     @classmethod
-    def calculate_cost(
-        cls, provider: str, model: str, input_tokens: int, output_tokens: int
-    ) -> float:
+    def calculate_cost(cls, provider: str, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost based on token usage"""
         try:
             pricing = cls.PRICING.get(provider.lower(), {}).get(model.lower(), {})
             if not pricing:
-                logger.warning(
-                    f"No pricing found for {provider}/{model}, using default"
-                )
+                logger.warning(f"No pricing found for {provider}/{model}, using default")
                 return 0.01  # Default fallback cost
 
             input_cost = (input_tokens / 1000) * pricing["input"]
@@ -138,9 +135,7 @@ class ProviderAPIClient:
         if self.session:
             await self.session.close()
 
-    async def get_openai_usage(
-        self, api_key: str, start_date: datetime, end_date: datetime
-    ) -> List[Dict]:
+    async def get_openai_usage(self, api_key: str, start_date: datetime, end_date: datetime) -> List[Dict]:
         """Get usage data from OpenAI API"""
         if not self.session:
             raise ValueError("Session not initialized")
@@ -157,9 +152,7 @@ class ProviderAPIClient:
                 "end_date": end_date.strftime("%Y-%m-%d"),
             }
 
-            async with self.session.get(
-                url, headers=headers, params=params
-            ) as response:
+            async with self.session.get(url, headers=headers, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
                     return data.get("data", [])
@@ -170,18 +163,14 @@ class ProviderAPIClient:
             logger.error(f"Error fetching OpenAI usage: {str(e)}")
             return []
 
-    async def get_anthropic_usage(
-        self, api_key: str, start_date: datetime, end_date: datetime
-    ) -> List[Dict]:
+    async def get_anthropic_usage(self, api_key: str, start_date: datetime, end_date: datetime) -> List[Dict]:
         """Get usage data from Anthropic API"""
         # Note: Anthropic doesn't have a public usage API yet
         # This would be implemented when available
         logger.info("Anthropic usage API not yet available")
         return []
 
-    async def get_google_usage(
-        self, api_key: str, project_id: str, start_date: datetime, end_date: datetime
-    ) -> List[Dict]:
+    async def get_google_usage(self, api_key: str, project_id: str, start_date: datetime, end_date: datetime) -> List[Dict]:
         """Get usage data from Google Cloud Billing API"""
         # This would integrate with Google Cloud Billing API
         logger.info("Google Cloud billing integration not yet implemented")
@@ -221,9 +210,7 @@ class RealTimeCostManager:
         """Track cost for a single request"""
 
         # Calculate cost
-        cost = self.calculator.calculate_cost(
-            provider, model, input_tokens, output_tokens
-        )
+        cost = self.calculator.calculate_cost(provider, model, input_tokens, output_tokens)
         total_tokens = input_tokens + output_tokens
 
         # Create cost record
@@ -255,14 +242,10 @@ class RealTimeCostManager:
         # Check budget limits
         await self._check_budget_limits(user_id)
 
-        logger.info(
-            f"Tracked cost: ${cost:.6f} for user {user_id} ({provider}/{model})"
-        )
+        logger.info(f"Tracked cost: ${cost:.6f} for user {user_id} ({provider}/{model})")
         return record
 
-    async def get_live_usage(
-        self, user_id: str, period: str = "month"
-    ) -> LiveUsageMetrics:
+    async def get_live_usage(self, user_id: str, period: str = "month") -> LiveUsageMetrics:
         """Get live usage metrics for a user"""
         cache_key = f"{user_id}_{period}"
 
@@ -280,9 +263,7 @@ class RealTimeCostManager:
 
         return metrics
 
-    async def _calculate_usage_metrics(
-        self, user_id: str, period: str
-    ) -> LiveUsageMetrics:
+    async def _calculate_usage_metrics(self, user_id: str, period: str) -> LiveUsageMetrics:
         """Calculate usage metrics for a specific period"""
         now = datetime.now(timezone.utc)
 
@@ -298,9 +279,7 @@ class RealTimeCostManager:
 
         # Filter records for user and time period
         relevant_records = [
-            record
-            for record in self.cost_records
-            if record.user_id == user_id and record.timestamp >= start_time
+            record for record in self.cost_records if record.user_id == user_id and record.timestamp >= start_time
         ]
 
         # Calculate totals
@@ -333,9 +312,7 @@ class RealTimeCostManager:
                 }
             by_provider[record.provider]["models"][model_key]["cost"] += record.cost
             by_provider[record.provider]["models"][model_key]["requests"] += 1
-            by_provider[record.provider]["models"][model_key][
-                "tokens"
-            ] += record.total_tokens
+            by_provider[record.provider]["models"][model_key]["tokens"] += record.total_tokens
 
         # Determine status
         status = CostTrackingStatus.ACTIVE
@@ -405,9 +382,7 @@ class RealTimeCostManager:
         if monthly_metrics.total_cost > monthly_budget * 0.8:  # 80% warning
             await self._create_budget_alert(
                 user_id,
-                "warning"
-                if monthly_metrics.total_cost < monthly_budget
-                else "exceeded",
+                "warning" if monthly_metrics.total_cost < monthly_budget else "exceeded",
                 monthly_metrics.total_cost,
                 monthly_budget,
                 "monthly",
@@ -430,8 +405,7 @@ class RealTimeCostManager:
             if (
                 alert.user_id == user_id
                 and alert.alert_type == alert_type
-                and datetime.now(timezone.utc) - alert.triggered_at
-                < self.alert_cooldown
+                and datetime.now(timezone.utc) - alert.triggered_at < self.alert_cooldown
             )
         ]
 
@@ -455,9 +429,7 @@ class RealTimeCostManager:
         self.budget_alerts.append(alert)
         logger.warning(f"Budget alert for {user_id}: {message}")
 
-    async def get_cost_summary(
-        self, user_id: str, period: str = "month"
-    ) -> Dict[str, Any]:
+    async def get_cost_summary(self, user_id: str, period: str = "month") -> Dict[str, Any]:
         """Get cost summary for API responses"""
         metrics = await self.get_live_usage(user_id, period)
 
@@ -467,9 +439,7 @@ class RealTimeCostManager:
             "total_cost": round(metrics.total_cost, 4),
             "total_requests": metrics.total_requests,
             "total_tokens": metrics.total_tokens,
-            "average_cost_per_request": round(
-                metrics.total_cost / max(metrics.total_requests, 1), 6
-            ),
+            "average_cost_per_request": round(metrics.total_cost / max(metrics.total_requests, 1), 6),
             "by_provider": {
                 provider: {
                     "cost": round(data["cost"], 4),
@@ -500,9 +470,7 @@ class RealTimeCostManager:
         estimated_output_tokens: int,
     ) -> Dict[str, Any]:
         """Estimate cost for a potential request"""
-        estimated_cost = self.calculator.calculate_cost(
-            provider, model, estimated_input_tokens, estimated_output_tokens
-        )
+        estimated_cost = self.calculator.calculate_cost(provider, model, estimated_input_tokens, estimated_output_tokens)
 
         return {
             "provider": provider,
@@ -511,18 +479,12 @@ class RealTimeCostManager:
             "estimated_output_tokens": estimated_output_tokens,
             "estimated_total_tokens": estimated_input_tokens + estimated_output_tokens,
             "estimated_cost": round(estimated_cost, 6),
-            "pricing_per_1k_tokens": self.calculator.PRICING.get(provider, {}).get(
-                model, {}
-            ),
+            "pricing_per_1k_tokens": self.calculator.PRICING.get(provider, {}).get(model, {}),
         }
 
-    async def get_recent_alerts(
-        self, user_id: str, limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    async def get_recent_alerts(self, user_id: str, limit: int = 10) -> List[Dict[str, Any]]:
         """Get recent budget alerts for a user"""
-        user_alerts = [
-            alert for alert in self.budget_alerts if alert.user_id == user_id
-        ]
+        user_alerts = [alert for alert in self.budget_alerts if alert.user_id == user_id]
 
         # Sort by most recent first
         user_alerts.sort(key=lambda x: x.triggered_at, reverse=True)

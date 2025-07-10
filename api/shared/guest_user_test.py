@@ -1,16 +1,17 @@
-import pytest
-import json
 import asyncio
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime, timezone, timedelta
+import json
+from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, Mock, patch
 
 import azure.functions as func
-from ..conftest import create_auth_request
+import pytest
 from shared.guest_user import (
     GuestUserManager,
     allow_guest_access,
     get_guest_usage_stats,
 )
+
+from ..conftest import create_auth_request
 
 
 class TestGuestUserManager:
@@ -182,9 +183,7 @@ class TestGuestUserManager:
 class TestAllowGuestAccessDecorator:
     """Test suite for allow_guest_access decorator."""
 
-    def create_mock_request(
-        self, auth_header=None, guest_session_id=None, ip_address="127.0.0.1"
-    ):
+    def create_mock_request(self, auth_header=None, guest_session_id=None, ip_address="127.0.0.1"):
         """Create mock HTTP request."""
         headers = {"x-forwarded-for": ip_address}
         if auth_header:
@@ -292,9 +291,7 @@ class TestAllowGuestAccessDecorator:
                 "limits": {"llm_calls_per_day": 5},
                 "active": True,
             }
-            mock_manager.get_or_create_anonymous_session = AsyncMock(
-                return_value=mock_session
-            )
+            mock_manager.get_or_create_anonymous_session = AsyncMock(return_value=mock_session)
             mock_manager.check_usage_limit = AsyncMock(return_value=True)
             mock_manager.increment_usage = AsyncMock(return_value=mock_session)
             mock_manager_class.return_value = mock_manager

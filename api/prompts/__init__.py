@@ -1,49 +1,49 @@
 import json
 import logging
-
-import sys
 import os
+import sys
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import azure.functions as func
-from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
+import traceback
 import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+import azure.functions as func
+from shared.database import get_database_manager
+from shared.error_handling import (
+    BusinessLogicException,
+    ErrorHandler,
+    ErrorType,
+    SutraError,
+    ValidationException,
+    extract_request_id,
+    handle_api_errors,
+)
+from shared.models import (
+    CreatePromptRequest,
+    ErrorResponse,
+    PromptStatus,
+    PromptTemplate,
+    UpdatePromptRequest,
+)
+from shared.real_time_cost import get_real_time_cost_manager
 
 # Updated imports for unified auth and validation
 from shared.unified_auth import require_authentication, require_permissions
-from shared.real_time_cost import get_real_time_cost_manager
-from shared.database import get_database_manager
-from shared.models import (
-    PromptTemplate,
-    PromptStatus,
-    CreatePromptRequest,
-    UpdatePromptRequest,
-    ErrorResponse,
-)
-from shared.validation import PromptTemplateValidator
-from shared.error_handling import (
-    ValidationException,
-    BusinessLogicException,
-    ErrorHandler,
-    handle_api_errors,
-    extract_request_id,
-    SutraError,
-    ErrorType,
-)
 from shared.validation import (
-    validate_pagination_params,
-    validate_search_query,
-    validate_resource_ownership,
+    PromptTemplateValidator,
     RateLimitValidator,
+    validate_pagination_params,
+    validate_resource_ownership,
+    validate_search_query,
 )
-import traceback
 
 # Import schema validation
 try:
-    from shared.utils.schemaValidator import validatePrompt, createPromptValidation
+    from shared.utils.schemaValidator import createPromptValidation, validatePrompt
 except ImportError:
     # Fallback if schema validator not available
     def validatePrompt(data, partial=False):
@@ -86,9 +86,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         elif method == "DELETE":
             return await handle_delete_prompt(req, request_id)
         else:
-            return ErrorHandler.handle_not_found_error(
-                "endpoint", f"{method} /prompts", request_id
-            ).to_azure_response()
+            return ErrorHandler.handle_not_found_error("endpoint", f"{method} /prompts", request_id).to_azure_response()
 
     except Exception as e:
         logger.error(f"Prompts API error: {str(e)}")
@@ -108,17 +106,13 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
 
 
-async def handle_get_prompts(
-    req: func.HttpRequest, request_id: Optional[str] = None
-) -> func.HttpResponse:
+async def handle_get_prompts(req: func.HttpRequest, request_id: Optional[str] = None) -> func.HttpResponse:
     """Handle GET requests for prompts with validation."""
     user = req.current_user
     db_manager = get_database_manager()
@@ -128,14 +122,10 @@ async def handle_get_prompts(
 
     if prompt_id:
         # Get single prompt
-        prompt = await db_manager.read_item(
-            container_name="Prompts", item_id=prompt_id, partition_key=user.id
-        )
+        prompt = await db_manager.read_item(container_name="Prompts", item_id=prompt_id, partition_key=user.id)
 
         if not prompt:
-            return ErrorHandler.handle_not_found_error(
-                "prompt", prompt_id, request_id
-            ).to_azure_response()
+            return ErrorHandler.handle_not_found_error("prompt", prompt_id, request_id).to_azure_response()
 
         # Validate user can access this resource
         validate_resource_ownership(prompt.get("user_id", ""), user.id, user.roles)
@@ -164,11 +154,7 @@ async def handle_get_prompts(
 
         # Validate and process tags
         tags_param = query_params.get("tags", "")
-        tags = (
-            [tag.strip() for tag in tags_param.split(",") if tag.strip()]
-            if tags_param
-            else None
-        )
+        tags = [tag.strip() for tag in tags_param.split(",") if tag.strip()] if tags_param else None
 
         # Build query - use consistent database field names
         query = "SELECT * FROM c WHERE c.userId = @user_id"
@@ -189,9 +175,7 @@ async def handle_get_prompts(
 
         query += f" ORDER BY c.updatedAt DESC OFFSET {skip} LIMIT {limit}"
 
-        prompts = await db_manager.query_items(
-            container_name="Prompts", query=query, parameters=parameters
-        )
+        prompts = await db_manager.query_items(container_name="Prompts", query=query, parameters=parameters)
 
         return func.HttpResponse(
             json.dumps(
@@ -208,9 +192,7 @@ async def handle_get_prompts(
         )
 
 
-async def handle_create_prompt(
-    req: func.HttpRequest, request_id: Optional[str] = None
-) -> func.HttpResponse:
+async def handle_create_prompt(req: func.HttpRequest, request_id: Optional[str] = None) -> func.HttpResponse:
     """Handle POST requests to create prompts."""
     try:
         user = req.current_user
@@ -255,9 +237,7 @@ async def handle_create_prompt(
         }
 
         # Save to database
-        created_prompt = await db_manager.create_item(
-            container_name="Prompts", item=prompt_data, partition_key=user.id
-        )
+        created_prompt = await db_manager.create_item(container_name="Prompts", item=prompt_data, partition_key=user.id)
 
         logging.info(f"Created prompt {prompt_id} for user {user.id}")
 
@@ -269,9 +249,7 @@ async def handle_create_prompt(
     except Exception as e:
         logging.error(f"Error creating prompt: {str(e)}")
         return func.HttpResponse(
-            json.dumps(
-                {"error": "internal_error", "message": "Failed to create prompt"}
-            ),
+            json.dumps({"error": "internal_error", "message": "Failed to create prompt"}),
             status_code=500,
             headers={"Content-Type": "application/json"},
         )
@@ -310,9 +288,7 @@ async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Get existing prompt
-        existing_prompt = await db_manager.read_item(
-            container_name="Prompts", item_id=prompt_id, partition_key=user.id
-        )
+        existing_prompt = await db_manager.read_item(container_name="Prompts", item_id=prompt_id, partition_key=user.id)
 
         if not existing_prompt:
             return func.HttpResponse(
@@ -332,9 +308,7 @@ async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
         if update_request.content is not None:
             existing_prompt["content"] = update_request.content
         if update_request.variables is not None:
-            existing_prompt["variables"] = [
-                var.dict() for var in update_request.variables
-            ]
+            existing_prompt["variables"] = [var.dict() for var in update_request.variables]
         if update_request.tags is not None:
             existing_prompt["tags"] = update_request.tags
         if update_request.status is not None:
@@ -369,9 +343,7 @@ async def handle_update_prompt(req: func.HttpRequest) -> func.HttpResponse:
             message="Failed to update prompt",
             details={"error": str(e)},
         )
-        return func.HttpResponse(
-            error.json(), status_code=500, headers={"Content-Type": "application/json"}
-        )
+        return func.HttpResponse(error.json(), status_code=500, headers={"Content-Type": "application/json"})
 
 
 async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
@@ -390,9 +362,7 @@ async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Check if prompt exists and belongs to user
-        existing_prompt = await db_manager.read_item(
-            container_name="Prompts", item_id=prompt_id, partition_key=user.id
-        )
+        existing_prompt = await db_manager.read_item(container_name="Prompts", item_id=prompt_id, partition_key=user.id)
 
         if not existing_prompt:
             return func.HttpResponse(
@@ -402,9 +372,7 @@ async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Delete the prompt
-        success = await db_manager.delete_item(
-            container_name="Prompts", item_id=prompt_id, partition_key=user.id
-        )
+        success = await db_manager.delete_item(container_name="Prompts", item_id=prompt_id, partition_key=user.id)
 
         if success:
             logging.info(f"Deleted prompt {prompt_id} for user {user.id}")
@@ -414,9 +382,7 @@ async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "deletion_failed", "message": "Failed to delete prompt"}
-                ),
+                json.dumps({"error": "deletion_failed", "message": "Failed to delete prompt"}),
                 status_code=500,
                 headers={"Content-Type": "application/json"},
             )
@@ -428,6 +394,4 @@ async def handle_delete_prompt(req: func.HttpRequest) -> func.HttpResponse:
             message="Failed to delete prompt",
             details={"error": str(e)},
         )
-        return func.HttpResponse(
-            error.json(), status_code=500, headers={"Content-Type": "application/json"}
-        )
+        return func.HttpResponse(error.json(), status_code=500, headers={"Content-Type": "application/json"})

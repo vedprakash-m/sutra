@@ -5,10 +5,12 @@ This module provides standardized authentication mocking patterns to ensure
 consistent behavior across all test files and improve CI/CD reliability.
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
 from .models import User, UserRole
 
 
@@ -154,9 +156,7 @@ def mock_auth_success():
 
     with patch("api.shared.auth.get_auth_manager") as mock_get_auth, patch(
         "api.shared.auth.extract_token_from_request"
-    ) as mock_extract_token, patch(
-        "api.shared.auth.verify_jwt_token"
-    ) as mock_verify_jwt, patch(
+    ) as mock_extract_token, patch("api.shared.auth.verify_jwt_token") as mock_verify_jwt, patch(
         "api.shared.auth.get_user_id_from_token"
     ) as mock_get_user_id:
         # Configure mocks
@@ -189,9 +189,7 @@ def mock_admin_auth_success():
 
     with patch("api.shared.auth.get_auth_manager") as mock_get_auth, patch(
         "api.shared.auth.extract_token_from_request"
-    ) as mock_extract_token, patch(
-        "api.shared.auth.verify_jwt_token"
-    ) as mock_verify_jwt, patch(
+    ) as mock_extract_token, patch("api.shared.auth.verify_jwt_token") as mock_verify_jwt, patch(
         "api.shared.auth.get_user_id_from_token"
     ) as mock_get_user_id, patch(
         "api.shared.auth.check_admin_role"
@@ -220,9 +218,7 @@ def mock_admin_auth_success():
 @pytest.fixture
 def mock_auth_failure():
     """Fixture for authentication failure mocking."""
-    with patch(
-        "api.shared.auth.extract_token_from_request"
-    ) as mock_extract_token, patch(
+    with patch("api.shared.auth.extract_token_from_request") as mock_extract_token, patch(
         "api.shared.auth.verify_jwt_token"
     ) as mock_verify_jwt:
         mock_extract_token.return_value = None

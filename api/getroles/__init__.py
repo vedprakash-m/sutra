@@ -3,12 +3,13 @@ Azure Static Web Apps Role Assignment Endpoint
 This endpoint is called by Azure Static Web Apps to determine user roles.
 """
 
-import azure.functions as func
 import json
 import logging
 import os
 import sys
 from datetime import datetime
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -73,9 +74,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                             user_doc["approvalStatus"] = "approved"
                             user_doc["updatedAt"] = datetime.now().isoformat()
                             # In development mode, just log the change (since database is mocked)
-                            logger.info(
-                                f"DEVELOPMENT: Setting {user_name} as admin user"
-                            )
+                            logger.info(f"DEVELOPMENT: Setting {user_name} as admin user")
 
                     logger.info(f"Found existing user {user_id} with role: {user_role}")
 
@@ -84,9 +83,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                         user_doc["lastLoginAt"] = datetime.now().isoformat()
                         user_doc["updatedAt"] = datetime.now().isoformat()
 
-                        await db_manager.update_item(
-                            container_name="Users", item=user_doc
-                        )
+                        await db_manager.update_item(container_name="Users", item=user_doc)
                 else:
                     # User doesn't exist - implement approval system
                     # Check if this is the first user (make them admin) or require approval
@@ -105,15 +102,11 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                     elif not admin_users:
                         # No admin users exist, make this user an admin (first user)
                         user_role = "admin"
-                        logger.info(
-                            f"No admin users found, making {user_id} the first admin"
-                        )
+                        logger.info(f"No admin users found, making {user_id} the first admin")
                     else:
                         # Admin users exist, new users need approval
                         user_role = "pending_approval"
-                        logger.info(
-                            f"Admin users exist, new user {user_id} requires approval"
-                        )
+                        logger.info(f"Admin users exist, new user {user_id} requires approval")
 
                     user_doc = {
                         "id": user_id,
@@ -125,14 +118,10 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                         "lastLoginAt": datetime.now().isoformat(),
                         "updatedAt": datetime.now().isoformat(),
                         "type": "user",
-                        "approvalStatus": "pending"
-                        if user_role == "pending_approval"
-                        else "approved",
+                        "approvalStatus": "pending" if user_role == "pending_approval" else "approved",
                     }
 
-                    await db_manager.create_item(
-                        container_name="Users", item=user_doc, partition_key=user_id
-                    )
+                    await db_manager.create_item(container_name="Users", item=user_doc, partition_key=user_id)
                     logger.info(f"Created new user {user_id} with role: {user_role}")
             except Exception as user_error:
                 logger.error(f"Error handling user {user_id}: {str(user_error)}")
@@ -152,9 +141,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             response_data = {"roles": roles}
             logger.info(f"Returning roles for user {user_id}: {roles}")
 
-            return func.HttpResponse(
-                json.dumps(response_data), status_code=200, mimetype="application/json"
-            )
+            return func.HttpResponse(json.dumps(response_data), status_code=200, mimetype="application/json")
 
         except Exception as db_error:
             logger.error(f"Database error in role assignment: {str(db_error)}")

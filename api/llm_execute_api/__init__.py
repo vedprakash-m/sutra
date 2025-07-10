@@ -1,27 +1,28 @@
-import azure.functions as func
 import json
-
-import sys
 import os
+import sys
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import logging
-from datetime import datetime
-from typing import Dict, Any, List, Optional
 import asyncio
+import logging
+import traceback
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 import httpx
+from shared.database import get_database_manager
+from shared.error_handling import SutraAPIError, handle_api_error
+from shared.llm_client import LLMProvider, get_llm_client
+from shared.models import User
+from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
 from shared.unified_auth import require_authentication
-from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
-from shared.real_time_cost import get_cost_manager
-from shared.database import get_database_manager
-from shared.llm_client import get_llm_client, LLMProvider
-from shared.models import User
-from shared.error_handling import handle_api_error, SutraAPIError
-import traceback
+from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -79,9 +80,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
@@ -118,9 +117,7 @@ async def execute_llm_prompt(user_id: str, req: func.HttpRequest) -> func.HttpRe
         # Replace variables in prompt text
         processed_prompt = prompt_text
         for var_name, var_value in variables.items():
-            processed_prompt = processed_prompt.replace(
-                f"{{{{{var_name}}}}}", str(var_value)
-            )
+            processed_prompt = processed_prompt.replace(f"{{{{{var_name}}}}}", str(var_value))
 
         # Get user's LLM API keys
         db_manager = get_database_manager()
@@ -129,11 +126,7 @@ async def execute_llm_prompt(user_id: str, req: func.HttpRequest) -> func.HttpRe
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
 
-        user_items = list(
-            users_container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        user_items = list(users_container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not user_items:
             return func.HttpResponse(
@@ -199,15 +192,11 @@ async def execute_llm_prompt(user_id: str, req: func.HttpRequest) -> func.HttpRe
                 "endTime": execution_end.isoformat() + "Z",
                 "totalDurationMs": int(total_duration),
                 "providersExecuted": len(execution_tasks),
-                "successfulProviders": len(
-                    [r for r in results.values() if "error" not in r]
-                ),
+                "successfulProviders": len([r for r in results.values() if "error" not in r]),
             },
         }
 
-        logger.info(
-            f"Executed prompt across {len(execution_tasks)} LLMs for user {user_id}"
-        )
+        logger.info(f"Executed prompt across {len(execution_tasks)} LLMs for user {user_id}")
 
         return func.HttpResponse(
             json.dumps(response_data, default=str),
@@ -236,9 +225,7 @@ async def execute_single_llm(
         llm_client = get_llm_client(provider, api_config)
 
         # Execute the prompt
-        response = await llm_client.complete(
-            prompt=prompt, temperature=temperature, max_tokens=max_tokens
-        )
+        response = await llm_client.complete(prompt=prompt, temperature=temperature, max_tokens=max_tokens)
 
         end_time = datetime.utcnow()
         duration_ms = (end_time - start_time).total_seconds() * 1000
@@ -326,9 +313,7 @@ async def compare_llm_outputs(user_id: str, req: func.HttpRequest) -> func.HttpR
             )
 
         outputs = body.get("outputs", {})
-        comparison_criteria = body.get(
-            "criteria", ["quality", "relevance", "creativity"]
-        )
+        comparison_criteria = body.get("criteria", ["quality", "relevance", "creativity"])
 
         if len(outputs) < 2:
             return func.HttpResponse(
@@ -366,16 +351,11 @@ async def compare_llm_outputs(user_id: str, req: func.HttpRequest) -> func.HttpR
         # Determine overall rankings
         overall_scores = {}
         for provider in outputs.keys():
-            total_score = sum(
-                comparison_results[criterion].get(provider, 0)
-                for criterion in comparison_criteria
-            )
+            total_score = sum(comparison_results[criterion].get(provider, 0) for criterion in comparison_criteria)
             overall_scores[provider] = total_score / len(comparison_criteria)
 
         # Sort by score
-        ranked_providers = sorted(
-            overall_scores.items(), key=lambda x: x[1], reverse=True
-        )
+        ranked_providers = sorted(overall_scores.items(), key=lambda x: x[1], reverse=True)
 
         response_data = {
             "comparison": comparison_results,
@@ -409,11 +389,7 @@ async def get_available_providers(user_id: str) -> func.HttpResponse:
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
 
-        user_items = list(
-            users_container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        user_items = list(users_container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         user_llm_keys = {}
         if user_items:
@@ -422,9 +398,7 @@ async def get_available_providers(user_id: str) -> func.HttpResponse:
         # Get system LLM settings
         system_container = db_manager.get_container("SystemConfig")
         try:
-            llm_settings = system_container.read_item(
-                item="llm_settings", partition_key="llm_settings"
-            )
+            llm_settings = system_container.read_item(item="llm_settings", partition_key="llm_settings")
             system_providers = llm_settings.get("providers", {})
         except Exception:
             system_providers = {}
@@ -440,8 +414,7 @@ async def get_available_providers(user_id: str) -> func.HttpResponse:
                 "id": provider,
                 "name": provider.replace("_", " ").title(),
                 "configured": user_config is not None,
-                "enabled": system_config.get("enabled", True)
-                and user_config is not None,
+                "enabled": system_config.get("enabled", True) and user_config is not None,
                 "priority": system_config.get("priority", 999),
                 "models": get_provider_models(provider),
                 "rateLimits": system_config.get("rateLimits", {}),
@@ -455,9 +428,7 @@ async def get_available_providers(user_id: str) -> func.HttpResponse:
 
         response_data = {
             "providers": available_providers,
-            "defaultProvider": next(
-                (p["id"] for p in available_providers if p["enabled"]), "openai"
-            ),
+            "defaultProvider": next((p["id"] for p in available_providers if p["enabled"]), "openai"),
             "totalConfigured": len([p for p in available_providers if p["configured"]]),
             "totalEnabled": len([p for p in available_providers if p["enabled"]]),
         }

@@ -67,9 +67,7 @@ def convert_snake_to_camel(obj: Any) -> Any:
         return obj
 
 
-def batch_convert_requests(
-    requests: List[Dict[str, Any]], to_format: str = "snake"
-) -> List[Dict[str, Any]]:
+def batch_convert_requests(requests: List[Dict[str, Any]], to_format: str = "snake") -> List[Dict[str, Any]]:
     """
     Convert a batch of request objects
 
@@ -80,15 +78,11 @@ def batch_convert_requests(
     Returns:
         List of converted request objects
     """
-    converter = (
-        convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
-    )
+    converter = convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
     return [converter(req) for req in requests]
 
 
-def batch_convert_responses(
-    responses: List[Dict[str, Any]], to_format: str = "camel"
-) -> List[Dict[str, Any]]:
+def batch_convert_responses(responses: List[Dict[str, Any]], to_format: str = "camel") -> List[Dict[str, Any]]:
     """
     Convert a batch of response objects
 
@@ -99,9 +93,7 @@ def batch_convert_responses(
     Returns:
         List of converted response objects
     """
-    converter = (
-        convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
-    )
+    converter = convert_camel_to_snake if to_format == "snake" else convert_snake_to_camel
     return [converter(resp) for resp in responses]
 
 

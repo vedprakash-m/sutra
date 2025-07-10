@@ -6,11 +6,14 @@ Part of systematic resolution for validation centralization
 
 import json
 import os
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
+from jsonschema import (
+    Draft7Validator,
+)
+from jsonschema import ValidationError as JSONSchemaValidationError
 from jsonschema import (
     validate,
-    ValidationError as JSONSchemaValidationError,
-    Draft7Validator,
 )
 
 
@@ -19,9 +22,7 @@ class SchemaValidator:
 
     def __init__(self):
         self.schemas = {}
-        self.schema_dir = os.path.join(
-            os.path.dirname(__file__), "..", "..", "..", "shared", "schemas"
-        )
+        self.schema_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "shared", "schemas")
         self._load_schemas()
 
     def _load_schemas(self):
@@ -160,9 +161,7 @@ class SchemaValidator:
         except Exception as e:
             return {"valid": False, "errors": [f"Validation error: {str(e)}"]}
 
-    def validate_batch(
-        self, entities: List[Dict[str, Any]], entity_type: str
-    ) -> Dict[str, Any]:
+    def validate_batch(self, entities: List[Dict[str, Any]], entity_type: str) -> Dict[str, Any]:
         """
         Validate multiple entities of the same type
 
@@ -178,9 +177,7 @@ class SchemaValidator:
 
         for i, entity in enumerate(entities):
             result = self.validate_entity(entity, entity_type)
-            results.append(
-                {"index": i, "valid": result["valid"], "errors": result["errors"]}
-            )
+            results.append({"index": i, "valid": result["valid"], "errors": result["errors"]})
             if not result["valid"]:
                 all_valid = False
 

@@ -4,18 +4,20 @@ Centralized authentication system for Sutra Multi-LLM Platform
 Microsoft Entra ID integration with VedUser standard compliance
 """
 
-import os
 import logging
+import os
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, List
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
 import azure.functions as func
 
-from .models import User, UserRole
-from .auth_static_web_apps import StaticWebAppsAuthManager
 from .auth_mocking import MockAuthManager
-from .error_handling import SutraAPIError, SutraError, ErrorType
-from .entra_auth import validate_request_headers, VedUser as EntraVedUser
+from .auth_static_web_apps import StaticWebAppsAuthManager
+from .entra_auth import VedUser as EntraVedUser
+from .entra_auth import validate_request_headers
+from .error_handling import ErrorType, SutraAPIError, SutraError
+from .models import User, UserRole
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -39,9 +41,7 @@ class AuthProvider(ABC):
         pass
 
     @abstractmethod
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate user has required permissions"""
         pass
 
@@ -62,23 +62,17 @@ class EntraIdAuthProvider(AuthProvider):
             or self._extract_tenant_from_authority()
             or "80fe68b7-105c-4fb9-ab03-c9a818e35848"  # Default to specific tenant
         )
-        self.client_id = os.getenv("ENTRA_CLIENT_ID") or os.getenv(
-            "SUTRA_ENTRA_ID_CLIENT_ID"
-        )
+        self.client_id = os.getenv("ENTRA_CLIENT_ID") or os.getenv("SUTRA_ENTRA_ID_CLIENT_ID")
         logger.info(
             f"✅ EntraIdAuthProvider initialized (tenant: {self.tenant_id}, client_id: {'***' if self.client_id else 'None'})"
         )
 
         # Validate configuration
         if not self.client_id:
-            logger.error(
-                "❌ CRITICAL: No client ID configured for Entra ID authentication"
-            )
+            logger.error("❌ CRITICAL: No client ID configured for Entra ID authentication")
 
         # Log the extracted tenant for debugging
-        logger.info(
-            f"🔍 Tenant extracted from authority: {self._extract_tenant_from_authority()}"
-        )
+        logger.info(f"🔍 Tenant extracted from authority: {self._extract_tenant_from_authority()}")
 
     def _extract_tenant_from_authority(self):
         """Extract tenant ID from SUTRA_ENTRA_ID_AUTHORITY"""
@@ -107,9 +101,7 @@ class EntraIdAuthProvider(AuthProvider):
                     updated_at=ved_user.updated_at,
                 )
 
-                logger.info(
-                    f"✅ Entra ID user authenticated: {user.email} (role: {user.role})"
-                )
+                logger.info(f"✅ Entra ID user authenticated: {user.email} (role: {user.role})")
                 return user
 
             logger.warning("❌ Entra ID authentication failed")
@@ -119,9 +111,7 @@ class EntraIdAuthProvider(AuthProvider):
             logger.error(f"❌ Entra ID authentication error: {e}")
             return None
 
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate user has required permissions"""
         # Basic role-based validation
         if user.role == UserRole.ADMIN:
@@ -149,9 +139,7 @@ class StaticWebAppsAuthProvider(AuthProvider):
     async def get_user_from_request(self, req: func.HttpRequest) -> Optional[User]:
         return self.manager.get_user_from_headers(req)
 
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         # Basic permission validation - can be enhanced
         return user.role in [UserRole.ADMIN, UserRole.USER]
 
@@ -180,9 +168,7 @@ class MockAuthProvider(AuthProvider):
             updated_at=now,
         )
 
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         return True  # Mock allows all permissions
 
     async def refresh_user_session(self, user: User) -> Optional[User]:
@@ -199,9 +185,7 @@ class UnifiedAuthProvider:
         self.environment = self._detect_environment()
         self.provider = self._create_provider()
 
-        logger.info(
-            f"Initialized UnifiedAuthProvider for {self.environment.value} environment"
-        )
+        logger.info(f"Initialized UnifiedAuthProvider for {self.environment.value} environment")
 
     def _detect_environment(self) -> AuthEnvironment:
         """Detect the current environment"""
@@ -235,9 +219,7 @@ class UnifiedAuthProvider:
             logger.error(f"Authentication failed: {str(e)}")
             return None
 
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate user permissions"""
         return await self.provider.validate_user_permissions(user, required_permissions)
 
@@ -263,9 +245,7 @@ class UnifiedAuthProvider:
             )
         return user
 
-    async def require_permissions(
-        self, req: func.HttpRequest, permissions: List[str]
-    ) -> User:
+    async def require_permissions(self, req: func.HttpRequest, permissions: List[str]) -> User:
         """Require specific permissions and return user or raise error"""
         user = await self.require_authentication(req)
         if not await self.validate_user_permissions(user, permissions):
@@ -305,9 +285,7 @@ class ProductionAuthProvider(AuthProvider):
         logger.warning("❌ Both Entra ID and SWA authentication failed")
         return None
 
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate permissions based on role and explicit permissions"""
         # Admin users have all permissions
         if user.role == UserRole.ADMIN:
@@ -382,10 +360,7 @@ class DevelopmentAuthProvider(AuthProvider):
 
         # Auto-inject admin user for specific demo endpoints
         path = req.url.lower()
-        if any(
-            path.endswith(endpoint)
-            for endpoint in ["/admin", "/integrations", "/users"]
-        ):
+        if any(path.endswith(endpoint) for endpoint in ["/admin", "/integrations", "/users"]):
             logger.info("✅ Development auto-admin injection")
             return self.demo_users["vedprakash.m@outlook.com"]
 
@@ -393,9 +368,7 @@ class DevelopmentAuthProvider(AuthProvider):
         logger.info("✅ Development default demo user")
         return self.demo_users["demo.user@example.com"]
 
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate permissions with wildcard support"""
         user_permissions = getattr(user, "permissions", [])
 
@@ -445,6 +418,7 @@ class TestingAuthProvider(AuthProvider):
 
         if test_user_type:
             from datetime import datetime, timezone
+
             from .models import User, UserRole
 
             now = datetime.now(timezone.utc)
@@ -487,9 +461,7 @@ class TestingAuthProvider(AuthProvider):
 
         return None
 
-    async def validate_user_permissions(
-        self, user: User, required_permissions: List[str]
-    ) -> bool:
+    async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Always validate permissions for testing"""
         user_permissions = getattr(user, "permissions", [])
         if "*" in user_permissions or user.role == UserRole.ADMIN:

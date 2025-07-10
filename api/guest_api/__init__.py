@@ -1,14 +1,15 @@
-import azure.functions as func
 import json
 import logging
-import sys
 import os
+import sys
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from shared.guest_user import GuestUserManager, get_guest_usage_stats
 from shared.database import get_database_manager
+from shared.guest_user import GuestUserManager, get_guest_usage_stats
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +58,7 @@ async def get_or_create_session(req: func.HttpRequest) -> func.HttpResponse:
     """Get existing guest session or create a new one."""
     try:
         # Get IP address and user agent
-        ip_address = (
-            req.headers.get("x-forwarded-for")
-            or req.headers.get("x-real-ip")
-            or "127.0.0.1"
-        )
+        ip_address = req.headers.get("x-forwarded-for") or req.headers.get("x-real-ip") or "127.0.0.1"
         user_agent = req.headers.get("user-agent", "unknown")
         existing_session_id = req.headers.get("x-guest-session-id")
 
@@ -80,9 +77,7 @@ async def get_or_create_session(req: func.HttpRequest) -> func.HttpResponse:
 
         # Create new session if needed
         if not guest_session:
-            guest_session = await guest_manager.create_guest_session(
-                ip_address, user_agent
-            )
+            guest_session = await guest_manager.create_guest_session(ip_address, user_agent)
 
         # Get usage stats
         stats = await get_guest_usage_stats(guest_session["id"], db_manager)
@@ -115,9 +110,7 @@ async def get_or_create_session(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logger.error(f"Error getting/creating guest session: {str(e)}")
         return func.HttpResponse(
-            json.dumps(
-                {"error": "session_error", "message": "Could not create guest session"}
-            ),
+            json.dumps({"error": "session_error", "message": "Could not create guest session"}),
             status_code=500,
             mimetype="application/json",
         )
@@ -130,9 +123,7 @@ async def get_session_stats(session_id: str) -> func.HttpResponse:
         stats = await get_guest_usage_stats(session_id, db_manager)
 
         if "error" in stats:
-            return func.HttpResponse(
-                json.dumps(stats), status_code=404, mimetype="application/json"
-            )
+            return func.HttpResponse(json.dumps(stats), status_code=404, mimetype="application/json")
 
         return func.HttpResponse(
             json.dumps(stats, default=str),

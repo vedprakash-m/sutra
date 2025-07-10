@@ -2,23 +2,26 @@
 Tests for the middleware module.
 """
 
-import pytest
 import json
-import time
 import os
-from unittest.mock import Mock, patch, MagicMock
+import time
+from unittest.mock import MagicMock, Mock, patch
+
 import azure.functions as func
-from ..conftest import create_auth_request
+import pytest
+
 from api.shared.middleware import (
     RateLimiter,
-    get_client_ip,
-    security_headers,
-    rate_limit_middleware,
-    validate_cors_origin,
-    enhanced_security_middleware,
     create_health_response,
+    enhanced_security_middleware,
+    get_client_ip,
+    rate_limit_middleware,
     rate_limiter,
+    security_headers,
+    validate_cors_origin,
 )
+
+from ..conftest import create_auth_request
 
 
 class TestRateLimiter:
@@ -307,9 +310,7 @@ class TestRateLimitMiddleware:
 
                 # Verify warning logging
                 mock_logger.warning.assert_called_once()
-                assert (
-                    "Rate limit exceeded for IP" in mock_logger.warning.call_args[0][0]
-                )
+                assert "Rate limit exceeded for IP" in mock_logger.warning.call_args[0][0]
 
     def test_rate_limit_middleware_exception(self):
         """Test rate limit middleware when an exception occurs."""
@@ -322,9 +323,9 @@ class TestRateLimitMiddleware:
         req.headers = {}
 
         # Mock get_client_ip to raise an exception
-        with patch(
-            "api.shared.middleware.get_client_ip", side_effect=Exception("IP error")
-        ), patch("api.shared.middleware.logger") as mock_logger:
+        with patch("api.shared.middleware.get_client_ip", side_effect=Exception("IP error")), patch(
+            "api.shared.middleware.logger"
+        ) as mock_logger:
             response = test_function(req)
 
             # Should still execute the function despite middleware error
@@ -348,9 +349,7 @@ class TestEnhancedSecurityMiddleware:
         req = Mock(spec=func.HttpRequest)
         req.headers = {"Origin": "https://sutra-web.azurestaticapps.net"}
 
-        with patch(
-            "api.shared.middleware.rate_limit_middleware"
-        ) as mock_rate_middleware:
+        with patch("api.shared.middleware.rate_limit_middleware") as mock_rate_middleware:
             # Make rate_limit_middleware return the original function
             mock_rate_middleware.side_effect = lambda f: f
 
@@ -393,9 +392,7 @@ class TestEnhancedSecurityMiddleware:
             side_effect=Exception("CORS error"),
         ), patch(
             "api.shared.middleware.rate_limit_middleware"
-        ) as mock_rate_middleware, patch(
-            "api.shared.middleware.logger"
-        ) as mock_logger:
+        ) as mock_rate_middleware, patch("api.shared.middleware.logger") as mock_logger:
             # Make rate_limit_middleware return the original function
             mock_rate_middleware.side_effect = lambda f: f
 

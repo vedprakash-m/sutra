@@ -5,13 +5,14 @@ This file provides common fixtures and test utilities used across all test modul
 particularly standardized authentication mocking patterns for Azure Static Web Apps.
 """
 
-import pytest
-import sys
-import os
 import base64
 import json
-from unittest.mock import Mock, patch, AsyncMock
+import os
+import sys
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 # Add the current directory to the path for imports
 current_dir = os.path.dirname(__file__)
@@ -55,9 +56,7 @@ def mock_static_web_apps_auth():
         }
 
         # Encode as base64
-        principal_b64 = base64.b64encode(
-            json.dumps(principal_data).encode("utf-8")
-        ).decode("utf-8")
+        principal_b64 = base64.b64encode(json.dumps(principal_data).encode("utf-8")).decode("utf-8")
 
         # Create mock request with headers
         mock_request = Mock()
@@ -69,9 +68,7 @@ def mock_static_web_apps_auth():
         }
         mock_request.get_json.return_value = body or {}
         mock_request.method = method
-        mock_request.get_body.return_value = (
-            json.dumps(body or {}).encode("utf-8") if body else b"{}"
-        )
+        mock_request.get_body.return_value = json.dumps(body or {}).encode("utf-8") if body else b"{}"
 
         return mock_request
 
@@ -81,41 +78,31 @@ def mock_static_web_apps_auth():
 @pytest.fixture
 def mock_auth_success(mock_static_web_apps_auth):
     """Global fixture for successful authentication mocking."""
-    return mock_static_web_apps_auth(
-        user_id="auth-user-123", role="user", user_name="Auth User"
-    )
+    return mock_static_web_apps_auth(user_id="auth-user-123", role="user", user_name="Auth User")
 
 
 @pytest.fixture
 def mock_admin_auth(mock_static_web_apps_auth):
     """Fixture for admin authenticated requests."""
-    return mock_static_web_apps_auth(
-        user_id="admin-user-123", role="admin", user_name="Test Admin"
-    )
+    return mock_static_web_apps_auth(user_id="admin-user-123", role="admin", user_name="Test Admin")
 
 
 @pytest.fixture
 def mock_user_auth(mock_static_web_apps_auth):
     """Fixture for regular user authenticated requests."""
-    return mock_static_web_apps_auth(
-        user_id="test-user-123", role="user", user_name="Test User"
-    )
+    return mock_static_web_apps_auth(user_id="test-user-123", role="user", user_name="Test User")
 
 
 @pytest.fixture
 def mock_non_admin_auth(mock_static_web_apps_auth):
     """Fixture for non-admin authenticated requests."""
-    return mock_static_web_apps_auth(
-        user_id="non-admin-123", role="user", user_name="Non Admin User"
-    )
+    return mock_static_web_apps_auth(user_id="non-admin-123", role="user", user_name="Non Admin User")
 
 
 @pytest.fixture
 def mock_auth_request(mock_static_web_apps_auth):
     """General purpose authenticated request fixture."""
-    return mock_static_web_apps_auth(
-        user_id="test-user-123", role="user", user_name="Test User"
-    )
+    return mock_static_web_apps_auth(user_id="test-user-123", role="user", user_name="Test User")
 
 
 @pytest.fixture
@@ -164,32 +151,18 @@ def mock_cosmos_client():
         container.replace_item = Mock(return_value={"id": "test-id", "replaced": True})
         container.delete_item = Mock(return_value=True)
         container.query_items = Mock(return_value=[{"id": "test-id", "data": "test"}])
-        container.read_all_items = Mock(
-            return_value=[{"id": "test-id", "data": "test"}]
-        )
+        container.read_all_items = Mock(return_value=[{"id": "test-id", "data": "test"}])
         containers[name] = container
 
     # Mock database manager methods
     mock_database_manager = Mock()
-    mock_database_manager.get_container = Mock(
-        side_effect=lambda name: containers.get(name)
-    )
-    mock_database_manager.create_item = AsyncMock(
-        return_value={"id": "test-id", "created": True}
-    )
-    mock_database_manager.read_item = AsyncMock(
-        return_value={"id": "test-id", "data": "test"}
-    )
-    mock_database_manager.update_item = AsyncMock(
-        return_value={"id": "test-id", "updated": True}
-    )
+    mock_database_manager.get_container = Mock(side_effect=lambda name: containers.get(name))
+    mock_database_manager.create_item = AsyncMock(return_value={"id": "test-id", "created": True})
+    mock_database_manager.read_item = AsyncMock(return_value={"id": "test-id", "data": "test"})
+    mock_database_manager.update_item = AsyncMock(return_value={"id": "test-id", "updated": True})
     mock_database_manager.delete_item = AsyncMock(return_value=True)
-    mock_database_manager.query_items = AsyncMock(
-        return_value=[{"id": "test-id", "data": "test"}]
-    )
-    mock_database_manager.list_items = AsyncMock(
-        return_value=[{"id": "test-id", "data": "test"}]
-    )
+    mock_database_manager.query_items = AsyncMock(return_value=[{"id": "test-id", "data": "test"}])
+    mock_database_manager.list_items = AsyncMock(return_value=[{"id": "test-id", "data": "test"}])
 
     # Add container-specific access methods for backwards compatibility
     for name in container_names:
@@ -422,8 +395,9 @@ def create_auth_request(
     DEPRECATED: Use the proper unified auth fixtures instead.
     This function is kept for backward compatibility during migration.
     """
-    import azure.functions as func
     import os
+
+    import azure.functions as func
 
     if headers is None:
         headers = {}
@@ -449,9 +423,7 @@ def create_auth_request(
 
 
 # Helper functions for tests
-def create_mock_request(
-    method="GET", body=None, headers=None, user_id=None, role="user"
-):
+def create_mock_request(method="GET", body=None, headers=None, user_id=None, role="user"):
     """Helper to create mock requests with authentication."""
     if headers is None:
         headers = {}
@@ -465,9 +437,7 @@ def create_mock_request(
             "userRoles": [role],
             "claims": [],
         }
-        principal_b64 = base64.b64encode(
-            json.dumps(principal_data).encode("utf-8")
-        ).decode("utf-8")
+        principal_b64 = base64.b64encode(json.dumps(principal_data).encode("utf-8")).decode("utf-8")
         headers.update(
             {
                 "x-ms-client-principal": principal_b64,
@@ -481,9 +451,7 @@ def create_mock_request(
     mock_request.method = method
     mock_request.headers = headers
     mock_request.get_json.return_value = body or {}
-    mock_request.get_body.return_value = (
-        json.dumps(body or {}).encode("utf-8") if body else b"{}"
-    )
+    mock_request.get_body.return_value = json.dumps(body or {}).encode("utf-8") if body else b"{}"
 
     return mock_request
 
@@ -492,9 +460,7 @@ def create_mock_request(
 def mock_get_user():
     """Mock get_user function for tests that still reference it."""
 
-    def _mock_get_user(
-        user_id=None, role="user", email="test@example.com", name="Test User"
-    ):
+    def _mock_get_user(user_id=None, role="user", email="test@example.com", name="Test User"):
         return User(
             id=user_id or "test-user-123",
             email=email,

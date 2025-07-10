@@ -2,10 +2,11 @@ import json
 import logging
 import os
 from typing import Any, Dict, Optional, Union
-from azure.cosmos import CosmosClient, exceptions
-from azure.cosmos.database import DatabaseProxy
-from azure.cosmos.container import ContainerProxy
+
 from azure.core.exceptions import AzureError
+from azure.cosmos import CosmosClient, exceptions
+from azure.cosmos.container import ContainerProxy
+from azure.cosmos.database import DatabaseProxy
 
 
 class DatabaseManager:
@@ -25,9 +26,7 @@ class DatabaseManager:
 
         # In development mode, we don't require a connection string as we use mocks
         if not self._connection_string and not self._development_mode:
-            raise ValueError(
-                "COSMOS_DB_CONNECTION_STRING environment variable is required"
-            )
+            raise ValueError("COSMOS_DB_CONNECTION_STRING environment variable is required")
 
         self._database_name = "sutra"
 
@@ -59,16 +58,12 @@ class DatabaseManager:
         if container_name not in self._containers:
             database = self.database
             if database:
-                self._containers[container_name] = database.get_container_client(
-                    container_name
-                )
+                self._containers[container_name] = database.get_container_client(container_name)
             else:
                 return None
         return self._containers.get(container_name)
 
-    async def create_item(
-        self, container_name: str, item: Dict[str, Any], partition_key: str = None
-    ) -> Dict[str, Any]:
+    async def create_item(self, container_name: str, item: Dict[str, Any], partition_key: str = None) -> Dict[str, Any]:
         """Create a new item in the specified container."""
         if self._development_mode:
             # Return mock response for development
@@ -97,9 +92,7 @@ class DatabaseManager:
             logging.error(f"Error creating item in {container_name}: {e}")
             raise
 
-    async def read_item(
-        self, container_name: str, item_id: str, partition_key: str
-    ) -> Optional[Dict[str, Any]]:
+    async def read_item(self, container_name: str, item_id: str, partition_key: str) -> Optional[Dict[str, Any]]:
         """Read an item from the specified container."""
         if self._development_mode:
             # Return mock response for development
@@ -117,9 +110,7 @@ class DatabaseManager:
             logging.error(f"Error reading item from {container_name}: {e}")
             raise
 
-    async def update_item(
-        self, container_name: str, item: Dict[str, Any], partition_key: str
-    ) -> Dict[str, Any]:
+    async def update_item(self, container_name: str, item: Dict[str, Any], partition_key: str) -> Dict[str, Any]:
         """Update an item in the specified container."""
         if self._development_mode:
             # Return mock response for development
@@ -144,9 +135,7 @@ class DatabaseManager:
             logging.error(f"Error updating item in {container_name}: {e}")
             raise
 
-    async def delete_item(
-        self, container_name: str, item_id: str, partition_key: str
-    ) -> None:
+    async def delete_item(self, container_name: str, item_id: str, partition_key: str) -> None:
         """Delete an item from the specified container."""
         if self._development_mode:
             # Mock delete for development
@@ -174,9 +163,7 @@ class DatabaseManager:
         """Query items from the specified container."""
         if self._development_mode:
             # Return mock query results for development
-            logging.info(
-                f"DEV MODE: Querying items from {container_name} with query: {query}"
-            )
+            logging.info(f"DEV MODE: Querying items from {container_name} with query: {query}")
             return [
                 {
                     "id": "mock-query-result-1",
@@ -197,11 +184,7 @@ class DatabaseManager:
             if partition_key:
                 query_options["partition_key"] = partition_key
 
-            items = list(
-                container.query_items(
-                    query=query, parameters=parameters, **query_options
-                )
-            )
+            items = list(container.query_items(query=query, parameters=parameters, **query_options))
 
             return items
 

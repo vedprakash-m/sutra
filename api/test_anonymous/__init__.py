@@ -1,6 +1,7 @@
-import azure.functions as func
 import json
 import logging
+
+import azure.functions as func
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +29,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 prompt = body.get("prompt", "No prompt provided")
 
                 return func.HttpResponse(
-                    json.dumps(
-                        {"response": f"Echo: {prompt}", "test": True, "anonymous": True}
-                    ),
+                    json.dumps({"response": f"Echo: {prompt}", "test": True, "anonymous": True}),
                     status_code=200,
                     mimetype="application/json",
                 )

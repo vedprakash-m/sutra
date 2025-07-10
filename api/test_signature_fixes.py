@@ -5,6 +5,7 @@ without the authentication layer getting in the way.
 
 import asyncio
 from unittest.mock import Mock, patch
+
 from azure.functions import HttpRequest
 from shared.models import User, UserRole
 
@@ -75,9 +76,7 @@ async def test_function_signatures():
                     print(f"✗ {module_name}.{func_name} - SIGNATURE ERROR: {e}")
                     return False
                 else:
-                    print(
-                        f"✓ {module_name}.{func_name} - Function signature OK (expected error: {type(e).__name__})"
-                    )
+                    print(f"✓ {module_name}.{func_name} - Function signature OK (expected error: {type(e).__name__})")
 
         except Exception as e:
             print(f"✗ {module_name}.{func_name} - Import/setup error: {e}")
@@ -100,9 +99,9 @@ async def test_direct_function_calls():
         from collections_api import main as collections_main
 
         # Mock all the dependencies
-        with patch("collections_api.get_database_manager"), patch(
-            "collections_api.get_cost_manager"
-        ), patch("collections_api.list_collections") as mock_list_collections:
+        with patch("collections_api.get_database_manager"), patch("collections_api.get_cost_manager"), patch(
+            "collections_api.list_collections"
+        ) as mock_list_collections:
             # Mock the list_collections function to return a simple response
             mock_list_collections.return_value = Mock()
             mock_list_collections.return_value.status_code = 200
@@ -116,9 +115,7 @@ async def test_direct_function_calls():
                     print(f"✗ Direct function call failed with signature error: {e}")
                     return False
                 else:
-                    print(
-                        f"✓ Direct function call OK (non-signature error: {type(e).__name__})"
-                    )
+                    print(f"✓ Direct function call OK (non-signature error: {type(e).__name__})")
             except Exception as e:
                 print(f"✓ Direct function call OK (expected error: {type(e).__name__})")
 
@@ -136,9 +133,7 @@ if __name__ == "__main__":
     success2 = asyncio.run(test_direct_function_calls())
 
     if success1 and success2:
-        print(
-            "\n🎉 All tests passed! The function signature fixes are working correctly."
-        )
+        print("\n🎉 All tests passed! The function signature fixes are working correctly.")
         exit(0)
     else:
         print("\n❌ Some tests failed. There may still be signature issues.")

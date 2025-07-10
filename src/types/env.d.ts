@@ -3,7 +3,7 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      NODE_ENV: 'development' | 'production' | 'test';
+      NODE_ENV: "development" | "production" | "test";
       VITE_API_URL?: string;
       VITE_AUTH_DOMAIN?: string;
       VITE_AUTH_CLIENT_ID?: string;

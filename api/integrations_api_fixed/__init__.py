@@ -1,9 +1,10 @@
-import azure.functions as func
 import json
 import logging
-import traceback
-import sys
 import os
+import sys
+import traceback
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -66,9 +67,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
@@ -98,15 +97,11 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
         )
 
 
-async def create_llm_integration(
-    user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def create_llm_integration(user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Create new LLM integration"""
     try:
         return func.HttpResponse(
-            json.dumps(
-                {"status": "success", "message": "Create integration endpoint working"}
-            ),
+            json.dumps({"status": "success", "message": "Create integration endpoint working"}),
             status_code=200,
             mimetype="application/json",
         )
@@ -119,9 +114,7 @@ async def create_llm_integration(
         )
 
 
-async def update_llm_integration(
-    user_id: str, provider: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def update_llm_integration(user_id: str, provider: str, req: func.HttpRequest) -> func.HttpResponse:
     """Update LLM integration"""
     try:
         return func.HttpResponse(
@@ -165,9 +158,7 @@ async def delete_llm_integration(user_id: str, provider: str) -> func.HttpRespon
         )
 
 
-async def validate_llm_connection(
-    user_id: str, provider: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def validate_llm_connection(user_id: str, provider: str, req: func.HttpRequest) -> func.HttpResponse:
     """Test LLM connection"""
     try:
         return func.HttpResponse(

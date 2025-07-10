@@ -8,28 +8,28 @@ This module provides comprehensive validation for all API inputs including:
 - Rate limiting checks
 """
 
-import re
-from typing import Any, Dict, List, Optional, Union, Type
-from pydantic import BaseModel, ValidationError, validator
-from datetime import datetime, timedelta
 import json
 import logging
+import re
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel, ValidationError, validator
 
 from .models import (
-    UserRole,
-    PromptStatus,
-    PlaybookStatus,
+    Collection,
     LLMProvider,
-    User,
+    LLMProviderConfig,
+    Playbook,
+    PlaybookStatus,
+    PlaybookStep,
+    PromptStatus,
     PromptTemplate,
     PromptVariable,
-    Collection,
-    Playbook,
-    PlaybookStep,
-    LLMProviderConfig,
     UsageRecord,
+    User,
+    UserRole,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +61,7 @@ SAFE_STRING_PATTERN = re.compile(r"^[a-zA-Z0-9\s\-_.,!?()]+$")
 class ValidationException(Exception):
     """Base validation exception."""
 
-    def __init__(
-        self, message: str, field: Optional[str] = None, code: str = "VALIDATION_ERROR"
-    ):
+    def __init__(self, message: str, field: Optional[str] = None, code: str = "VALIDATION_ERROR"):
         self.message = message
         self.field = field
         self.code = code
@@ -108,9 +106,7 @@ def validate_identifier(identifier: str, field_name: str = "identifier") -> str:
     if not identifier:
         raise ValidationException(f"{field_name} cannot be empty", field_name)
     if len(identifier) > 100:
-        raise ValidationException(
-            f"{field_name} too long (max 100 characters)", field_name
-        )
+        raise ValidationException(f"{field_name} too long (max 100 characters)", field_name)
     if not IDENTIFIER_PATTERN.match(identifier):
         raise ValidationException(
             f"{field_name} must start with letter and contain only letters, numbers, underscore, hyphen",
@@ -119,17 +115,13 @@ def validate_identifier(identifier: str, field_name: str = "identifier") -> str:
     return identifier.strip()
 
 
-def validate_safe_string(
-    text: str, field_name: str = "text", max_length: int = MAX_STRING_LENGTH
-) -> str:
+def validate_safe_string(text: str, field_name: str = "text", max_length: int = MAX_STRING_LENGTH) -> str:
     """Validate string contains only safe characters."""
     if not text:
         return text
 
     if len(text) > max_length:
-        raise ValidationException(
-            f"{field_name} too long (max {max_length} characters)", field_name
-        )
+        raise ValidationException(f"{field_name} too long (max {max_length} characters)", field_name)
 
     # Check for potentially dangerous patterns
     dangerous_patterns = [
@@ -145,9 +137,7 @@ def validate_safe_string(
     text_lower = text.lower()
     for pattern in dangerous_patterns:
         if re.search(pattern, text_lower):
-            raise SecurityValidationException(
-                f"Potentially dangerous content detected in {field_name}", field_name
-            )
+            raise SecurityValidationException(f"Potentially dangerous content detected in {field_name}", field_name)
 
     return text.strip()
 
@@ -158,9 +148,7 @@ def validate_content(content: str, field_name: str = "content") -> str:
         raise ValidationException(f"{field_name} cannot be empty", field_name)
 
     if len(content) > MAX_CONTENT_LENGTH:
-        raise ValidationException(
-            f"{field_name} too long (max {MAX_CONTENT_LENGTH} characters)", field_name
-        )
+        raise ValidationException(f"{field_name} too long (max {MAX_CONTENT_LENGTH} characters)", field_name)
 
     # Check for script injections but allow more formatting
     dangerous_patterns = [
@@ -173,9 +161,7 @@ def validate_content(content: str, field_name: str = "content") -> str:
     content_lower = content.lower()
     for pattern in dangerous_patterns:
         if re.search(pattern, content_lower):
-            raise SecurityValidationException(
-                f"Script injection detected in {field_name}", field_name
-            )
+            raise SecurityValidationException(f"Script injection detected in {field_name}", field_name)
 
     return content.strip()
 
@@ -192,9 +178,7 @@ def validate_tags(tags: List[str]) -> List[str]:
 
         tag = tag.strip().lower()
         if len(tag) > MAX_TAG_LENGTH:
-            raise ValidationException(
-                f"Tag too long (max {MAX_TAG_LENGTH} characters)", "tags"
-            )
+            raise ValidationException(f"Tag too long (max {MAX_TAG_LENGTH} characters)", "tags")
 
         if not re.match(r"^[a-zA-Z0-9\-_]+$", tag):
             raise ValidationException(
@@ -215,9 +199,7 @@ def validate_json_field(data: Any, field_name: str = "json_field") -> Any:
         json.dumps(data)
         return data
     except (TypeError, ValueError) as e:
-        raise ValidationException(
-            f"Invalid JSON data in {field_name}: {str(e)}", field_name
-        )
+        raise ValidationException(f"Invalid JSON data in {field_name}: {str(e)}", field_name)
 
 
 # =============================================================================
@@ -241,35 +223,25 @@ class PromptTemplateValidator:
         validated["content"] = validate_content(data.get("content", ""), "content")
 
         # Optional fields
-        validated["description"] = validate_safe_string(
-            data.get("description", ""), "description", 1000
-        )
+        validated["description"] = validate_safe_string(data.get("description", ""), "description", 1000)
         validated["tags"] = validate_tags(data.get("tags", []))
 
         # Variables validation
         variables = data.get("variables", [])
         if len(variables) > MAX_VARIABLES_COUNT:
-            raise ValidationException(
-                f"Too many variables (max {MAX_VARIABLES_COUNT})", "variables"
-            )
+            raise ValidationException(f"Too many variables (max {MAX_VARIABLES_COUNT})", "variables")
 
         validated_variables = []
         for i, var in enumerate(variables):
             if not isinstance(var, dict):
-                raise ValidationException(
-                    f"Variable {i} must be an object", "variables"
-                )
+                raise ValidationException(f"Variable {i} must be an object", "variables")
 
             var_name = validate_identifier(var.get("name", ""), f"variables[{i}].name")
-            var_desc = validate_safe_string(
-                var.get("description", ""), f"variables[{i}].description", 500
-            )
+            var_desc = validate_safe_string(var.get("description", ""), f"variables[{i}].description", 500)
             var_type = var.get("type", "string")
 
             if var_type not in ["string", "number", "boolean"]:
-                raise ValidationException(
-                    f"Invalid variable type: {var_type}", f"variables[{i}].type"
-                )
+                raise ValidationException(f"Invalid variable type: {var_type}", f"variables[{i}].type")
 
             validated_variables.append(
                 {
@@ -288,9 +260,7 @@ class PromptTemplateValidator:
         return validated
 
     @staticmethod
-    def validate_update_request(
-        data: Dict[str, Any], existing_prompt: PromptTemplate
-    ) -> Dict[str, Any]:
+    def validate_update_request(data: Dict[str, Any], existing_prompt: PromptTemplate) -> Dict[str, Any]:
         """Validate prompt template update request."""
         validated = {}
 
@@ -316,26 +286,18 @@ class PromptTemplateValidator:
                     validated[field] = validate_tags(data[field])
                 elif field == "status":
                     if data[field] not in [s.value for s in PromptStatus]:
-                        raise ValidationException(
-                            f"Invalid status: {data[field]}", field
-                        )
+                        raise ValidationException(f"Invalid status: {data[field]}", field)
                     validated[field] = data[field]
                 elif field == "variables":
                     # Use same validation as create
                     variables = data[field]
                     if len(variables) > MAX_VARIABLES_COUNT:
-                        raise ValidationException(
-                            f"Too many variables (max {MAX_VARIABLES_COUNT})", field
-                        )
+                        raise ValidationException(f"Too many variables (max {MAX_VARIABLES_COUNT})", field)
 
                     validated_variables = []
                     for i, var in enumerate(variables):
-                        var_name = validate_identifier(
-                            var.get("name", ""), f"{field}[{i}].name"
-                        )
-                        var_desc = validate_safe_string(
-                            var.get("description", ""), f"{field}[{i}].description", 500
-                        )
+                        var_name = validate_identifier(var.get("name", ""), f"{field}[{i}].name")
+                        var_desc = validate_safe_string(var.get("description", ""), f"{field}[{i}].description", 500)
                         var_type = var.get("type", "string")
 
                         if var_type not in ["string", "number", "boolean"]:
@@ -373,9 +335,7 @@ class CollectionValidator:
             raise ValidationException("Name is required", "name")
 
         # Optional fields
-        validated["description"] = validate_safe_string(
-            data.get("description", ""), "description", 1000
-        )
+        validated["description"] = validate_safe_string(data.get("description", ""), "description", 1000)
         validated["tags"] = validate_tags(data.get("tags", []))
         validated["is_public"] = bool(data.get("is_public", False))
 
@@ -410,40 +370,30 @@ class PlaybookValidator:
             raise ValidationException("Name is required", "name")
 
         # Optional fields
-        validated["description"] = validate_safe_string(
-            data.get("description", ""), "description", 1000
-        )
+        validated["description"] = validate_safe_string(data.get("description", ""), "description", 1000)
         validated["tags"] = validate_tags(data.get("tags", []))
 
         # Steps validation
         steps = data.get("steps", [])
         if len(steps) > MAX_STEPS_COUNT:
-            raise ValidationException(
-                f"Too many steps (max {MAX_STEPS_COUNT})", "steps"
-            )
+            raise ValidationException(f"Too many steps (max {MAX_STEPS_COUNT})", "steps")
 
         validated_steps = []
         for i, step in enumerate(steps):
             if not isinstance(step, dict):
                 raise ValidationException(f"Step {i} must be an object", "steps")
 
-            step_name = validate_safe_string(
-                step.get("name", ""), f"steps[{i}].name", 200
-            )
+            step_name = validate_safe_string(step.get("name", ""), f"steps[{i}].name", 200)
             step_type = step.get("type", "prompt")
 
             if step_type not in ["prompt", "manual_review", "condition", "loop"]:
-                raise ValidationException(
-                    f"Invalid step type: {step_type}", f"steps[{i}].type"
-                )
+                raise ValidationException(f"Invalid step type: {step_type}", f"steps[{i}].type")
 
             validated_step = {
                 "step_number": i + 1,
                 "name": step_name,
                 "type": step_type,
-                "config": validate_json_field(
-                    step.get("config", {}), f"steps[{i}].config"
-                ),
+                "config": validate_json_field(step.get("config", {}), f"steps[{i}].config"),
             }
 
             validated_steps.append(validated_step)
@@ -460,9 +410,7 @@ class PlaybookValidator:
 # =============================================================================
 
 
-def validate_pydantic_model(
-    model_class: Type[BaseModel], data: Dict[str, Any]
-) -> BaseModel:
+def validate_pydantic_model(model_class: Type[BaseModel], data: Dict[str, Any]) -> BaseModel:
     """Validate data against a Pydantic model."""
     try:
         return model_class(**data)
@@ -531,9 +479,7 @@ class RateLimitValidator:
         limit = RateLimitValidator.RATE_LIMITS.get(operation_type, 100)
 
         if current_count >= limit:
-            raise RateLimitException(
-                f"Rate limit exceeded for {operation_type}. Limit: {limit} per hour"
-            )
+            raise RateLimitException(f"Rate limit exceeded for {operation_type}. Limit: {limit} per hour")
 
 
 # =============================================================================
@@ -547,9 +493,7 @@ def validate_user_permissions(user: User, required_role: UserRole) -> None:
         raise BusinessLogicException("Admin privileges required for this operation")
 
 
-def validate_resource_ownership(
-    resource_user_id: str, requesting_user_id: str, user_roles: List[UserRole]
-) -> None:
+def validate_resource_ownership(resource_user_id: str, requesting_user_id: str, user_roles: List[UserRole]) -> None:
     """Validate user can access resource (owner or admin)."""
     if resource_user_id != requesting_user_id and UserRole.ADMIN not in user_roles:
         raise BusinessLogicException("Access denied: insufficient permissions")
@@ -568,9 +512,7 @@ def validate_budget_limits(data: Dict[str, float]) -> bool:
         if total_budget < 0 or usage_limit < 0:
             raise ValidationException("Budget values cannot be negative", "budget")
         if usage_limit > total_budget:
-            raise ValidationException(
-                "Usage limit cannot exceed total budget", "budget"
-            )
+            raise ValidationException("Usage limit cannot exceed total budget", "budget")
 
     if current_usage is not None and budget_limit is not None:
         if not all(isinstance(x, (int, float)) for x in [current_usage, budget_limit]):
@@ -578,9 +520,7 @@ def validate_budget_limits(data: Dict[str, float]) -> bool:
         if current_usage < 0 or budget_limit < 0:
             raise ValidationException("Budget values cannot be negative", "budget")
         if current_usage > budget_limit:
-            raise ValidationException(
-                "Current usage cannot exceed budget limit", "budget"
-            )
+            raise ValidationException("Current usage cannot exceed budget limit", "budget")
 
     return True
 
@@ -595,25 +535,13 @@ def validate_collection_data(data: Dict[str, Any]) -> Dict[str, Any]:
     elif not isinstance(data.get("name"), str):
         errors.append("Collection name must be a string")
     elif len(data["name"]) > MAX_STRING_LENGTH:
-        errors.append(
-            f"Collection name must be a string and less than {MAX_STRING_LENGTH} characters"
-        )
+        errors.append(f"Collection name must be a string and less than {MAX_STRING_LENGTH} characters")
 
     # Optional fields
-    if (
-        "description" in data
-        and data["description"]
-        and not isinstance(data.get("description"), str)
-    ):
+    if "description" in data and data["description"] and not isinstance(data.get("description"), str):
         errors.append("Description must be a string")
-    elif (
-        "description" in data
-        and data["description"]
-        and len(data["description"]) > MAX_DESCRIPTION_LENGTH
-    ):
-        errors.append(
-            f"Description must be a string and less than {MAX_DESCRIPTION_LENGTH} characters"
-        )
+    elif "description" in data and data["description"] and len(data["description"]) > MAX_DESCRIPTION_LENGTH:
+        errors.append(f"Description must be a string and less than {MAX_DESCRIPTION_LENGTH} characters")
 
     if "tags" in data and data["tags"] and not isinstance(data["tags"], list):
         errors.append("Tags must be a list of strings")
@@ -692,9 +620,7 @@ def _validate_playbook_step(step: Dict[str, Any], index: int) -> List[str]:
 
     if step.get("type") == "prompt":
         if "promptId" not in step and "promptText" not in step:
-            errors.append(
-                f"{step_prefix}Prompt step must have either promptId or promptText"
-            )
+            errors.append(f"{step_prefix}Prompt step must have either promptId or promptText")
 
         if "config" in step:
             config = step["config"]
@@ -706,9 +632,7 @@ def _validate_playbook_step(step: Dict[str, Any], index: int) -> List[str]:
             if "maxTokens" in config:
                 tokens = config["maxTokens"]
                 if not isinstance(tokens, int) or tokens < 1 or tokens > 10000:
-                    errors.append(
-                        f"{step_prefix}Max tokens must be between 1 and 10000"
-                    )
+                    errors.append(f"{step_prefix}Max tokens must be between 1 and 10000")
 
     if "outputParsingRules" in step:
         parsing = step["outputParsingRules"]

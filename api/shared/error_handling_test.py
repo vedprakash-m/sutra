@@ -2,32 +2,34 @@
 Tests for the error handling module.
 """
 
-import pytest
 import json
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock
-import azure.functions as func
-from ..conftest import create_auth_request
+from unittest.mock import MagicMock, Mock, patch
+
 import azure.cosmos.exceptions as cosmos_exceptions
+import azure.functions as func
+import pytest
 from pydantic import ValidationError
 
 from api.shared.error_handling import (
-    SutraAPIError,
-    handle_api_error,
-    ErrorSeverity,
     ErrorCategory,
     ErrorDetail,
-    ErrorResponse,
     ErrorHandler,
     ErrorMonitor,
     ErrorRecovery,
+    ErrorResponse,
+    ErrorSeverity,
+    SutraAPIError,
+    handle_api_error,
 )
 from api.shared.validation import (
-    ValidationException,
-    SecurityValidationException,
     BusinessLogicException,
     RateLimitException,
+    SecurityValidationException,
+    ValidationException,
 )
+
+from ..conftest import create_auth_request
 
 
 class TestSutraAPIError:
@@ -110,9 +112,7 @@ class TestHandleAPIError:
 
     def test_handle_cosmos_not_found_error(self):
         """Test handling of Cosmos DB not found errors."""
-        error = cosmos_exceptions.CosmosResourceNotFoundError(
-            message="Resource not found", response=None
-        )
+        error = cosmos_exceptions.CosmosResourceNotFoundError(message="Resource not found", response=None)
 
         response = handle_api_error(error)
 
@@ -125,9 +125,7 @@ class TestHandleAPIError:
 
     def test_handle_sutra_api_error(self):
         """Test handling of SutraAPIError."""
-        error = SutraAPIError(
-            message="Custom error", error_code="CUSTOM_ERROR", status_code=403
-        )
+        error = SutraAPIError(message="Custom error", error_code="CUSTOM_ERROR", status_code=403)
 
         response = handle_api_error(error)
 
@@ -204,9 +202,7 @@ class TestErrorDetail:
 
     def test_error_detail_basic(self):
         """Test basic ErrorDetail creation."""
-        error_detail = ErrorDetail(
-            code="INVALID_EMAIL", message="Email format is invalid"
-        )
+        error_detail = ErrorDetail(code="INVALID_EMAIL", message="Email format is invalid")
 
         assert error_detail.code == "INVALID_EMAIL"
         assert error_detail.message == "Email format is invalid"
@@ -216,18 +212,14 @@ class TestErrorDetail:
 
     def test_error_detail_with_field(self):
         """Test ErrorDetail with field information."""
-        error_detail = ErrorDetail(
-            code="REQUIRED_FIELD", message="Field is required", field="username"
-        )
+        error_detail = ErrorDetail(code="REQUIRED_FIELD", message="Field is required", field="username")
 
         assert error_detail.field == "username"
 
     def test_error_detail_with_details(self):
         """Test ErrorDetail with additional details."""
         details = {"min_length": 8, "current_length": 5}
-        error_detail = ErrorDetail(
-            code="PASSWORD_TOO_SHORT", message="Password is too short", details=details
-        )
+        error_detail = ErrorDetail(code="PASSWORD_TOO_SHORT", message="Password is too short", details=details)
 
         assert error_detail.details == details
 

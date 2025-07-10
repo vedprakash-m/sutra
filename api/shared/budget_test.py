@@ -2,13 +2,14 @@
 Tests for budget.py module - Budget tracking and limits
 """
 
-import pytest
 import os
-from unittest.mock import Mock, patch, AsyncMock
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from api.shared.budget import BudgetManager, get_budget_manager
-from api.shared.models import UsageRecord, LLMProvider
+from api.shared.models import LLMProvider, UsageRecord
 
 
 class TestBudgetManager:
@@ -121,9 +122,7 @@ class TestBudgetManager:
         mock_get_db_manager.return_value = mock_db_manager
 
         budget_manager = BudgetManager()
-        budget_manager._get_daily_usage = AsyncMock(
-            return_value={"2024-01-15": {"cost": 0.08, "tokens": 175, "requests": 2}}
-        )
+        budget_manager._get_daily_usage = AsyncMock(return_value={"2024-01-15": {"cost": 0.08, "tokens": 175, "requests": 2}})
 
         result = await budget_manager.get_user_usage("user-123", days=30)
 
@@ -163,9 +162,7 @@ class TestBudgetManager:
         mock_get_db_manager.return_value = mock_db_manager
 
         budget_manager = BudgetManager()
-        budget_manager._get_daily_usage = AsyncMock(
-            return_value={"2024-01-15": {"cost": 0.08, "tokens": 175, "requests": 2}}
-        )
+        budget_manager._get_daily_usage = AsyncMock(return_value={"2024-01-15": {"cost": 0.08, "tokens": 175, "requests": 2}})
 
         result = await budget_manager.get_system_usage(days=30)
 
@@ -181,17 +178,13 @@ class TestBudgetManager:
     async def test_check_user_budget_within_limit(self, mock_get_db_manager):
         """Test user budget check within limit."""
         mock_db_manager = Mock()
-        mock_db_manager.query_items = AsyncMock(
-            return_value=[]
-        )  # No budget config found
+        mock_db_manager.query_items = AsyncMock(return_value=[])  # No budget config found
         mock_get_db_manager.return_value = mock_db_manager
 
         budget_manager = BudgetManager()
         budget_manager.get_user_usage = AsyncMock(return_value={"total_cost": 50.0})
 
-        result = await budget_manager.check_user_budget(
-            "user-123", additional_cost=10.0
-        )
+        result = await budget_manager.check_user_budget("user-123", additional_cost=10.0)
 
         assert result["user_id"] == "user-123"
         assert result["current_cost"] == 50.0
@@ -206,17 +199,13 @@ class TestBudgetManager:
     async def test_check_user_budget_over_limit(self, mock_get_db_manager):
         """Test user budget check over limit."""
         mock_db_manager = Mock()
-        mock_db_manager.query_items = AsyncMock(
-            return_value=[]
-        )  # No budget config found
+        mock_db_manager.query_items = AsyncMock(return_value=[])  # No budget config found
         mock_get_db_manager.return_value = mock_db_manager
 
         budget_manager = BudgetManager()
         budget_manager.get_user_usage = AsyncMock(return_value={"total_cost": 95.0})
 
-        result = await budget_manager.check_user_budget(
-            "user-123", additional_cost=10.0
-        )
+        result = await budget_manager.check_user_budget("user-123", additional_cost=10.0)
 
         assert result["projected_cost"] == 105.0
         assert result["within_budget"] is False
@@ -233,9 +222,7 @@ class TestBudgetManager:
 
         budget_manager = BudgetManager()
 
-        result = await budget_manager.check_provider_budget(
-            LLMProvider.OPENAI, additional_cost=25.0
-        )
+        result = await budget_manager.check_provider_budget(LLMProvider.OPENAI, additional_cost=25.0)
 
         assert result["provider"] == LLMProvider.OPENAI
         assert result["current_cost"] == 150.0
@@ -255,9 +242,7 @@ class TestBudgetManager:
 
         budget_manager = BudgetManager()
 
-        result = await budget_manager.check_provider_budget(
-            LLMProvider.OPENAI, additional_cost=0.0
-        )
+        result = await budget_manager.check_provider_budget(LLMProvider.OPENAI, additional_cost=0.0)
 
         assert result["current_cost"] == 550.0
         assert result["within_budget"] is False
@@ -331,9 +316,7 @@ class TestBudgetManager:
     async def test_get_budget_alerts_error_handling(self, mock_get_db_manager):
         """Test budget alerts error handling."""
         budget_manager = BudgetManager()
-        budget_manager.get_system_usage = AsyncMock(
-            side_effect=Exception("System error")
-        )
+        budget_manager.get_system_usage = AsyncMock(side_effect=Exception("System error"))
 
         alerts = await budget_manager.get_budget_alerts()
 
@@ -369,9 +352,7 @@ class TestBudgetManager:
         """Test daily usage with timestamp fallback."""
         budget_manager = BudgetManager()
 
-        usage_records = [
-            {"timestamp": "2024-01-15T10:00:00Z", "cost": 0.05, "tokens_used": 100}
-        ]
+        usage_records = [{"timestamp": "2024-01-15T10:00:00Z", "cost": 0.05, "tokens_used": 100}]
 
         result = await budget_manager._get_daily_usage(usage_records)
 
@@ -414,9 +395,7 @@ class TestBudgetManagerEdgeCases:
         with patch("api.shared.models.LLMProvider") as mock_provider:
             mock_provider.UNKNOWN = "unknown"
 
-            result = await budget_manager.check_provider_budget(
-                "unknown", additional_cost=0.0
-            )
+            result = await budget_manager.check_provider_budget("unknown", additional_cost=0.0)
 
             assert result["budget_limit"] == 500.0  # Default limit
 
@@ -577,9 +556,7 @@ class TestCostManagementFeatures:
         mock_db_manager.query_items = AsyncMock(return_value=[{"cost": 480.0}])
         mock_get_db_manager.return_value = mock_db_manager
 
-        result = await budget_manager.check_and_enforce_provider_budget(
-            LLMProvider.OPENAI, 30.0
-        )
+        result = await budget_manager.check_and_enforce_provider_budget(LLMProvider.OPENAI, 30.0)
 
         assert result["action"] == "warn"
         assert result["allowed"]
@@ -725,9 +702,7 @@ class TestCostManagementFeatures:
         ]
 
         for test_case in test_cases:
-            budget_manager.get_user_usage = AsyncMock(
-                return_value={"total_cost": test_case["current_usage"]}
-            )
+            budget_manager.get_user_usage = AsyncMock(return_value={"total_cost": test_case["current_usage"]})
 
             result = await budget_manager.check_tier_based_budget(
                 user_id="user-123",
@@ -820,9 +795,7 @@ class TestCostManagementFeatures:
             }
         )
 
-        budget_manager.check_user_budget = AsyncMock(
-            return_value={"utilization_percent": 95.0, "remaining_budget": 5.0}
-        )
+        budget_manager.check_user_budget = AsyncMock(return_value={"utilization_percent": 95.0, "remaining_budget": 5.0})
 
         # Mock notification sending
         with patch("api.shared.budget.send_notification") as mock_send:

@@ -3,37 +3,39 @@ Comprehensive tests for error handling module to achieve 75% coverage.
 Focuses on missing coverage areas: ErrorHandler methods, ErrorMonitor, ErrorRecovery, and utility functions.
 """
 
-import pytest
 import json
 from datetime import datetime, timezone
-from unittest.mock import Mock, patch, MagicMock, PropertyMock
-import azure.functions as func
-from ..conftest import create_auth_request
+from unittest.mock import MagicMock, Mock, PropertyMock, patch
+
 import azure.cosmos.exceptions as cosmos_exceptions
-from pydantic import ValidationError, BaseModel
+import azure.functions as func
+import pytest
+from pydantic import BaseModel, ValidationError
 
 from api.shared.error_handling import (
-    SutraAPIError,
-    handle_api_error,
-    ErrorSeverity,
     ErrorCategory,
     ErrorDetail,
-    ErrorResponse,
     ErrorHandler,
     ErrorMonitor,
     ErrorRecovery,
-    handle_api_errors,
-    extract_request_id,
+    ErrorResponse,
+    ErrorSeverity,
+    SutraAPIError,
     add_correlation_id,
+    extract_request_id,
+    handle_api_error,
+    handle_api_errors,
     is_retriable_error,
     sanitize_error_message,
 )
 from api.shared.validation import (
-    ValidationException,
-    SecurityValidationException,
     BusinessLogicException,
     RateLimitException,
+    SecurityValidationException,
+    ValidationException,
 )
+
+from ..conftest import create_auth_request
 
 
 class TestErrorHandlerComprehensive:
@@ -213,9 +215,7 @@ class TestErrorHandlerComprehensive:
         resource_id = "prompt-123"
         request_id = "req-notfound-2"
 
-        result = ErrorHandler.handle_not_found_error(
-            resource_type, resource_id, request_id
-        )
+        result = ErrorHandler.handle_not_found_error(resource_type, resource_id, request_id)
 
         assert isinstance(result, ErrorResponse)
         assert result.status_code == 404
@@ -244,9 +244,7 @@ class TestErrorHandlerComprehensive:
 
     def test_handle_business_logic_error(self):
         """Test handling business logic error."""
-        exc = BusinessLogicException(
-            "Cannot delete collection with prompts", "collection_id"
-        )
+        exc = BusinessLogicException("Cannot delete collection with prompts", "collection_id")
         request_id = "req-business-1"
 
         with patch("api.shared.error_handling.logger") as mock_logger:
@@ -269,9 +267,7 @@ class TestErrorHandlerComprehensive:
         request_id = "req-ext-1"
 
         with patch("api.shared.error_handling.logger") as mock_logger:
-            result = ErrorHandler.handle_external_service_error(
-                service_name, error_message, request_id=request_id
-            )
+            result = ErrorHandler.handle_external_service_error(service_name, error_message, request_id=request_id)
 
             assert isinstance(result, ErrorResponse)
             assert result.status_code == 502
@@ -292,9 +288,7 @@ class TestErrorHandlerComprehensive:
         status_code = 503
         request_id = "req-ext-2"
 
-        result = ErrorHandler.handle_external_service_error(
-            service_name, error_message, status_code, request_id
-        )
+        result = ErrorHandler.handle_external_service_error(service_name, error_message, status_code, request_id)
 
         assert isinstance(result, ErrorResponse)
         assert result.status_code == 502
@@ -307,17 +301,12 @@ class TestErrorHandlerComprehensive:
         request_id = "req-db-1"
 
         with patch("api.shared.error_handling.logger") as mock_logger:
-            result = ErrorHandler.handle_database_error(
-                operation, error_message, request_id
-            )
+            result = ErrorHandler.handle_database_error(operation, error_message, request_id)
 
             assert isinstance(result, ErrorResponse)
             assert result.status_code == 500
             assert result.error.code == "DATABASE_ERROR"
-            assert (
-                result.error.message
-                == "A database error occurred. Please try again later."
-            )
+            assert result.error.message == "A database error occurred. Please try again later."
             assert result.error.details["operation"] == operation
             assert result.request_id == request_id
 
@@ -330,17 +319,12 @@ class TestErrorHandlerComprehensive:
         request_id = "req-sys-1"
 
         with patch("api.shared.error_handling.logger") as mock_logger:
-            result = ErrorHandler.handle_system_error(
-                exc, request_id, include_traceback=False
-            )
+            result = ErrorHandler.handle_system_error(exc, request_id, include_traceback=False)
 
             assert isinstance(result, ErrorResponse)
             assert result.status_code == 500
             assert result.error.code == "INTERNAL_SERVER_ERROR"
-            assert (
-                result.error.message
-                == "An unexpected error occurred. Please try again later."
-            )
+            assert result.error.message == "An unexpected error occurred. Please try again later."
             assert result.error.details["error_type"] == "Exception"
             assert result.error.details["error_message"] == str(exc)
             assert "traceback" not in result.error.details
@@ -358,17 +342,12 @@ class TestErrorHandlerComprehensive:
         ) as mock_traceback:
             mock_traceback.return_value = "Traceback line 1\nTraceback line 2"
 
-            result = ErrorHandler.handle_system_error(
-                exc, request_id, include_traceback=True
-            )
+            result = ErrorHandler.handle_system_error(exc, request_id, include_traceback=True)
 
             assert isinstance(result, ErrorResponse)
             assert result.status_code == 500
             assert result.error.code == "INTERNAL_SERVER_ERROR"
-            assert (
-                result.error.details["traceback"]
-                == "Traceback line 1\nTraceback line 2"
-            )
+            assert result.error.details["traceback"] == "Traceback line 1\nTraceback line 2"
 
 
 class TestErrorDecorator:
@@ -472,54 +451,25 @@ class TestErrorMonitor:
     def test_should_alert_true_cases(self):
         """Test cases where alerts should be triggered."""
         # Critical errors always trigger alerts
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.SYSTEM, ErrorSeverity.CRITICAL)
-            is True
-        )
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.DATABASE, ErrorSeverity.CRITICAL)
-            is True
-        )
+        assert ErrorMonitor.should_alert(ErrorCategory.SYSTEM, ErrorSeverity.CRITICAL) is True
+        assert ErrorMonitor.should_alert(ErrorCategory.DATABASE, ErrorSeverity.CRITICAL) is True
 
         # High severity errors in security and authentication trigger alerts
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.AUTHENTICATION, ErrorSeverity.HIGH)
-            is True
-        )
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.AUTHORIZATION, ErrorSeverity.HIGH)
-            is True
-        )
+        assert ErrorMonitor.should_alert(ErrorCategory.AUTHENTICATION, ErrorSeverity.HIGH) is True
+        assert ErrorMonitor.should_alert(ErrorCategory.AUTHORIZATION, ErrorSeverity.HIGH) is True
 
         # External service high severity errors trigger alerts
-        assert (
-            ErrorMonitor.should_alert(
-                ErrorCategory.EXTERNAL_SERVICE, ErrorSeverity.HIGH
-            )
-            is True
-        )
+        assert ErrorMonitor.should_alert(ErrorCategory.EXTERNAL_SERVICE, ErrorSeverity.HIGH) is True
 
     def test_should_alert_false_cases(self):
         """Test cases where alerts should not be triggered."""
         # Low severity errors generally don't trigger alerts
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.LOW)
-            is False
-        )
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.BUSINESS_LOGIC, ErrorSeverity.LOW)
-            is False
-        )
+        assert ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.LOW) is False
+        assert ErrorMonitor.should_alert(ErrorCategory.BUSINESS_LOGIC, ErrorSeverity.LOW) is False
 
         # Medium severity in most categories don't trigger alerts
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.MEDIUM)
-            is False
-        )
-        assert (
-            ErrorMonitor.should_alert(ErrorCategory.RATE_LIMITING, ErrorSeverity.MEDIUM)
-            is False
-        )
+        assert ErrorMonitor.should_alert(ErrorCategory.VALIDATION, ErrorSeverity.MEDIUM) is False
+        assert ErrorMonitor.should_alert(ErrorCategory.RATE_LIMITING, ErrorSeverity.MEDIUM) is False
 
 
 class TestErrorRecovery:
@@ -707,10 +657,7 @@ class TestUtilityFunctions:
             assert "abc123def456" not in sanitized
             assert "secret123" not in sanitized
             assert "sk-proj-abcdef123456" not in sanitized
-            assert (
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"
-                not in sanitized
-            )
+            assert "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature" not in sanitized
 
 
 class TestErrorResponseIntegration:
@@ -724,9 +671,7 @@ class TestErrorResponseIntegration:
             field="email",
             details={"pattern": "email", "value": "invalid"},
         )
-        additional_error = ErrorDetail(
-            code="REQUIRED_FIELD", message="Name is required", field="name"
-        )
+        additional_error = ErrorDetail(code="REQUIRED_FIELD", message="Name is required", field="name")
 
         response = ErrorResponse(
             status_code=400,

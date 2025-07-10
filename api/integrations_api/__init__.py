@@ -1,29 +1,31 @@
-import azure.functions as func
 import json
 import logging
-import traceback
-import sys
 import os
+import sys
+import traceback
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import logging
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-import uuid
-import httpx
 import asyncio
+import logging
+import uuid
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import httpx
+from shared.database import get_database_manager
+from shared.error_handling import SutraAPIError, handle_api_error
+from shared.models import User, ValidationError
+from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
 from shared.unified_auth import require_authentication
-from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 from shared.utils.schemaValidator import validate_entity
 from shared.validation import validate_llm_integration_data
-from shared.real_time_cost import get_cost_manager
-from shared.database import get_database_manager
-from shared.models import ValidationError, User
-from shared.error_handling import handle_api_error, SutraAPIError
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -88,9 +90,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
@@ -156,9 +156,7 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
 
-        items = await db_manager.query_items(
-            container_name="Users", query=query, parameters=parameters
-        )
+        items = await db_manager.query_items(container_name="Users", query=query, parameters=parameters)
 
         if not items:
             return func.HttpResponse(
@@ -229,9 +227,7 @@ async def list_llm_integrations(user_id: str) -> func.HttpResponse:
         raise SutraAPIError(f"Failed to list LLM integrations: {str(e)}", 500)
 
 
-async def create_llm_integration(
-    user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def create_llm_integration(user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Add a new LLM integration."""
     try:
         # Parse request body
@@ -283,11 +279,7 @@ async def create_llm_integration(
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             # Create user profile if it doesn't exist
@@ -349,9 +341,7 @@ async def create_llm_integration(
         raise SutraAPIError(f"Failed to create LLM integration: {str(e)}", 500)
 
 
-async def update_llm_integration(
-    user_id: str, provider: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def update_llm_integration(user_id: str, provider: str, req: func.HttpRequest) -> func.HttpResponse:
     """Update an existing LLM integration."""
     try:
         # Parse request body
@@ -371,11 +361,7 @@ async def update_llm_integration(
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -399,9 +385,7 @@ async def update_llm_integration(
             api_key = body["apiKey"]
             custom_url = body.get("url")
 
-            validation_result = await validate_llm_api_key(
-                provider, api_key, custom_url
-            )
+            validation_result = await validate_llm_api_key(provider, api_key, custom_url)
             if not validation_result["valid"]:
                 return func.HttpResponse(
                     json.dumps(
@@ -421,9 +405,7 @@ async def update_llm_integration(
                 user_data["llmApiKeys"][provider]["keyRe"] = key_ref
                 if custom_url:
                     user_data["llmApiKeys"][provider]["url"] = custom_url
-                user_data["llmApiKeys"][provider]["lastTested"] = (
-                    datetime.utcnow().isoformat() + "Z"
-                )
+                user_data["llmApiKeys"][provider]["lastTested"] = datetime.utcnow().isoformat() + "Z"
                 user_data["llmApiKeys"][provider]["status"] = "active"
             else:
                 user_data["llmApiKeys"][provider] = key_ref
@@ -467,11 +449,7 @@ async def delete_llm_integration(user_id: str, provider: str) -> func.HttpRespon
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": user_id}]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -511,9 +489,7 @@ async def delete_llm_integration(user_id: str, provider: str) -> func.HttpRespon
         raise SutraAPIError(f"Failed to delete LLM integration: {str(e)}", 500)
 
 
-async def validate_llm_connection(
-    user_id: str, provider: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def validate_llm_connection(user_id: str, provider: str, req: func.HttpRequest) -> func.HttpResponse:
     """Test LLM connection."""
     try:
         # Parse request body
@@ -564,9 +540,7 @@ async def validate_llm_connection(
         raise SutraAPIError(f"Failed to test LLM connection: {str(e)}", 500)
 
 
-async def validate_llm_api_key(
-    provider: str, api_key: str, custom_url: Optional[str] = None
-) -> Dict[str, Any]:
+async def validate_llm_api_key(provider: str, api_key: str, custom_url: Optional[str] = None) -> Dict[str, Any]:
     """Validate LLM API key by making a lightweight test call."""
     try:
         start_time = datetime.utcnow()
@@ -595,9 +569,7 @@ async def validate_llm_api_key(
                     }
 
             elif provider == "google_gemini":
-                response = await client.get(
-                    f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-                )
+                response = await client.get(f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}")
 
                 if response.status_code == 200:
                     end_time = datetime.utcnow()

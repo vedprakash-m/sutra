@@ -1,11 +1,12 @@
-import pytest
 import json
 import os
-from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, Mock, patch
 
 import azure.functions as func
+import pytest
 from shared.error_handling import SutraAPIError
+
 from ..conftest import create_auth_request
 from . import main as admin_main
 
@@ -50,9 +51,7 @@ class TestAdminAPI:
                 container.delete_item = Mock()
                 containers[name] = container
 
-            mock_manager.get_container = Mock(
-                side_effect=lambda name: containers.get(name)
-            )
+            mock_manager.get_container = Mock(side_effect=lambda name: containers.get(name))
 
             # For backwards compatibility with old method names
             for name in container_names:
@@ -93,9 +92,7 @@ class TestAdminAPI:
         # Mock database responses - using AsyncMock for async methods
         from unittest.mock import AsyncMock
 
-        mock_cosmos_client.query_items = AsyncMock(
-            side_effect=[mock_users, [2]]  # Users list  # Count
-        )
+        mock_cosmos_client.query_items = AsyncMock(side_effect=[mock_users, [2]])  # Users list  # Count
 
         # Create authenticated request using helper
         req = create_auth_request(method="GET", route_params={"resource": "users"})
@@ -165,9 +162,7 @@ class TestAdminAPI:
         mock_cosmos_client.update_item.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_user_role_invalid_role(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_update_user_role_invalid_role(self, auth_admin_user, mock_cosmos_client):
         """Test user role update with invalid role."""
         # Arrange
         target_user_id = "user-123"
@@ -201,9 +196,7 @@ class TestAdminAPI:
         mock_cosmos_client.query_items.return_value = [1]  # Successful query
 
         # Create authenticated request using helper
-        req = create_auth_request(
-            method="GET", route_params={"resource": "system", "action": "health"}
-        )
+        req = create_auth_request(method="GET", route_params={"resource": "system", "action": "health"})
 
         # Act
         response = await admin_main(req)
@@ -240,9 +233,7 @@ class TestAdminAPI:
         playbooks_container_mock.query_items.return_value = [8]  # Playbook count
 
         # Create authenticated request using helper
-        req = create_auth_request(
-            method="GET", route_params={"resource": "system", "action": "stats"}
-        )
+        req = create_auth_request(method="GET", route_params={"resource": "system", "action": "stats"})
 
         # Act
         response = await admin_main(req)
@@ -258,9 +249,7 @@ class TestAdminAPI:
         assert response_data["recent_activity"]["new_prompts"] == 7
 
     @pytest.mark.asyncio
-    async def test_set_maintenance_mode_enable(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_set_maintenance_mode_enable(self, auth_admin_user, mock_cosmos_client):
         """Test enabling maintenance mode."""
         # Arrange
         maintenance_data = {
@@ -318,9 +307,7 @@ class TestAdminAPI:
         mock_cosmos_client.read_item.return_value = llm_settings
 
         # Create request
-        req = create_auth_request(
-            method="GET", route_params={"resource": "llm", "action": "settings"}
-        )
+        req = create_auth_request(method="GET", route_params={"resource": "llm", "action": "settings"})
 
         # Act
         response = await admin_main(req)
@@ -334,9 +321,7 @@ class TestAdminAPI:
         assert response_data["providers"]["openai"]["priority"] == 1
 
     @pytest.mark.asyncio
-    async def test_update_llm_settings_success(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_update_llm_settings_success(self, auth_admin_user, mock_cosmos_client):
         """Test successful LLM settings update."""
         # Arrange
         existing_settings = {
@@ -356,9 +341,7 @@ class TestAdminAPI:
             "defaultProvider": "openai",
         }
 
-        mock_cosmos_client.get_config_container().read_item.return_value = (
-            existing_settings
-        )
+        mock_cosmos_client.get_config_container().read_item.return_value = existing_settings
         mock_cosmos_client.get_config_container().replace_item.return_value = {
             **existing_settings,
             **update_data,
@@ -379,9 +362,7 @@ class TestAdminAPI:
         # Assert
         assert response.status_code == 200
         response_data = json.loads(response.get_body())
-        assert (
-            response_data["providers"]["openai"]["budgetLimits"]["dailyBudget"] == 100.0
-        )
+        assert response_data["providers"]["openai"]["budgetLimits"]["dailyBudget"] == 100.0
         assert response_data["providers"]["google_gemini"]["enabled"] is False
         assert response_data["updatedBy"] == "admin-user-123"
         mock_cosmos_client.get_config_container().replace_item.assert_called_once()
@@ -396,9 +377,7 @@ class TestAdminAPI:
             [12],  # Successful executions
             [3],  # Failed executions
         ]
-        mock_cosmos_client.get_users_container().query_items.return_value = [
-            8
-        ]  # Active users
+        mock_cosmos_client.get_users_container().query_items.return_value = [8]  # Active users
 
         # Create authenticated request using helper
         req = create_auth_request(method="GET", route_params={"resource": "usage"})
@@ -438,20 +417,14 @@ class TestAdminAPI:
         assert "Admin access required" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_get_system_health_database_failure(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_get_system_health_database_failure(self, auth_admin_user, mock_cosmos_client):
         """Test system health check when database is unavailable."""
         # Arrange
         # Mock database failure
-        mock_cosmos_client.query_items.side_effect = Exception(
-            "Database connection failed"
-        )
+        mock_cosmos_client.query_items.side_effect = Exception("Database connection failed")
 
         # Create request
-        req = create_auth_request(
-            method="GET", route_params={"resource": "system", "action": "health"}
-        )
+        req = create_auth_request(method="GET", route_params={"resource": "system", "action": "health"})
 
         # Act
         response = await admin_main(req)
@@ -463,9 +436,7 @@ class TestAdminAPI:
         assert "unhealthy" in response_data["components"]["database"]["status"]
 
     @pytest.mark.asyncio
-    async def test_update_user_role_user_not_found(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_update_user_role_user_not_found(self, auth_admin_user, mock_cosmos_client):
         """Test user role update with non-existent user."""
         # Arrange
         target_user_id = "non-existent-user"
@@ -498,9 +469,7 @@ class TestAdminAPI:
     # ADDITIONAL TESTS FOR COVERAGE IMPROVEMENT
 
     @pytest.mark.asyncio
-    async def test_list_users_with_search_filter(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_list_users_with_search_filter(self, auth_admin_user, mock_cosmos_client):
         """Test user listing with search and role filter."""
         # Arrange
         mock_users = [
@@ -513,9 +482,7 @@ class TestAdminAPI:
             }
         ]
 
-        mock_cosmos_client.query_items = AsyncMock(
-            side_effect=[mock_users, [1]]  # Users list and count
-        )
+        mock_cosmos_client.query_items = AsyncMock(side_effect=[mock_users, [1]])  # Users list and count
 
         # Create authenticated request using helper with search and role filter
         req = create_auth_request(method="GET", route_params={"resource": "users"})
@@ -531,9 +498,7 @@ class TestAdminAPI:
         assert response_data["pagination"]["limit"] == 50
 
     @pytest.mark.asyncio
-    async def test_update_user_role_invalid_json(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_update_user_role_invalid_json(self, auth_admin_user, mock_cosmos_client):
         """Test user role update with invalid JSON."""
         # Create request with invalid JSON by directly creating the HttpRequest
         import azure.functions as func
@@ -569,9 +534,7 @@ class TestAdminAPI:
         # Mock environment to allow test data operations
         with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
             # Create authenticated request using helper
-            req = create_auth_request(
-                method="POST", route_params={"resource": "test-data", "action": "reset"}
-            )
+            req = create_auth_request(method="POST", route_params={"resource": "test-data", "action": "reset"})
 
             # Act
             response = await admin_main(req)
@@ -593,9 +556,7 @@ class TestAdminAPI:
         # Mock environment to allow test data operations
         with patch.dict("os.environ", {"ENVIRONMENT": "test"}):
             # Create authenticated request using helper
-            req = create_auth_request(
-                method="POST", route_params={"resource": "test-data", "action": "seed"}
-            )
+            req = create_auth_request(method="POST", route_params={"resource": "test-data", "action": "seed"})
 
             # Act
             response = await admin_main(req)
@@ -622,9 +583,7 @@ class TestAdminAPI:
         assert "Resource not found" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_list_users_with_masked_api_keys(
-        self, auth_admin_user, mock_cosmos_client
-    ):
+    async def test_list_users_with_masked_api_keys(self, auth_admin_user, mock_cosmos_client):
         """Test that API keys are properly masked in user listing."""
         # Arrange
         mock_users = [
@@ -666,18 +625,14 @@ class TestAdminAPI:
         # Check that dict API keys are properly masked
         assert user["llmApiKeys"]["google_gemini"]["enabled"] == True
         assert user["llmApiKeys"]["google_gemini"]["status"] == "active"
-        assert (
-            user["llmApiKeys"]["google_gemini"]["lastTested"] == "2025-06-15T08:00:00Z"
-        )
+        assert user["llmApiKeys"]["google_gemini"]["lastTested"] == "2025-06-15T08:00:00Z"
         assert "apiKey" not in user["llmApiKeys"]["google_gemini"]
 
     @pytest.mark.asyncio
     async def test_test_data_production_environment_blocked(self, auth_admin_user):
         """Test that test data operations are blocked in production environment."""
         # Create authenticated request using helper
-        req = create_auth_request(
-            method="POST", route_params={"resource": "test-data", "action": "reset"}
-        )
+        req = create_auth_request(method="POST", route_params={"resource": "test-data", "action": "reset"})
 
         # Mock production environment
         with patch.dict(os.environ, {"ENVIRONMENT": "production"}):

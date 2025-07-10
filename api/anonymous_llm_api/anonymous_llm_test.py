@@ -1,10 +1,11 @@
-import pytest
-import json
 import asyncio
-from unittest.mock import Mock, patch, AsyncMock
+import json
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
 import azure.functions as func
+import pytest
+
 from ..conftest import create_auth_request
 from . import main as anonymous_llm_main
 
@@ -242,9 +243,7 @@ class TestAnonymousLLMAPI:
     async def test_method_not_allowed(self):
         """Test unsupported HTTP method."""
         # Arrange
-        req = self.create_anonymous_request(
-            method="PATCH", url="http://localhost/api/anonymous/llm"  # Not supported
-        )
+        req = self.create_anonymous_request(method="PATCH", url="http://localhost/api/anonymous/llm")  # Not supported
 
         # Act
         response = await anonymous_llm_main(req)
@@ -347,9 +346,7 @@ class TestAnonymousLLMAPI:
 
             response2 = await anonymous_llm_main(req2)
             data2 = json.loads(response2.get_body())
-            assert (
-                data2["anonymous_info"]["remaining_calls"] == 4
-            )  # Full limit for new IP
+            assert data2["anonymous_info"]["remaining_calls"] == 4  # Full limit for new IP
 
 
 if __name__ == "__main__":

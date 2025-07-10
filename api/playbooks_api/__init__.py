@@ -1,28 +1,29 @@
-import azure.functions as func
 import json
-
-import sys
 import os
+import sys
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-import logging
-from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
-import uuid
 import asyncio
+import logging
+import traceback
+import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from shared.database import get_database_manager
+from shared.error_handling import SutraAPIError, handle_api_error
+from shared.models import Playbook, PlaybookExecution, User, ValidationError
+from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
-from shared.unified_auth import require_authentication, get_user_from_request
-from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from shared.unified_auth import get_user_from_request, require_authentication
+from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 from shared.utils.schemaValidator import validate_entity
-from shared.real_time_cost import get_cost_manager
 from shared.validation import validate_playbook_data
-from shared.database import get_database_manager
-from shared.models import Playbook, PlaybookExecution, ValidationError, User
-from shared.error_handling import handle_api_error, SutraAPIError
-import traceback
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -99,9 +100,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
@@ -146,9 +145,7 @@ async def list_playbooks(user_id: str, req: func.HttpRequest) -> func.HttpRespon
         query = " ".join(query_parts)
 
         # Execute query
-        items = await db_manager.query_items(
-            container_name="Playbooks", query=query, parameters=query_params
-        )
+        items = await db_manager.query_items(container_name="Playbooks", query=query, parameters=query_params)
 
         # Get total count for pagination
         count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.userId = @user_id"
@@ -166,16 +163,10 @@ async def list_playbooks(user_id: str, req: func.HttpRequest) -> func.HttpRespon
             count_query += " AND (CONTAINS(LOWER(c.name), LOWER(@search)) OR CONTAINS(LOWER(c.description), LOWER(@search)))"
             count_params.append({"name": "@search", "value": search})
 
-        count_result = await db_manager.query_items(
-            container_name="Playbooks", query=count_query, parameters=count_params
-        )
+        count_result = await db_manager.query_items(container_name="Playbooks", query=count_query, parameters=count_params)
 
         # Handle development mode where we get mock data
-        if (
-            count_result
-            and isinstance(count_result[0], dict)
-            and "_mock" in count_result[0]
-        ):
+        if count_result and isinstance(count_result[0], dict) and "_mock" in count_result[0]:
             total_count = 2  # Mock count for development
         else:
             total_count = count_result[0] if count_result else 0
@@ -315,9 +306,7 @@ async def create_playbook(user_id: str, req: func.HttpRequest) -> func.HttpRespo
             "updatedAt": now_str,
         }
 
-        created_item = await db_manager.create_item(
-            container_name="Playbooks", item=db_data, partition_key=user_id
-        )
+        created_item = await db_manager.create_item(container_name="Playbooks", item=db_data, partition_key=user_id)
 
         logger.info(f"Created playbook {playbook_id} for user {user_id}")
 
@@ -345,11 +334,7 @@ async def get_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -371,9 +356,7 @@ async def get_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
         raise SutraAPIError(f"Failed to get playbook: {str(e)}", 500)
 
 
-async def update_playbook(
-    user_id: str, playbook_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def update_playbook(user_id: str, playbook_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Update an existing playbook."""
     try:
         # Parse request body
@@ -396,11 +379,7 @@ async def update_playbook(
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -424,9 +403,7 @@ async def update_playbook(
             if field in body:
                 existing_playbook[field] = body[field]
 
-        existing_playbook["updatedAt"] = (
-            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        )
+        existing_playbook["updatedAt"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         # Validate updated playbook
         validation_result = validate_playbook_data(existing_playbook)
@@ -443,9 +420,7 @@ async def update_playbook(
             )
 
         # Update in database
-        updated_item = container.replace_item(
-            item=existing_playbook["id"], body=existing_playbook
-        )
+        updated_item = container.replace_item(item=existing_playbook["id"], body=existing_playbook)
 
         logger.info(f"Updated playbook {playbook_id} for user {user_id}")
 
@@ -473,11 +448,7 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -488,7 +459,9 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
 
         # Check if playbook has active executions
         executions_container = db_manager.get_container("Executions")
-        exec_query = "SELECT VALUE COUNT(1) FROM c WHERE c.playbookId = @playbook_id AND c.status IN ('running', 'paused_for_review')"
+        exec_query = (
+            "SELECT VALUE COUNT(1) FROM c WHERE c.playbookId = @playbook_id AND c.status IN ('running', 'paused_for_review')"
+        )
         exec_params = [{"name": "@playbook_id", "value": playbook_id}]
 
         active_count = list(
@@ -527,9 +500,7 @@ async def delete_playbook(user_id: str, playbook_id: str) -> func.HttpResponse:
         raise SutraAPIError(f"Failed to delete playbook: {str(e)}", 500)
 
 
-async def run_playbook(
-    user_id: str, playbook_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def run_playbook(user_id: str, playbook_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Execute a playbook (async)."""
     try:
         # Parse request body
@@ -552,11 +523,7 @@ async def run_playbook(
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = list(
-            playbooks_container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(playbooks_container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -595,9 +562,7 @@ async def run_playbook(
             "startTime": now,
             "initialInputs": initial_inputs,
             "stepLogs": [],
-            "auditTrail": [
-                {"action": "playbook_started", "userId": user_id, "timestamp": now}
-            ],
+            "auditTrail": [{"action": "playbook_started", "userId": user_id, "timestamp": now}],
         }
 
         # Save execution record
@@ -606,13 +571,9 @@ async def run_playbook(
 
         # Start async execution (simplified for MVP)
         # In production, this would use Azure Service Bus or Functions orchestration
-        asyncio.create_task(
-            execute_playbook_steps(execution_id, playbook, initial_inputs)
-        )
+        asyncio.create_task(execute_playbook_steps(execution_id, playbook, initial_inputs))
 
-        logger.info(
-            f"Started playbook execution {execution_id} for playbook {playbook_id}"
-        )
+        logger.info(f"Started playbook execution {execution_id} for playbook {playbook_id}")
 
         return func.HttpResponse(
             json.dumps(
@@ -644,11 +605,7 @@ async def get_execution_status(user_id: str, execution_id: str) -> func.HttpResp
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -670,9 +627,7 @@ async def get_execution_status(user_id: str, execution_id: str) -> func.HttpResp
         raise SutraAPIError(f"Failed to get execution status: {str(e)}", 500)
 
 
-async def continue_execution(
-    user_id: str, execution_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def continue_execution(user_id: str, execution_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Continue a paused playbook after manual review."""
     try:
         # Parse request body
@@ -695,11 +650,7 @@ async def continue_execution(
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = list(
-            container.query_items(
-                query=query, parameters=parameters, enable_cross_partition_query=True
-            )
-        )
+        items = list(container.query_items(query=query, parameters=parameters, enable_cross_partition_query=True))
 
         if not items:
             return func.HttpResponse(
@@ -725,9 +676,7 @@ async def continue_execution(
         # Update execution to continue
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         execution["status"] = "running"
-        execution["auditTrail"].append(
-            {"action": "manual_review_approved", "userId": user_id, "timestamp": now}
-        )
+        execution["auditTrail"].append({"action": "manual_review_approved", "userId": user_id, "timestamp": now})
 
         # Apply any manual edits to the current step
         if "editedOutput" in body:
@@ -758,9 +707,7 @@ async def continue_execution(
         )
 
         if playbook_items:
-            asyncio.create_task(
-                resume_playbook_execution(execution_id, playbook_items[0], execution)
-            )
+            asyncio.create_task(resume_playbook_execution(execution_id, playbook_items[0], execution))
 
         logger.info(f"Continued execution {execution_id} after manual review")
 
@@ -775,9 +722,7 @@ async def continue_execution(
         raise SutraAPIError(f"Failed to continue execution: {str(e)}", 500)
 
 
-async def execute_playbook_steps(
-    execution_id: str, playbook: Dict[str, Any], initial_inputs: Dict[str, Any]
-):
+async def execute_playbook_steps(execution_id: str, playbook: Dict[str, Any], initial_inputs: Dict[str, Any]):
     """Execute playbook steps asynchronously (simplified for MVP)."""
     try:
         # This is a simplified implementation for MVP
@@ -800,9 +745,7 @@ async def execute_playbook_steps(
                 "stepId": step_id,
                 "stepName": step.get("name", f"Step {i + 1}"),
                 "status": "running",
-                "timestamp": datetime.now(timezone.utc)
-                .isoformat()
-                .replace("+00:00", "Z"),
+                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             }
 
             try:
@@ -851,9 +794,7 @@ async def execute_playbook_steps(
         # Mark execution as completed
         if execution["status"] != "failed":
             execution["status"] = "completed"
-            execution["endTime"] = (
-                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            )
+            execution["endTime"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         container.replace_item(item=execution_id, body=execution)
 
@@ -863,22 +804,16 @@ async def execute_playbook_steps(
         logger.error(f"Error executing playbook {execution_id}: {str(e)}")
         # Mark execution as failed
         try:
-            execution = container.read_item(
-                item=execution_id, partition_key=execution_id
-            )
+            execution = container.read_item(item=execution_id, partition_key=execution_id)
             execution["status"] = "failed"
-            execution["endTime"] = (
-                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            )
+            execution["endTime"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             execution["error"] = str(e)
             container.replace_item(item=execution_id, body=execution)
         except Exception:
             pass
 
 
-async def resume_playbook_execution(
-    execution_id: str, playbook: Dict[str, Any], execution: Dict[str, Any]
-):
+async def resume_playbook_execution(execution_id: str, playbook: Dict[str, Any], execution: Dict[str, Any]):
     """Resume playbook execution after manual review."""
     try:
         # Find the last completed step and continue from there

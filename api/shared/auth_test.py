@@ -2,32 +2,34 @@
 Tests for auth.py module - Authentication and authorization
 """
 
-import pytest
 import os
-import jwt
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
 import azure.functions as func
-from ..conftest import create_auth_request
+import jwt
+import pytest
 
 from api.shared.auth import (
-    AuthManager,
     AuthenticationError,
+    AuthManager,
     AuthorizationError,
-    get_auth_manager,
-    extract_token_from_request,
-    require_auth,
-    require_admin,
-    get_current_user,
     check_admin_role,
     check_user_permissions,
+    extract_token_from_request,
+    get_auth_manager,
+    get_current_user,
+    get_user_id_from_token,
     get_user_role,
+    require_admin,
     require_admin_role,
+    require_auth,
     require_permission,
     verify_jwt_token,
-    get_user_id_from_token,
 )
 from api.shared.models import User, UserRole
+
+from ..conftest import create_auth_request
 
 
 class TestAuthManager:
@@ -48,9 +50,7 @@ class TestAuthManager:
         mock_client_instance = Mock()
         mock_secret_client.return_value = mock_client_instance
 
-        with patch.dict(
-            os.environ, {"KEY_VAULT_URI": "https://test-kv.vault.azure.net/"}
-        ):
+        with patch.dict(os.environ, {"KEY_VAULT_URI": "https://test-kv.vault.azure.net/"}):
             auth_manager = AuthManager()
             client = auth_manager.kv_client
 
@@ -64,9 +64,7 @@ class TestAuthManager:
         """Test Key Vault client property without URI."""
         with patch.dict(os.environ, {}, clear=True):
             auth_manager = AuthManager()
-            with pytest.raises(
-                ValueError, match="KEY_VAULT_URI environment variable is required"
-            ):
+            with pytest.raises(ValueError, match="KEY_VAULT_URI environment variable is required"):
                 _ = auth_manager.kv_client
 
     @pytest.mark.skip(reason="Legacy auth system - replaced by unified_auth")
@@ -92,9 +90,7 @@ class TestAuthManager:
             domain_secret,
         ]
 
-        with patch.dict(
-            os.environ, {"KEY_VAULT_URI": "https://test-kv.vault.azure.net/"}
-        ):
+        with patch.dict(os.environ, {"KEY_VAULT_URI": "https://test-kv.vault.azure.net/"}):
             auth_manager = AuthManager()
             config = await auth_manager.get_auth_config()
 
@@ -104,10 +100,7 @@ class TestAuthManager:
             assert config["domain"] == "test-domain.onmicrosoft.com"
             assert "issuer" in config
             assert "jwks_uri" in config
-            assert (
-                config["issuer"]
-                == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/v2.0/"
-            )
+            assert config["issuer"] == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/v2.0/"
             assert (
                 config["jwks_uri"]
                 == "https://test-domain.onmicrosoft.com.b2clogin.com/test-domain/B2C_1_signupsignin/discovery/v2.0/keys"
@@ -123,15 +116,11 @@ class TestAuthManager:
         mock_secret_client.return_value = mock_client_instance
         mock_client_instance.get_secret.side_effect = Exception("Key Vault error")
 
-        with patch.dict(
-            os.environ, {"KEY_VAULT_URI": "https://test-kv.vault.azure.net/"}
-        ):
+        with patch.dict(os.environ, {"KEY_VAULT_URI": "https://test-kv.vault.azure.net/"}):
             auth_manager = AuthManager()
             config = await auth_manager.get_auth_config()
 
-            assert (
-                config["tenant_id"] == "vedid.onmicrosoft.com"
-            )  # Falls back to domain default
+            assert config["tenant_id"] == "vedid.onmicrosoft.com"  # Falls back to domain default
             assert config["client_id"] == "mock-client"
             assert config["client_secret"] == "mock-secret"
             assert config["domain"] == "mock-domain"
@@ -225,9 +214,7 @@ class TestAuthManager:
         assert isinstance(user, User)
         assert user.id == "mock-user-id"
         assert user.email == "dev@sutra.ai"
-        assert (
-            user.role == UserRole.ADMIN
-        )  # dev@sutra.ai is automatically admin in development
+        assert user.role == UserRole.ADMIN  # dev@sutra.ai is automatically admin in development
 
     @pytest.mark.asyncio
     async def test_get_user_from_token_admin(self):

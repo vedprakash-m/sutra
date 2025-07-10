@@ -2,14 +2,15 @@
 Tests for database.py module - Database connection and operations
 """
 
-import pytest
 import os
-from unittest.mock import Mock, patch, MagicMock
-from azure.cosmos import CosmosClient, exceptions
-from azure.cosmos.database import DatabaseProxy
-from azure.cosmos.container import ContainerProxy
+from unittest.mock import MagicMock, Mock, patch
 
-from api.shared.database import DatabaseManager, get_database_manager, get_cosmos_client
+import pytest
+from azure.cosmos import CosmosClient, exceptions
+from azure.cosmos.container import ContainerProxy
+from azure.cosmos.database import DatabaseProxy
+
+from api.shared.database import DatabaseManager, get_cosmos_client, get_database_manager
 
 
 class TestDatabaseManager:
@@ -57,9 +58,7 @@ class TestDatabaseManager:
         mock_client = Mock(spec=CosmosClient)
         mock_cosmos_client.return_value = mock_client
 
-        with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
-        ):
+        with patch.dict(os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}):
             db_manager = DatabaseManager()
             client = db_manager.client
 
@@ -79,9 +78,7 @@ class TestDatabaseManager:
         mock_client = Mock(spec=CosmosClient)
         mock_cosmos_client.return_value = mock_client
 
-        with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
-        ):
+        with patch.dict(os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}):
             db_manager = DatabaseManager()
             client1 = db_manager.client
             client2 = db_manager.client
@@ -97,9 +94,7 @@ class TestDatabaseManager:
         mock_client.get_database_client.return_value = mock_database
         mock_cosmos_client.return_value = mock_client
 
-        with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
-        ):
+        with patch.dict(os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}):
             db_manager = DatabaseManager()
             database = db_manager.database
 
@@ -123,9 +118,7 @@ class TestDatabaseManager:
         mock_database.get_container_client.return_value = mock_container
         mock_cosmos_client.return_value = mock_client
 
-        with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
-        ):
+        with patch.dict(os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}):
             db_manager = DatabaseManager()
             container = db_manager.get_container("test_container")
 
@@ -142,9 +135,7 @@ class TestDatabaseManager:
         mock_database.get_container_client.return_value = mock_container
         mock_cosmos_client.return_value = mock_client
 
-        with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
-        ):
+        with patch.dict(os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}):
             db_manager = DatabaseManager()
             container1 = db_manager.get_container("test_container")
             container2 = db_manager.get_container("test_container")
@@ -191,9 +182,7 @@ class TestDatabaseManager:
         with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
             db_manager = DatabaseManager()
 
-            result = await db_manager.read_item(
-                "test_container", "test_id", "test_partition"
-            )
+            result = await db_manager.read_item("test_container", "test_id", "test_partition")
 
             assert result["id"] == "test_id"
             assert result["name"] == "Mock Item"
@@ -206,9 +195,7 @@ class TestDatabaseManager:
             db_manager = DatabaseManager()
             item = {"id": "test_id", "name": "updated_item"}
 
-            result = await db_manager.update_item(
-                "test_container", item, "test_partition"
-            )
+            result = await db_manager.update_item("test_container", item, "test_partition")
 
             assert result["id"] == "test_id"
             assert result["name"] == "updated_item"
@@ -220,9 +207,7 @@ class TestDatabaseManager:
         with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
             db_manager = DatabaseManager()
 
-            result = await db_manager.delete_item(
-                "test_container", "test_id", "test_partition"
-            )
+            result = await db_manager.delete_item("test_container", "test_id", "test_partition")
 
             assert result is None
 
@@ -284,9 +269,7 @@ class TestDatabaseManagerProductionOperations:
             result = await db_manager.create_item("test_container", item)
 
             assert result == expected_result
-            mock_container.create_item.assert_called_once_with(
-                body=item, partition_key=None
-            )
+            mock_container.create_item.assert_called_once_with(body=item, partition_key=None)
 
     @pytest.mark.asyncio
     @patch("api.shared.database.CosmosClient.from_connection_string")
@@ -311,14 +294,10 @@ class TestDatabaseManagerProductionOperations:
         ):
             db_manager = DatabaseManager()
 
-            result = await db_manager.read_item(
-                "test_container", "test_id", "test_partition"
-            )
+            result = await db_manager.read_item("test_container", "test_id", "test_partition")
 
             assert result == expected_result
-            mock_container.read_item.assert_called_once_with(
-                item="test_id", partition_key="test_partition"
-            )
+            mock_container.read_item.assert_called_once_with(item="test_id", partition_key="test_partition")
 
     @pytest.mark.asyncio
     @patch("api.shared.database.CosmosClient.from_connection_string")
@@ -331,9 +310,7 @@ class TestDatabaseManagerProductionOperations:
         mock_database.get_container_client.return_value = mock_container
         mock_cosmos_client.return_value = mock_client
 
-        mock_container.read_item.side_effect = exceptions.CosmosResourceNotFoundError(
-            message="Not found"
-        )
+        mock_container.read_item.side_effect = exceptions.CosmosResourceNotFoundError(message="Not found")
 
         with patch.dict(
             os.environ,
@@ -344,9 +321,7 @@ class TestDatabaseManagerProductionOperations:
         ):
             db_manager = DatabaseManager()
 
-            result = await db_manager.read_item(
-                "test_container", "test_id", "test_partition"
-            )
+            result = await db_manager.read_item("test_container", "test_id", "test_partition")
 
             assert result is None
 
@@ -370,14 +345,10 @@ class TestDatabaseManagerProductionOperations:
         ):
             db_manager = DatabaseManager()
 
-            result = await db_manager.delete_item(
-                "test_container", "test_id", "test_partition"
-            )
+            result = await db_manager.delete_item("test_container", "test_id", "test_partition")
 
             assert result is True
-            mock_container.delete_item.assert_called_once_with(
-                item="test_id", partition_key="test_partition"
-            )
+            mock_container.delete_item.assert_called_once_with(item="test_id", partition_key="test_partition")
 
     @pytest.mark.asyncio
     @patch("api.shared.database.CosmosClient.from_connection_string")
@@ -390,9 +361,7 @@ class TestDatabaseManagerProductionOperations:
         mock_database.get_container_client.return_value = mock_container
         mock_cosmos_client.return_value = mock_client
 
-        mock_container.delete_item.side_effect = exceptions.CosmosResourceNotFoundError(
-            message="Not found"
-        )
+        mock_container.delete_item.side_effect = exceptions.CosmosResourceNotFoundError(message="Not found")
 
         with patch.dict(
             os.environ,
@@ -403,9 +372,7 @@ class TestDatabaseManagerProductionOperations:
         ):
             db_manager = DatabaseManager()
 
-            result = await db_manager.delete_item(
-                "test_container", "test_id", "test_partition"
-            )
+            result = await db_manager.delete_item("test_container", "test_id", "test_partition")
 
             assert result is False
 

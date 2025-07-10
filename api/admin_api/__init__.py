@@ -1,22 +1,22 @@
-import azure.functions as func
 import json
-
-import sys
 import os
+import sys
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, List, Optional
-import uuid
-
-from shared.unified_auth import require_authentication
-from shared.database import get_database_manager
-from shared.models import ValidationError, UserRole
-from shared.error_handling import handle_api_error, SutraAPIError
 import traceback
+import uuid
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
+
+from shared.database import get_database_manager
+from shared.error_handling import SutraAPIError, handle_api_error
+from shared.models import UserRole, ValidationError
+from shared.unified_auth import require_authentication
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -122,9 +122,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
@@ -150,9 +148,7 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
         where_conditions = []
 
         if search:
-            where_conditions.append(
-                "(CONTAINS(LOWER(c.name), LOWER(@search)) OR CONTAINS(LOWER(c.email), LOWER(@search)))"
-            )
+            where_conditions.append("(CONTAINS(LOWER(c.name), LOWER(@search)) OR CONTAINS(LOWER(c.email), LOWER(@search)))")
             query_params.append({"name": "@search", "value": search})
 
         if role_filter:
@@ -169,9 +165,7 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
         query = " ".join(query_parts)
 
         # Execute query
-        items = await db_manager.query_items(
-            container_name="Users", query=query, parameters=query_params
-        )
+        items = await db_manager.query_items(container_name="Users", query=query, parameters=query_params)
 
         # Mask sensitive data
         for user in items:
@@ -203,9 +197,7 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
             if role_filter:
                 count_params.append({"name": "@role", "value": role_filter})
 
-        total_count_result = await db_manager.query_items(
-            container_name="Users", query=count_query, parameters=count_params
-        )
+        total_count_result = await db_manager.query_items(container_name="Users", query=count_query, parameters=count_params)
         total_count = total_count_result[0] if total_count_result else 0
 
         total_pages = (total_count + limit - 1) // limit
@@ -233,9 +225,7 @@ async def list_users(admin_user_id: str, req: func.HttpRequest) -> func.HttpResp
         raise SutraAPIError(f"Failed to list users: {str(e)}", 500)
 
 
-async def update_user_role(
-    admin_user_id: str, target_user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def update_user_role(admin_user_id: str, target_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Update user role (admin only)."""
     try:
         # Parse request body
@@ -269,9 +259,7 @@ async def update_user_role(
         query = "SELECT * FROM c WHERE c.id = @user_id"
         parameters = [{"name": "@user_id", "value": target_user_id}]
 
-        items = await db_manager.query_items(
-            container_name="Users", query=query, parameters=parameters
-        )
+        items = await db_manager.query_items(container_name="Users", query=query, parameters=parameters)
 
         if not items:
             return func.HttpResponse(
@@ -285,18 +273,12 @@ async def update_user_role(
         # Update role
         old_role = user_data.get("role", "user")
         user_data["role"] = new_role
-        user_data["updatedAt"] = (
-            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        )
+        user_data["updatedAt"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         # Save to database
-        updated_user = await db_manager.update_item(
-            container_name="Users", item=user_data, partition_key=user_data["id"]
-        )
+        updated_user = await db_manager.update_item(container_name="Users", item=user_data, partition_key=user_data["id"])
 
-        logger.info(
-            f"Admin {admin_user_id} updated user {target_user_id} role from {old_role} to {new_role}"
-        )
+        logger.info(f"Admin {admin_user_id} updated user {target_user_id} role from {old_role} to {new_role}")
 
         return func.HttpResponse(
             json.dumps(
@@ -324,9 +306,7 @@ async def get_system_health() -> func.HttpResponse:
         # Check database connectivity
         try:
             # Simple query to test database
-            await db_manager.query_items(
-                container_name="Users", query="SELECT VALUE COUNT(1) FROM c"
-            )
+            await db_manager.query_items(container_name="Users", query="SELECT VALUE COUNT(1) FROM c")
             db_status = "healthy"
         except Exception as e:
             db_status = f"unhealthy: {str(e)}"
@@ -358,9 +338,7 @@ async def get_system_health() -> func.HttpResponse:
                 {
                     "status": "unhealthy",
                     "error": str(e),
-                    "timestamp": datetime.now(timezone.utc)
-                    .isoformat()
-                    .replace("+00:00", "Z"),
+                    "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 }
             ),
             status_code=503,
@@ -376,41 +354,29 @@ async def get_system_stats() -> func.HttpResponse:
         # Get user count
         users_container = db_manager.get_container("Users")
         user_count = list(
-            users_container.query_items(
-                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
-            )
+            users_container.query_items(query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True)
         )[0]
 
         # Get prompt count
         prompts_container = db_manager.get_container("Prompts")
         prompt_count = list(
-            prompts_container.query_items(
-                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
-            )
+            prompts_container.query_items(query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True)
         )[0]
 
         # Get collection count
         collections_container = db_manager.get_container("Collections")
         collection_count = list(
-            collections_container.query_items(
-                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
-            )
+            collections_container.query_items(query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True)
         )[0]
 
         # Get playbook count
         playbooks_container = db_manager.get_container("Playbooks")
         playbook_count = list(
-            playbooks_container.query_items(
-                query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True
-            )
+            playbooks_container.query_items(query="SELECT VALUE COUNT(1) FROM c", enable_cross_partition_query=True)
         )[0]
 
         # Get recent activity (last 24 hours)
-        yesterday = (
-            (datetime.now(timezone.utc) - timedelta(days=1))
-            .isoformat()
-            .replace("+00:00", "Z")
-        )
+        yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat().replace("+00:00", "Z")
 
         recent_users = list(
             users_container.query_items(
@@ -454,9 +420,7 @@ async def get_system_stats() -> func.HttpResponse:
         raise SutraAPIError(f"Failed to get system stats: {str(e)}", 500)
 
 
-async def set_maintenance_mode(
-    admin_user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def set_maintenance_mode(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Enable/disable maintenance mode."""
     try:
         # Parse request body
@@ -547,9 +511,7 @@ async def get_llm_settings() -> func.HttpResponse:
                     },
                 },
                 "defaultProvider": "openai",
-                "updatedAt": datetime.now(timezone.utc)
-                .isoformat()
-                .replace("+00:00", "Z"),
+                "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             }
 
         return func.HttpResponse(
@@ -563,9 +525,7 @@ async def get_llm_settings() -> func.HttpResponse:
         raise SutraAPIError(f"Failed to get LLM settings: {str(e)}", 500)
 
 
-async def update_llm_settings(
-    admin_user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def update_llm_settings(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Update LLM provider settings."""
     try:
         # Parse request body
@@ -583,9 +543,7 @@ async def update_llm_settings(
 
         # Get existing settings
         try:
-            existing_config = config_container.read_item(
-                item="llm_settings", partition_key="llm_settings"
-            )
+            existing_config = config_container.read_item(item="llm_settings", partition_key="llm_settings")
         except Exception:
             existing_config = {"id": "llm_settings", "providers": {}}
 
@@ -596,16 +554,12 @@ async def update_llm_settings(
         if "defaultProvider" in body:
             existing_config["defaultProvider"] = body["defaultProvider"]
 
-        existing_config["updatedAt"] = (
-            datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        )
+        existing_config["updatedAt"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         existing_config["updatedBy"] = admin_user_id
 
         # Save settings
         try:
-            updated_config = config_container.replace_item(
-                item="llm_settings", body=existing_config
-            )
+            updated_config = config_container.replace_item(item="llm_settings", body=existing_config)
         except Exception:
             updated_config = config_container.create_item(existing_config)
 
@@ -690,9 +644,7 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
                     "total": total_executions,
                     "successful": successful_executions,
                     "failed": failed_executions,
-                    "success_rate": (successful_executions / total_executions * 100)
-                    if total_executions > 0
-                    else 0,
+                    "success_rate": (successful_executions / total_executions * 100) if total_executions > 0 else 0,
                 },
                 "users": {"active": active_users},
             },
@@ -712,9 +664,7 @@ async def get_usage_stats(req: func.HttpRequest) -> func.HttpResponse:
 # Test Data Management Functions (for E2E testing)
 
 
-async def reset_test_data(
-    admin_user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def reset_test_data(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """
     Reset test database to clean state (E2E testing only).
     Only works in test/development environments.
@@ -765,9 +715,7 @@ async def reset_test_data(
 
                 deleted_count = 0
                 for item in items:
-                    await db_manager.delete_item(
-                        container_name, item["id"], item.get("userId", item["id"])
-                    )
+                    await db_manager.delete_item(container_name, item["id"], item.get("userId", item["id"]))
                     deleted_count += 1
 
                 reset_summary["containers_reset"].append(
@@ -778,9 +726,7 @@ async def reset_test_data(
                     }
                 )
 
-                logger.info(
-                    f"Reset container {container_name}: deleted {deleted_count} items"
-                )
+                logger.info(f"Reset container {container_name}: deleted {deleted_count} items")
 
             except Exception as container_error:
                 reset_summary["containers_reset"].append(
@@ -790,13 +736,9 @@ async def reset_test_data(
                         "status": "error",
                     }
                 )
-                logger.error(
-                    f"Error resetting container {container_name}: {container_error}"
-                )
+                logger.error(f"Error resetting container {container_name}: {container_error}")
 
-        return func.HttpResponse(
-            json.dumps(reset_summary), status_code=200, mimetype="application/json"
-        )
+        return func.HttpResponse(json.dumps(reset_summary), status_code=200, mimetype="application/json")
 
     except Exception as e:
         logger.error(f"Error in reset_test_data: {e}")
@@ -813,9 +755,7 @@ async def reset_test_data(
         )
 
 
-async def seed_test_data(
-    admin_user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def seed_test_data(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """
     Seed test database with initial data for E2E testing.
     Only works in test/development environments.
@@ -880,9 +820,7 @@ async def seed_test_data(
         for user in test_users:
             try:
                 await db_manager.create_item("Users", user)
-                seed_summary["data_created"].append(
-                    {"type": "user", "id": user["id"], "status": "success"}
-                )
+                seed_summary["data_created"].append({"type": "user", "id": user["id"], "status": "success"})
             except Exception as e:
                 seed_summary["data_created"].append(
                     {
@@ -920,9 +858,7 @@ async def seed_test_data(
         for collection in test_collections:
             try:
                 await db_manager.create_item("Collections", collection)
-                seed_summary["data_created"].append(
-                    {"type": "collection", "id": collection["id"], "status": "success"}
-                )
+                seed_summary["data_created"].append({"type": "collection", "id": collection["id"], "status": "success"})
             except Exception as e:
                 seed_summary["data_created"].append(
                     {
@@ -957,9 +893,7 @@ async def seed_test_data(
         for prompt in test_prompts:
             try:
                 await db_manager.create_item("Prompts", prompt)
-                seed_summary["data_created"].append(
-                    {"type": "prompt", "id": prompt["id"], "status": "success"}
-                )
+                seed_summary["data_created"].append({"type": "prompt", "id": prompt["id"], "status": "success"})
             except Exception as e:
                 seed_summary["data_created"].append(
                     {
@@ -1007,9 +941,7 @@ async def seed_test_data(
 
         logger.info(f"Test data seeded by {admin_user_id} in {environment} environment")
 
-        return func.HttpResponse(
-            json.dumps(seed_summary), status_code=200, mimetype="application/json"
-        )
+        return func.HttpResponse(json.dumps(seed_summary), status_code=200, mimetype="application/json")
 
     except Exception as e:
         logger.error(f"Error in seed_test_data: {e}")
@@ -1064,9 +996,7 @@ async def get_guest_settings() -> func.HttpResponse:
         raise SutraAPIError(f"Failed to get guest settings: {str(e)}", 500)
 
 
-async def update_guest_settings(
-    admin_user_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def update_guest_settings(admin_user_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Update guest user settings."""
     try:
         # Parse request body
@@ -1123,9 +1053,7 @@ async def update_guest_settings(
             logger.info(f"DEV MODE: Would update guest settings: {updated_config}")
         else:
             try:
-                updated_config = await db_manager.update_item(
-                    container_name="SystemConfig", item=existing_config
-                )
+                updated_config = await db_manager.update_item(container_name="SystemConfig", item=existing_config)
             except Exception:
                 updated_config = await db_manager.create_item(
                     container_name="SystemConfig",
@@ -1200,9 +1128,7 @@ async def get_guest_usage_stats_admin(req: func.HttpRequest) -> func.HttpRespons
 
             parameters = [{"name": "@start_date", "value": start_iso}]
 
-            result = await db_manager.query_items(
-                container_name="GuestSessions", query=query, parameters=parameters
-            )
+            result = await db_manager.query_items(container_name="GuestSessions", query=query, parameters=parameters)
 
             stats_data = result[0] if result else {}
 
@@ -1213,17 +1139,13 @@ async def get_guest_usage_stats_admin(req: func.HttpRequest) -> func.HttpRespons
                 "total_sessions": stats_data.get("total_sessions", 0),
                 "total_llm_calls": stats_data.get("total_llm_calls", 0),
                 "total_prompts_created": stats_data.get("total_prompts_created", 0),
-                "total_collections_created": stats_data.get(
-                    "total_collections_created", 0
-                ),
+                "total_collections_created": stats_data.get("total_collections_created", 0),
                 "total_playbooks_created": stats_data.get("total_playbooks_created", 0),
                 "avg_calls_per_session": 0,
             }
 
             if stats["total_sessions"] > 0:
-                stats["avg_calls_per_session"] = round(
-                    stats["total_llm_calls"] / stats["total_sessions"], 2
-                )
+                stats["avg_calls_per_session"] = round(stats["total_llm_calls"] / stats["total_sessions"], 2)
 
         return func.HttpResponse(
             json.dumps(stats, default=str),

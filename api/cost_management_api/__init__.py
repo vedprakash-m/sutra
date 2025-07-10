@@ -1,20 +1,21 @@
 import json
 import logging
+import os
+import sys
+import traceback
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 import azure.functions as func
 from azure.functions import HttpRequest, HttpResponse
+from shared.budget import BudgetConfig, get_enhanced_budget_manager
+from shared.error_handling import SutraAPIError, handle_api_error
+from shared.models import User, UserRole
+from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
-from shared.unified_auth import require_authentication, get_user_from_request
-from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
-from shared.real_time_cost import get_cost_manager
-from shared.models import UserRole, User
-from shared.budget import get_enhanced_budget_manager, BudgetConfig
-from shared.error_handling import handle_api_error, SutraAPIError
-import traceback
-import sys
-import os
+from shared.unified_auth import get_user_from_request, require_authentication
+from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -97,17 +98,13 @@ async def main(req: HttpRequest) -> HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
 
 
-async def handle_create_budget_config(
-    req: HttpRequest, user_info: Dict[str, Any], budget_manager
-) -> HttpResponse:
+async def handle_create_budget_config(req: HttpRequest, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
     """Handle budget configuration creation/update."""
     try:
         request_body = req.get_json()
@@ -150,9 +147,7 @@ async def handle_create_budget_config(
         budget_config = await budget_manager.create_budget_config(config_data)
 
         return HttpResponse(
-            json.dumps(
-                {"success": True, "budget_config": budget_config.__dict__}, default=str
-            ),
+            json.dumps({"success": True, "budget_config": budget_config.__dict__}, default=str),
             status_code=201,
             headers={"Content-Type": "application/json"},
         )
@@ -166,9 +161,7 @@ async def handle_create_budget_config(
         )
 
 
-async def handle_get_usage(
-    entity_id: str, user_info: Dict[str, Any], budget_manager
-) -> HttpResponse:
+async def handle_get_usage(entity_id: str, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
     """Handle real-time usage retrieval."""
     try:
         # Check permissions
@@ -199,8 +192,7 @@ async def handle_get_usage(
                 {
                     "budget_amount": budget_config.budget_amount,
                     "budget_period": budget_config.budget_period,
-                    "remaining_budget": budget_config.budget_amount
-                    - usage_data.get("current_spend", 0),
+                    "remaining_budget": budget_config.budget_amount - usage_data.get("current_spend", 0),
                     "alert_thresholds": budget_config.alert_thresholds,
                 }
             )
@@ -220,9 +212,7 @@ async def handle_get_usage(
         )
 
 
-async def handle_get_predictions(
-    entity_id: str, user_info: Dict[str, Any], budget_manager
-) -> HttpResponse:
+async def handle_get_predictions(entity_id: str, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
     """Handle cost predictions retrieval."""
     try:
         # Check permissions
@@ -251,9 +241,7 @@ async def handle_get_predictions(
         )
 
 
-async def handle_estimate_cost(
-    req: HttpRequest, user_info: Dict[str, Any], budget_manager
-) -> HttpResponse:
+async def handle_estimate_cost(req: HttpRequest, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
     """Handle execution cost estimation."""
     try:
         request_body = req.get_json()
@@ -273,15 +261,11 @@ async def handle_estimate_cost(
         max_tokens = request_body.get("max_tokens", 1000)
 
         # Estimate cost
-        estimate = await budget_manager.estimate_execution_cost(
-            model, prompt, max_tokens
-        )
+        estimate = await budget_manager.estimate_execution_cost(model, prompt, max_tokens)
 
         # Check budget impact for the user
         user_id = user_info["user_id"]
-        budget_check = await budget_manager.check_pre_execution_budget(
-            user_id, estimate["estimated_cost"], model
-        )
+        budget_check = await budget_manager.check_pre_execution_budget(user_id, estimate["estimated_cost"], model)
 
         response_data = {**estimate, "budget_check": budget_check}
 
@@ -300,9 +284,7 @@ async def handle_estimate_cost(
         )
 
 
-async def handle_check_restrictions(
-    entity_id: str, user_info: Dict[str, Any], budget_manager
-) -> HttpResponse:
+async def handle_check_restrictions(entity_id: str, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
     """Handle access restrictions check."""
     try:
         # Check permissions
@@ -331,9 +313,7 @@ async def handle_check_restrictions(
         )
 
 
-async def handle_get_analytics(
-    req: HttpRequest, user_info: Dict[str, Any], budget_manager
-) -> HttpResponse:
+async def handle_get_analytics(req: HttpRequest, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
     """Handle cost analytics retrieval (admin only)."""
     try:
         # Check admin permissions
@@ -350,9 +330,7 @@ async def handle_get_analytics(
 
         # Generate analytics report
         analytics_data = {
-            "system_overview": await get_system_cost_overview(
-                budget_manager, time_period
-            ),
+            "system_overview": await get_system_cost_overview(budget_manager, time_period),
             "top_users": await get_top_users_by_cost(budget_manager, time_period),
             "model_usage": await get_model_usage_analytics(budget_manager, time_period),
             "budget_alerts": await get_budget_alerts_summary(budget_manager),
@@ -424,9 +402,7 @@ async def get_system_cost_overview(budget_manager, time_period: str) -> Dict[str
     }
 
 
-async def get_top_users_by_cost(
-    budget_manager, time_period: str
-) -> List[Dict[str, Any]]:
+async def get_top_users_by_cost(budget_manager, time_period: str) -> List[Dict[str, Any]]:
     """Get top users by cost."""
     # Placeholder implementation
     return [

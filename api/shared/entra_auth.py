@@ -14,14 +14,15 @@ Provides JWT token validation with JWKS caching and VedUser standard compliance
 """
 
 import json
+import logging
 import os
 import time
-from typing import Optional, Dict, Any, List
-from cachetools import TTLCache
+from typing import Any, Dict, List, Optional
+
 import jwt
 import requests
+from cachetools import TTLCache
 from pydantic import BaseModel
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +66,7 @@ class JWKSCache:
         if tenant_id in self.jwks_endpoints:
             jwks_url = self.jwks_endpoints[tenant_id]
         else:
-            jwks_url = (
-                f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys"
-            )
+            jwks_url = f"https://login.microsoftonline.com/{tenant_id}/discovery/v2.0/keys"
 
         try:
             logger.info(f"Fetching JWKS from: {jwks_url}")
@@ -83,9 +82,7 @@ class JWKSCache:
             logger.error(f"Failed to fetch JWKS for tenant {tenant_id}: {e}")
             raise
 
-    def get_signing_key(
-        self, token_kid: str, tenant_id: str = "common"
-    ) -> Optional[str]:
+    def get_signing_key(self, token_kid: str, tenant_id: str = "common") -> Optional[str]:
         """Get signing key for token validation"""
         try:
             jwks = self.get_jwks(tenant_id)
@@ -118,21 +115,13 @@ class EntraIdAuth:
             or self._extract_tenant_from_authority()
             or "80fe68b7-105c-4fb9-ab03-c9a818e35848"  # Default to specific tenant
         )
-        self.client_id = (
-            client_id
-            or os.getenv("ENTRA_CLIENT_ID")
-            or os.getenv("SUTRA_ENTRA_ID_CLIENT_ID")
-        )
+        self.client_id = client_id or os.getenv("ENTRA_CLIENT_ID") or os.getenv("SUTRA_ENTRA_ID_CLIENT_ID")
 
-        logger.info(
-            f"✅ EntraIdAuth initialized (tenant: {self.tenant_id}, client_id: {'***' if self.client_id else 'None'})"
-        )
+        logger.info(f"✅ EntraIdAuth initialized (tenant: {self.tenant_id}, client_id: {'***' if self.client_id else 'None'})")
 
         # Validate configuration
         if not self.client_id:
-            logger.error(
-                "❌ CRITICAL: No client ID configured for Entra ID authentication"
-            )
+            logger.error("❌ CRITICAL: No client ID configured for Entra ID authentication")
 
         self.jwks_cache = JWKSCache()
 
@@ -175,11 +164,7 @@ class EntraIdAuth:
             logger.debug(f"Token payload preview: {unverified_payload.keys()}")
 
             # Determine if this is an access token or ID token
-            token_type = (
-                "access"
-                if "scp" in unverified_payload or "roles" in unverified_payload
-                else "id"
-            )
+            token_type = "access" if "scp" in unverified_payload or "roles" in unverified_payload else "id"
             logger.info(f"Detected token type: {token_type}")
 
             # For access tokens, we need different validation
@@ -236,11 +221,7 @@ class EntraIdAuth:
         """Create VedUser from JWT token payload"""
         # Extract user information from token claims
         user_id = payload.get("oid") or payload.get("sub")
-        email = (
-            payload.get("email")
-            or payload.get("preferred_username")
-            or payload.get("upn")
-        )
+        email = payload.get("email") or payload.get("preferred_username") or payload.get("upn")
         name = payload.get("name", "")
         given_name = payload.get("given_name")
         family_name = payload.get("family_name")
@@ -309,9 +290,7 @@ def get_entra_auth(tenant_id: str = None, client_id: str = None) -> EntraIdAuth:
                 or "80fe68b7-105c-4fb9-ab03-c9a818e35848"  # Default to specific tenant
             )
         if not client_id:
-            client_id = os.getenv("ENTRA_CLIENT_ID") or os.getenv(
-                "SUTRA_ENTRA_ID_CLIENT_ID"
-            )
+            client_id = os.getenv("ENTRA_CLIENT_ID") or os.getenv("SUTRA_ENTRA_ID_CLIENT_ID")
 
         _entra_auth_instance = EntraIdAuth(tenant_id, client_id)
 
@@ -362,11 +341,7 @@ def validate_request_headers(headers: Dict[str, str]) -> Optional[VedUser]:
             roles = principal_data.get("userRoles", [])
 
             if user_id and email:
-                role = (
-                    "admin"
-                    if "admin" in roles or email == "vedprakash.m@outlook.com"
-                    else "user"
-                )
+                role = "admin" if "admin" in roles or email == "vedprakash.m@outlook.com" else "user"
 
                 ved_user = VedUser(
                     id=user_id,

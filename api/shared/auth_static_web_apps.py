@@ -3,14 +3,16 @@ Azure Static Web Apps Authentication Module
 Correctly handles authentication for Azure Static Web Apps with Entra External ID
 """
 
-import os
-import logging
 import base64
 import json
+import logging
+import os
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
 from functools import wraps
+from typing import Any, Dict, Optional
+
 import azure.functions as func
+
 from .models import User, UserRole
 
 
@@ -55,9 +57,7 @@ class StaticWebAppsAuthManager:
 
                     user_id = principal.get("userId") or principal.get("sub")
                     user_name = principal.get("userDetails") or principal.get("name")
-                    identity_provider = principal.get(
-                        "identityProvider", "azureActiveDirectory"
-                    )
+                    identity_provider = principal.get("identityProvider", "azureActiveDirectory")
                     user_roles = principal.get("userRoles", ["user"])
 
                     # Determine primary role (Azure Static Web Apps can have multiple roles)
@@ -82,9 +82,7 @@ class StaticWebAppsAuthManager:
             # Method 2: Try individual headers (fallback)
             user_id = req.headers.get("x-ms-client-principal-id")
             user_name = req.headers.get("x-ms-client-principal-name")
-            identity_provider = req.headers.get(
-                "x-ms-client-principal-idp", "azureActiveDirectory"
-            )
+            identity_provider = req.headers.get("x-ms-client-principal-idp", "azureActiveDirectory")
 
             if user_id:
                 # Default to user role, but check for special admin users
@@ -203,14 +201,9 @@ def require_auth(func_or_resource=None, *, resource: str = None, action: str = "
                         req.current_user = user
                     else:
                         # Check if test wants to simulate authorization failure
-                        if (
-                            hasattr(req, "_test_admin_required")
-                            and req._test_admin_required
-                        ):
+                        if hasattr(req, "_test_admin_required") and req._test_admin_required:
                             user_id = getattr(req, "_test_user_id", "test-user-123")
-                            req.current_user = create_mock_user(
-                                user_id, "user"
-                            )  # Non-admin user
+                            req.current_user = create_mock_user(user_id, "user")  # Non-admin user
                         else:
                             # Create a mock user for testing (fallback)
                             user_id = getattr(req, "_test_user_id", "test-user-123")

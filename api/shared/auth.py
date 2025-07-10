@@ -1,15 +1,17 @@
-import os
-import jwt
-import logging
-import requests
 import json
-from typing import Optional, List, Dict, Any
+import logging
+import os
 from datetime import datetime, timezone
 from functools import wraps
-from cachetools import TTLCache
+from typing import Any, Dict, List, Optional
+
 import azure.functions as func
+import jwt
+import requests
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
+from cachetools import TTLCache
+
 from .models import User, UserRole
 
 
@@ -44,9 +46,7 @@ class AuthManager:
                 raise ValueError("KEY_VAULT_URI environment variable is required")
 
             credential = DefaultAzureCredential()
-            self._kv_client = SecretClient(
-                vault_url=key_vault_uri, credential=credential
-            )
+            self._kv_client = SecretClient(vault_url=key_vault_uri, credential=credential)
 
         return self._kv_client
 
@@ -96,11 +96,7 @@ class AuthManager:
         """
         try:
             # For development, use a simple mock validation
-            if (
-                token == "mock-token"
-                or token.startswith("dev-")
-                or token.startswith("local-dev")
-            ):
+            if token == "mock-token" or token.startswith("dev-") or token.startswith("local-dev"):
                 return {
                     "sub": "mock-user-id",
                     "email": "vedprakash.m@outlook.com",
@@ -125,25 +121,17 @@ class AuthManager:
                 decoded = self.validate_jwt_signature(token, jwks_uri)
             except AuthenticationError:
                 # Fallback: decode without verification for development/testing
-                logging.warning(
-                    "JWKS validation failed, falling back to unverified decode"
-                )
+                logging.warning("JWKS validation failed, falling back to unverified decode")
                 decoded = jwt.decode(token, options={"verify_signature": False})
 
             # Validate issuer (required by Apps_Auth_Requirement.md)
-            expected_issuer = (
-                "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0"
-            )
+            expected_issuer = "https://login.microsoftonline.com/vedid.onmicrosoft.com/v2.0"
             if decoded.get("iss") != expected_issuer:
-                raise AuthenticationError(
-                    f"Invalid token issuer. Expected: {expected_issuer}"
-                )
+                raise AuthenticationError(f"Invalid token issuer. Expected: {expected_issuer}")
 
             # Validate audience (optional for development)
             if config.get("client_id") and decoded.get("aud") != config["client_id"]:
-                logging.warning(
-                    f"Token audience mismatch: {decoded.get('aud')} != {config['client_id']}"
-                )
+                logging.warning(f"Token audience mismatch: {decoded.get('aud')} != {config['client_id']}")
 
             # Check expiration
             if decoded.get("exp", 0) < datetime.now(timezone.utc).timestamp():
@@ -211,12 +199,8 @@ class AuthManager:
         ved_profile = {
             "profileId": token_claims.get("ved_profile_id", user_id),
             "subscriptionTier": token_claims.get("ved_subscription_tier", "free"),
-            "appsEnrolled": self._parse_apps_enrolled(
-                token_claims.get("ved_apps_enrolled", [])
-            ),
-            "preferences": self._parse_preferences(
-                token_claims.get("ved_preferences", "{}")
-            ),
+            "appsEnrolled": self._parse_apps_enrolled(token_claims.get("ved_apps_enrolled", [])),
+            "preferences": self._parse_preferences(token_claims.get("ved_preferences", "{}")),
         }
 
         return User(
@@ -239,11 +223,7 @@ class AuthManager:
             return apps_enrolled
         elif isinstance(apps_enrolled, str):
             try:
-                return (
-                    eval(apps_enrolled)
-                    if apps_enrolled.startswith("[")
-                    else [apps_enrolled]
-                )
+                return eval(apps_enrolled) if apps_enrolled.startswith("[") else [apps_enrolled]
             except:
                 return [apps_enrolled] if apps_enrolled else []
         return []
@@ -520,9 +500,7 @@ def check_admin_role(req: func.HttpRequest) -> bool:
         return False
 
 
-def check_user_permissions(
-    user_id: str, resource_type: str, resource_id: str, required_permission: str
-) -> bool:
+def check_user_permissions(user_id: str, resource_type: str, resource_id: str, required_permission: str) -> bool:
     """Check if user has specific permission for a resource."""
     try:
         # This would be implemented with database checks in a full system
@@ -552,9 +530,7 @@ def check_user_permissions(
             return False
 
         # Check ownership
-        owner_field = (
-            "creatorId" if resource_type in ["prompt", "playbook"] else "ownerId"
-        )
+        owner_field = "creatorId" if resource_type in ["prompt", "playbook"] else "ownerId"
         if resource.get(owner_field) == user_id:
             return True
 
@@ -644,12 +620,8 @@ def require_permission(resource_type: str, permission: str):
             if not user_id:
                 raise AuthenticationError("User not authenticated")
 
-            if not check_user_permissions(
-                user_id, resource_type, resource_id, permission
-            ):
-                raise AuthorizationError(
-                    f"Permission '{permission}' required for {resource_type}"
-                )
+            if not check_user_permissions(user_id, resource_type, resource_id, permission):
+                raise AuthorizationError(f"Permission '{permission}' required for {resource_type}")
 
             return await func(*args, **kwargs)
 
@@ -665,9 +637,7 @@ def verify_jwt_token(req: func.HttpRequest) -> Dict[str, Any]:
         environment = os.getenv("ENVIRONMENT", "").lower()
         if environment == "development":
             auth_header = req.headers.get("Authorization", "")
-            if auth_header.startswith("Bearer dev-") or auth_header.startswith(
-                "Bearer demo-"
-            ):
+            if auth_header.startswith("Bearer dev-") or auth_header.startswith("Bearer demo-"):
                 role = "admin" if "admin" in auth_header else "user"
                 return {
                     "valid": True,
@@ -687,11 +657,7 @@ def verify_jwt_token(req: func.HttpRequest) -> Dict[str, Any]:
         auth_manager = get_auth_manager()
         # For now, use a simple validation - in production this would be async
         # For development, accept mock tokens
-        if (
-            token == "mock-token"
-            or token.startswith("dev-")
-            or token == "mock-admin-token"
-        ):
+        if token == "mock-token" or token.startswith("dev-") or token == "mock-admin-token":
             roles = ["user"]
             if token == "mock-admin-token" or "admin" in token:
                 roles = ["admin", "user"]
@@ -701,12 +667,8 @@ def verify_jwt_token(req: func.HttpRequest) -> Dict[str, Any]:
                 "message": "Token validated",
                 "claims": {
                     "sub": "mock-user-id" if "admin" not in token else "mock-admin-id",
-                    "email": "dev@sutra.ai"
-                    if "admin" not in token
-                    else "admin@sutra.ai",
-                    "name": "Development User"
-                    if "admin" not in token
-                    else "Development Admin",
+                    "email": "dev@sutra.ai" if "admin" not in token else "admin@sutra.ai",
+                    "name": "Development User" if "admin" not in token else "Development Admin",
                     "roles": roles,
                 },
             }
@@ -799,9 +761,7 @@ def standardized_auth_error(error_code: str, message: str) -> func.HttpResponse:
         },
     }
 
-    error_info = error_responses.get(
-        error_code, {"status_code": 500, "error": message, "code": "AUTH_ERROR"}
-    )
+    error_info = error_responses.get(error_code, {"status_code": 500, "error": message, "code": "AUTH_ERROR"})
 
     response = func.HttpResponse(
         json.dumps(error_info),

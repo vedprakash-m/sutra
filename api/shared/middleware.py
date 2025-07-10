@@ -3,15 +3,15 @@ Rate limiting and security middleware for Sutra API (No-Gateway Architecture)
 Provides basic protection against abuse for small team deployment
 """
 
+import json
+import logging
 import os
 import time
-import logging
-from typing import Dict, Optional, Tuple, Any
-from functools import wraps
 from collections import defaultdict, deque
-import azure.functions as func
-import json
+from functools import wraps
+from typing import Any, Dict, Optional, Tuple
 
+import azure.functions as func
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -64,9 +64,7 @@ class RateLimiter:
         # Prepare rate limit info
         rate_limit_info = {
             "limit": self.max_requests,
-            "remaining": max(
-                0, self.max_requests - current_count - (1 if is_allowed else 0)
-            ),
+            "remaining": max(0, self.max_requests - current_count - (1 if is_allowed else 0)),
             "reset_time": int(current_time + self.time_window),
             "retry_after": self.time_window if not is_allowed else None,
         }
@@ -91,9 +89,7 @@ class RateLimiter:
             del self.clients[client_ip]
 
         self.last_cleanup = current_time
-        logger.info(
-            f"Rate limiter cleanup: removed {len(clients_to_remove)} inactive clients"
-        )
+        logger.info(f"Rate limiter cleanup: removed {len(clients_to_remove)} inactive clients")
 
 
 # Global rate limiter instance
@@ -281,9 +277,7 @@ def enhanced_security_middleware(f):
         try:
             # CORS validation
             if not validate_cors_origin(req):
-                logger.warning(
-                    f"CORS violation from origin: {req.headers.get('Origin')}"
-                )
+                logger.warning(f"CORS violation from origin: {req.headers.get('Origin')}")
                 return func.HttpResponse(
                     json.dumps({"error": "CORS policy violation"}),
                     status_code=403,

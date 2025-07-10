@@ -3,15 +3,16 @@ Health check endpoint for Sutra API (No-Gateway Architecture)
 Provides system health status with enhanced security
 """
 
-import azure.functions as func
 import logging
 import os
 import sys
 
+import azure.functions as func
+
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from shared.middleware import enhanced_security_middleware, create_health_response
+from shared.middleware import create_health_response, enhanced_security_middleware
 
 # Initialize logging
 logger = logging.getLogger(__name__)

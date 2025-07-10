@@ -1,9 +1,10 @@
-import os
 import logging
-from typing import Dict, List, Optional, Any
+import os
 from datetime import datetime, timezone
-from azure.keyvault.secrets import SecretClient
+from typing import Any, Dict, List, Optional
+
 from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
 
 
 class LLMProvider:
@@ -47,9 +48,7 @@ class LLMProvider:
             return True  # No budget limit set
         return self.current_usage < self.budget_limit
 
-    async def execute_prompt(
-        self, prompt: str, context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_prompt(self, prompt: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a prompt with this provider. Override in subclasses."""
         raise NotImplementedError("Subclasses must implement execute_prompt")
 
@@ -63,9 +62,7 @@ class OpenAIProvider(LLMProvider):
         self.max_tokens = 2000
         self.temperature = 0.7
 
-    async def execute_prompt(
-        self, prompt: str, context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_prompt(self, prompt: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a prompt using OpenAI GPT."""
         if not self.enabled or not await self.check_budget():
             raise Exception(f"{self.name} provider is disabled or over budget")
@@ -99,9 +96,7 @@ class AnthropicProvider(LLMProvider):
         self.model = "claude-3-sonnet-20240229"
         self.max_tokens = 2000
 
-    async def execute_prompt(
-        self, prompt: str, context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_prompt(self, prompt: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a prompt using Anthropic Claude."""
         if not self.enabled or not await self.check_budget():
             raise Exception(f"{self.name} provider is disabled or over budget")
@@ -134,9 +129,7 @@ class GoogleProvider(LLMProvider):
         self.model = "gemini-pro"
         self.max_tokens = 2000
 
-    async def execute_prompt(
-        self, prompt: str, context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def execute_prompt(self, prompt: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a prompt using Google Gemini."""
         if not self.enabled or not await self.check_budget():
             raise Exception(f"{self.name} provider is disabled or over budget")
@@ -182,9 +175,7 @@ class LLMManager:
                 raise ValueError("KEY_VAULT_URI environment variable is required")
 
             credential = DefaultAzureCredential()
-            self._kv_client = SecretClient(
-                vault_url=key_vault_uri, credential=credential
-            )
+            self._kv_client = SecretClient(vault_url=key_vault_uri, credential=credential)
 
         return self._kv_client
 
@@ -220,9 +211,7 @@ class LLMManager:
         available.sort(key=lambda x: self.providers[x].priority)
         return available
 
-    async def execute_prompt(
-        self, provider_name: str, prompt: str, context: Dict[str, Any] = None
-    ) -> Dict[str, Any]:
+    async def execute_prompt(self, provider_name: str, prompt: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
         """Execute a prompt with the specified provider."""
         if not await self.initialize():
             raise Exception("LLM Manager not initialized")
@@ -290,9 +279,7 @@ class LLMManager:
                 "enabled": provider.enabled,
                 "budget_limit": provider.budget_limit,
                 "current_usage": provider.current_usage,
-                "budget_remaining": max(
-                    0, provider.budget_limit - provider.current_usage
-                ),
+                "budget_remaining": max(0, provider.budget_limit - provider.current_usage),
                 "priority": provider.priority,
                 "available": provider.enabled and await provider.check_budget(),
             }

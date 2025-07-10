@@ -4,47 +4,42 @@ Focuses on missing coverage areas: PromptTemplateValidator, CollectionValidator,
 PlaybookValidator, RateLimitValidator, and business logic validators.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 
-from api.shared.validation import (
-    # Core validation functions
-    validate_identifier,
-    validate_safe_string,
-    validate_content,
-    validate_tags,
-    validate_json_field,
-    validate_pagination_params,
-    validate_search_query,
-    # Model validators
-    PromptTemplateValidator,
+import pytest
+
+from api.shared.models import PromptStatus, PromptTemplate, User, UserRole
+from api.shared.validation import (  # Core validation functions; Model validators; Business logic validators; Exceptions; Constants
+    MAX_CONTENT_LENGTH,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_STEPS_COUNT,
+    MAX_STRING_LENGTH,
+    MAX_TAG_LENGTH,
+    MAX_TAGS_COUNT,
+    MAX_VARIABLES_COUNT,
+    BusinessLogicException,
     CollectionValidator,
     PlaybookValidator,
-    RateLimitValidator,
-    # Business logic validators
-    validate_user_permissions,
-    validate_resource_ownership,
-    validate_budget_limits,
-    validate_pydantic_model,
-    validate_execution_input,
-    _validate_playbook_step,
-    # Exceptions
-    ValidationException,
-    SecurityValidationException,
-    BusinessLogicException,
+    PromptTemplateValidator,
     RateLimitException,
-    # Constants
-    MAX_STRING_LENGTH,
-    MAX_CONTENT_LENGTH,
-    MAX_VARIABLES_COUNT,
-    MAX_STEPS_COUNT,
-    MAX_TAGS_COUNT,
-    MAX_TAG_LENGTH,
-    MAX_DESCRIPTION_LENGTH,
+    RateLimitValidator,
+    SecurityValidationException,
+    ValidationException,
+    _validate_playbook_step,
+    validate_budget_limits,
+    validate_content,
+    validate_execution_input,
+    validate_identifier,
+    validate_json_field,
+    validate_pagination_params,
+    validate_pydantic_model,
+    validate_resource_ownership,
+    validate_safe_string,
+    validate_search_query,
+    validate_tags,
+    validate_user_permissions,
 )
-
-from api.shared.models import User, UserRole, PromptTemplate, PromptStatus
 
 
 class TestPromptTemplateValidator:
@@ -98,10 +93,7 @@ class TestPromptTemplateValidator:
 
     def test_validate_create_request_too_many_variables(self):
         """Test validation with too many variables."""
-        variables = [
-            {"name": f"var{i}", "type": "string"}
-            for i in range(MAX_VARIABLES_COUNT + 1)
-        ]
+        variables = [{"name": f"var{i}", "type": "string"} for i in range(MAX_VARIABLES_COUNT + 1)]
         data = {"title": "Test", "content": "Test content", "variables": variables}
         user_id = "test-user"
 
@@ -113,9 +105,7 @@ class TestPromptTemplateValidator:
         data = {
             "title": "Test",
             "content": "Test content",
-            "variables": [
-                {"name": "test_var", "type": "invalid_type", "description": "Test"}
-            ],
+            "variables": [{"name": "test_var", "type": "invalid_type", "description": "Test"}],
         }
         user_id = "test-user"
 
@@ -127,9 +117,7 @@ class TestPromptTemplateValidator:
         data = {
             "title": "Test",
             "content": "Test content",
-            "variables": [
-                {"name": "123invalid", "type": "string"}  # Can't start with number
-            ],
+            "variables": [{"name": "123invalid", "type": "string"}],  # Can't start with number
         }
         user_id = "test-user"
 
@@ -202,10 +190,7 @@ class TestPromptTemplateValidator:
     def test_validate_update_request_too_many_variables(self):
         """Test update validation with too many variables."""
         existing_prompt = Mock(spec=PromptTemplate)
-        variables = [
-            {"name": f"var{i}", "type": "string"}
-            for i in range(MAX_VARIABLES_COUNT + 1)
-        ]
+        variables = [{"name": f"var{i}", "type": "string"} for i in range(MAX_VARIABLES_COUNT + 1)]
         data = {"variables": variables}
 
         with pytest.raises(ValidationException, match="Too many variables"):
@@ -359,9 +344,7 @@ class TestPlaybookStepValidation:
         errors = _validate_playbook_step(step, 0)
 
         assert len(errors) > 0
-        assert any(
-            "must have either promptId or promptText" in error for error in errors
-        )
+        assert any("must have either promptId or promptText" in error for error in errors)
 
     def test_validate_prompt_step_invalid_temperature(self):
         """Test prompt step with invalid temperature."""
@@ -387,9 +370,7 @@ class TestPlaybookStepValidation:
         errors = _validate_playbook_step(step, 0)
 
         assert len(errors) > 0
-        assert any(
-            "Max tokens must be between 1 and 10000" in error for error in errors
-        )
+        assert any("Max tokens must be between 1 and 10000" in error for error in errors)
 
     def test_validate_step_invalid_parsing_rules(self):
         """Test step with invalid output parsing rules."""
@@ -402,9 +383,7 @@ class TestPlaybookStepValidation:
         errors = _validate_playbook_step(step, 0)
 
         assert len(errors) > 0
-        assert any(
-            "Output parsing rules must be a dictionary" in error for error in errors
-        )
+        assert any("Output parsing rules must be a dictionary" in error for error in errors)
 
     def test_validate_step_invalid_regex(self):
         """Test step with invalid regex pattern."""
@@ -583,9 +562,7 @@ class TestExecutionInputValidation:
         result = validate_execution_input(data)
 
         assert result["valid"] is False
-        assert any(
-            "Initial inputs must be a dictionary" in error for error in result["errors"]
-        )
+        assert any("Initial inputs must be a dictionary" in error for error in result["errors"])
 
     def test_validate_execution_input_invalid_variable_name(self):
         """Test execution input validation with invalid variable name."""
@@ -599,9 +576,7 @@ class TestExecutionInputValidation:
         result = validate_execution_input(data)
 
         assert result["valid"] is False
-        assert any(
-            "Invalid variable name '123invalid'" in error for error in result["errors"]
-        )
+        assert any("Invalid variable name '123invalid'" in error for error in result["errors"])
 
     def test_validate_execution_input_value_too_long(self):
         """Test execution input validation with value too long."""
@@ -672,9 +647,7 @@ class TestCoreValidationEdgeCases:
         ]
 
         for content in dangerous_content:
-            with pytest.raises(
-                SecurityValidationException, match="Script injection detected"
-            ):
+            with pytest.raises(SecurityValidationException, match="Script injection detected"):
                 validate_content(content)
 
     def test_validate_tags_too_many(self):
@@ -703,16 +676,12 @@ class TestCoreValidationEdgeCases:
 
     def test_validate_pagination_params_negative_skip(self):
         """Test pagination validation with negative skip."""
-        with pytest.raises(
-            ValidationException, match="Skip parameter must be non-negative"
-        ):
+        with pytest.raises(ValidationException, match="Skip parameter must be non-negative"):
             validate_pagination_params(-1, 10)
 
     def test_validate_pagination_params_zero_limit(self):
         """Test pagination validation with zero limit."""
-        with pytest.raises(
-            ValidationException, match="Limit parameter must be positive"
-        ):
+        with pytest.raises(ValidationException, match="Limit parameter must be positive"):
             validate_pagination_params(0, 0)
 
     def test_validate_pagination_params_limit_too_high(self):

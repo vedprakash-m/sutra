@@ -1,27 +1,28 @@
-import azure.functions as func
 import json
-
-import sys
 import os
+import sys
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import logging
-from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
+import traceback
 import uuid
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from shared.database import get_database_manager
+from shared.error_handling import SutraAPIError, handle_api_error
+from shared.models import Collection, User, ValidationError
+from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
-from shared.unified_auth import require_authentication, get_user_from_request
-from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
+from shared.unified_auth import get_user_from_request, require_authentication
+from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 from shared.utils.schemaValidator import validate_entity
-from shared.real_time_cost import get_cost_manager
-from shared.database import get_database_manager
 from shared.validation import validate_collection_data
-from shared.models import Collection, ValidationError, User
-from shared.error_handling import handle_api_error, SutraAPIError
-import traceback
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -94,9 +95,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
@@ -142,9 +141,7 @@ async def list_collections(user: User, req: func.HttpRequest) -> func.HttpRespon
         query = " ".join(query_parts)
 
         # Execute query
-        items = await db_manager.query_items(
-            container_name="Collections", query=query, parameters=query_params
-        )
+        items = await db_manager.query_items(container_name="Collections", query=query, parameters=query_params)
 
         # Get total count for pagination
         count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.userId = @user_id"
@@ -162,16 +159,10 @@ async def list_collections(user: User, req: func.HttpRequest) -> func.HttpRespon
             count_query += " AND (CONTAINS(LOWER(c.name), LOWER(@search)) OR CONTAINS(LOWER(c.description), LOWER(@search)))"
             count_params.append({"name": "@search", "value": search})
 
-        count_result = await db_manager.query_items(
-            container_name="Collections", query=count_query, parameters=count_params
-        )
+        count_result = await db_manager.query_items(container_name="Collections", query=count_query, parameters=count_params)
 
         # Handle development mode where we get mock data
-        if (
-            count_result
-            and isinstance(count_result[0], dict)
-            and "_mock" in count_result[0]
-        ):
+        if count_result and isinstance(count_result[0], dict) and "_mock" in count_result[0]:
             total_count = 2  # Mock count for development
         else:
             total_count = count_result[0] if count_result else 0
@@ -247,9 +238,7 @@ async def create_collection(user: User, req: func.HttpRequest) -> func.HttpRespo
             "userId": user_id,  # Consistent with database partition key
             "name": snake_body["name"],
             "description": snake_body.get("description", ""),
-            "type": snake_body.get(
-                "type", "private"
-            ),  # private, shared_team, public_marketplace
+            "type": snake_body.get("type", "private"),  # private, shared_team, public_marketplace
             "tags": snake_body.get("tags", []),
             "promptIds": [],  # Array of prompt IDs in this collection
             "teamId": body.get("teamId"),  # For shared_team collections
@@ -259,9 +248,7 @@ async def create_collection(user: User, req: func.HttpRequest) -> func.HttpRespo
         }
 
         # Save to database
-        created_item = await db_manager.create_item(
-            container_name="Collections", item=collection_data, partition_key=user_id
-        )
+        created_item = await db_manager.create_item(container_name="Collections", item=collection_data, partition_key=user_id)
 
         logger.info(f"Created collection {collection_id} for user {user_id}")
 
@@ -292,9 +279,7 @@ async def get_collection(user: User, collection_id: str) -> func.HttpResponse:
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = await db_manager.query_items(
-            container_name="Collections", query=query, parameters=parameters
-        )
+        items = await db_manager.query_items(container_name="Collections", query=query, parameters=parameters)
 
         if not items:
             return func.HttpResponse(
@@ -319,9 +304,7 @@ async def get_collection(user: User, collection_id: str) -> func.HttpResponse:
         raise SutraAPIError(f"Failed to get collection: {str(e)}", 500)
 
 
-async def update_collection(
-    user: User, collection_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def update_collection(user: User, collection_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Update an existing collection."""
     try:
         user_id = user.id
@@ -344,9 +327,7 @@ async def update_collection(
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = await db_manager.query_items(
-            container_name="Collections", query=query, parameters=parameters
-        )
+        items = await db_manager.query_items(container_name="Collections", query=query, parameters=parameters)
 
         if not items:
             return func.HttpResponse(
@@ -365,16 +346,12 @@ async def update_collection(
         for field in updatable_fields:
             if field in body:
                 existing_collection[field] = body[field]
-                update_operations.append(
-                    {"op": "replace", "path": f"/{field}", "value": body[field]}
-                )
+                update_operations.append({"op": "replace", "path": f"/{field}", "value": body[field]})
 
         # Always update the updatedAt timestamp
         updated_at = datetime.now(timezone.utc).isoformat()
         existing_collection["updatedAt"] = updated_at
-        update_operations.append(
-            {"op": "replace", "path": "/updatedAt", "value": updated_at}
-        )
+        update_operations.append({"op": "replace", "path": "/updatedAt", "value": updated_at})
 
         # Validate updated collection
         validation_result = validate_collection_data(existing_collection)
@@ -423,9 +400,7 @@ async def delete_collection(user: User, collection_id: str) -> func.HttpResponse
             {"name": "@user_id", "value": user_id},
         ]
 
-        items = await db_manager.query_items(
-            container_name="Collections", query=query, parameters=parameters
-        )
+        items = await db_manager.query_items(container_name="Collections", query=query, parameters=parameters)
 
         if not items:
             return func.HttpResponse(
@@ -435,9 +410,7 @@ async def delete_collection(user: User, collection_id: str) -> func.HttpResponse
             )
 
         # Check if collection has prompts
-        prompts_query = (
-            "SELECT VALUE COUNT(1) FROM c WHERE c.collectionId = @collection_id"
-        )
+        prompts_query = "SELECT VALUE COUNT(1) FROM c WHERE c.collectionId = @collection_id"
         prompts_params = [{"name": "@collection_id", "value": collection_id}]
 
         prompt_count_result = await db_manager.query_items(
@@ -485,9 +458,7 @@ async def delete_collection(user: User, collection_id: str) -> func.HttpResponse
         raise SutraAPIError(f"Failed to delete collection: {str(e)}", 500)
 
 
-async def get_collection_prompts(
-    user: User, collection_id: str, req: func.HttpRequest
-) -> func.HttpResponse:
+async def get_collection_prompts(user: User, collection_id: str, req: func.HttpRequest) -> func.HttpResponse:
     """Get prompts within a specific collection."""
     try:
         user_id = user.id
@@ -501,9 +472,7 @@ async def get_collection_prompts(
         db_manager = get_database_manager()
 
         # Verify user has access to collection
-        collection_query = (
-            "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
-        )
+        collection_query = "SELECT * FROM c WHERE c.id = @collection_id AND c.ownerId = @user_id"
         collection_params = [
             {"name": "@collection_id", "value": collection_id},
             {"name": "@user_id", "value": user_id},
@@ -550,14 +519,10 @@ async def get_collection_prompts(
         query = " ".join(query_parts)
 
         # Execute query
-        prompts = await db_manager.query_items(
-            container_name="Prompts", query=query, parameters=query_params
-        )
+        prompts = await db_manager.query_items(container_name="Prompts", query=query, parameters=query_params)
 
         # Get total count
-        count_query = (
-            "SELECT VALUE COUNT(1) FROM c WHERE c.collectionId = @collection_id"
-        )
+        count_query = "SELECT VALUE COUNT(1) FROM c WHERE c.collectionId = @collection_id"
         count_params = [{"name": "@collection_id", "value": collection_id}]
 
         if search:
@@ -573,9 +538,7 @@ async def get_collection_prompts(
                 count_params.append({"name": param_name, "value": tag})
             count_query += f" AND ({' OR '.join(tag_conditions)})"
 
-        total_count_result = await db_manager.query_items(
-            container_name="Prompts", query=count_query, parameters=count_params
-        )
+        total_count_result = await db_manager.query_items(container_name="Prompts", query=count_query, parameters=count_params)
         total_count = total_count_result[0] if total_count_result else 0
 
         total_pages = (total_count + limit - 1) // limit

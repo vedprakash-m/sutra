@@ -2,31 +2,32 @@
 Additional comprehensive tests for validation utilities.
 """
 
-import pytest
 from datetime import datetime
 from unittest.mock import Mock, patch
 
+import pytest
+
+from api.shared.models import User, UserRole
 from api.shared.validation import (
-    ValidationException,
-    SecurityValidationException,
-    BusinessLogicException,
-    validate_safe_string,
-    validate_content,
-    validate_json_field,
-    validate_pydantic_model,
-    validate_pagination_params,
-    validate_search_query,
-    validate_user_permissions,
-    validate_resource_ownership,
-    MAX_STRING_LENGTH,
-    MAX_CONTENT_LENGTH,
-    MAX_TAGS_COUNT,
-    MAX_TAG_LENGTH,
     EMAIL_PATTERN,
     IDENTIFIER_PATTERN,
+    MAX_CONTENT_LENGTH,
+    MAX_STRING_LENGTH,
+    MAX_TAG_LENGTH,
+    MAX_TAGS_COUNT,
     SAFE_STRING_PATTERN,
+    BusinessLogicException,
+    SecurityValidationException,
+    ValidationException,
+    validate_content,
+    validate_json_field,
+    validate_pagination_params,
+    validate_pydantic_model,
+    validate_resource_ownership,
+    validate_safe_string,
+    validate_search_query,
+    validate_user_permissions,
 )
-from api.shared.models import User, UserRole
 
 
 class TestBasicValidationFunctions:
@@ -47,9 +48,7 @@ class TestBasicValidationFunctions:
     def test_validate_safe_string_unsafe_characters(self):
         """Test safe string validation with unsafe characters."""
         unsafe_string = "This contains <script>alert('xss')</script>"
-        with pytest.raises(
-            SecurityValidationException, match="Potentially dangerous content detected"
-        ):
+        with pytest.raises(SecurityValidationException, match="Potentially dangerous content detected"):
             validate_safe_string(unsafe_string)
 
     def test_validate_safe_string_custom_max_length(self):
@@ -117,16 +116,12 @@ class TestPaginationValidation:
 
     def test_validate_pagination_params_negative_skip(self):
         """Test pagination validation with negative skip."""
-        with pytest.raises(
-            ValidationException, match="Skip parameter must be non-negative"
-        ):
+        with pytest.raises(ValidationException, match="Skip parameter must be non-negative"):
             validate_pagination_params(-1, 50)
 
     def test_validate_pagination_params_zero_limit(self):
         """Test pagination validation with zero limit."""
-        with pytest.raises(
-            ValidationException, match="Limit parameter must be positive"
-        ):
+        with pytest.raises(ValidationException, match="Limit parameter must be positive"):
             validate_pagination_params(0, 0)
 
     def test_validate_pagination_params_too_large_limit(self):
@@ -188,9 +183,7 @@ class TestPermissionValidation:
 
         # Should not raise an exception
         validate_user_permissions(user, UserRole.ADMIN)
-        validate_user_permissions(
-            user, UserRole.USER
-        )  # Admin should have user permissions
+        validate_user_permissions(user, UserRole.USER)  # Admin should have user permissions
 
     def test_validate_user_permissions_insufficient(self):
         """Test user permission validation with insufficient role."""
@@ -327,9 +320,7 @@ class TestRegexPatterns:
         ]
 
         for email in invalid_emails:
-            assert not EMAIL_PATTERN.match(
-                email
-            ), f"Email pattern should not match {email}"
+            assert not EMAIL_PATTERN.match(email), f"Email pattern should not match {email}"
 
     def test_identifier_pattern_valid(self):
         """Test identifier regex pattern with valid identifiers."""
@@ -342,9 +333,7 @@ class TestRegexPatterns:
         ]
 
         for identifier in valid_identifiers:
-            assert IDENTIFIER_PATTERN.match(
-                identifier
-            ), f"Identifier pattern should match {identifier}"
+            assert IDENTIFIER_PATTERN.match(identifier), f"Identifier pattern should match {identifier}"
 
     def test_identifier_pattern_invalid(self):
         """Test identifier regex pattern with invalid identifiers."""
@@ -356,9 +345,7 @@ class TestRegexPatterns:
         ]
 
         for identifier in invalid_identifiers:
-            assert not IDENTIFIER_PATTERN.match(
-                identifier
-            ), f"Identifier pattern should not match {identifier}"
+            assert not IDENTIFIER_PATTERN.match(identifier), f"Identifier pattern should not match {identifier}"
 
     def test_safe_string_pattern_valid(self):
         """Test safe string regex pattern with valid strings."""
@@ -370,9 +357,7 @@ class TestRegexPatterns:
         ]
 
         for string in valid_strings:
-            assert SAFE_STRING_PATTERN.match(
-                string
-            ), f"Safe string pattern should match '{string}'"
+            assert SAFE_STRING_PATTERN.match(string), f"Safe string pattern should match '{string}'"
 
     def test_safe_string_pattern_invalid(self):
         """Test safe string regex pattern with invalid strings."""
@@ -384,6 +369,4 @@ class TestRegexPatterns:
         ]
 
         for string in invalid_strings:
-            assert not SAFE_STRING_PATTERN.match(
-                string
-            ), f"Safe string pattern should not match '{string}'"
+            assert not SAFE_STRING_PATTERN.match(string), f"Safe string pattern should not match '{string}'"

@@ -1,9 +1,10 @@
-import azure.functions as func
 import json
 import logging
-import traceback
-import sys
 import os
+import sys
+import traceback
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -88,9 +89,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             "method": req.method,
         }
 
-        return func.HttpResponse(
-            json.dumps(result), status_code=200, mimetype="application/json"
-        )
+        return func.HttpResponse(json.dumps(result), status_code=200, mimetype="application/json")
 
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}")

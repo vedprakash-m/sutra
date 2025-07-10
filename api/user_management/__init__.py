@@ -3,24 +3,27 @@ User Management API for Admin Users
 Provides endpoints for managing user roles and approvals
 """
 
-import azure.functions as func
 import json
 import logging
 import os
 import sys
 from datetime import datetime
 
+import azure.functions as func
+
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-# NEW: Use unified authentication and validation systems
-from shared.unified_auth import require_authentication
-from shared.utils.fieldConverter import convert_snake_to_camel, convert_camel_to_snake
-from shared.utils.schemaValidator import validate_entity
-from shared.real_time_cost import get_cost_manager
+import traceback
+
 from shared.database import get_database_manager
 from shared.models import User
-import traceback
+from shared.real_time_cost import get_cost_manager
+
+# NEW: Use unified authentication and validation systems
+from shared.unified_auth import require_authentication
+from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
+from shared.utils.schemaValidator import validate_entity
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -47,9 +50,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json",
             )
 
-        logger.info(
-            f"User Management API called by {user.email}: {req.method} {req.url}"
-        )
+        logger.info(f"User Management API called by {user.email}: {req.method} {req.url}")
 
         method = req.method
         route_params = req.route_params
@@ -95,9 +96,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )
@@ -111,9 +110,7 @@ async def list_users(req: func.HttpRequest) -> func.HttpResponse:
 
         # Query all users
         query = "SELECT * FROM c WHERE c.type = 'user' ORDER BY c.createdAt DESC"
-        users = list(
-            container.query_items(query=query, enable_cross_partition_query=True)
-        )
+        users = list(container.query_items(query=query, enable_cross_partition_query=True))
 
         # Format user data for admin display
         user_data = []
@@ -146,9 +143,7 @@ async def list_users(req: func.HttpRequest) -> func.HttpResponse:
             },
         }
 
-        return func.HttpResponse(
-            json.dumps(response_data), status_code=200, mimetype="application/json"
-        )
+        return func.HttpResponse(json.dumps(response_data), status_code=200, mimetype="application/json")
 
     except Exception as e:
         logger.error(f"Error listing users: {str(e)}")

@@ -1,12 +1,15 @@
-import pytest
+import os
 from unittest.mock import MagicMock, patch
-from api.shared.database import DatabaseManager, get_database_manager
-from api.shared.error_handling import SutraAPIError, handle_api_error
-from pydantic import ValidationError
+
 import azure.cosmos.exceptions as cosmos_exceptions
 import azure.functions as func
+import pytest
+from pydantic import ValidationError
+
+from api.shared.database import DatabaseManager, get_database_manager
+from api.shared.error_handling import SutraAPIError, handle_api_error
+
 from ..conftest import create_auth_request
-import os
 
 
 class TestDatabaseManager:
@@ -15,9 +18,7 @@ class TestDatabaseManager:
     @pytest.fixture
     def mock_cosmos_client(self):
         """Mock Cosmos DB client."""
-        with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
-        ):
+        with patch.dict(os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}):
             mock_client = MagicMock()
             mock_database = MagicMock()
             mock_container = MagicMock()
@@ -57,9 +58,7 @@ class TestDatabaseManager:
     def test_get_container_failure(self, mock_cosmos_client):
         """Test container retrieval failure."""
         mock_client, mock_database, mock_container = mock_cosmos_client
-        mock_database.get_container_client.side_effect = Exception(
-            "Container not found"
-        )
+        mock_database.get_container_client.side_effect = Exception("Container not found")
 
         with patch(
             "api.shared.database.CosmosClient.from_connection_string",
@@ -72,9 +71,7 @@ class TestDatabaseManager:
 
     def test_get_database_manager_singleton(self):
         """Test database manager singleton pattern."""
-        with patch.dict(
-            os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}
-        ):
+        with patch.dict(os.environ, {"COSMOS_DB_CONNECTION_STRING": "test_connection_string"}):
             manager1 = get_database_manager()
             manager2 = get_database_manager()
 
@@ -86,9 +83,7 @@ class TestErrorHandling:
 
     def test_sutra_api_error_creation(self):
         """Test SutraAPIError creation and properties."""
-        error = SutraAPIError(
-            "Test error", status_code=400, details={"detail": "validation failed"}
-        )
+        error = SutraAPIError("Test error", status_code=400, details={"detail": "validation failed"})
 
         assert str(error) == "Test error"
         assert error.status_code == 400
@@ -96,9 +91,7 @@ class TestErrorHandling:
 
     def test_handle_api_error_with_cosmos_error(self):
         """Test handle_api_error with Cosmos DB error."""
-        error = cosmos_exceptions.CosmosResourceNotFoundError(
-            status_code=404, message="Item not found"
-        )
+        error = cosmos_exceptions.CosmosResourceNotFoundError(status_code=404, message="Item not found")
 
         response = handle_api_error(error)
 

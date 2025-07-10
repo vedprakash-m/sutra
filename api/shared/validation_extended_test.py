@@ -1,13 +1,14 @@
 import pytest
+
 from api.shared.validation import (
-    validate_email,
+    MAX_STRING_LENGTH,
+    ValidationException,
     validate_budget_limits,
-    validate_tags,
     validate_collection_data,
+    validate_email,
     validate_llm_integration_data,
     validate_playbook_data,
-    ValidationException,
-    MAX_STRING_LENGTH,
+    validate_tags,
 )
 
 
@@ -30,27 +31,16 @@ class TestValidationExtended:
 
     def test_validate_budget_limits_valid(self):
         """Test budget limits validation with valid inputs."""
-        assert (
-            validate_budget_limits({"total_budget": 100.0, "usage_limit": 10.0}) is True
-        )
-        assert (
-            validate_budget_limits({"current_usage": 10.0, "budget_limit": 100.0})
-            is True
-        )
+        assert validate_budget_limits({"total_budget": 100.0, "usage_limit": 10.0}) is True
+        assert validate_budget_limits({"current_usage": 10.0, "budget_limit": 100.0}) is True
 
     def test_validate_budget_limits_invalid(self):
         """Test budget limits validation with invalid inputs."""
-        with pytest.raises(
-            ValidationException, match="Budget values cannot be negative"
-        ):
+        with pytest.raises(ValidationException, match="Budget values cannot be negative"):
             validate_budget_limits({"total_budget": -10.0, "usage_limit": 5.0})
-        with pytest.raises(
-            ValidationException, match="Usage limit cannot exceed total budget"
-        ):
+        with pytest.raises(ValidationException, match="Usage limit cannot exceed total budget"):
             validate_budget_limits({"total_budget": 5.0, "usage_limit": 10.0})
-        with pytest.raises(
-            ValidationException, match="Current usage cannot exceed budget limit"
-        ):
+        with pytest.raises(ValidationException, match="Current usage cannot exceed budget limit"):
             validate_budget_limits({"current_usage": 110.0, "budget_limit": 100.0})
 
     def test_validate_llm_integration_edge_cases(self):
@@ -105,9 +95,7 @@ class TestValidationExtended:
             ],
         }
         result = validate_playbook_data(data)
-        assert (
-            result["valid"] is True
-        ), f"Validation failed with errors: {result['errors']}"
+        assert result["valid"] is True, f"Validation failed with errors: {result['errors']}"
 
 
 class TestValidationErrorHandling:
@@ -135,9 +123,7 @@ class TestValidationErrorHandling:
         result = validate_collection_data(data)
         assert result["valid"] is False
         assert any("name must be a string" in e.lower() for e in result["errors"])
-        assert any(
-            "description must be a string" in e.lower() for e in result["errors"]
-        )
+        assert any("description must be a string" in e.lower() for e in result["errors"])
         assert any("tags must be a list" in e.lower() for e in result["errors"])
 
         # Playbook with malformed steps

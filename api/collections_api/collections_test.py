@@ -1,21 +1,20 @@
-import pytest
-import json
 import asyncio
-from unittest.mock import Mock, patch, AsyncMock
+import json
 from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
 
 import azure.functions as func
-from . import main as collections_main
+import pytest
+
 from ..conftest import create_auth_request
+from . import main as collections_main
 
 
 class TestCollectionsAPI:
     """Test suite for Collections API endpoints."""
 
     @pytest.mark.asyncio
-    async def test_create_collection_success(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_create_collection_success(self, auth_test_user, mock_database_manager):
         """Test successful collection creation."""
         # Arrange
         collection_data = {
@@ -66,9 +65,7 @@ class TestCollectionsAPI:
                 mock_database_manager.create_item.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_create_collection_validation_error(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_create_collection_validation_error(self, auth_test_user, mock_database_manager):
         """Test collection creation with validation errors."""
         # Arrange
         collection_data = {
@@ -186,9 +183,7 @@ class TestCollectionsAPI:
             assert response_data["name"] == "Test Collection"
 
     @pytest.mark.asyncio
-    async def test_get_collection_not_found(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_get_collection_not_found(self, auth_test_user, mock_database_manager):
         """Test collection retrieval when collection doesn't exist."""
         # Arrange
         collection_id = "nonexistent-collection"
@@ -216,9 +211,7 @@ class TestCollectionsAPI:
         assert response_data["error"] == "Collection not found"
 
     @pytest.mark.asyncio
-    async def test_update_collection_success(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_update_collection_success(self, auth_test_user, mock_database_manager):
         """Test successful collection update."""
         # Arrange
         collection_id = "test-collection-123"
@@ -269,9 +262,7 @@ class TestCollectionsAPI:
             mock_database_manager.update_item.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_delete_collection_success(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_delete_collection_success(self, auth_test_user, mock_database_manager):
         """Test successful collection deletion."""
         # Arrange
         collection_id = "test-collection-123"
@@ -314,9 +305,7 @@ class TestCollectionsAPI:
         )
 
     @pytest.mark.asyncio
-    async def test_delete_collection_with_prompts(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_delete_collection_with_prompts(self, auth_test_user, mock_database_manager):
         """Test collection deletion when collection has prompts."""
         # Arrange
         collection_id = "test-collection-123"
@@ -356,9 +345,7 @@ class TestCollectionsAPI:
         mock_database_manager.delete_item.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_get_collection_prompts_success(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_get_collection_prompts_success(self, auth_test_user, mock_database_manager):
         """Test successful retrieval of prompts within a collection."""
         # Arrange
         collection_id = "test-collection-123"
@@ -423,9 +410,7 @@ class TestCollectionsAPI:
             "api.collections_api.get_database_manager",
             return_value=mock_database_manager,
         ):
-            req = create_auth_request(
-                method="GET", url="http://localhost/api/collections"
-            )
+            req = create_auth_request(method="GET", url="http://localhost/api/collections")
 
             # Act
         response = await collections_main(req)
@@ -445,9 +430,7 @@ class TestCollectionsAPI:
             "api.collections_api.get_database_manager",
             return_value=mock_database_manager,
         ):
-            req = create_auth_request(
-                method="PATCH", url="http://localhost/api/collections"
-            )
+            req = create_auth_request(method="PATCH", url="http://localhost/api/collections")
 
             # Act
         response = await collections_main(req)
@@ -458,9 +441,7 @@ class TestCollectionsAPI:
         assert "Method not allowed" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_create_collection_invalid_json(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_create_collection_invalid_json(self, auth_test_user, mock_database_manager):
         """Test collection creation with invalid JSON."""
         # Create request with invalid JSON
         # Additional patch to ensure we catch the right import
@@ -480,9 +461,7 @@ class TestCollectionsAPI:
         assert "Invalid JSON" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_list_collections_with_filters(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_list_collections_with_filters(self, auth_test_user, mock_database_manager):
         """Test collection listing with search and type filters."""
         # Arrange
         mock_collections = [
@@ -520,9 +499,7 @@ class TestCollectionsAPI:
         assert len(response_data["collections"]) >= 0
 
     @pytest.mark.asyncio
-    async def test_list_collections_mock_data_handling(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_list_collections_mock_data_handling(self, auth_test_user, mock_database_manager):
         """Test collection listing with mock data in development mode."""
         # Arrange
         mock_collections = [
@@ -557,9 +534,7 @@ class TestCollectionsAPI:
         assert response_data["pagination"]["totalCount"] == 2  # Mock count
 
     @pytest.mark.asyncio
-    async def test_create_collection_validation_exception(
-        self, auth_test_user, mock_database_manager
-    ):
+    async def test_create_collection_validation_exception(self, auth_test_user, mock_database_manager):
         """Test collection creation with validation failure."""
         # Arrange
         collection_data = {

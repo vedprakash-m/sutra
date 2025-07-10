@@ -3,15 +3,16 @@ Advanced Role Management System for Sutra
 Provides comprehensive role-based access control with Static Web Apps integration
 """
 
-import azure.functions as func
 import json
 import logging
 import os
 import sys
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Any
-from enum import Enum
 import traceback
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -109,15 +110,11 @@ class RoleManager:
         user_permissions = self.get_user_permissions(user_role)
         return permission in user_permissions
 
-    async def assign_role(
-        self, user_id: str, new_role: UserRole, assigned_by: str
-    ) -> Dict[str, Any]:
+    async def assign_role(self, user_id: str, new_role: UserRole, assigned_by: str) -> Dict[str, Any]:
         """Assign a new role to a user"""
         try:
             # Get user document
-            user_doc = self.users_container.read_item(
-                item=user_id, partition_key=user_id
-            )
+            user_doc = self.users_container.read_item(item=user_id, partition_key=user_id)
 
             old_role = user_doc.get("role", "user")
 
@@ -161,9 +158,7 @@ class RoleManager:
     async def get_user_role_info(self, user_id: str) -> Dict[str, Any]:
         """Get comprehensive role information for a user"""
         try:
-            user_doc = self.users_container.read_item(
-                item=user_id, partition_key=user_id
-            )
+            user_doc = self.users_container.read_item(item=user_id, partition_key=user_id)
 
             user_role = UserRole(user_doc.get("role", "user"))
             permissions = self.get_user_permissions(user_role)
@@ -181,26 +176,18 @@ class RoleManager:
             return {
                 "user_id": user_id,
                 "role": "user",
-                "permissions": [
-                    perm.value for perm in self.get_user_permissions(UserRole.USER)
-                ],
+                "permissions": [perm.value for perm in self.get_user_permissions(UserRole.USER)],
                 "error": str(e),
             }
 
-    async def list_users_by_role(
-        self, role: Optional[UserRole] = None
-    ) -> List[Dict[str, Any]]:
+    async def list_users_by_role(self, role: Optional[UserRole] = None) -> List[Dict[str, Any]]:
         """List all users, optionally filtered by role"""
         try:
             query = "SELECT * FROM c WHERE c.type = 'user'"
             if role:
                 query += f" AND c.role = '{role.value}'"
 
-            users = list(
-                self.users_container.query_items(
-                    query=query, enable_cross_partition_query=True
-                )
-            )
+            users = list(self.users_container.query_items(query=query, enable_cross_partition_query=True))
 
             return [
                 {
@@ -210,9 +197,7 @@ class RoleManager:
                     "role": user.get("role", "user"),
                     "created_at": user.get("createdAt"),
                     "last_login": user.get("lastLoginAt"),
-                    "identity_provider": user.get(
-                        "identityProvider", "azureActiveDirectory"
-                    ),
+                    "identity_provider": user.get("identityProvider", "azureActiveDirectory"),
                 }
                 for user in users
             ]
@@ -265,9 +250,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             user_id = req.params.get("user_id")
             if user_id:
                 role_info = await role_manager.get_user_role_info(user_id)
-                return func.HttpResponse(
-                    json.dumps(role_info), status_code=200, mimetype="application/json"
-                )
+                return func.HttpResponse(json.dumps(role_info), status_code=200, mimetype="application/json")
 
             # List users by role
             list_users = req.params.get("list_users")
@@ -284,17 +267,11 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
 
             # Return role permissions info
             permissions_info = {
-                "roles": {
-                    role.value: [perm.value for perm in perms]
-                    for role, perms in RoleManager.ROLE_PERMISSIONS.items()
-                },
+                "roles": {role.value: [perm.value for perm in perms] for role, perms in RoleManager.ROLE_PERMISSIONS.items()},
                 "current_user": {
                     "id": current_user.id,
                     "role": current_user.role.value,
-                    "permissions": [
-                        perm.value
-                        for perm in role_manager.get_user_permissions(current_user.role)
-                    ],
+                    "permissions": [perm.value for perm in role_manager.get_user_permissions(current_user.role)],
                 },
             }
 
@@ -329,9 +306,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
                     )
 
                 # Assign role
-                result = await role_manager.assign_role(
-                    user_id=user_id, new_role=role_enum, assigned_by=current_user.id
-                )
+                result = await role_manager.assign_role(user_id=user_id, new_role=role_enum, assigned_by=current_user.id)
 
                 status_code = 200 if result["success"] else 400
                 return func.HttpResponse(
@@ -378,9 +353,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             )
         else:
             return func.HttpResponse(
-                json.dumps(
-                    {"error": "internal_error", "message": "An internal error occurred"}
-                ),
+                json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
                 status_code=500,
                 mimetype="application/json",
             )

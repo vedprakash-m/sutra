@@ -7,11 +7,10 @@ import json
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Any, Optional
 from functools import wraps
+from typing import Any, Dict, Optional
 
 import azure.functions
-from functools import wraps
 import azure.functions as func
 
 logger = logging.getLogger(__name__)
@@ -51,9 +50,7 @@ class GuestUserManager:
 
         return self.default_guest_limits
 
-    async def create_guest_session(
-        self, ip_address: str, user_agent: str = None
-    ) -> Dict[str, Any]:
+    async def create_guest_session(self, ip_address: str, user_agent: str = None) -> Dict[str, Any]:
         """Create a new guest user session."""
         try:
             session_id = f"guest_{uuid.uuid4().hex[:12]}"
@@ -67,9 +64,7 @@ class GuestUserManager:
                 "ip_address": ip_address,
                 "user_agent": user_agent or "unknown",
                 "created_at": now.isoformat(),
-                "expires_at": (
-                    now + timedelta(hours=limits["session_duration_hours"])
-                ).isoformat(),
+                "expires_at": (now + timedelta(hours=limits["session_duration_hours"])).isoformat(),
                 "usage": {
                     "llm_calls": 0,
                     "prompts_created": 0,
@@ -117,9 +112,7 @@ class GuestUserManager:
 
             # Check if session is expired
             if session and session.get("expires_at"):
-                expires_at = datetime.fromisoformat(
-                    session["expires_at"].replace("Z", "+00:00")
-                )
+                expires_at = datetime.fromisoformat(session["expires_at"].replace("Z", "+00:00"))
                 if datetime.now(timezone.utc) > expires_at:
                     session["active"] = False
                     await self.update_guest_session(session)
@@ -136,9 +129,7 @@ class GuestUserManager:
             session["usage"]["last_activity"] = datetime.now(timezone.utc).isoformat()
 
             if self.db_manager and not self.db_manager._development_mode:
-                updated_session = await self.db_manager.update_item(
-                    container_name="GuestSessions", item=session
-                )
+                updated_session = await self.db_manager.update_item(container_name="GuestSessions", item=session)
                 return updated_session
 
             return session
@@ -162,9 +153,7 @@ class GuestUserManager:
             logger.error(f"Error checking usage limit: {e}")
             return False
 
-    async def increment_usage(
-        self, session: Dict[str, Any], usage_type: str
-    ) -> Dict[str, Any]:
+    async def increment_usage(self, session: Dict[str, Any], usage_type: str) -> Dict[str, Any]:
         """Increment usage counter for guest session."""
         try:
             if "usage" not in session:
@@ -177,9 +166,7 @@ class GuestUserManager:
             logger.error(f"Error incrementing usage: {e}")
             return session
 
-    async def get_or_create_anonymous_session(
-        self, ip_address: str, user_agent: str = None
-    ) -> Dict[str, Any]:
+    async def get_or_create_anonymous_session(self, ip_address: str, user_agent: str = None) -> Dict[str, Any]:
         """Get or create anonymous guest session based on IP address."""
         try:
             # For anonymous users, use IP-based session ID
@@ -191,9 +178,7 @@ class GuestUserManager:
 
             if existing_session and existing_session.get("active"):
                 # Check if session is from today (reset daily limits)
-                created_at = datetime.fromisoformat(
-                    existing_session.get("created_at", "").replace("Z", "+00:00")
-                )
+                created_at = datetime.fromisoformat(existing_session.get("created_at", "").replace("Z", "+00:00"))
                 if created_at.date() == now.date():
                     return existing_session
 
@@ -268,11 +253,7 @@ def allow_guest_access(usage_type: str = "llm_calls", allow_anonymous: bool = Tr
                     return await func(req)
 
                 # For anonymous access, use IP-based tracking
-                ip_address = (
-                    req.headers.get("x-forwarded-for")
-                    or req.headers.get("x-real-ip")
-                    or "127.0.0.1"
-                )
+                ip_address = req.headers.get("x-forwarded-for") or req.headers.get("x-real-ip") or "127.0.0.1"
                 guest_session_id = req.headers.get("x-guest-session-id")
 
                 db_manager = get_database_manager()
@@ -282,16 +263,12 @@ def allow_guest_access(usage_type: str = "llm_calls", allow_anonymous: bool = Tr
 
                 # Try to get existing session by ID or create anonymous session based on IP
                 if guest_session_id:
-                    guest_session = await guest_manager.get_guest_session(
-                        guest_session_id
-                    )
+                    guest_session = await guest_manager.get_guest_session(guest_session_id)
 
                 if not guest_session and allow_anonymous:
                     # Create anonymous session based on IP address for tracking
                     user_agent = req.headers.get("user-agent", "unknown")
-                    guest_session = await guest_manager.get_or_create_anonymous_session(
-                        ip_address, user_agent
-                    )
+                    guest_session = await guest_manager.get_or_create_anonymous_session(ip_address, user_agent)
 
                 # If still no session and anonymous access not allowed, require session creation
                 if not guest_session and not allow_anonymous:
@@ -333,19 +310,9 @@ def allow_guest_access(usage_type: str = "llm_calls", allow_anonymous: bool = Tr
                 class GuestUser:
                     def __init__(self, session):
                         self.id = session["id"]
-                        self.email = (
-                            "guest@sutra.app"
-                            if not session.get("anonymous")
-                            else "anonymous@sutra.app"
-                        )
-                        self.name = (
-                            "Guest User"
-                            if not session.get("anonymous")
-                            else "Anonymous User"
-                        )
-                        self.role = (
-                            "guest" if not session.get("anonymous") else "anonymous"
-                        )
+                        self.email = "guest@sutra.app" if not session.get("anonymous") else "anonymous@sutra.app"
+                        self.name = "Guest User" if not session.get("anonymous") else "Anonymous User"
+                        self.role = "guest" if not session.get("anonymous") else "anonymous"
                         self.session = session
 
                 req.current_user = GuestUser(guest_session)
@@ -407,9 +374,7 @@ async def get_guest_usage_stats(session_id: str, db_manager=None) -> Dict[str, A
         # Calculate remaining usage
         for limit_key, limit_value in limits.items():
             if limit_key.endswith("_per_day") or limit_key.endswith("_per_session"):
-                usage_key = limit_key.replace("_per_day", "").replace(
-                    "_per_session", ""
-                )
+                usage_key = limit_key.replace("_per_day", "").replace("_per_session", "")
                 current_usage = usage.get(usage_key, 0)
                 stats["remaining"][usage_key] = max(0, limit_value - current_usage)
 

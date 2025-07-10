@@ -1,8 +1,9 @@
-import azure.functions as func
 import json
 import logging
-import sys
 import os
+import sys
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -57,11 +58,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         action = route_params.get("action", "execute")
 
         # Get IP address for rate limiting
-        ip_address = (
-            req.headers.get("x-forwarded-for")
-            or req.headers.get("x-real-ip")
-            or "127.0.0.1"
-        )
+        ip_address = req.headers.get("x-forwarded-for") or req.headers.get("x-real-ip") or "127.0.0.1"
 
         if method == "POST" and action == "execute":
             return await execute_anonymous_llm(req, ip_address)
@@ -85,9 +82,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-async def execute_anonymous_llm(
-    req: func.HttpRequest, ip_address: str
-) -> func.HttpResponse:
+async def execute_anonymous_llm(req: func.HttpRequest, ip_address: str) -> func.HttpResponse:
     """Execute LLM prompt for anonymous users."""
     try:
         # Get admin-configured limits
@@ -183,9 +178,7 @@ async def execute_anonymous_llm(
             "signup_message": f"You have {max(0, remaining_calls)} free calls remaining today. Sign up for unlimited access!",
         }
 
-        logger.info(
-            f"Anonymous LLM execution for IP: {ip_address}, remaining: {remaining_calls}"
-        )
+        logger.info(f"Anonymous LLM execution for IP: {ip_address}, remaining: {remaining_calls}")
 
         return func.HttpResponse(
             json.dumps(mock_response, default=str),
@@ -245,9 +238,7 @@ async def list_anonymous_models(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-async def get_anonymous_usage(
-    req: func.HttpRequest, ip_address: str
-) -> func.HttpResponse:
+async def get_anonymous_usage(req: func.HttpRequest, ip_address: str) -> func.HttpResponse:
     """Get usage information for anonymous user (IP-based)."""
     try:
         # Get admin-configured limits

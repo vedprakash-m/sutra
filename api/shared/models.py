@@ -1,16 +1,15 @@
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from typing import List, Optional, Dict, Any, Union
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class UserRole(str, Enum):
     """User roles in the system - simplified to match UX specification."""
 
     USER = "user"  # Standard user role for all personas (Content Creator, Developer, PM, CS)
-    ADMIN = (
-        "admin"  # System administrator role for LLM config, budgets, user management
-    )
+    ADMIN = "admin"  # System administrator role for LLM config, budgets, user management
 
 
 class PromptStatus(str, Enum):
@@ -168,9 +167,7 @@ class PlaybookStep(BaseModel):
     llm_providers: List[LLMProvider] = []
     requires_manual_review: bool = False
     auto_proceed: bool = True
-    variables_mapping: Dict[
-        str, str
-    ] = {}  # Maps output vars to input vars of next step
+    variables_mapping: Dict[str, str] = {}  # Maps output vars to input vars of next step
     conditions: Dict[str, Any] = {}  # Conditional logic
 
     model_config = ConfigDict(use_enum_values=True)
@@ -276,9 +273,7 @@ class CreatePromptRequest(BaseModel):
     content: str = Field(..., min_length=1)
     variables: List[PromptVariable] = []
     tags: List[str] = []
-    collection_id: Optional[
-        str
-    ] = None  # Allow prompts to be created in specific collections
+    collection_id: Optional[str] = None  # Allow prompts to be created in specific collections
 
     @field_validator("tags")
     @classmethod

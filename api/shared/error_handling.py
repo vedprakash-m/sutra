@@ -8,28 +8,25 @@ This module provides standardized error handling including:
 - Recovery strategies
 """
 
-import logging
-import traceback
 import json
+import logging
 import re
+import traceback
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Union, List
-from functools import wraps
-import azure.functions as func
-from datetime import datetime
 from enum import Enum
-import azure.cosmos.exceptions as cosmos_exceptions
+from functools import wraps
+from typing import Any, Dict, List, Optional, Union
 
+import azure.cosmos.exceptions as cosmos_exceptions
 import azure.functions as func
 from pydantic import ValidationError
 
 from .validation import (
-    ValidationException,
-    SecurityValidationException,
     BusinessLogicException,
     RateLimitException,
+    SecurityValidationException,
+    ValidationException,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -267,9 +264,7 @@ class ErrorResponse:
             result["request_id"] = self.request_id
 
         if self.additional_errors:
-            result["additional_errors"] = [
-                err.to_dict() for err in self.additional_errors
-            ]
+            result["additional_errors"] = [err.to_dict() for err in self.additional_errors]
 
         return result
 
@@ -321,17 +316,9 @@ class ErrorHandler:
             for error_detail in exc.errors():
                 field = ".".join(str(loc) for loc in error_detail["loc"])
                 message = error_detail["msg"]
-                errors.append(
-                    ErrorDetail(
-                        code="PYDANTIC_VALIDATION_ERROR", message=message, field=field
-                    )
-                )
+                errors.append(ErrorDetail(code="PYDANTIC_VALIDATION_ERROR", message=message, field=field))
 
-            main_error = (
-                errors[0]
-                if errors
-                else ErrorDetail(code="VALIDATION_ERROR", message="Validation failed")
-            )
+            main_error = errors[0] if errors else ErrorDetail(code="VALIDATION_ERROR", message="Validation failed")
 
             logger.info(
                 f"Pydantic validation failed: {str(exc)}",
@@ -349,15 +336,11 @@ class ErrorHandler:
             # Handle generic ValueError
             error = ErrorDetail(code="INVALID_INPUT", message=str(exc))
 
-            logger.info(
-                f"Input validation failed: {str(exc)}", extra={"request_id": request_id}
-            )
+            logger.info(f"Input validation failed: {str(exc)}", extra={"request_id": request_id})
 
             status_code = 400
 
-        return ErrorResponse(
-            status_code=status_code, error=error, request_id=request_id
-        )
+        return ErrorResponse(status_code=status_code, error=error, request_id=request_id)
 
     @staticmethod
     def handle_authentication_error(
@@ -366,9 +349,7 @@ class ErrorHandler:
         """Handle authentication errors."""
         error = ErrorDetail(code="AUTHENTICATION_REQUIRED", message=message)
 
-        logger.warning(
-            f"Authentication failed: {message}", extra={"request_id": request_id}
-        )
+        logger.warning(f"Authentication failed: {message}", extra={"request_id": request_id})
 
         return ErrorResponse(status_code=401, error=error, request_id=request_id)
 
@@ -379,9 +360,7 @@ class ErrorHandler:
         """Handle authorization errors."""
         error = ErrorDetail(code="INSUFFICIENT_PERMISSIONS", message=message)
 
-        logger.warning(
-            f"Authorization failed: {message}", extra={"request_id": request_id}
-        )
+        logger.warning(f"Authorization failed: {message}", extra={"request_id": request_id})
 
         return ErrorResponse(status_code=403, error=error, request_id=request_id)
 
@@ -407,9 +386,7 @@ class ErrorHandler:
         return ErrorResponse(status_code=404, error=error, request_id=request_id)
 
     @staticmethod
-    def handle_rate_limit_error(
-        exc: RateLimitException, request_id: Optional[str] = None
-    ) -> ErrorResponse:
+    def handle_rate_limit_error(exc: RateLimitException, request_id: Optional[str] = None) -> ErrorResponse:
         """Handle rate limiting errors."""
         error = ErrorDetail(
             code="RATE_LIMIT_EXCEEDED",
@@ -417,16 +394,12 @@ class ErrorHandler:
             details={"retry_after": 3600},  # 1 hour
         )
 
-        logger.warning(
-            f"Rate limit exceeded: {exc.message}", extra={"request_id": request_id}
-        )
+        logger.warning(f"Rate limit exceeded: {exc.message}", extra={"request_id": request_id})
 
         return ErrorResponse(status_code=429, error=error, request_id=request_id)
 
     @staticmethod
-    def handle_business_logic_error(
-        exc: BusinessLogicException, request_id: Optional[str] = None
-    ) -> ErrorResponse:
+    def handle_business_logic_error(exc: BusinessLogicException, request_id: Optional[str] = None) -> ErrorResponse:
         """Handle business logic errors."""
         error = ErrorDetail(code=exc.code, message=exc.message, field=exc.field)
 
@@ -435,9 +408,7 @@ class ErrorHandler:
             extra={"request_id": request_id, "field": exc.field},
         )
 
-        return ErrorResponse(
-            status_code=422, error=error, request_id=request_id  # Unprocessable Entity
-        )
+        return ErrorResponse(status_code=422, error=error, request_id=request_id)  # Unprocessable Entity
 
     @staticmethod
     def handle_external_service_error(
@@ -462,14 +433,10 @@ class ErrorHandler:
             extra={"request_id": request_id, "service": service_name},
         )
 
-        return ErrorResponse(
-            status_code=502, error=error, request_id=request_id  # Bad Gateway
-        )
+        return ErrorResponse(status_code=502, error=error, request_id=request_id)  # Bad Gateway
 
     @staticmethod
-    def handle_database_error(
-        operation: str, error_message: str, request_id: Optional[str] = None
-    ) -> ErrorResponse:
+    def handle_database_error(operation: str, error_message: str, request_id: Optional[str] = None) -> ErrorResponse:
         """Handle database errors."""
         error = ErrorDetail(
             code="DATABASE_ERROR",
@@ -498,9 +465,7 @@ class ErrorHandler:
         if include_traceback:
             error_details["traceback"] = traceback.format_exc()
 
-        error = ErrorDetail(
-            code="INTERNAL_SERVER_ERROR", message=error_message, details=error_details
-        )
+        error = ErrorDetail(code="INTERNAL_SERVER_ERROR", message=error_message, details=error_details)
 
         logger.error(
             f"Unexpected error: {str(exc)}",
@@ -525,24 +490,16 @@ def handle_api_errors(func):
             return func(*args, **kwargs)
 
         except ValidationException as e:
-            return ErrorHandler.handle_validation_error(
-                e, request_id
-            ).to_azure_response()
+            return ErrorHandler.handle_validation_error(e, request_id).to_azure_response()
 
         except RateLimitException as e:
-            return ErrorHandler.handle_rate_limit_error(
-                e, request_id
-            ).to_azure_response()
+            return ErrorHandler.handle_rate_limit_error(e, request_id).to_azure_response()
 
         except BusinessLogicException as e:
-            return ErrorHandler.handle_business_logic_error(
-                e, request_id
-            ).to_azure_response()
+            return ErrorHandler.handle_business_logic_error(e, request_id).to_azure_response()
 
         except ValidationError as e:
-            return ErrorHandler.handle_validation_error(
-                e, request_id
-            ).to_azure_response()
+            return ErrorHandler.handle_validation_error(e, request_id).to_azure_response()
 
         except Exception as e:
             return ErrorHandler.handle_system_error(e, request_id).to_azure_response()
@@ -598,9 +555,7 @@ class ErrorMonitor:
         # - Performance impact tracking
 
     @staticmethod
-    def should_alert(
-        error_category: ErrorCategory, error_severity: ErrorSeverity
-    ) -> bool:
+    def should_alert(error_category: ErrorCategory, error_severity: ErrorSeverity) -> bool:
         """Determine if error should trigger an alert."""
         # Alert on critical errors or high severity security/auth issues
         if error_severity == ErrorSeverity.CRITICAL:
@@ -698,9 +653,7 @@ def extract_request_id(req: func.HttpRequest) -> Optional[str]:
     return req.params.get("request_id")
 
 
-def add_correlation_id(
-    response_dict: Dict[str, Any], request_id: Optional[str]
-) -> Dict[str, Any]:
+def add_correlation_id(response_dict: Dict[str, Any], request_id: Optional[str]) -> Dict[str, Any]:
     """Add correlation ID to response for tracking."""
     if request_id:
         response_dict["request_id"] = request_id

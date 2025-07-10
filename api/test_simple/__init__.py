@@ -1,5 +1,6 @@
-import azure.functions as func
 import json
+
+import azure.functions as func
 
 
 async def main(req: func.HttpRequest) -> func.HttpResponse:

@@ -1,17 +1,19 @@
-import azure.functions as func
 import json
 import logging
-import sys
 import os
+import sys
+
+import azure.functions as func
 
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
+import traceback
+
+from shared.database import get_database_manager
+from shared.error_handling import SutraAPIError, handle_api_error
 from shared.guest_user import allow_guest_access
 from shared.unified_auth import require_authentication
-from shared.database import get_database_manager
-from shared.error_handling import handle_api_error, SutraAPIError
-import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +39,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         route_params = req.route_params
         action = route_params.get("action", "execute")
 
-        logger.info(
-            f"Guest LLM API called by {user.email if user else 'guest'}: {method} {req.url}"
-        )
+        logger.info(f"Guest LLM API called by {user.email if user else 'guest'}: {method} {req.url}")
 
         if method == "POST" and action == "execute":
             return await execute_llm_prompt(req)
@@ -58,9 +58,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
 
         # Return proper error response
         return func.HttpResponse(
-            json.dumps(
-                {"error": "internal_error", "message": "An internal error occurred"}
-            ),
+            json.dumps({"error": "internal_error", "message": "An internal error occurred"}),
             status_code=500,
             mimetype="application/json",
         )
@@ -93,12 +91,8 @@ async def execute_llm_prompt(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Get model preference
-        model = body.get(
-            "model", "gpt-3.5-turbo"
-        )  # Default to cheaper model for guests
-        max_tokens = body.get(
-            "max_tokens", 150 if is_guest else 1000
-        )  # Limit tokens for guests
+        model = body.get("model", "gpt-3.5-turbo")  # Default to cheaper model for guests
+        max_tokens = body.get("max_tokens", 150 if is_guest else 1000)  # Limit tokens for guests
 
         # For guests, limit to specific models and parameters
         if is_guest:
@@ -143,9 +137,7 @@ async def execute_llm_prompt(req: func.HttpRequest) -> func.HttpResponse:
                 "upgrade_message": f"You have {max(0, remaining_calls)} LLM calls remaining today. Sign up for unlimited access!",
             }
 
-        logger.info(
-            f"LLM execution for user {user.id} ({'guest' if is_guest else 'authenticated'})"
-        )
+        logger.info(f"LLM execution for user {user.id} ({'guest' if is_guest else 'authenticated'})")
 
         return func.HttpResponse(
             json.dumps(mock_response, default=str),
@@ -224,9 +216,7 @@ async def list_available_models(req: func.HttpRequest) -> func.HttpResponse:
         response_data = {
             "models": models,
             "user_type": "guest" if is_guest else "authenticated",
-            "note": "Guest users have access to limited models with reduced token limits"
-            if is_guest
-            else None,
+            "note": "Guest users have access to limited models with reduced token limits" if is_guest else None,
         }
 
         return func.HttpResponse(

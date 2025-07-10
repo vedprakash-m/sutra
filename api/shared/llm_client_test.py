@@ -2,20 +2,21 @@
 Tests for llm_client.py module - LLM provider integrations and management
 """
 
-import pytest
-import os
 import json
-from unittest.mock import Mock, patch, AsyncMock
+import os
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from api.shared.llm_client import (
-    LLMProvider,
-    OpenAIProvider,
     AnthropicProvider,
     GoogleProvider,
     LLMManager,
-    get_llm_manager,
+    LLMProvider,
+    OpenAIProvider,
     get_llm_client,
+    get_llm_manager,
 )
 
 
@@ -42,9 +43,7 @@ class TestLLMProvider:
         mock_api_secret = Mock()
         mock_api_secret.value = "test-api-key"
         mock_config_secret = Mock()
-        mock_config_secret.value = json.dumps(
-            {"budget_limit": 100.0, "priority": 2, "enabled": True}
-        )
+        mock_config_secret.value = json.dumps({"budget_limit": 100.0, "priority": 2, "enabled": True})
 
         mock_kv_client.get_secret.side_effect = [mock_api_secret, mock_config_secret]
 
@@ -262,9 +261,7 @@ class TestLLMManager:
         with patch.dict(os.environ, {}, clear=True):
             manager = LLMManager()
 
-            with pytest.raises(
-                ValueError, match="KEY_VAULT_URI environment variable is required"
-            ):
+            with pytest.raises(ValueError, match="KEY_VAULT_URI environment variable is required"):
                 _ = manager.kv_client
 
     @pytest.mark.asyncio
@@ -330,9 +327,7 @@ class TestLLMManager:
         mock_provider.enabled = True
         mock_provider.current_usage = 0.0  # Start with 0
         mock_provider.check_budget = AsyncMock(return_value=True)
-        mock_provider.execute_prompt = AsyncMock(
-            return_value={"response": "Test response", "cost": 0.02}
-        )
+        mock_provider.execute_prompt = AsyncMock(return_value={"response": "Test response", "cost": 0.02})
         manager.providers["openai"] = mock_provider
 
         result = await manager.execute_prompt("openai", "Hello!", {"user": "123"})
@@ -364,9 +359,7 @@ class TestLLMManager:
     async def test_execute_multi_llm_success(self):
         """Test multi-LLM execution success."""
         manager = LLMManager()
-        manager.get_available_providers = AsyncMock(
-            return_value=["openai", "anthropic"]
-        )
+        manager.get_available_providers = AsyncMock(return_value=["openai", "anthropic"])
         manager.execute_prompt = AsyncMock(
             side_effect=[
                 {"provider": "openai", "response": "OpenAI response"},
@@ -385,9 +378,7 @@ class TestLLMManager:
     async def test_execute_multi_llm_with_failures(self):
         """Test multi-LLM execution with some failures."""
         manager = LLMManager()
-        manager.get_available_providers = AsyncMock(
-            return_value=["openai", "anthropic"]
-        )
+        manager.get_available_providers = AsyncMock(return_value=["openai", "anthropic"])
         manager.execute_prompt = AsyncMock(
             side_effect=[
                 {"provider": "openai", "response": "OpenAI response"},

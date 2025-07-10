@@ -198,13 +198,48 @@ npm run e2e:cleanup       # Clean up E2E resources
 
 # E2E Environment Management
 npm run e2e:logs          # View service logs
-npm run e2e:services      # Manage individual services
-npm run e2e:validate      # Validate E2E environment
+```
+
+### **🔧 Code Quality & Git Hooks Setup**
+
+Set up comprehensive code quality enforcement for development:
+
+```bash
+# One-time setup for Git hooks and pre-commit
+./scripts/setup-git-hooks.sh
+
+# Manual pre-commit installation (if needed)
+pip install pre-commit
+pre-commit install
+
+# Run all quality checks manually
+pre-commit run --all-files
+
+# Quality checks include:
+# ✅ ESLint & TypeScript validation
+# ✅ Python Black formatting & flake8 linting
+# ✅ Prettier code formatting
+# ✅ Security scanning (detect-secrets)
+# ✅ Infrastructure validation (Bicep/Azure)
+# ✅ Shell script validation
+```
+
+**Quality Hooks Enforced:**
+
+- 🔒 **Security**: Secret detection, private key scanning
+- 🎨 **Formatting**: Black (Python), Prettier (TS/JS), consistent styling
+- 🐛 **Linting**: ESLint, flake8, TypeScript type checking
+- 📋 **Validation**: YAML/JSON syntax, Bicep templates, shell scripts
+- 📦 **Dependencies**: NPM and Python package validation
+  npm run e2e:services # Manage individual services
+  npm run e2e:validate # Validate E2E environment
 
 # Production deployment testing
+
 ./scripts/configure-azure-app-registration.sh
 ./scripts/deploy-production-config.sh
 ./scripts/test-production-auth.sh
+
 ```
 
 ---
@@ -216,22 +251,24 @@ npm run e2e:validate      # Validate E2E environment
 Sutra implements a **two-tier architecture** that separates persistent data from compute resources, enabling **70-80% cost savings** during development downtime without data loss.
 
 ```
+
 ┌─────────────────────────────────────────────────────────────┐
-│                    🔄 COMPUTE TIER (Auto-Scale)            │
+│ 🔄 COMPUTE TIER (Auto-Scale) │
 ├─────────────────────────────────────────────────────────────┤
-│  📱 Static Web App (React + TypeScript + Vite)             │
-│  ⚡ Azure Functions (Python 3.11 + FastAPI)               │
-│  📊 Application Insights (Monitoring & Analytics)          │
+│ 📱 Static Web App (React + TypeScript + Vite) │
+│ ⚡ Azure Functions (Python 3.11 + FastAPI) │
+│ 📊 Application Insights (Monitoring & Analytics) │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                   💾 PERSISTENT TIER (Always-On)           │
+│ 💾 PERSISTENT TIER (Always-On) │
 ├─────────────────────────────────────────────────────────────┤
-│  🗄️ Cosmos DB (NoSQL, Serverless Mode)                     │
-│  🔐 Key Vault (Secrets & Certificate Management)           │
-│  📦 Storage Account (Blob Storage & File Shares)           │
+│ 🗄️ Cosmos DB (NoSQL, Serverless Mode) │
+│ 🔐 Key Vault (Secrets & Certificate Management) │
+│ 📦 Storage Account (Blob Storage & File Shares) │
 └─────────────────────────────────────────────────────────────┘
-```
+
+````
 
 ### **🛠️ Technology Stack**
 
@@ -308,7 +345,7 @@ docker --version  # Required for local development
 # Setup
 npm install
 cd api && pip install -r requirements.txt
-```
+````
 
 ---
 

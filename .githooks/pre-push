@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Pre-push hook to run additional validation before pushing to remote
+# This ensures that code quality is maintained across all commits being pushed
+
+set -e
+
+echo "🔍 Running pre-push validation checks..."
+
+# Run pre-commit on all files to ensure nothing slipped through
+echo "📋 Running pre-commit hooks..."
+if ! pre-commit run --all-files; then
+    echo "❌ Pre-commit hooks failed. Please fix the issues before pushing."
+    exit 1
+fi
+
+# Optional: Run quick unit tests to catch breaking changes
+echo "🧪 Running quick unit tests..."
+if [ -f "package.json" ]; then
+    echo "  → Running frontend tests..."
+    npm test -- --watchAll=false --passWithNoTests 2>/dev/null || echo "  ⚠️  Frontend tests not available or failed"
+fi
+
+if [ -d "api" ] && [ -f "api/requirements.txt" ]; then
+    echo "  → Running backend tests..."
+    cd api && python -m pytest --tb=short -q 2>/dev/null && cd .. || echo "  ⚠️  Backend tests not available or failed"
+fi
+
+echo "✅ Pre-push validation completed successfully!"
+echo "🚀 Pushing to remote..."

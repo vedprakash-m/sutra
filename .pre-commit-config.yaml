@@ -104,7 +104,7 @@ repos:
     hooks:
       - id: bicep-validation
         name: Bicep Template Validation
-        entry: bash -c 'if command -v az &> /dev/null; then cd infrastructure && az bicep install && az bicep build --file persistent.bicep && az bicep build --file compute.bicep; else echo "Azure CLI not available - skipping Bicep validation"; fi'
+        entry: bash -c 'if command -v az &> /dev/null; then cd infrastructure && az bicep install >/dev/null 2>&1 && az bicep build --file persistent.bicep --outfile persistent.json >/dev/null 2>&1 && az bicep build --file compute.bicep --outfile compute.json >/dev/null 2>&1 && echo "✅ Bicep templates validated and JSON updated"; else echo "⚠️  Azure CLI not available - skipping Bicep validation"; fi'
         language: system
         files: infrastructure/.*\.bicep$
         pass_filenames: false

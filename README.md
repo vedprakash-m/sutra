@@ -233,6 +233,18 @@ pre-commit run --all-files
 - 📦 **Dependencies**: NPM and Python package validation
 - 🖥️ **Cross-Platform**: Platform compatibility checks for CI/CD
 
+**Infrastructure Development (Bicep):**
+
+```bash
+# Validate Bicep templates (runs automatically in pre-commit)
+pre-commit run bicep-validation --all-files
+
+# Build ARM JSON templates when Bicep files change
+./scripts/build-bicep.sh
+
+# Pre-commit only validates syntax - build script generates deployable ARM templates
+```
+
 **Cross-Platform Validation:**
 
 ```bash
@@ -359,10 +371,14 @@ We welcome contributions! Please see our contributing guidelines for details on 
 node --version  # Requires Node.js 18+
 python --version  # Requires Python 3.11+
 docker --version  # Required for local development
+az --version  # Required for Bicep infrastructure templates
 
 # Setup
 npm install
 cd api && pip install -r requirements.txt
+
+# Infrastructure Development (Bicep)
+./scripts/build-bicep.sh  # Build ARM templates from Bicep files
 ````
 
 ---

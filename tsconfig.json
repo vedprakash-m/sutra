@@ -34,6 +34,17 @@
     }
   },
   "include": ["src"],
-  "exclude": ["src/dev/**/*"],
+  "exclude": [
+    "src/dev/**/*", 
+    "src/__mocks__/**/*",
+    "src/config/__mocks__/**/*",
+    "src/config/__legacy_backup/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx", 
+    "**/__tests__/**",
+    "**/test-setup.ts",
+    "**/test-utils.tsx",
+    "**/test-utils/**"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

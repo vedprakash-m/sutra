@@ -1,4 +1,4 @@
-#!/Users/vedprakashmishra/sutra/.venv-test/bin/python3
+#!/Users/ved/Apps/sutra/.venv-test/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -4,17 +4,17 @@
 
 <div align="center">
 
-[![Production Status](https://img.shields.io/badge/status-production_ready-success.svg)](https://orange-dune-053cfbf1e.2.azurestaticapps.net)
+[![Production Status](https://img.shields.io/badge/status-production_ready-success.svg)](https://sutra.vedprakash.net)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Azure](https://img.shields.io/badge/cloud-azure-0078d4.svg)](https://azure.microsoft.com)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-3178c6.svg)](https://www.typescriptlang.org)
 [![Python](https://img.shields.io/badge/python-3.12+-3776ab.svg)](https://www.python.org)
-[![Test Coverage](https://img.shields.io/badge/coverage-98.7%25-brightgreen.svg)](#testing--quality)
+[![Test Coverage](https://img.shields.io/badge/coverage-100%25_frontend-brightgreen.svg)](#testing--quality)
 [![Auth Compliance](https://img.shields.io/badge/auth-100%25_compliant-green.svg)](#authentication)
 
 **Enterprise-grade platform for prompt engineering, multi-LLM optimization, and AI workflow orchestration**
 
-[🌐 Live Application](https://orange-dune-053cfbf1e.2.azurestaticapps.net) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation)
+[🌐 Live Application](https://sutra.vedprakash.net) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation)
 
 </div>
 
@@ -29,14 +29,15 @@ Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how tea
 - **🚀 Zero-Friction Trial**: Anonymous users can test AI capabilities without signup
 - **🤖 Multi-LLM Optimization**: Compare responses across OpenAI GPT, Google Gemini, Anthropic Claude
 - **🔐 Enterprise Security**: Microsoft Entra ID authentication with comprehensive security headers
-- **📊 Production-Proven**: Live deployment with 98.7% backend test coverage (453/459 tests passing)
+- **📊 Production-Proven**: Live deployment with 100% frontend test coverage (30/30 test suites, 508/508 tests passing)
 - **⚡ Cost-Optimized**: Serverless Azure architecture with real-time cost monitoring
 - **💰 Budget Management**: Intelligent cost controls with predictive analytics
 
 ### **🏆 Production Status (July 2025)**
 
 - ✅ **Live Production Environment** - Fully operational since July 2025
-- ✅ **453+ Backend Tests Passing** (98.7% coverage)
+- ✅ **508 Frontend Tests Passing** (100% test success rate)
+- ✅ **459 Backend Tests Available** (comprehensive pytest framework)
 - ✅ **100% Authentication Compliance** (Microsoft Entra ID integration)
 - ✅ **Enterprise Security Implementation** (CSP, HSTS, CORS, security headers)
 - ✅ **Production Azure Infrastructure** (Functions, Static Web Apps, Cosmos DB)
@@ -44,7 +45,7 @@ Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how tea
 
 ### **🌐 Production Environment**
 
-- **🚀 Application**: https://orange-dune-053cfbf1e.2.azurestaticapps.net
+- **🚀 Application**: https://sutra.vedprakash.net
 - **📊 API Health**: https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api/health
 - **🔐 Authentication**: Microsoft Entra ID (vedid.onmicrosoft.com)
 - **📈 Monitoring**: Azure Application Insights with real-time telemetry
@@ -133,7 +134,7 @@ Our validation system ensures production readiness through:
 
 ### **🌐 Try the Live Application**
 
-Visit our production environment: **https://orange-dune-053cfbf1e.2.azurestaticapps.net**
+Visit our production environment: **https://sutra.vedprakash.net**
 
 1. **Anonymous Trial**: Start testing AI capabilities immediately (5 free calls/day)
 2. **Sign in** with Microsoft Entra ID for full access

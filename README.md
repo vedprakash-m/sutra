@@ -248,8 +248,9 @@ pre-commit run --all-files
 # - OS-specific paths in configuration files
 # - Windows line endings (CRLF) in source files
 ```
-  npm run e2e:services # Manage individual services
-  npm run e2e:validate # Validate E2E environment
+
+npm run e2e:services # Manage individual services
+npm run e2e:validate # Validate E2E environment
 
 # Production deployment testing
 

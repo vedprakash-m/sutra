@@ -3,6 +3,7 @@
 ## Issue Resolution: Virtual Environment Symlink Failures
 
 ### Problem Statement
+
 CI/CD pipeline failed with broken symlink errors when running pre-commit hooks. The `check-symlinks` hook detected broken symlinks in `.venv-test/bin/python` and `.venv-test/bin/python3` that worked locally on macOS but failed in Ubuntu CI environment.
 
 ### Root Cause Analysis (5 Whys)
@@ -16,16 +17,19 @@ CI/CD pipeline failed with broken symlink errors when running pre-commit hooks. 
 ### Solution Implementation
 
 #### 1. Immediate Fix
+
 - Removed virtual environment from git tracking: `git rm -r --cached .venv-test`
 - Enhanced `.gitignore` patterns for all virtual environment variants
 - Excluded virtual environments from `check-symlinks` hook
 
 #### 2. Long-term Prevention
+
 - Created cross-platform validation script (`scripts/cross-platform-validation.sh`)
 - Enhanced unified validation to include platform compatibility checks
 - Updated pre-commit configuration with platform-aware exclusions
 
 #### 3. Developer Experience Improvements
+
 - Automated detection of platform-specific issues
 - Clear error messages and remediation steps
 - Integration with existing validation workflows
@@ -33,6 +37,7 @@ CI/CD pipeline failed with broken symlink errors when running pre-commit hooks. 
 ### Cross-Platform Best Practices
 
 #### Git Repository Management
+
 ```bash
 # Enhanced .gitignore patterns
 .venv*/
@@ -45,12 +50,14 @@ pyvenv.cfg
 ```
 
 #### Pre-commit Hook Configuration
+
 ```yaml
 - id: check-symlinks
   exclude: '\.venv|venv|__pycache__|\.git|node_modules'
 ```
 
 #### Validation Strategies
+
 1. **Local Development**: Run cross-platform checks before committing
 2. **CI/CD Pipeline**: Comprehensive validation in target environment
 3. **Developer Onboarding**: Automated setup scripts prevent common issues
@@ -58,12 +65,14 @@ pyvenv.cfg
 ### Implementation Results
 
 #### Before Fix
+
 - ❌ CI failures due to platform-specific symlinks
 - ❌ Virtual environments tracked in git
 - ❌ No cross-platform validation
 - ❌ Reactive issue resolution
 
 #### After Fix
+
 - ✅ All pre-commit hooks pass in CI and locally
 - ✅ Virtual environments properly excluded from git
 - ✅ Proactive cross-platform validation

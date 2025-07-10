@@ -8,7 +8,6 @@ repos:
     rev: v5.0.0 # Updated to latest stable version
     hooks:
       - id: trailing-whitespace
-      - id: end-of-file-fixer
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: check-json
@@ -122,6 +121,13 @@ repos:
         language: system
         files: api/requirements.*\.txt$
         pass_filenames: false
+
+  # End-of-file fixer runs last to avoid conflicts with Bicep JSON generation
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+        exclude: infrastructure/(compute|persistent)\.json$
 
 # Fast hooks run first, slower ones later
 default_stages: [pre-commit]

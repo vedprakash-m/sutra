@@ -71,11 +71,21 @@ htmlcov/
 .jest-cache/
 .eslintcache
 
-# Python virtual environments
+# Python virtual environments (ALL variants)
 .venv/
-.venv-test/
+.venv-*/
 venv/
+venv-*/
+env/
+env-*/
+.env-*/
 __pycache__/
+
+# Virtual environment patterns for testing
+**/test-env/
+**/test-ci-env/
+**/.venv*/
+**/venv*/
 
 # Build artifacts
 *.tgz

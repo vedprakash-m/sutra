@@ -356,6 +356,10 @@ if [[ "$SCOPE" == "all" ]]; then
     fi
 fi
 
+# Cross-Platform Compatibility Validations
+echo -e "${BLUE}=== Cross-Platform Compatibility ===${NC}"
+run_check "Cross-Platform Git Tracking" "./scripts/cross-platform-validation.sh" "true"
+
 # E2E Validations (when requested)
 if should_run_e2e; then
     echo -e "${BLUE}=== E2E Validations ===${NC}"

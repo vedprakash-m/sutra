@@ -18,6 +18,7 @@ repos:
         args: [--maxkb=1000]
       - id: detect-private-key
       - id: check-symlinks
+        exclude: '\.venv|venv|__pycache__|\.git|node_modules'
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
 

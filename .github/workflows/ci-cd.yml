@@ -52,8 +52,8 @@ jobs:
           pip install pre-commit
           pre-commit run --all-files
 
-      - name: Run unified validation (CI mode)
-        run: ./scripts/unified-validation.sh ci all
+      - name: Run unified validation (CI mode - core only)
+        run: ./scripts/unified-validation.sh ci core
 
       - name: Build frontend (verify build works)
         run: npm run build

@@ -266,11 +266,16 @@ class TestLLMManager:
 
     @pytest.mark.asyncio
     @patch.dict(os.environ, {"KEY_VAULT_URI": "https://test-vault.vault.azure.net/"})
+    @patch("api.shared.llm_client.DefaultAzureCredential")
     @patch("api.shared.llm_client.SecretClient")
-    async def test_initialize_success(self, mock_secret_client):
+    async def test_initialize_success(self, mock_secret_client, mock_credential):
         """Test successful LLM manager initialization."""
         # Mock all provider initializations to succeed
         manager = LLMManager()
+
+        # Mock the kv_client property by setting _kv_client directly
+        mock_kv_instance = Mock()
+        manager._kv_client = mock_kv_instance
 
         for provider in manager.providers.values():
             provider.initialize = AsyncMock(return_value=True)

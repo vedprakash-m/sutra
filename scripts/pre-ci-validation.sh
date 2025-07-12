@@ -69,8 +69,14 @@ cd api    python3 -m pip install --upgrade pip
 cd ..
 
 # Simulate pre-commit hooks
-echo -e "${CYAN}🪝 Installing and running pre-commit hooks...${NC}"    python3 -m pip install pre-commit
-pre-commit run --all-files
+echo -e "${CYAN}🪝 Installing and running pre-commit hooks...${NC}"
+python3 -m pip install pre-commit --user
+export PATH="$HOME/.local/bin:$PATH"
+if command -v pre-commit >/dev/null 2>&1; then
+    pre-commit run --all-files
+else
+    echo "⚠️ pre-commit not available in PATH, skipping..."
+fi
 
 # Run the unified validation in CI mode
 echo -e "${BLUE}🚀 Running unified validation (CI mode)...${NC}"

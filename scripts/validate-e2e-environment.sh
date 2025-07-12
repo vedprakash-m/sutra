@@ -176,7 +176,7 @@ validate_environment_detection() {
     # Test CI environment simulation
     log_info "Testing CI environment detection..."
     local ci_config=$(CI=true bash -c 'source scripts/e2e-setup-enhanced.sh >/dev/null 2>&1; determine_docker_compose_config' 2>/dev/null || echo "error")
-    
+
     if [[ "$ci_config" == "docker-compose.e2e-no-cosmos.yml" ]]; then
         log_success "CI environment detection works"
     else
@@ -186,7 +186,7 @@ validate_environment_detection() {
     # Test local environment detection
     log_info "Testing local environment detection..."
     local local_config=$(unset CI && bash -c 'source scripts/e2e-setup-enhanced.sh >/dev/null 2>&1; determine_docker_compose_config' 2>/dev/null || echo "error")
-    
+
     if [[ "$local_config" =~ ^docker-compose\.e2e-.*\.yml$ ]]; then
         log_success "Local environment detection works: $local_config"
     else
@@ -297,7 +297,7 @@ validate_requirements_consistency() {
     for req_file in "${req_files[@]}"; do
         if [ -f "$req_file" ]; then
             log_success "$(basename "$req_file") exists"
-            
+
             # Check for critical dependencies
             if grep -q "azure-functions" "$req_file"; then
                 log_success "$(basename "$req_file") includes azure-functions"
@@ -335,7 +335,7 @@ main() {
 
     echo ""
     echo "=========================================="
-    
+
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
 

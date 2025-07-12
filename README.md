@@ -167,6 +167,9 @@ cd sutra
 npm install
 cd api && pip install -r requirements.txt && cd ..
 
+# Set up development tools
+pre-commit install  # Install pre-commit hooks
+
 # Option A: Frontend only (uses production API)
 npm run dev
 
@@ -178,6 +181,39 @@ cd api && func start --port 7071
 npm run dev
 
 # Option C: Docker environment with all services
+npm run dev:local
+```
+
+### **🔍 Development Validation**
+
+```bash
+# Run comprehensive validation (recommended before commits)
+./scripts/unified-validation.sh local all
+
+# Quick validation check
+./scripts/unified-validation.sh local core
+
+# Simulate CI environment locally (before pushing to main)
+./scripts/pre-ci-validation.sh
+
+# Run specific test suites
+npm test                           # Frontend tests (508 tests)
+cd api && python -m pytest && cd .. # Backend tests (459 tests)
+```
+
+### **🚨 CI/CD Troubleshooting**
+
+If CI/CD pipeline fails:
+
+1. **Run Local CI Simulation**: `./scripts/pre-ci-validation.sh`
+2. **Check Error Details**: See [CI/CD Troubleshooting Guide](docs/CI_CD_Troubleshooting.md)
+3. **Environment Differences**: Run `./scripts/cross-platform-validation.sh`
+4. **Quick Fix**: Ensure dependencies are synchronized with `npm ci && npm run build`
+
+The project includes enhanced validation that catches CI issues before they occur:
+- **Pre-commit hooks**: Validate code quality and formatting
+- **Pre-push validation**: Full CI simulation for main branch, quick checks for features  
+- **Cross-platform compatibility**: Ensure code works across development environments
 docker-compose up -d
 ```
 

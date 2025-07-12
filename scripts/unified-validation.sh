@@ -7,7 +7,7 @@
 # Modes: local, ci, strict
 # Scopes: core, all, frontend-only, backend-only, e2e
 
-set -e
+# Note: Not using 'set -e' to allow proper error accumulation and reporting
 
 # Colors for output
 RED='\033[0;31m'
@@ -41,31 +41,63 @@ run_check() {
     local command="$2"
     local required="${3:-true}"
     local working_dir="${4:-$PROJECT_ROOT}"
+    local temp_output="${RUNNER_TEMP:-/tmp}/unified_validation_${RANDOM}_$$.log"
 
     ((TOTAL_CHECKS++))
 
     echo -e "${BLUE}🔍 $check_name${NC}"
+    
+    # Debug information for CI
+    if [[ "$MODE" == "ci" ]]; then
+        echo -e "${CYAN}  → Command: $command${NC}"
+        echo -e "${CYAN}  → Working dir: $working_dir${NC}"
+        echo -e "${CYAN}  → Required: $required${NC}"
+    fi
 
-    if cd "$working_dir" && eval "$command" > /tmp/unified_validation_output 2>&1; then
+    # Ensure working directory exists and is accessible
+    if [[ ! -d "$working_dir" ]]; then
+        echo -e "${RED}❌ Working directory does not exist: $working_dir${NC}"
+        ((FAILED_CHECKS++))
+        return 1
+    fi
+
+    local exit_code=0
+    if cd "$working_dir" && eval "$command" > "$temp_output" 2>&1; then
         echo -e "${GREEN}✅ $check_name passed${NC}"
         ((PASSED_CHECKS++))
         echo ""
         cd "$PROJECT_ROOT"
+        rm -f "$temp_output" 2>/dev/null || true
         return 0
     else
-        echo -e "${RED}❌ $check_name failed${NC}"
+        exit_code=$?
+        echo -e "${RED}❌ $check_name failed (exit code: $exit_code)${NC}"
         ((FAILED_CHECKS++))
 
         # Show relevant error output
-        if [ -f /tmp/unified_validation_output ]; then
-            echo -e "${YELLOW}Error output:${NC}"
-            head -10 /tmp/unified_validation_output
+        if [ -f "$temp_output" ]; then
+            echo -e "${YELLOW}Error output (last 20 lines):${NC}"
+            tail -20 "$temp_output" 2>/dev/null || echo "Could not read error output"
+            echo ""
+            
+            # In CI mode, show more details
+            if [[ "$MODE" == "ci" ]]; then
+                echo -e "${YELLOW}Full error output:${NC}"
+                cat "$temp_output" 2>/dev/null || echo "Could not read full error output"
+                echo ""
+            fi
+        else
+            echo -e "${YELLOW}No error output file found${NC}"
             echo ""
         fi
 
         cd "$PROJECT_ROOT"
+        rm -f "$temp_output" 2>/dev/null || true
+        
         if [[ "$required" == "true" ]]; then
-            return 1
+            echo -e "${RED}🚨 Critical check failed: $check_name${NC}"
+            echo -e "${RED}🚨 Stopping validation due to critical failure${NC}"
+            return $exit_code
         else
             echo -e "${YELLOW}⚠️  Continuing despite failure (non-critical)${NC}"
             echo ""
@@ -183,22 +215,43 @@ if should_run_frontend; then
     echo -e "${CYAN}--- Frontend (React/TypeScript) ---${NC}"
 
     # Check if package.json exists
-    run_check "Frontend Package Configuration" "test -f package.json"
+    if ! run_check "Frontend Package Configuration" "test -f package.json"; then
+        echo -e "${RED}🚨 Cannot proceed without package.json${NC}"
+        exit 1
+    fi
 
-    # Install dependencies if needed
+    # Install dependencies if needed (only in local mode)
     if [[ ! -d "node_modules" ]]; then
-        echo -e "${YELLOW}📦 Installing frontend dependencies...${NC}"
-        npm install
+        if [[ "$MODE" == "ci" ]]; then
+            echo -e "${RED}🚨 CI mode expects dependencies to be pre-installed${NC}"
+            echo -e "${RED}🚨 node_modules directory not found${NC}"
+            exit 1
+        else
+            echo -e "${YELLOW}📦 Installing frontend dependencies...${NC}"
+            if ! npm install; then
+                echo -e "${RED}🚨 Failed to install frontend dependencies${NC}"
+                exit 1
+            fi
+        fi
     fi
 
     # TypeScript compilation check
-    run_check "TypeScript Compilation" "npx tsc --noEmit" "true"
+    if ! run_check "TypeScript Compilation" "npx tsc --noEmit" "true"; then
+        echo -e "${RED}🚨 TypeScript compilation failed - cannot continue${NC}"
+        exit 1
+    fi
 
     # Build check
-    run_check "Frontend Build" "npm run build" "true"
+    if ! run_check "Frontend Build" "npm run build" "true"; then
+        echo -e "${RED}🚨 Frontend build failed - cannot continue${NC}"
+        exit 1
+    fi
 
     # Run frontend tests
-    run_check "Frontend Test Suite" "npm test -- --passWithNoTests --watchAll=false" "true"
+    if ! run_check "Frontend Test Suite" "npm test -- --passWithNoTests --watchAll=false" "true"; then
+        echo -e "${RED}🚨 Frontend tests failed - cannot continue${NC}"
+        exit 1
+    fi
 
     # Lint check (simplified for CI stability)
     if [[ "$MODE" == "ci" ]]; then
@@ -214,14 +267,20 @@ if should_run_backend; then
     echo -e "${CYAN}--- Backend (Python/Azure Functions) ---${NC}"
 
     # Check Python environment
-    check_python_env
+    if ! check_python_env; then
+        echo -e "${RED}🚨 Python environment check failed${NC}"
+        exit 1
+    fi
 
     # Check if requirements.txt exists
-    run_check "Backend Package Configuration" "test -f requirements.txt" "true" "api"
+    if ! run_check "Backend Package Configuration" "test -f requirements.txt" "true" "api"; then
+        echo -e "${RED}🚨 Backend requirements.txt not found${NC}"
+        exit 1
+    fi
 
     # Dependency validation - ensure CI requirements contain all runtime dependencies
     if [[ "$MODE" == "ci" || "$MODE" == "strict" ]]; then
-        run_check "Dependency Synchronization Check" "
+        if ! run_check "Dependency Synchronization Check" "
             echo 'Validating CI dependencies against runtime imports...' &&
             python3 -c \"
 import ast
@@ -303,7 +362,10 @@ if missing_in_minimal:
 else:
     print('✅ All runtime dependencies are present in CI requirements')
 \"
-        " "true" "api"
+        " "true" "api"; then
+            echo -e "${RED}🚨 Dependency synchronization check failed${NC}"
+            exit 1
+        fi
     fi
 
     # Python linting
@@ -312,7 +374,7 @@ else:
     # Run backend tests with proper environment
     if [[ "$MODE" == "ci" ]]; then
         # In CI mode, simulate CI environment by using requirements-minimal.txt
-        run_check "Backend Test Suite (CI Dependencies)" "
+        if ! run_check "Backend Test Suite (CI Dependencies)" "
             echo 'Testing with CI dependency set (requirements-minimal.txt)...' &&
             # Create temporary venv for CI simulation
             python3 -m venv .ci_test_env &&
@@ -322,9 +384,15 @@ else:
             TESTING_MODE=true python3 -m pytest --cov=. --cov-report=xml --cov-report=term-missing -v &&
             deactivate &&
             rm -rf .ci_test_env
-        " "true" "api"
+        " "true" "api"; then
+            echo -e "${RED}🚨 Backend tests failed in CI mode${NC}"
+            exit 1
+        fi
     else
-        run_check "Backend Test Suite" "TESTING_MODE=true python3 -m pytest -v" "true" "api"
+        if ! run_check "Backend Test Suite" "TESTING_MODE=true python3 -m pytest -v" "true" "api"; then
+            echo -e "${RED}🚨 Backend tests failed${NC}"
+            exit 1
+        fi
     fi
 fi
 
@@ -363,7 +431,10 @@ fi
 
 # Cross-Platform Compatibility Validations
 echo -e "${BLUE}=== Cross-Platform Compatibility ===${NC}"
-run_check "Cross-Platform Git Tracking" "./scripts/cross-platform-validation.sh" "true"
+if ! run_check "Cross-Platform Git Tracking" "./scripts/cross-platform-validation.sh" "true"; then
+    echo -e "${RED}🚨 Cross-platform validation failed${NC}"
+    exit 1
+fi
 
 # E2E Validations (when requested)
 if should_run_e2e; then

@@ -423,6 +423,7 @@ python -m pytest
 ### Investigation Progress
 
 **✅ COMPLETED:**
+
 - Analyzed CI/CD error log and traced failure source
 - Identified output stream contamination in `determine_docker_compose_config`
 - Confirmed local E2E validation gaps (no CI environment simulation)
@@ -433,12 +434,14 @@ python -m pytest
 - Updated validation pipeline to use comprehensive testing
 
 **📁 FILES MODIFIED:**
+
 - `scripts/e2e-setup-enhanced.sh` - Fixed output stream contamination
 - `scripts/validate-e2e-comprehensive.sh` - New comprehensive validation
 - `scripts/validate-e2e.sh` - Updated to use comprehensive validation
 - `scripts/unified-validation.sh` - Integrated comprehensive E2E validation
 
 **🔧 TECHNICAL FIXES:**
+
 - Redirected all logging to stderr in `determine_docker_compose_config`
 - Added filename validation to prevent corrupted output
 - Added Docker Compose file existence validation
@@ -448,6 +451,7 @@ python -m pytest
 ### Remaining Work
 
 **🚀 PENDING (Next Session):**
+
 - [ ] Run full local validation with Docker available
 - [ ] Test Docker Compose file selection logic comprehensively
 - [ ] Validate Playwright and E2E test structure
@@ -457,6 +461,7 @@ python -m pytest
 - [ ] Document long-term recommendations for preventing similar issues
 
 **📊 VALIDATION PIPELINE IMPROVEMENTS:**
+
 - [ ] Test all E2E setup script functions in isolation
 - [ ] Validate Docker Compose configuration selection
 - [ ] Ensure CI environment parity in local testing
@@ -464,6 +469,7 @@ python -m pytest
 - [ ] Test script error handling and recovery
 
 **📚 DOCUMENTATION UPDATES:**
+
 - [ ] Update E2E testing documentation
 - [ ] Document new validation approach
 - [ ] Add troubleshooting guide for CI/CD issues

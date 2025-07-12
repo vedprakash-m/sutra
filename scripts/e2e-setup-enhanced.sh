@@ -188,14 +188,14 @@ main() {
 
     # Step 1: Determine configuration
     COMPOSE_FILE=$(determine_docker_compose_config)
-    
+
     # Validate that we got a clean filename
     if [[ ! "$COMPOSE_FILE" =~ ^docker-compose\..*\.yml$ ]]; then
         echo -e "${RED}❌ Failed to determine Docker Compose configuration${NC}"
         echo -e "${RED}   Got: '$COMPOSE_FILE'${NC}"
         exit 1
     fi
-    
+
     log_with_time "Using Docker Compose configuration: $COMPOSE_FILE"
 
     # Validate that the compose file exists

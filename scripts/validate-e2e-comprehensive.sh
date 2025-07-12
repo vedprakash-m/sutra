@@ -35,20 +35,20 @@ log_with_time() {
 cleanup_validation() {
     echo -e "${BLUE}🧹 Cleaning up validation environment...${NC}"
     rm -rf "$TEMP_DIR" 2>/dev/null || true
-    
+
     # Stop any containers that might be running from validation
     docker compose -f docker-compose.e2e-no-cosmos.yml down --remove-orphans --volumes >/dev/null 2>&1 || true
     docker compose -f docker-compose.e2e-arm64.yml down --remove-orphans --volumes >/dev/null 2>&1 || true
-    
+
     echo -e "${GREEN}✅ Validation cleanup completed${NC}"
 }
 
 # Function to validate script output parsing
 validate_script_output_parsing() {
     echo -e "${BLUE}🔍 Validating script output parsing...${NC}"
-    
+
     mkdir -p "$TEMP_DIR"
-    
+
     # Create a test version of the determine_docker_compose_config function
     cat > "$TEMP_DIR/test_function.sh" << 'EOF'
 #!/bin/bash
@@ -111,7 +111,7 @@ EOF
     # Test the function
     if bash "$TEMP_DIR/test_function.sh" > "$TEMP_DIR/output.log" 2>&1; then
         echo -e "${GREEN}✅ Script output parsing: Clean${NC}"
-        
+
         # Verify the actual output
         if grep -q "RESULT: \[docker-compose\..*\.yml\]" "$TEMP_DIR/output.log"; then
             echo -e "${GREEN}✅ Output format validation: Passed${NC}"
@@ -130,7 +130,7 @@ EOF
 # Function to validate Docker Compose file selection logic
 validate_compose_file_selection() {
     echo -e "${BLUE}🐳 Validating Docker Compose file selection...${NC}"
-    
+
     # Test CI environment detection
     echo -e "${CYAN}Testing CI environment detection...${NC}"
     if CI=true bash -c 'source scripts/e2e-setup-enhanced.sh; determine_docker_compose_config' 2>/dev/null | grep -q "docker-compose.e2e-no-cosmos.yml"; then
@@ -139,7 +139,7 @@ validate_compose_file_selection() {
         echo -e "${RED}❌ CI environment: Wrong file selected${NC}"
         return 1
     fi
-    
+
     # Test ARM64 detection
     echo -e "${CYAN}Testing ARM64 architecture detection...${NC}"
     local current_arch=$(uname -m)
@@ -158,17 +158,17 @@ validate_compose_file_selection() {
 # Function to validate Docker Compose files exist and are valid
 validate_compose_files() {
     echo -e "${BLUE}📋 Validating Docker Compose files...${NC}"
-    
+
     local files=(
         "docker-compose.yml"
         "docker-compose.e2e-no-cosmos.yml"
         "docker-compose.e2e-arm64.yml"
     )
-    
+
     for file in "${files[@]}"; do
         if [ -f "$file" ]; then
             echo -e "${GREEN}✅ File exists: $file${NC}"
-            
+
             # Validate syntax
             if docker compose -f "$file" config >/dev/null 2>&1; then
                 echo -e "${GREEN}✅ Valid syntax: $file${NC}"
@@ -187,20 +187,20 @@ validate_compose_files() {
 # Function to validate E2E setup script execution (dry run)
 validate_e2e_setup_dryrun() {
     echo -e "${BLUE}🧪 Validating E2E setup script (dry run)...${NC}"
-    
+
     # Create a modified version that doesn't actually start containers
     mkdir -p "$TEMP_DIR"
-    
+
     # Copy the script and modify it for dry run
     cp scripts/e2e-setup-enhanced.sh "$TEMP_DIR/e2e-setup-dryrun.sh"
-    
+
     # Patch the script to skip actual Docker operations
     sed -i.bak 's/docker compose -f "$compose_file" build --no-cache/echo "DRY RUN: docker compose -f $compose_file build --no-cache"/' "$TEMP_DIR/e2e-setup-dryrun.sh" 2>/dev/null || \
     sed -i'.bak' 's/docker compose -f "$compose_file" build --no-cache/echo "DRY RUN: docker compose -f $compose_file build --no-cache"/' "$TEMP_DIR/e2e-setup-dryrun.sh"
-    
+
     sed -i.bak 's/docker compose -f "$compose_file" up -d/echo "DRY RUN: docker compose -f $compose_file up -d"/' "$TEMP_DIR/e2e-setup-dryrun.sh" 2>/dev/null || \
     sed -i'.bak' 's/docker compose -f "$compose_file" up -d/echo "DRY RUN: docker compose -f $compose_file up -d"/' "$TEMP_DIR/e2e-setup-dryrun.sh"
-    
+
     # Run the dry run version
     if timeout 30 bash "$TEMP_DIR/e2e-setup-dryrun.sh" > "$TEMP_DIR/dryrun.log" 2>&1; then
         echo -e "${GREEN}✅ E2E setup script: Dry run successful${NC}"
@@ -215,20 +215,20 @@ validate_e2e_setup_dryrun() {
 # Function to simulate CI environment
 validate_ci_environment_simulation() {
     echo -e "${BLUE}🤖 Validating CI environment simulation...${NC}"
-    
+
     # Test with CI environment variables set
     export CI=true
     export RUNNER_OS=Linux
     export RUNNER_ARCH=X64
-    
+
     # Test script behavior in CI mode
     mkdir -p "$TEMP_DIR/ci_test"
     cd "$TEMP_DIR/ci_test"
-    
+
     # Copy necessary files
     cp -r "$PROJECT_ROOT/scripts" .
     cp "$PROJECT_ROOT"/docker-compose*.yml .
-    
+
     # Test the determine_docker_compose_config function in CI mode
     if bash -c 'source scripts/e2e-setup-enhanced.sh; determine_docker_compose_config' 2>/dev/null | grep -q "docker-compose.e2e-no-cosmos.yml"; then
         echo -e "${GREEN}✅ CI simulation: Correct behavior${NC}"
@@ -236,7 +236,7 @@ validate_ci_environment_simulation() {
         echo -e "${RED}❌ CI simulation: Incorrect behavior${NC}"
         return 1
     fi
-    
+
     # Clean up CI environment variables
     unset CI RUNNER_OS RUNNER_ARCH
     cd "$PROJECT_ROOT"
@@ -245,12 +245,12 @@ validate_ci_environment_simulation() {
 # Function to validate Playwright test structure
 validate_playwright_tests() {
     echo -e "${BLUE}🎭 Validating Playwright test structure...${NC}"
-    
+
     if [ ! -d "tests/e2e" ]; then
         echo -e "${RED}❌ E2E tests directory missing${NC}"
         return 1
     fi
-    
+
     # Check for test files
     if find tests/e2e -name "*.spec.ts" | head -1 >/dev/null; then
         echo -e "${GREEN}✅ Playwright test files found${NC}"
@@ -258,7 +258,7 @@ validate_playwright_tests() {
         echo -e "${RED}❌ No Playwright test files found${NC}"
         return 1
     fi
-    
+
     # Check Playwright configuration
     if [ -f "playwright.config.ts" ]; then
         echo -e "${GREEN}✅ Playwright configuration exists${NC}"
@@ -271,10 +271,10 @@ validate_playwright_tests() {
 # Main validation execution
 main() {
     log_with_time "Starting comprehensive E2E validation..."
-    
+
     # Set up trap for cleanup
     trap cleanup_validation EXIT INT TERM
-    
+
     case "$VALIDATION_MODE" in
         "quick")
             echo -e "${CYAN}Running quick validation...${NC}"
@@ -288,7 +288,7 @@ main() {
             validate_compose_files
             validate_playwright_tests
             validate_ci_environment_simulation
-            
+
             # Only run dry run if Docker is available
             if command -v docker >/dev/null 2>&1; then
                 validate_e2e_setup_dryrun
@@ -302,7 +302,7 @@ main() {
             exit 1
             ;;
     esac
-    
+
     log_with_time "Comprehensive E2E validation completed successfully!"
     echo ""
     echo -e "${GREEN}🎉 All E2E validations passed${NC}"

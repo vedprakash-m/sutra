@@ -1,33 +1,23 @@
 #!/bin/bash
 
 # E2E Validation Script
-# Provides comprehensive validation of E2E environment setup
-# Ensures all components are properly configured before running tests
+# Wrapper that calls the comprehensive E2E validation
+# Maintains backward compatibility while providing enhanced validation
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# Get the directory of this script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Configuration
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VALIDATION_MODE=${1:-"full"}
-TIMEOUT_SECONDS=60
-
-echo -e "${BLUE}🔍 E2E Environment Validation${NC}"
-echo -e "${CYAN}Project: Sutra Multi-LLM Prompt Studio${NC}"
-echo -e "${CYAN}Mode: $VALIDATION_MODE${NC}"
-echo ""
-
-cd "$PROJECT_ROOT"
-
-# Validation counters
-TOTAL_CHECKS=0
+# Check if comprehensive validation exists
+if [ -f "$SCRIPT_DIR/validate-e2e-comprehensive.sh" ]; then
+    # Use the comprehensive validation
+    exec "$SCRIPT_DIR/validate-e2e-comprehensive.sh" "$@"
+else
+    echo "❌ Comprehensive E2E validation script not found"
+    echo "Expected: $SCRIPT_DIR/validate-e2e-comprehensive.sh"
+    exit 1
+fi
 PASSED_CHECKS=0
 FAILED_CHECKS=0
 ISSUES_FOUND=()

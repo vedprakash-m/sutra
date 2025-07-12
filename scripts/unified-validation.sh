@@ -172,21 +172,15 @@ run_e2e_validation() {
 
     # If in CI or strict mode, also validate E2E setup works
     if [[ "$MODE" == "ci" || "$MODE" == "strict" ]]; then
-        echo -e "${BLUE}🔧 Testing E2E setup process...${NC}"
+        echo -e "${BLUE}🔧 Testing E2E setup process comprehensively...${NC}"
 
-        # Test that E2E setup script runs without errors
-        if timeout 60 ./scripts/e2e-setup.sh > /tmp/e2e_setup_test.log 2>&1; then
-            echo -e "${GREEN}✅ E2E setup process: Success${NC}"
-
-            # Cleanup after test
-            ./scripts/e2e-cleanup.sh > /dev/null 2>&1 || true
+        # Run comprehensive E2E validation that simulates CI environment
+        if ./scripts/validate-e2e-comprehensive.sh full > /tmp/e2e_comprehensive_test.log 2>&1; then
+            echo -e "${GREEN}✅ Comprehensive E2E validation: Success${NC}"
         else
-            echo -e "${RED}❌ E2E setup process: Failed${NC}"
-            echo -e "${YELLOW}E2E setup log:${NC}"
-            head -20 /tmp/e2e_setup_test.log
-
-            # Cleanup after test
-            ./scripts/e2e-cleanup.sh > /dev/null 2>&1 || true
+            echo -e "${RED}❌ Comprehensive E2E validation: Failed${NC}"
+            echo -e "${YELLOW}E2E comprehensive validation log:${NC}"
+            tail -30 /tmp/e2e_comprehensive_test.log
             return 1
         fi
     fi

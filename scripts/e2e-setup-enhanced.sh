@@ -60,33 +60,31 @@ check_service_health() {
 determine_docker_compose_config() {
     local arch=$(uname -m)
     local os=$(uname -s)
+    local config_file=""
 
-    echo -e "${BLUE}🔍 Detecting system architecture and capabilities...${NC}"
-    log_with_time "System: $os, Architecture: $arch"
+    # Log to stderr to avoid contaminating return value
+    echo -e "${BLUE}🔍 Detecting system architecture and capabilities...${NC}" >&2
+    log_with_time "System: $os, Architecture: $arch" >&2
 
     # Check if we're in CI environment
     if [ -n "$CI" ]; then
-        echo -e "${CYAN}📊 CI Environment detected${NC}"
-        echo "docker-compose.e2e-no-cosmos.yml"
-        return 0
-    fi
-
+        echo -e "${CYAN}📊 CI Environment detected${NC}" >&2
+        config_file="docker-compose.e2e-no-cosmos.yml"
     # Check if Cosmos DB emulator is supported
-    if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then
-        echo -e "${YELLOW}⚠️  ARM64 detected - using no-cosmos configuration${NC}"
-        echo "docker-compose.e2e-no-cosmos.yml"
-        return 0
-    fi
-
+    elif [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then
+        echo -e "${YELLOW}⚠️  ARM64 detected - using no-cosmos configuration${NC}" >&2
+        config_file="docker-compose.e2e-no-cosmos.yml"
     # Check if Docker has sufficient resources for full stack
-    if docker info | grep -q "Total Memory.*[0-9]G"; then
-        echo -e "${GREEN}✅ Sufficient Docker resources for full stack${NC}"
-        echo "docker-compose.e2e-arm64.yml"
-        return 0
+    elif docker info 2>/dev/null | grep -q "Total Memory.*[0-9]G"; then
+        echo -e "${GREEN}✅ Sufficient Docker resources for full stack${NC}" >&2
+        config_file="docker-compose.e2e-arm64.yml"
+    else
+        echo -e "${YELLOW}⚠️  Limited resources - using optimized configuration${NC}" >&2
+        config_file="docker-compose.e2e-no-cosmos.yml"
     fi
 
-    echo -e "${YELLOW}⚠️  Limited resources - using optimized configuration${NC}"
-    echo "docker-compose.e2e-no-cosmos.yml"
+    # Return only the filename to stdout
+    echo "$config_file"
 }
 
 # Function to cleanup existing resources
@@ -190,7 +188,23 @@ main() {
 
     # Step 1: Determine configuration
     COMPOSE_FILE=$(determine_docker_compose_config)
+    
+    # Validate that we got a clean filename
+    if [[ ! "$COMPOSE_FILE" =~ ^docker-compose\..*\.yml$ ]]; then
+        echo -e "${RED}❌ Failed to determine Docker Compose configuration${NC}"
+        echo -e "${RED}   Got: '$COMPOSE_FILE'${NC}"
+        exit 1
+    fi
+    
     log_with_time "Using Docker Compose configuration: $COMPOSE_FILE"
+
+    # Validate that the compose file exists
+    if [ ! -f "$COMPOSE_FILE" ]; then
+        echo -e "${RED}❌ Docker Compose file not found: $COMPOSE_FILE${NC}"
+        echo -e "${YELLOW}Available files:${NC}"
+        ls -la docker-compose*.yml 2>/dev/null || echo "No Docker Compose files found"
+        exit 1
+    fi
 
     # Step 2: Cleanup existing resources
     cleanup_existing_resources

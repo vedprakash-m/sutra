@@ -128,7 +128,7 @@ fi
 cd api
 if ! python3 -c "import azure.functions" 2>/dev/null; then
     echo "Installing Python dependencies..."
-    pip install -r requirements-minimal.txt
+    python3 -m pip install -r requirements-minimal.txt
     log_success "Python dependencies installed"
 else
     run_test "Python dependencies" "python3 -c 'import azure.functions, azure.cosmos, pydantic'"
@@ -426,7 +426,7 @@ if command -v npm &> /dev/null; then
 fi
 
 cd api
-if command -v safety &> /dev/null || pip install safety > /dev/null 2>&1; then
+if command -v safety &> /dev/null || python3 -m pip install safety > /dev/null 2>&1; then
     # Python security check with known vulnerability filtering
     echo "Running Python security check (filtering known acceptable risks)..."
     if safety check > /tmp/safety_output.log 2>&1; then

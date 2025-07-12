@@ -64,14 +64,12 @@ npm ci --prefer-offline --no-audit
 
 # Simulate GitHub Actions Python setup
 echo -e "${CYAN}🐍 Installing backend dependencies...${NC}"
-cd api
-python3 -m pip install --upgrade pip
-pip install -r requirements.txt
+cd api    python3 -m pip install --upgrade pip
+    python3 -m pip install -r requirements.txt
 cd ..
 
 # Simulate pre-commit hooks
-echo -e "${CYAN}🪝 Installing and running pre-commit hooks...${NC}"
-pip install pre-commit
+echo -e "${CYAN}🪝 Installing and running pre-commit hooks...${NC}"    python3 -m pip install pre-commit
 pre-commit run --all-files
 
 # Run the unified validation in CI mode

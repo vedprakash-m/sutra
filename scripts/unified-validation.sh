@@ -46,7 +46,7 @@ run_check() {
     ((TOTAL_CHECKS++))
 
     echo -e "${BLUE}🔍 $check_name${NC}"
-    
+
     # Debug information for CI
     if [[ "$MODE" == "ci" ]]; then
         echo -e "${CYAN}  → Command: $command${NC}"
@@ -79,7 +79,7 @@ run_check() {
             echo -e "${YELLOW}Error output (last 20 lines):${NC}"
             tail -20 "$temp_output" 2>/dev/null || echo "Could not read error output"
             echo ""
-            
+
             # In CI mode, show more details
             if [[ "$MODE" == "ci" ]]; then
                 echo -e "${YELLOW}Full error output:${NC}"
@@ -93,7 +93,7 @@ run_check() {
 
         cd "$PROJECT_ROOT"
         rm -f "$temp_output" 2>/dev/null || true
-        
+
         if [[ "$required" == "true" ]]; then
             echo -e "${RED}🚨 Critical check failed: $check_name${NC}"
             echo -e "${RED}🚨 Stopping validation due to critical failure${NC}"

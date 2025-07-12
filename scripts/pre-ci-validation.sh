@@ -62,7 +62,7 @@ echo -e "${BLUE}🔧 Simulating CI Environment Setup...${NC}"
 echo -e "${CYAN}📦 Installing frontend dependencies (npm ci)...${NC}"
 npm ci --prefer-offline --no-audit
 
-# Simulate GitHub Actions Python setup  
+# Simulate GitHub Actions Python setup
 echo -e "${CYAN}🐍 Installing backend dependencies...${NC}"
 cd api
 python3 -m pip install --upgrade pip

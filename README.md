@@ -211,11 +211,13 @@ If CI/CD pipeline fails:
 4. **Quick Fix**: Ensure dependencies are synchronized with `npm ci && npm run build`
 
 The project includes enhanced validation that catches CI issues before they occur:
+
 - **Pre-commit hooks**: Validate code quality and formatting
-- **Pre-push validation**: Full CI simulation for main branch, quick checks for features  
+- **Pre-push validation**: Full CI simulation for main branch, quick checks for features
 - **Cross-platform compatibility**: Ensure code works across development environments
-docker-compose up -d
-```
+  docker-compose up -d
+
+````
 
 ### **✅ Testing & Validation**
 
@@ -234,7 +236,7 @@ npm run e2e:cleanup       # Clean up E2E resources
 
 # E2E Environment Management
 npm run e2e:logs          # View service logs
-```
+````
 
 ### **🔧 Code Quality & Git Hooks Setup**
 

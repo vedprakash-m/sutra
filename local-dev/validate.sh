@@ -59,6 +59,7 @@ check_dependencies() {
     # Check Docker (critical for E2E tests)
     if ! command -v docker &> /dev/null; then
         print_error "Docker is not installed (required for E2E tests)"
+        print_error "This will cause CI/CD E2E tests to fail"
         print_error "Please install Docker Desktop"
         exit 1
     fi
@@ -66,6 +67,7 @@ check_dependencies() {
     # Check if Docker daemon is running
     if ! docker info &> /dev/null; then
         print_error "Docker daemon is not running"
+        print_error "This will cause CI/CD E2E tests to fail"
         print_error "Please start Docker Desktop"
         exit 1
     fi
@@ -682,6 +684,14 @@ validate_docker_builds() {
 
     # Check Azure Functions Dockerfile issues
     print_status "Validating Azure Functions container setup..."
+
+    # CRITICAL: Check if Dockerfile.dev exists first
+    if [ ! -f "api/Dockerfile.dev" ]; then
+        print_error "api/Dockerfile.dev not found but required by Docker Compose files"
+        print_error "This will cause CI/CD E2E build failures"
+        print_error "Create api/Dockerfile.dev for development environment"
+        return 1
+    fi
 
     if [ -f "api/Dockerfile.dev" ]; then
         # Check for incorrect manual CMD usage in Azure Functions container

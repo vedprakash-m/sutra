@@ -334,6 +334,19 @@ else
     echo -e "${BLUE}🔗 Stage 7: E2E Environment Check (Essential for CI/CD)${NC}"
     echo "--------------------------------------------------------"
 
+    # CRITICAL: Run comprehensive Docker configuration validation first
+    echo "Running comprehensive Docker configuration validation..."
+    if [ -f "scripts/validate-docker-config.sh" ]; then
+        if bash scripts/validate-docker-config.sh; then
+            log_success "Docker configuration validation passed"
+        else
+            log_error "Docker configuration validation failed - this will cause CI/CD failures"
+            ((ISSUES_FOUND++))
+        fi
+    else
+        log_warning "Docker configuration validation script not found"
+    fi
+
     # CRITICAL: Check required E2E files exist before Docker validation
     echo "Checking required E2E files..."
     MISSING_E2E_FILES=false

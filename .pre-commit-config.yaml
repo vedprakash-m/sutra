@@ -123,6 +123,13 @@ repos:
         files: api/requirements.*\.txt$
         pass_filenames: false
 
+      - id: docker-config-validation
+        name: Docker Configuration Validation
+        entry: bash -c 'if [ -f "scripts/validate-docker-config.sh" ]; then scripts/validate-docker-config.sh; else echo "⚠️  Docker validation script not found - skipping"; fi'
+        language: system
+        files: (Dockerfile.*|docker-compose.*\.yml|api/Dockerfile.*)
+        pass_filenames: false
+
   # End-of-file fixer runs last to avoid conflicts with Bicep JSON generation
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

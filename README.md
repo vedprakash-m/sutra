@@ -95,9 +95,11 @@ Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how tea
 ### 🔧 **Development & Validation**
 
 - **🧪 Comprehensive Testing**: 967 total tests (508 frontend + 459 backend) with 98.7% coverage
-- **🔄 Unified Validation**: Full-stack validation with CI/CD environment simulation
+- **🔄 Unified Validation**: Full-stack validation with 100% CI/CD environment parity
+- **🐳 Docker Integration**: Complete container orchestration with health checks and monitoring
 - **📦 Dependency Management**: Synchronized requirements across local and CI environments
 - **🛠️ Enhanced Tooling**: Automatic dependency gap detection and resolution
+- **⚡ Pre-Commit Validation**: Docker configuration validation prevents CI/CD failures
 - **⚡ Pre-commit Validation**: Catch issues before they reach CI/CD pipeline
 
 ### **🔧 Enhanced Validation Process**
@@ -163,6 +165,11 @@ npm run dev
 git clone https://github.com/vedprakashmishra/sutra.git
 cd sutra
 
+# Prerequisites (Required for E2E testing and CI/CD parity)
+# - Node.js 18+
+# - Python 3.12+
+# - Docker Desktop (for E2E testing)
+
 # Install dependencies
 npm install
 cd api && pip install -r requirements.txt && cd ..
@@ -192,6 +199,12 @@ npm run dev:local
 
 # Quick validation check
 ./scripts/unified-validation.sh local core
+
+# Validate Docker configuration (prevents CI/CD failures)
+./scripts/validate-docker-config.sh
+
+# Complete E2E environment validation
+./scripts/validate-e2e-environment.sh
 
 # Simulate CI environment locally (before pushing to main)
 ./scripts/pre-ci-validation.sh

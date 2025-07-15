@@ -4,6 +4,8 @@ import {
   convertObjectToSnakeCase,
 } from "../utils/fieldConverter";
 import { getAppConfig } from "../config";
+import { apiCache, CacheTTL } from "./apiCache";
+import { performanceMonitor } from "./performanceMonitor";
 
 const getApiBaseUrl = () => {
   // Handle test environment where window might not be available
@@ -114,6 +116,27 @@ class ApiService {
     return headers;
   }
 
+  // Determine cache TTL based on endpoint
+  private getCacheTTL(endpoint: string): number {
+    // Static configuration data - cache for longer
+    if (endpoint.includes('/admin/') || endpoint.includes('/config/')) {
+      return CacheTTL.VERY_LONG;
+    }
+    
+    // Analytics data - medium cache
+    if (endpoint.includes('/analytics/') || endpoint.includes('/metrics/')) {
+      return CacheTTL.MEDIUM;
+    }
+    
+    // User-specific data - short cache
+    if (endpoint.includes('/prompts/') || endpoint.includes('/collections/') || endpoint.includes('/playbooks/')) {
+      return CacheTTL.SHORT;
+    }
+    
+    // Default cache duration
+    return CacheTTL.MEDIUM;
+  }
+
   // Enhanced error handling for direct access with field conversion
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
@@ -142,7 +165,8 @@ class ApiService {
     return convertObjectToCamelCase(responseData) as T;
   }
 
-  async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+  async get<T>(endpoint: string, params?: Record<string, any>, options?: { cache?: boolean, cacheTTL?: number }): Promise<T> {
+    const startTime = performance.now();
     const url = new URL(`${this.baseUrl}${endpoint}`);
 
     if (params) {
@@ -153,6 +177,20 @@ class ApiService {
           url.searchParams.append(key, String(value));
         }
       });
+    }
+
+    // Check cache if caching is enabled (default: true for GET requests)
+    const shouldCache = options?.cache !== false;
+    const cacheKey = `GET:${url.toString()}`;
+    
+    if (shouldCache) {
+      const cachedData = apiCache.get<T>(cacheKey);
+      if (cachedData) {
+        const duration = performance.now() - startTime;
+        performanceMonitor.recordAPICall(endpoint, 'GET', duration, 200, { cached: true });
+        console.log(`📦 Cache hit for ${endpoint}`);
+        return cachedData;
+      }
     }
 
     const headers = await this.getHeaders();
@@ -174,11 +212,47 @@ class ApiService {
     }
 
     const response = await fetch(url.toString(), fetchOptions);
+    const data = await this.handleResponse<T>(response);
 
-    return this.handleResponse<T>(response);
+    const duration = performance.now() - startTime;
+    
+    // Record API performance
+    const responseSize = response.headers.get('content-length');
+    performanceMonitor.recordAPICall(
+      endpoint, 
+      'GET', 
+      duration, 
+      response.status, 
+      { 
+        cached: false,
+        size: responseSize ? parseInt(responseSize) : undefined
+      }
+    );
+
+    // Cache the response if caching is enabled
+    if (shouldCache) {
+      const ttl = options?.cacheTTL || this.getCacheTTL(endpoint);
+      apiCache.set(cacheKey, data, ttl);
+      console.log(`💾 Cached response for ${endpoint} (TTL: ${ttl}ms)`);
+    }
+
+    return data;
+  }
+
+  // Cache invalidation helper
+  private invalidateCache(endpoint: string): void {
+    // Simple cache invalidation - remove all entries with similar paths
+    const cacheStats = apiCache.getStats();
+    console.log(`🗑️ Invalidating cache entries for ${endpoint} (before: ${cacheStats.totalEntries} entries)`);
+    
+    // For now, clear all cache on mutations to ensure data consistency
+    // In production, you'd implement more sophisticated cache invalidation
+    apiCache.clear();
   }
 
   async post<T>(endpoint: string, data?: any): Promise<T> {
+    const startTime = performance.now();
+    
     // Convert request data to snake_case before sending
     const convertedData = data ? convertObjectToSnakeCase(data) : undefined;
 
@@ -188,10 +262,20 @@ class ApiService {
       body: convertedData ? JSON.stringify(convertedData) : undefined,
     });
 
-    return this.handleResponse<T>(response);
+    const result = await this.handleResponse<T>(response);
+    
+    const duration = performance.now() - startTime;
+    performanceMonitor.recordAPICall(endpoint, 'POST', duration, response.status);
+    
+    // Invalidate cache after mutation
+    this.invalidateCache(endpoint);
+    
+    return result;
   }
 
   async put<T>(endpoint: string, data?: any): Promise<T> {
+    const startTime = performance.now();
+    
     // Convert request data to snake_case before sending
     const convertedData = data ? convertObjectToSnakeCase(data) : undefined;
 
@@ -201,16 +285,34 @@ class ApiService {
       body: convertedData ? JSON.stringify(convertedData) : undefined,
     });
 
-    return this.handleResponse<T>(response);
+    const result = await this.handleResponse<T>(response);
+    
+    const duration = performance.now() - startTime;
+    performanceMonitor.recordAPICall(endpoint, 'PUT', duration, response.status);
+    
+    // Invalidate cache after mutation
+    this.invalidateCache(endpoint);
+    
+    return result;
   }
 
   async delete<T>(endpoint: string): Promise<T> {
+    const startTime = performance.now();
+    
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "DELETE",
       headers: await this.getHeaders(),
     });
 
-    return this.handleResponse<T>(response);
+    const result = await this.handleResponse<T>(response);
+    
+    const duration = performance.now() - startTime;
+    performanceMonitor.recordAPICall(endpoint, 'DELETE', duration, response.status);
+    
+    // Invalidate cache after mutation
+    this.invalidateCache(endpoint);
+    
+    return result;
   }
 }
 

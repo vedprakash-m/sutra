@@ -1,19 +1,33 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { AuthProvider, useAuth } from "@/components/auth/UnifiedAuthProvider";
 import { apiService } from "@/services/api";
 import LoginPage from "@/components/auth/LoginPage";
 import NavBar from "@/components/layout/NavBar";
-import Dashboard from "@/components/dashboard/Dashboard";
-import PromptBuilder from "@/components/prompt/PromptBuilder";
-import CollectionsPage from "@/components/collections/CollectionsPage";
-import PlaybookBuilder from "@/components/playbooks/PlaybookBuilder";
-import PlaybookRunner from "@/components/playbooks/PlaybookRunner";
-import IntegrationsPage from "@/components/integrations/IntegrationsPage";
-import AdminPanel from "@/components/admin/AdminPanel";
+
+// Lazy load major components for better performance
+const Dashboard = React.lazy(() => import("@/components/dashboard/Dashboard"));
+const PromptBuilder = React.lazy(() => import("@/components/prompt/PromptBuilder"));
+const CollectionsPage = React.lazy(() => import("@/components/collections/CollectionsPage"));
+const PlaybookBuilder = React.lazy(() => import("@/components/playbooks/PlaybookBuilder"));
+const PlaybookRunner = React.lazy(() => import("@/components/playbooks/PlaybookRunner"));
+const IntegrationsPage = React.lazy(() => import("@/components/integrations/IntegrationsPage"));
+const AdminPanel = React.lazy(() => import("@/components/admin/AdminPanel"));
+const ForgePage = React.lazy(() => import("@/components/forge/ForgePage"));
+const AnalyticsPage = React.lazy(() => import("@/components/analytics/AnalyticsPage"));
 
 const queryClient = new QueryClient();
+
+// Loading component for lazy-loaded pages
+const PageLoader: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading page...</p>
+    </div>
+  </div>
+);
 
 function AppContent() {
   const { isAuthenticated, isLoading, getAccessToken } = useAuth();
@@ -62,17 +76,22 @@ function AppContent() {
     <div className="min-h-screen bg-gray-50">
       <NavBar />
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/prompts/new" element={<PromptBuilder />} />
-          <Route path="/prompts/:id" element={<PromptBuilder />} />
-          <Route path="/collections" element={<CollectionsPage />} />
-          <Route path="/playbooks/new" element={<PlaybookBuilder />} />
-          <Route path="/playbooks/:id" element={<PlaybookBuilder />} />
-          <Route path="/playbooks/:id/run" element={<PlaybookRunner />} />
-          <Route path="/integrations" element={<IntegrationsPage />} />
-          <Route path="/admin" element={<AdminPanel />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/prompts/new" element={<PromptBuilder />} />
+            <Route path="/prompts/:id" element={<PromptBuilder />} />
+            <Route path="/collections" element={<CollectionsPage />} />
+            <Route path="/playbooks/new" element={<PlaybookBuilder />} />
+            <Route path="/playbooks/:id" element={<PlaybookBuilder />} />
+            <Route path="/playbooks/:id/run" element={<PlaybookRunner />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/forge" element={<ForgePage />} />
+            <Route path="/forge/:projectId" element={<ForgePage />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   );

@@ -73,6 +73,19 @@ async def main(req: HttpRequest) -> HttpResponse:
         elif method == "GET" and req.url.find("/analytics") != -1:
             return await handle_get_analytics(req, user_info, budget_manager)
 
+        elif method == "POST" and req.url.find("/budget/create") != -1:
+            return await handle_create_budget_limit(req, user_info, budget_manager)
+
+        elif method == "GET" and req.url.find("/budget/status") != -1:
+            entity_id = route_params.get("entity_id", user_info["user_id"])
+            return await handle_get_budget_status(entity_id, user_info, budget_manager)
+
+        elif method == "POST" and req.url.find("/budget/override") != -1:
+            return await handle_create_admin_override(req, user_info, budget_manager)
+
+        elif method == "GET" and req.url.find("/budget/report") != -1:
+            return await handle_get_budget_report(req, user_info, budget_manager)
+
         else:
             return HttpResponse(
                 json.dumps({"error": "Invalid endpoint"}),
@@ -345,6 +358,208 @@ async def handle_get_analytics(req: HttpRequest, user_info: Dict[str, Any], budg
 
     except Exception as e:
         logging.error(f"Failed to get analytics: {e}")
+        return HttpResponse(
+            json.dumps({"error": str(e)}),
+            status_code=500,
+            headers={"Content-Type": "application/json"},
+        )
+
+
+async def handle_create_budget_limit(req: HttpRequest, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
+    """Handle budget limit creation."""
+    try:
+        request_body = req.get_json()
+
+        # Validate required fields
+        required_fields = ["name", "amount", "period", "applies_to"]
+        for field in required_fields:
+            if field not in request_body:
+                return HttpResponse(
+                    json.dumps({"error": f"Missing required field: {field}"}),
+                    status_code=400,
+                    headers={"Content-Type": "application/json"},
+                )
+
+        # Check if user has admin privileges for budget creation
+        if user_info["role"] != "admin":
+            return HttpResponse(
+                json.dumps({"error": "Admin privileges required for budget creation"}),
+                status_code=403,
+                headers={"Content-Type": "application/json"},
+            )
+
+        from shared.budget_manager import BudgetPeriod, BudgetAction
+        from decimal import Decimal
+
+        # Create budget limit
+        budget_limit = await budget_manager.create_budget_limit(
+            name=request_body["name"],
+            amount=Decimal(str(request_body["amount"])),
+            period=BudgetPeriod(request_body["period"]),
+            applies_to=request_body["applies_to"],
+            admin_user_id=user_info["user_id"],
+            threshold_percentages=request_body.get("threshold_percentages"),
+            actions={int(k): BudgetAction(v) for k, v in request_body.get("actions", {}).items()}
+        )
+
+        response_data = {
+            "success": True,
+            "budget_limit": {
+                "id": budget_limit.id,
+                "name": budget_limit.name,
+                "amount": float(budget_limit.amount),
+                "period": budget_limit.period.value,
+                "threshold_percentages": budget_limit.threshold_percentages,
+                "actions": {k: v.value if hasattr(v, 'value') else v for k, v in budget_limit.actions.items()},
+                "applies_to": budget_limit.applies_to,
+                "is_active": budget_limit.is_active,
+                "created_at": budget_limit.created_at.isoformat()
+            }
+        }
+
+        return HttpResponse(
+            json.dumps(response_data, default=str),
+            status_code=201,
+            headers={"Content-Type": "application/json"},
+        )
+
+    except Exception as e:
+        logging.error(f"Failed to create budget limit: {e}")
+        return HttpResponse(
+            json.dumps({"error": str(e)}),
+            status_code=500,
+            headers={"Content-Type": "application/json"},
+        )
+
+
+async def handle_get_budget_status(entity_id: str, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
+    """Handle budget status retrieval."""
+    try:
+        # Check permissions
+        if not await can_view_budget(user_info, entity_id):
+            return HttpResponse(
+                json.dumps({"error": "Insufficient permissions"}),
+                status_code=403,
+                headers={"Content-Type": "application/json"},
+            )
+
+        # Get budget report
+        budget_report = await budget_manager.get_budget_report(user_id=entity_id)
+
+        return HttpResponse(
+            json.dumps(budget_report, default=str),
+            status_code=200,
+            headers={"Content-Type": "application/json"},
+        )
+
+    except Exception as e:
+        logging.error(f"Failed to get budget status: {e}")
+        return HttpResponse(
+            json.dumps({"error": str(e)}),
+            status_code=500,
+            headers={"Content-Type": "application/json"},
+        )
+
+
+async def handle_create_admin_override(req: HttpRequest, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
+    """Handle admin override creation."""
+    try:
+        request_body = req.get_json()
+
+        # Validate required fields
+        required_fields = ["budget_id", "user_id", "override_type", "new_limit", "reason"]
+        for field in required_fields:
+            if field not in request_body:
+                return HttpResponse(
+                    json.dumps({"error": f"Missing required field: {field}"}),
+                    status_code=400,
+                    headers={"Content-Type": "application/json"},
+                )
+
+        # Check if user has admin privileges
+        if user_info["role"] != "admin":
+            return HttpResponse(
+                json.dumps({"error": "Admin privileges required for budget overrides"}),
+                status_code=403,
+                headers={"Content-Type": "application/json"},
+            )
+
+        from decimal import Decimal
+
+        # Create admin override
+        override = await budget_manager.create_admin_override(
+            budget_id=request_body["budget_id"],
+            user_id=request_body["user_id"],
+            admin_user_id=user_info["user_id"],
+            override_type=request_body["override_type"],
+            new_limit=Decimal(str(request_body["new_limit"])),
+            reason=request_body["reason"],
+            expires_hours=request_body.get("expires_hours")
+        )
+
+        response_data = {
+            "success": True,
+            "override": {
+                "id": override.id,
+                "budget_id": override.budget_id,
+                "user_id": override.user_id,
+                "admin_user_id": override.admin_user_id,
+                "override_type": override.override_type,
+                "original_limit": float(override.original_limit),
+                "new_limit": float(override.new_limit),
+                "reason": override.reason,
+                "expires_at": override.expires_at.isoformat() if override.expires_at else None,
+                "is_active": override.is_active,
+                "created_at": override.created_at.isoformat()
+            }
+        }
+
+        return HttpResponse(
+            json.dumps(response_data, default=str),
+            status_code=201,
+            headers={"Content-Type": "application/json"},
+        )
+
+    except Exception as e:
+        logging.error(f"Failed to create admin override: {e}")
+        return HttpResponse(
+            json.dumps({"error": str(e)}),
+            status_code=500,
+            headers={"Content-Type": "application/json"},
+        )
+
+
+async def handle_get_budget_report(req: HttpRequest, user_info: Dict[str, Any], budget_manager) -> HttpResponse:
+    """Handle budget report generation."""
+    try:
+        # Parse query parameters
+        entity_id = req.params.get("entity_id")
+        organization_id = req.params.get("organization_id")
+        period_days = int(req.params.get("period_days", 30))
+
+        # Check permissions
+        if entity_id and not await can_view_budget(user_info, entity_id):
+            return HttpResponse(
+                json.dumps({"error": "Insufficient permissions"}),
+                status_code=403,
+                headers={"Content-Type": "application/json"},
+            )
+
+        # Generate budget report
+        report = await budget_manager.get_budget_report(
+            user_id=entity_id,
+            organization_id=organization_id,
+            period_days=period_days
+        )
+
+        return HttpResponse(
+            json.dumps(report, default=str),
+            status_code=200,
+            headers={"Content-Type": "application/json"},
+        )
+
+    except Exception as e:
+        logging.error(f"Failed to generate budget report: {e}")
         return HttpResponse(
             json.dumps({"error": str(e)}),
             status_code=500,

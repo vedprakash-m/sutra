@@ -71,7 +71,44 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 mb-8">
+        <Link
+          to="/forge"
+          className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow border-2 border-indigo-200"
+        >
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-md flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-semibold text-indigo-600 truncate">
+                    🚀 Forge
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">
+                    Idea to Playbook
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </Link>
+
         <Link
           to="/prompts/new"
           className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow"

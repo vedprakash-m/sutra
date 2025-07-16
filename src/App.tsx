@@ -49,11 +49,11 @@ function AppContent() {
   useEffect(() => {
     // Initialize performance monitoring
     console.log("🔍 Initializing performance monitoring");
-    
+
     // Track page navigation
-    performanceMonitor.trackUserAction('app_load', performance.now(), {
+    performanceMonitor.trackUserAction("app_load", performance.now(), {
       path: window.location.pathname,
-      userAgent: navigator.userAgent
+      userAgent: navigator.userAgent,
     });
 
     // Set up API service token provider

@@ -591,7 +591,15 @@ export default function PRDGeneration({
     return (trueCount / 6) * 100;
   };
 
-  const getPriorityColor = (priority: string): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' => {
+  const getPriorityColor = (
+    priority: string,
+  ):
+    | "default"
+    | "secondary"
+    | "destructive"
+    | "outline"
+    | "success"
+    | "warning" => {
     switch (priority.toLowerCase()) {
       case "high":
       case "must-have":

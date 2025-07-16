@@ -72,7 +72,7 @@ interface ProjectContext {
 interface Dependency {
   name: string;
   version?: string;
-  type: 'runtime' | 'development' | 'peer';
+  type: "runtime" | "development" | "peer";
 }
 
 interface Milestone {
@@ -84,8 +84,8 @@ interface Milestone {
 
 interface Risk {
   description: string;
-  impact: 'low' | 'medium' | 'high';
-  probability: 'low' | 'medium' | 'high';
+  impact: "low" | "medium" | "high";
+  probability: "low" | "medium" | "high";
   mitigation: string;
 }
 

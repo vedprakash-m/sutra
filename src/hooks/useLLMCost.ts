@@ -4,6 +4,6 @@ export const useLLMCost = () => {
     totalCost: 0,
     addCost: (_cost: number) => {},
     resetCost: () => {},
-    trackCost: (_cost: number, _model?: string, _operation?: string) => {}
+    trackCost: (_cost: number, _model?: string, _operation?: string) => {},
   };
 };

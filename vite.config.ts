@@ -7,48 +7,52 @@ import fs from "fs";
 // CDN optimization plugin
 const cdnOptimizationPlugin = () => {
   return {
-    name: 'cdn-optimization',
+    name: "cdn-optimization",
     generateBundle(options, bundle) {
       // Generate asset manifest for CDN
       const manifest = {};
       for (const [fileName, chunk] of Object.entries(bundle)) {
-        if (chunk.type === 'asset' || chunk.type === 'chunk') {
-          const originalName = chunk.name || fileName.replace(/\.[^.]+$/, '');
+        if (chunk.type === "asset" || chunk.type === "chunk") {
+          const originalName = chunk.name || fileName.replace(/\.[^.]+$/, "");
           manifest[originalName] = fileName;
         }
       }
-      
+
       // Write manifest file
       this.emitFile({
-        type: 'asset',
-        fileName: 'asset-manifest.json',
-        source: JSON.stringify(manifest, null, 2)
+        type: "asset",
+        fileName: "asset-manifest.json",
+        source: JSON.stringify(manifest, null, 2),
       });
-      
+
       // Add performance hints to HTML
-      const indexChunk = bundle['index.html'];
-      if (indexChunk && indexChunk.type === 'asset') {
+      const indexChunk = bundle["index.html"];
+      if (indexChunk && indexChunk.type === "asset") {
         let html = indexChunk.source as string;
-        
+
         // Add resource hints
         const preloadLinks = [];
         for (const [fileName, chunk] of Object.entries(bundle)) {
-          if (chunk.type === 'chunk' && chunk.isEntry) {
-            preloadLinks.push(`<link rel="preload" href="/${fileName}" as="script">`);
+          if (chunk.type === "chunk" && chunk.isEntry) {
+            preloadLinks.push(
+              `<link rel="preload" href="/${fileName}" as="script">`,
+            );
           }
-          if (chunk.type === 'asset' && fileName.endsWith('.css')) {
-            preloadLinks.push(`<link rel="preload" href="/${fileName}" as="style">`);
+          if (chunk.type === "asset" && fileName.endsWith(".css")) {
+            preloadLinks.push(
+              `<link rel="preload" href="/${fileName}" as="style">`,
+            );
           }
         }
-        
+
         html = html.replace(
-          '<head>',
-          `<head>\n    ${preloadLinks.join('\n    ')}`
+          "<head>",
+          `<head>\n    ${preloadLinks.join("\n    ")}`,
         );
-        
+
         indexChunk.source = html;
       }
-    }
+    },
   };
 };
 
@@ -98,7 +102,7 @@ export default defineConfig(async () => {
         output: {
           // Asset naming with hash for cache busting
           assetFileNames: (assetInfo) => {
-            const info = assetInfo.name.split('.');
+            const info = assetInfo.name.split(".");
             const ext = info[info.length - 1];
             if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
               return `assets/images/[name].[hash][extname]`;
@@ -108,25 +112,25 @@ export default defineConfig(async () => {
             }
             return `assets/[name].[hash][extname]`;
           },
-          chunkFileNames: 'assets/js/[name].[hash].js',
-          entryFileNames: 'assets/js/[name].[hash].js',
+          chunkFileNames: "assets/js/[name].[hash].js",
+          entryFileNames: "assets/js/[name].[hash].js",
           // Code splitting for better caching
           manualChunks: {
-            vendor: ['react', 'react-dom'],
-            ui: ['@mui/material', '@emotion/react', '@emotion/styled'],
-            routing: ['react-router-dom'],
-            utils: ['axios', 'date-fns']
-          }
-        }
+            vendor: ["react", "react-dom"],
+            ui: ["@mui/material", "@emotion/react", "@emotion/styled"],
+            routing: ["react-router-dom"],
+            utils: ["axios", "date-fns"],
+          },
+        },
       },
       // Enable compression
-      minify: 'terser',
+      minify: "terser",
       terserOptions: {
         compress: {
           drop_console: true,
-          drop_debugger: true
-        }
-      }
+          drop_debugger: true,
+        },
+      },
     },
     define: {
       // Pass backend mode to the frontend

@@ -7,7 +7,7 @@ interface PerformanceMetric {
   name: string;
   value: number;
   timestamp: number;
-  type: 'navigation' | 'resource' | 'measure' | 'api' | 'user';
+  type: "navigation" | "resource" | "measure" | "api" | "user";
   metadata?: Record<string, any>;
 }
 
@@ -29,29 +29,29 @@ class PerformanceMonitor {
 
   constructor(reportingInterval: number = 30000) {
     this.reportingInterval = reportingInterval;
-    this.apiEndpoint = '/api/analytics/performance';
-    
+    this.apiEndpoint = "/api/analytics/performance";
+
     this.initializeObservers();
     this.startPeriodicReporting();
   }
 
   private initializeObservers(): void {
     // Performance Observer for navigation and resource timing
-    if ('PerformanceObserver' in window) {
+    if ("PerformanceObserver" in window) {
       const observer = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
           this.collectPerformanceEntry(entry);
         });
       });
 
-      observer.observe({ 
-        entryTypes: ['navigation', 'resource', 'measure', 'paint'] 
+      observer.observe({
+        entryTypes: ["navigation", "resource", "measure", "paint"],
       });
     }
 
     // Web Vitals monitoring
     this.monitorCoreWebVitals();
-    
+
     // API request monitoring
     this.interceptFetchRequests();
   }
@@ -64,30 +64,32 @@ class PerformanceMonitor {
       type: this.getMetricType(entry.entryType),
       metadata: {
         entryType: entry.entryType,
-        startTime: entry.startTime
-      }
+        startTime: entry.startTime,
+      },
     };
 
     // Add specific metadata based on entry type
-    if (entry.entryType === 'navigation') {
+    if (entry.entryType === "navigation") {
       const navEntry = entry as PerformanceNavigationTiming;
       metric.metadata = {
         ...metric.metadata,
-        domContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart,
+        domContentLoaded:
+          navEntry.domContentLoadedEventEnd -
+          navEntry.domContentLoadedEventStart,
         loadComplete: navEntry.loadEventEnd - navEntry.loadEventStart,
         firstByte: navEntry.responseStart - navEntry.requestStart,
-        domInteractive: navEntry.domInteractive - navEntry.fetchStart
+        domInteractive: navEntry.domInteractive - navEntry.fetchStart,
       };
     }
 
-    if (entry.entryType === 'resource') {
+    if (entry.entryType === "resource") {
       const resourceEntry = entry as PerformanceResourceTiming;
       metric.metadata = {
         ...metric.metadata,
         transferSize: resourceEntry.transferSize,
         encodedBodySize: resourceEntry.encodedBodySize,
         decodedBodySize: resourceEntry.decodedBodySize,
-        initiatorType: resourceEntry.initiatorType
+        initiatorType: resourceEntry.initiatorType,
       };
     }
 
@@ -95,16 +97,16 @@ class PerformanceMonitor {
     this.checkAndReport();
   }
 
-  private getMetricType(entryType: string): PerformanceMetric['type'] {
+  private getMetricType(entryType: string): PerformanceMetric["type"] {
     switch (entryType) {
-      case 'navigation':
-        return 'navigation';
-      case 'resource':
-        return 'resource';
-      case 'measure':
-        return 'measure';
+      case "navigation":
+        return "navigation";
+      case "resource":
+        return "resource";
+      case "measure":
+        return "measure";
       default:
-        return 'measure';
+        return "measure";
     }
   }
 
@@ -112,31 +114,35 @@ class PerformanceMonitor {
     // First Contentful Paint (FCP)
     const observer = new PerformanceObserver((list) => {
       list.getEntries().forEach((entry) => {
-        if (entry.name === 'first-contentful-paint') {
-          this.addMetric('FCP', entry.startTime, 'navigation', {
-            description: 'First Contentful Paint'
+        if (entry.name === "first-contentful-paint") {
+          this.addMetric("FCP", entry.startTime, "navigation", {
+            description: "First Contentful Paint",
           });
         }
       });
     });
-    
-    if (PerformanceObserver.supportedEntryTypes.includes('paint')) {
-      observer.observe({ entryTypes: ['paint'] });
+
+    if (PerformanceObserver.supportedEntryTypes.includes("paint")) {
+      observer.observe({ entryTypes: ["paint"] });
     }
 
     // Largest Contentful Paint (LCP)
-    if ('LargestContentfulPaint' in window) {
+    if ("LargestContentfulPaint" in window) {
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
-        this.addMetric('LCP', lastEntry.startTime, 'navigation', {
-          description: 'Largest Contentful Paint',
-          element: (lastEntry as any).element?.tagName
+        this.addMetric("LCP", lastEntry.startTime, "navigation", {
+          description: "Largest Contentful Paint",
+          element: (lastEntry as any).element?.tagName,
         });
       });
-      
-      if (PerformanceObserver.supportedEntryTypes.includes('largest-contentful-paint')) {
-        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+
+      if (
+        PerformanceObserver.supportedEntryTypes.includes(
+          "largest-contentful-paint",
+        )
+      ) {
+        lcpObserver.observe({ entryTypes: ["largest-contentful-paint"] });
       }
     }
 
@@ -148,73 +154,75 @@ class PerformanceMonitor {
           clsValue += entry.value;
         }
       });
-      
-      this.addMetric('CLS', clsValue, 'navigation', {
-        description: 'Cumulative Layout Shift'
+
+      this.addMetric("CLS", clsValue, "navigation", {
+        description: "Cumulative Layout Shift",
       });
     });
-    
-    if (PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
-      clsObserver.observe({ entryTypes: ['layout-shift'] });
+
+    if (PerformanceObserver.supportedEntryTypes.includes("layout-shift")) {
+      clsObserver.observe({ entryTypes: ["layout-shift"] });
     }
   }
 
   private interceptFetchRequests(): void {
     const originalFetch = window.fetch;
-    
+
     window.fetch = async (...args) => {
       const startTime = performance.now();
-      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url;
-      const method = args[1]?.method || 'GET';
-      
+      const url =
+        typeof args[0] === "string" ? args[0] : (args[0] as Request).url;
+      const method = args[1]?.method || "GET";
+
       try {
         const response = await originalFetch(...args);
         const endTime = performance.now();
         const duration = endTime - startTime;
-        
+
         // Only track API calls, not static assets
-        if (url.includes('/api/')) {
+        if (url.includes("/api/")) {
           const apiMetric: APIMetric = {
             endpoint: this.sanitizeEndpoint(url),
             method,
             duration,
             status: response.status,
             timestamp: Date.now(),
-            size: response.headers.get('content-length') ? 
-              parseInt(response.headers.get('content-length') || '0') : undefined
+            size: response.headers.get("content-length")
+              ? parseInt(response.headers.get("content-length") || "0")
+              : undefined,
           };
-          
+
           this.apiMetrics.push(apiMetric);
-          
+
           // Add as performance metric too
-          this.addMetric(`API_${method}_${response.status}`, duration, 'api', {
+          this.addMetric(`API_${method}_${response.status}`, duration, "api", {
             endpoint: apiMetric.endpoint,
-            status: response.status
+            status: response.status,
           });
         }
-        
+
         return response;
       } catch (error) {
         const endTime = performance.now();
         const duration = endTime - startTime;
-        
-        if (url.includes('/api/')) {
+
+        if (url.includes("/api/")) {
           const apiMetric: APIMetric = {
             endpoint: this.sanitizeEndpoint(url),
             method,
             duration,
             status: 0,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           };
-          
+
           this.apiMetrics.push(apiMetric);
-          
-          this.addMetric(`API_${method}_ERROR`, duration, 'api', {
+
+          this.addMetric(`API_${method}_ERROR`, duration, "api", {
             endpoint: apiMetric.endpoint,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : "Unknown error",
           });
         }
-        
+
         throw error;
       }
     };
@@ -223,26 +231,35 @@ class PerformanceMonitor {
   private sanitizeEndpoint(url: string): string {
     // Remove query parameters and dynamic IDs for grouping
     return url
-      .replace(/\?.*$/, '') // Remove query params
-      .replace(/\/\d+/g, '/:id') // Replace numeric IDs
-      .replace(/\/[a-f0-9-]{36}/g, '/:uuid') // Replace UUIDs
-      .replace(/^https?:\/\/[^/]+/, ''); // Remove domain
+      .replace(/\?.*$/, "") // Remove query params
+      .replace(/\/\d+/g, "/:id") // Replace numeric IDs
+      .replace(/\/[a-f0-9-]{36}/g, "/:uuid") // Replace UUIDs
+      .replace(/^https?:\/\/[^/]+/, ""); // Remove domain
   }
 
-  public addMetric(name: string, value: number, type: PerformanceMetric['type'], metadata?: Record<string, any>): void {
+  public addMetric(
+    name: string,
+    value: number,
+    type: PerformanceMetric["type"],
+    metadata?: Record<string, any>,
+  ): void {
     this.metrics.push({
       name,
       value,
       timestamp: Date.now(),
       type,
-      metadata
+      metadata,
     });
-    
+
     this.checkAndReport();
   }
 
-  public trackUserAction(action: string, duration?: number, metadata?: Record<string, any>): void {
-    this.addMetric(`user_action_${action}`, duration || 0, 'user', metadata);
+  public trackUserAction(
+    action: string,
+    duration?: number,
+    metadata?: Record<string, any>,
+  ): void {
+    this.addMetric(`user_action_${action}`, duration || 0, "user", metadata);
   }
 
   private checkAndReport(): void {
@@ -267,7 +284,7 @@ class PerformanceMonitor {
       apiMetrics: [...this.apiMetrics],
       userAgent: navigator.userAgent,
       timestamp: Date.now(),
-      url: window.location.href
+      url: window.location.href,
     };
 
     // Clear metrics
@@ -276,14 +293,14 @@ class PerformanceMonitor {
 
     try {
       await fetch(this.apiEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
     } catch (error) {
-      console.warn('Failed to report performance metrics:', error);
+      console.warn("Failed to report performance metrics:", error);
       // In case of failure, we could store metrics locally and retry
     }
   }
@@ -294,17 +311,25 @@ class PerformanceMonitor {
     errorRate: number;
     totalMetrics: number;
   } {
-    const navigationMetrics = this.metrics.filter(m => m.type === 'navigation');
+    const navigationMetrics = this.metrics.filter(
+      (m) => m.type === "navigation",
+    );
     const apiMetrics = this.apiMetrics;
-    const errorCount = apiMetrics.filter(m => m.status >= 400).length;
+    const errorCount = apiMetrics.filter((m) => m.status >= 400).length;
 
     return {
-      pageLoad: navigationMetrics.length > 0 ? 
-        navigationMetrics.reduce((sum, m) => sum + m.value, 0) / navigationMetrics.length : 0,
-      apiResponseTime: apiMetrics.length > 0 ? 
-        apiMetrics.reduce((sum, m) => sum + m.duration, 0) / apiMetrics.length : 0,
+      pageLoad:
+        navigationMetrics.length > 0
+          ? navigationMetrics.reduce((sum, m) => sum + m.value, 0) /
+            navigationMetrics.length
+          : 0,
+      apiResponseTime:
+        apiMetrics.length > 0
+          ? apiMetrics.reduce((sum, m) => sum + m.duration, 0) /
+            apiMetrics.length
+          : 0,
       errorRate: apiMetrics.length > 0 ? errorCount / apiMetrics.length : 0,
-      totalMetrics: this.metrics.length + this.apiMetrics.length
+      totalMetrics: this.metrics.length + this.apiMetrics.length,
     };
   }
 }

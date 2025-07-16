@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface SelectProps {
   children: React.ReactNode;
@@ -33,57 +33,79 @@ const SelectContext = React.createContext<{
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }>({
-  value: '',
+  value: "",
   onValueChange: () => {},
   isOpen: false,
-  setIsOpen: () => {}
+  setIsOpen: () => {},
 });
 
-export const Select: React.FC<SelectProps> = ({ children, value = '', onValueChange = () => {} }) => {
+export const Select: React.FC<SelectProps> = ({
+  children,
+  value = "",
+  onValueChange = () => {},
+}) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  
+
   return (
     <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen }}>
-      <div className="relative">
-        {children}
-      </div>
+      <div className="relative">{children}</div>
     </SelectContext.Provider>
   );
 };
 
-export const SelectTrigger: React.FC<SelectTriggerProps> = ({ children, className = '' }) => {
+export const SelectTrigger: React.FC<SelectTriggerProps> = ({
+  children,
+  className = "",
+}) => {
   const { isOpen, setIsOpen } = React.useContext(SelectContext);
-  
+
   return (
     <button
       onClick={() => setIsOpen(!isOpen)}
       className={`flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       {children}
-      <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      <svg
+        className="h-4 w-4 opacity-50"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
       </svg>
     </button>
   );
 };
 
-export const SelectContent: React.FC<SelectContentProps> = ({ children, className = '' }) => {
+export const SelectContent: React.FC<SelectContentProps> = ({
+  children,
+  className = "",
+}) => {
   const { isOpen } = React.useContext(SelectContext);
-  
+
   if (!isOpen) return null;
-  
+
   return (
-    <div className={`absolute top-full z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg ${className}`}>
-      <div className="max-h-60 overflow-auto p-1">
-        {children}
-      </div>
+    <div
+      className={`absolute top-full z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg ${className}`}
+    >
+      <div className="max-h-60 overflow-auto p-1">{children}</div>
     </div>
   );
 };
 
-export const SelectItem: React.FC<SelectItemProps> = ({ children, value, className = '' }) => {
+export const SelectItem: React.FC<SelectItemProps> = ({
+  children,
+  value,
+  className = "",
+}) => {
   const { onValueChange, setIsOpen } = React.useContext(SelectContext);
-  
+
   return (
     <div
       onClick={() => {
@@ -97,12 +119,11 @@ export const SelectItem: React.FC<SelectItemProps> = ({ children, value, classNa
   );
 };
 
-export const SelectValue: React.FC<SelectValueProps> = ({ placeholder = '', className = '' }) => {
+export const SelectValue: React.FC<SelectValueProps> = ({
+  placeholder = "",
+  className = "",
+}) => {
   const { value } = React.useContext(SelectContext);
-  
-  return (
-    <span className={className}>
-      {value || placeholder}
-    </span>
-  );
+
+  return <span className={className}>{value || placeholder}</span>;
 };

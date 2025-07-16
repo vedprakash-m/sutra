@@ -5,6 +5,7 @@ Handles all CRUD operations for Forge projects, artifacts, and stage management.
 
 import json
 import logging
+from dataclasses import asdict
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional

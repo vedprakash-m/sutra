@@ -163,7 +163,13 @@ describe("App", () => {
       { timeout: 5000 },
     );
 
-    expect(screen.getByTestId("dashboard")).toBeInTheDocument();
+    // Wait for lazy-loaded component to render
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("dashboard")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it("should render prompt builder when navigating to /prompts/new", async () => {
@@ -185,7 +191,13 @@ describe("App", () => {
       },
       { timeout: 5000 },
     );
-    expect(screen.getByTestId("prompt-builder")).toBeInTheDocument();
+    
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("prompt-builder")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it("should render collections page when navigating to /collections", async () => {
@@ -207,7 +219,13 @@ describe("App", () => {
       },
       { timeout: 5000 },
     );
-    expect(screen.getByTestId("collections-page")).toBeInTheDocument();
+    
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("collections-page")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it("should render playbook builder when navigating to /playbooks/new", async () => {
@@ -231,7 +249,13 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    expect(screen.getByTestId("playbook-builder")).toBeInTheDocument();
+    
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("playbook-builder")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it("should render playbook runner when navigating to /playbooks/123/run", async () => {
@@ -255,7 +279,13 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    expect(screen.getByTestId("playbook-runner")).toBeInTheDocument();
+    
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("playbook-runner")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it("should render integrations page when navigating to /integrations", async () => {
@@ -279,7 +309,13 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    expect(screen.getByTestId("integrations-page")).toBeInTheDocument();
+    
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("integrations-page")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it("should render admin panel when navigating to /admin", async () => {
@@ -303,7 +339,13 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    expect(screen.getByTestId("admin-panel")).toBeInTheDocument();
+    
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("admin-panel")).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it("should render prompt builder with id when navigating to /prompts/123", async () => {

@@ -1,6 +1,13 @@
 import "@testing-library/jest-dom";
 import { configure } from "@testing-library/react";
 
+// Mock PerformanceObserver for Jest environment
+(global as any).PerformanceObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  disconnect: jest.fn(),
+}));
+(global as any).PerformanceObserver.supportedEntryTypes = [];
+
 // Configure Testing Library to use React's act instead of ReactDOMTestUtils.act
 configure({ asyncUtilTimeout: 2000 });
 

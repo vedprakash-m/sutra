@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
 import {
   CheckCircle,
   AlertTriangle,
@@ -142,7 +141,7 @@ export default function PRDGeneration({
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
 
   // Configuration state
-  const [requirementFocus, setRequirementFocus] = useState<string[]>([
+  const [requirementFocus] = useState<string[]>([
     "Core functionality",
     "User experience",
     "Performance requirements",

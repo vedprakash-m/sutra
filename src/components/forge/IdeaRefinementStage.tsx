@@ -148,9 +148,7 @@ export default function IdeaRefinementStage({
     "input" | "analysis" | "refinement"
   >("input");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isRefining, setIsRefining] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
-  const [refinementResults, setRefinementResults] = useState<any>(null);
   const [competitorInput, setCompetitorInput] = useState("");
   const [constraintInput, setConstraintInput] = useState("");
   const [riskInput, setRiskInput] = useState("");
@@ -186,43 +184,6 @@ export default function IdeaRefinementStage({
     [projectId],
   );
 
-  const refineIdeaWithLLM = useCallback(
-    async (
-      currentIdea: IdeaRefinementData,
-      improvementFocus: string[],
-      llmModel: string,
-      context: any,
-    ) => {
-      try {
-        const response = await fetch(
-          `/api/forge/idea-refinement/refine/${projectId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              currentIdea,
-              improvementFocus,
-              selectedLLM: llmModel,
-              projectContext: context,
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Refinement failed: ${response.statusText}`);
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error("Error refining idea with LLM:", error);
-        throw error;
-      }
-    },
-    [projectId],
-  );
-
   const getQualityAssessment = useCallback(async () => {
     try {
       const response = await fetch(
@@ -245,37 +206,6 @@ export default function IdeaRefinementStage({
       throw error;
     }
   }, [projectId]);
-
-  const completeStage = useCallback(
-    async (finalData: IdeaRefinementData, forceComplete: boolean = false) => {
-      try {
-        const response = await fetch(
-          `/api/forge/idea-refinement/complete/${projectId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              finalIdeaData: finalData,
-              forceComplete,
-              projectContext,
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Stage completion failed: ${response.statusText}`);
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error("Error completing stage:", error);
-        throw error;
-      }
-    },
-    [projectId, projectContext],
-  );
 
   // Update parent component when data changes
   useEffect(() => {
@@ -515,47 +445,6 @@ export default function IdeaRefinementStage({
   };
 
   // Handle LLM refinement
-  const handleLLMRefinement = async (improvementFocus: string[]) => {
-    setIsRefining(true);
-    try {
-      const refinement = await refineIdeaWithLLM(
-        data,
-        improvementFocus,
-        selectedLLM,
-        projectContext,
-      );
-
-      // Update data with refined content
-      if (refinement.refinedIdea) {
-        setData((prev) => ({
-          ...prev,
-          ...refinement.refinedIdea,
-          qualityScore: refinement.qualityImprovement.afterScore,
-          lastRefinementTimestamp: refinement.refinementTimestamp,
-        }));
-        setRefinementResults(refinement);
-      }
-    } catch (error) {
-      console.error("LLM refinement failed:", error);
-    } finally {
-      setIsRefining(false);
-    }
-  };
-
-  // Handle stage completion
-  const handleStageCompletion = async (forceComplete: boolean = false) => {
-    try {
-      const completion = await completeStage(data, forceComplete);
-
-      if (completion.stageCompleted === "idea_refinement") {
-        setData((prev) => ({ ...prev, analysisComplete: true }));
-        onStageComplete(data);
-      }
-    } catch (error) {
-      console.error("Stage completion failed:", error);
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       {/* Header */}

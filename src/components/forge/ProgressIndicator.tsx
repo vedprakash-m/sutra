@@ -5,8 +5,6 @@ interface ProgressIndicatorProps {
   current?: number;
   totalSteps?: number;
   steps?: string[];
-  threshold?: number;
-  label?: string;
   className?: string;
 }
 
@@ -15,38 +13,35 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   current,
   totalSteps,
   steps,
-  threshold,
-  label,
   className = "",
 }) => {
-  const actualCurrentStep = currentStep ?? current ?? 0;
-  const actualTotalSteps = totalSteps ?? steps?.length ?? 5;
-  const actualSteps =
-    steps ??
-    Array.from({ length: actualTotalSteps }, (_, i) => `Step ${i + 1}`);
+  const currentIndex = currentStep ?? current ?? 0;
+  const displaySteps =
+    steps ?? Array.from({ length: totalSteps ?? 5 }, (_, i) => `Step ${i + 1}`);
+  
   return (
     <div className={`w-full ${className}`}>
       <div className="flex justify-between mb-2">
-        {steps.map((step, index) => (
+        {displaySteps.map((step, index) => (
           <div key={index} className="flex flex-col items-center">
             <div
               className={`
               w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
               ${
-                index < currentStep
+                index < currentIndex
                   ? "bg-green-500 text-white"
-                  : index === currentStep
+                  : index === currentIndex
                     ? "bg-blue-500 text-white"
                     : "bg-gray-200 text-gray-600"
               }
             `}
             >
-              {index < currentStep ? "✓" : index + 1}
+              {index < currentIndex ? "✓" : index + 1}
             </div>
             <span
               className={`
               mt-2 text-xs text-center max-w-20
-              ${index <= currentStep ? "text-gray-900" : "text-gray-500"}
+              ${index <= currentIndex ? "text-gray-900" : "text-gray-500"}
             `}
             >
               {step}

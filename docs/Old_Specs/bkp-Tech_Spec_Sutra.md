@@ -556,7 +556,7 @@ All APIs are exposed via Azure Functions with HTTP triggers. Authentication uses
       "sessionId": "guest_session_guid",
       "email": "user@example.com",
       "name": "John Doe",
-      "password": "secure_password"  // pragma: allowlist secret
+      "password": "secure_password" // pragma: allowlist secret
     }
     ```
   - **Response:**

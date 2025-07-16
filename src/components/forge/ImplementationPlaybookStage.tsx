@@ -24,12 +24,7 @@ import {
   Download,
   Code,
   GitBranch,
-  Zap,
-  Settings,
-  FileText,
   Target,
-  Shield,
-  BarChart3,
   RefreshCw,
   AlertTriangle,
   Brain,
@@ -45,13 +40,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 
 // Import existing components
 import { QualityGate } from "@/components/forge/QualityGate";
-import { ProgressIndicator } from "@/components/forge/ProgressIndicator";
-import { useAuth } from "@/hooks/useAuth";
 import { useLLMCost } from "@/hooks/useLLMCost";
 
 // Types for Implementation Playbook
@@ -67,158 +59,6 @@ interface ProjectContext {
   prdGeneration: any;
   uxRequirements: any;
   technicalAnalysis: any;
-}
-
-interface Dependency {
-  name: string;
-  version?: string;
-  type: "runtime" | "development" | "peer";
-}
-
-interface Milestone {
-  name: string;
-  description: string;
-  dueDate: string;
-  progress: number;
-}
-
-interface Risk {
-  description: string;
-  impact: "low" | "medium" | "high";
-  probability: "low" | "medium" | "high";
-  mitigation: string;
-}
-
-interface QualityGateType {
-  name: string;
-  criteria: string[];
-  threshold: number;
-}
-
-interface EnvironmentConfig {
-  name: string;
-  variables: Record<string, string>;
-  requirements: string[];
-}
-
-interface BuildStep {
-  name: string;
-  command: string;
-  description: string;
-}
-
-interface DeploymentStep {
-  name: string;
-  command: string;
-  description: string;
-  environment: string;
-}
-
-interface MonitoringConfig {
-  metrics: string[];
-  alerts: string[];
-  dashboards: string[];
-}
-
-interface BackupConfig {
-  frequency: string;
-  retention: string;
-  strategy: string;
-}
-
-interface RollbackConfig {
-  strategy: string;
-  steps: string[];
-  verification: string[];
-}
-
-interface SecurityConfig {
-  authentication: string[];
-  authorization: string[];
-  encryption: string[];
-}
-
-interface CodingPrompt {
-  id: string;
-  title: string;
-  category:
-    | "setup"
-    | "architecture"
-    | "frontend"
-    | "backend"
-    | "testing"
-    | "deployment";
-  content: string;
-  agentInstructions: string[];
-  validationCriteria: string[];
-  outputFormat: string;
-  contextRequirements: string[];
-  estimatedEffort: string;
-  dependencies: string[];
-}
-
-interface DevelopmentWorkflow {
-  methodology: "agile_sprints" | "waterfall" | "kanban";
-  phases: WorkflowPhase[];
-  sprints: Sprint[];
-  dependencies: Dependency[];
-  criticalPath: string[];
-  milestones: Milestone[];
-  qualityGates: QualityGateType[];
-  riskMitigation: Risk[];
-}
-
-interface WorkflowPhase {
-  name: string;
-  duration: string;
-  activities: string[];
-  deliverables: string[];
-  qualityChecks: string[];
-}
-
-interface Sprint {
-  number: number;
-  duration: string;
-  focus: string;
-  userStories: string[];
-  acceptance: string[];
-  definition: string;
-}
-
-interface TestingStrategy {
-  unitTesting: TestingConfig;
-  integrationTesting: TestingConfig;
-  e2eTesting: TestingConfig;
-  performanceTesting: TestingConfig;
-  securityTesting: TestingConfig;
-  accessibilityTesting: TestingConfig;
-  qaProcedures: QAProcedure[];
-}
-
-interface TestingConfig {
-  framework: string;
-  coverage: number;
-  tools: string[];
-  scenarios: string[];
-  automation: boolean;
-}
-
-interface QAProcedure {
-  name: string;
-  description: string;
-  steps: string[];
-  criteria: string[];
-  automation: boolean;
-}
-
-interface DeploymentGuide {
-  environmentSetup: EnvironmentConfig;
-  buildProcedures: BuildStep[];
-  deploymentSteps: DeploymentStep[];
-  monitoringSetup: MonitoringConfig;
-  backupProcedures: BackupConfig;
-  rollbackProcedures: RollbackConfig;
-  securityConfigurations: SecurityConfig;
 }
 
 interface PlaybookSection {
@@ -261,7 +101,6 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
     useState("agile_sprints");
 
   // Hooks
-  const { user } = useAuth();
   const { trackCost } = useLLMCost();
 
   // Initialize sections
@@ -631,12 +470,12 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
       [sectionId]: {
         ...prev[sectionId],
         data,
-        quality: assessSectionQuality(data),
+        quality: assessSectionQuality(),
       },
     }));
   };
 
-  const assessSectionQuality = (data: any): QualityAssessment => {
+  const assessSectionQuality = (): QualityAssessment => {
     // Mock quality assessment - in real implementation this would be more sophisticated
     return {
       score: 85,

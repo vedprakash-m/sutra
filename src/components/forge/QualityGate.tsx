@@ -6,9 +6,7 @@ interface QualityGateProps {
   quality?: any;
   threshold: number;
   title?: string;
-  stage?: string;
   description?: string;
-  onImprove?: () => void;
 }
 
 export const QualityGate: React.FC<QualityGateProps> = ({
@@ -17,9 +15,7 @@ export const QualityGate: React.FC<QualityGateProps> = ({
   quality,
   threshold,
   title = "Quality Gate",
-  stage,
   description,
-  onImprove,
 }) => {
   const actualScore = score || currentScore || quality?.overallScore || 0;
   const isPass = actualScore >= threshold;

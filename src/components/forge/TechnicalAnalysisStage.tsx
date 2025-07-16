@@ -6,7 +6,7 @@
  * with 85% quality threshold and detailed feasibility assessment.
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,6 @@ import {
   TrendingUp,
   Brain,
   Shield,
-  Zap,
   BarChart3,
   GitBranch,
   Download,
@@ -29,7 +28,6 @@ import {
   Target,
   Settings,
   Database,
-  Globe,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -192,7 +190,6 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics | null>(
     null,
   );
-  const [costSummary, setCostSummary] = useState<any>(null);
   const [operationId, setOperationId] = useState<string>("");
 
   // UI state
@@ -307,7 +304,6 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
         setTechnicalEvaluation(result.architecture_evaluation);
         setConsensusResult(result.consensus_analysis);
         setQualityMetrics(result.quality_metrics);
-        setCostSummary(result.cost_summary);
         setOperationId(result.operation_id);
 
         setCurrentStep("review");
@@ -621,7 +617,7 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
             </div>
 
             <div className="space-y-2">
-              {selectedModels.map((modelId, index) => {
+              {selectedModels.map((modelId) => {
                 const model = availableModels.find((m) => m.id === modelId);
                 return (
                   <div key={modelId} className="flex items-center gap-2">

@@ -3,16 +3,17 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, AsyncGenerator, Union
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from azure.keyvault.secrets import SecretClient
 
 
 class ModelCapability(Enum):
     """Capabilities that a model can support."""
+
     TEXT_GENERATION = "text_generation"
     STREAMING = "streaming"
     FUNCTION_CALLING = "function_calling"
@@ -24,10 +25,11 @@ class ModelCapability(Enum):
 @dataclass
 class TokenUsage:
     """Token usage information for an LLM request."""
+
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
-    
+
     def __post_init__(self):
         if self.total_tokens == 0:
             self.total_tokens = self.prompt_tokens + self.completion_tokens
@@ -36,6 +38,7 @@ class TokenUsage:
 @dataclass
 class ModelInfo:
     """Information about an LLM model."""
+
     name: str
     display_name: str
     max_tokens: int
@@ -49,6 +52,7 @@ class ModelInfo:
 @dataclass
 class LLMResponse:
     """Response from an LLM provider."""
+
     provider: str
     model: str
     response: str
@@ -57,21 +61,28 @@ class LLMResponse:
     timestamp: str
     metadata: Dict[str, Any] = field(default_factory=dict)
     finish_reason: Optional[str] = None
-    
+
     @classmethod
-    def create(cls, provider: str, model: str, response: str, usage: TokenUsage, 
-               cost: float, metadata: Optional[Dict[str, Any]] = None, 
-               finish_reason: Optional[str] = None) -> 'LLMResponse':
+    def create(
+        cls,
+        provider: str,
+        model: str,
+        response: str,
+        usage: TokenUsage,
+        cost: float,
+        metadata: Optional[Dict[str, Any]] = None,
+        finish_reason: Optional[str] = None,
+    ) -> "LLMResponse":
         """Create a new LLM response with current timestamp."""
         return cls(
             provider=provider,
-            model=model, 
+            model=model,
             response=response,
             usage=usage,
             cost=cost,
             timestamp=datetime.now(timezone.utc).isoformat(),
             metadata=metadata or {},
-            finish_reason=finish_reason
+            finish_reason=finish_reason,
         )
 
 
@@ -103,11 +114,7 @@ class BaseLLMProvider(ABC):
 
     @abstractmethod
     async def _execute_request(
-        self, 
-        prompt: str, 
-        model: str, 
-        context: Dict[str, Any],
-        stream: bool = False
+        self, prompt: str, model: str, context: Dict[str, Any], stream: bool = False
     ) -> Union[LLMResponse, AsyncGenerator[str, None]]:
         """Execute the actual API request. Override in subclasses."""
         pass
@@ -132,6 +139,7 @@ class BaseLLMProvider(ABC):
                 config_secret = kv_client.get_secret(f"{self.name.lower()}-config")
                 if config_secret:
                     import json
+
                     config = json.loads(config_secret.value)
                     self.budget_limit = config.get("budget_limit", 100.0)  # Default $100
                     self.priority = config.get("priority", 1)
@@ -160,7 +168,7 @@ class BaseLLMProvider(ABC):
         """Check if the provider is within budget limits."""
         if self.budget_limit <= 0:
             return True  # No budget limit set
-        
+
         projected_usage = self.current_usage + estimated_cost
         return projected_usage < self.budget_limit
 
@@ -168,29 +176,29 @@ class BaseLLMProvider(ABC):
         """Estimate the cost of a request before execution."""
         if not model:
             model = self.default_model
-        
+
         if not model or model not in self.models:
             return 0.0
 
         model_info = self.models[model]
-        
+
         # Rough token estimation (1 token ≈ 4 characters for English text)
         input_tokens = len(prompt) // 4
         output_tokens = max_tokens or (model_info.max_tokens // 4)
-        
+
         input_cost = (input_tokens / 1000) * model_info.cost_per_input_token
         output_cost = (output_tokens / 1000) * model_info.cost_per_output_token
-        
+
         return input_cost + output_cost
 
     async def execute_prompt(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
         context: Optional[Dict[str, Any]] = None,
         model: Optional[str] = None,
         stream: bool = False,
         max_tokens: Optional[int] = None,
-        temperature: float = 0.7
+        temperature: float = 0.7,
     ) -> Union[LLMResponse, AsyncGenerator[str, None]]:
         """Execute a prompt with this provider."""
         if not self._initialized:
@@ -202,7 +210,7 @@ class BaseLLMProvider(ABC):
         # Use default model if none specified
         if not model:
             model = self.default_model
-        
+
         if not model or model not in self.models:
             raise ValueError(f"Invalid model {model} for {self.name}")
 
@@ -217,18 +225,18 @@ class BaseLLMProvider(ABC):
             "model": model,
             "max_tokens": max_tokens or self.models[model].max_tokens,
             "temperature": temperature,
-            "provider": self.name
+            "provider": self.name,
         }
 
         try:
             # Execute the request
             result = await self._execute_request(prompt, model, execution_context, stream)
-            
+
             # Track usage for non-streaming responses
             if isinstance(result, LLMResponse):
                 self.current_usage += result.cost
                 self.logger.info(f"Executed {model} request, cost: ${result.cost:.4f}, total usage: ${self.current_usage:.4f}")
-            
+
             return result
 
         except Exception as e:
@@ -252,14 +260,17 @@ class BaseLLMProvider(ABC):
             "budget_percentage": (self.current_usage / self.budget_limit * 100) if self.budget_limit > 0 else 0,
             "priority": self.priority,
             "available": self.enabled and self._initialized,
-            "models": {name: {
-                "display_name": info.display_name,
-                "max_tokens": info.max_tokens,
-                "capabilities": [cap.value for cap in info.capabilities],
-                "cost_per_1k_input": info.cost_per_input_token,
-                "cost_per_1k_output": info.cost_per_output_token
-            } for name, info in self.models.items()},
-            "default_model": self.default_model
+            "models": {
+                name: {
+                    "display_name": info.display_name,
+                    "max_tokens": info.max_tokens,
+                    "capabilities": [cap.value for cap in info.capabilities],
+                    "cost_per_1k_input": info.cost_per_input_token,
+                    "cost_per_1k_output": info.cost_per_output_token,
+                }
+                for name, info in self.models.items()
+            },
+            "default_model": self.default_model,
         }
 
     async def health_check(self) -> Dict[str, Any]:
@@ -271,7 +282,7 @@ class BaseLLMProvider(ABC):
             "enabled": self.enabled,
             "api_key_configured": bool(self.api_key),
             "models_loaded": len(self.models),
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         if not self._initialized:

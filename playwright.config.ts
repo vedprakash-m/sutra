@@ -10,8 +10,8 @@ export default defineConfig({
   testDir: "./tests/e2e",
 
   // Global setup and teardown
-  globalSetup: require.resolve("./tests/e2e/global-setup.ts"),
-  globalTeardown: require.resolve("./tests/e2e/global-teardown.ts"),
+  globalSetup: "./tests/e2e/global-setup.ts",
+  globalTeardown: "./tests/e2e/global-teardown.ts",
 
   // Run tests in files in parallel but use only one worker
   // This ensures test data isolation while maintaining speed

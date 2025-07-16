@@ -3,18 +3,12 @@
 import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional, AsyncGenerator, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import anthropic
 from anthropic import AsyncAnthropic
 
-from .base_provider import (
-    BaseLLMProvider, 
-    ModelInfo, 
-    ModelCapability, 
-    TokenUsage, 
-    LLMResponse
-)
+from .base_provider import BaseLLMProvider, LLMResponse, ModelCapability, ModelInfo, TokenUsage
 
 
 class AnthropicProvider(BaseLLMProvider):
@@ -42,10 +36,10 @@ class AnthropicProvider(BaseLLMProvider):
                     ModelCapability.TEXT_GENERATION,
                     ModelCapability.STREAMING,
                     ModelCapability.CODE_GENERATION,
-                    ModelCapability.IMAGE_ANALYSIS
+                    ModelCapability.IMAGE_ANALYSIS,
                 ],
                 context_window=200000,
-                supports_streaming=True
+                supports_streaming=True,
             ),
             "claude-3-haiku-20240307": ModelInfo(
                 name="claude-3-haiku-20240307",
@@ -57,10 +51,10 @@ class AnthropicProvider(BaseLLMProvider):
                     ModelCapability.TEXT_GENERATION,
                     ModelCapability.STREAMING,
                     ModelCapability.CODE_GENERATION,
-                    ModelCapability.IMAGE_ANALYSIS
+                    ModelCapability.IMAGE_ANALYSIS,
                 ],
                 context_window=200000,
-                supports_streaming=True
+                supports_streaming=True,
             ),
             "claude-3-opus-20240229": ModelInfo(
                 name="claude-3-opus-20240229",
@@ -72,10 +66,10 @@ class AnthropicProvider(BaseLLMProvider):
                     ModelCapability.TEXT_GENERATION,
                     ModelCapability.STREAMING,
                     ModelCapability.CODE_GENERATION,
-                    ModelCapability.IMAGE_ANALYSIS
+                    ModelCapability.IMAGE_ANALYSIS,
                 ],
                 context_window=200000,
-                supports_streaming=True
+                supports_streaming=True,
             ),
         }
 
@@ -86,15 +80,15 @@ class AnthropicProvider(BaseLLMProvider):
 
         try:
             # Initialize Anthropic client
-            self.client = AsyncAnthropic(
-                api_key=self.api_key
-            )
+            self.client = AsyncAnthropic(api_key=self.api_key)
 
             # Set default model
             if not self.default_model:
                 self.default_model = "claude-3-5-sonnet-20241022"  # Use Claude 3.5 Sonnet as default
 
-            self.logger.info(f"Anthropic client initialized with API key ending in: ...{self.api_key[-4:] if self.api_key else 'None'}")
+            self.logger.info(
+                f"Anthropic client initialized with API key ending in: ...{self.api_key[-4:] if self.api_key else 'None'}"
+            )
             return True
 
         except Exception as e:
@@ -112,11 +106,7 @@ class AnthropicProvider(BaseLLMProvider):
         return input_cost + output_cost
 
     async def _execute_request(
-        self, 
-        prompt: str, 
-        model: str, 
-        context: Dict[str, Any],
-        stream: bool = False
+        self, prompt: str, model: str, context: Dict[str, Any], stream: bool = False
     ) -> Union[LLMResponse, AsyncGenerator[str, None]]:
         """Execute the actual Anthropic API request."""
         if not self.client:
@@ -124,14 +114,14 @@ class AnthropicProvider(BaseLLMProvider):
 
         # Prepare the messages
         messages = [{"role": "user", "content": prompt}]
-        
+
         # Prepare API parameters
         api_params = {
             "model": model,
             "messages": messages,
             "max_tokens": context.get("max_tokens", self.models[model].max_tokens),
             "temperature": context.get("temperature", 0.7),
-            "stream": stream
+            "stream": stream,
         }
 
         # Add system prompt if provided
@@ -147,11 +137,11 @@ class AnthropicProvider(BaseLLMProvider):
         except anthropic.RateLimitError as e:
             self.logger.warning(f"Anthropic rate limit exceeded: {e}")
             raise RuntimeError(f"Rate limit exceeded. Please try again later.")
-        
+
         except anthropic.APIError as e:
             self.logger.error(f"Anthropic API error: {e}")
             raise RuntimeError(f"Anthropic API error: {str(e)}")
-        
+
         except Exception as e:
             self.logger.error(f"Unexpected error in Anthropic request: {e}")
             raise RuntimeError(f"Anthropic request failed: {str(e)}")
@@ -159,31 +149,31 @@ class AnthropicProvider(BaseLLMProvider):
     async def _handle_standard_response(self, api_params: Dict[str, Any], model: str) -> LLMResponse:
         """Handle non-streaming Anthropic response."""
         response = await self.client.messages.create(**api_params)
-        
+
         # Extract response data - Anthropic returns content as a list
         content = ""
         if response.content and len(response.content) > 0:
-            content = response.content[0].text if hasattr(response.content[0], 'text') else str(response.content[0])
-        
+            content = response.content[0].text if hasattr(response.content[0], "text") else str(response.content[0])
+
         finish_reason = response.stop_reason
-        
+
         # Create usage object
         usage = TokenUsage(
             prompt_tokens=response.usage.input_tokens if response.usage else 0,
-            completion_tokens=response.usage.output_tokens if response.usage else 0
+            completion_tokens=response.usage.output_tokens if response.usage else 0,
         )
-        
+
         # Calculate cost
         cost = self._calculate_cost(usage, model)
-        
+
         # Create metadata
         metadata = {
             "model": model,
             "finish_reason": finish_reason,
-            "response_id": response.id if hasattr(response, 'id') else None,
-            "role": response.role if hasattr(response, 'role') else "assistant"
+            "response_id": response.id if hasattr(response, "id") else None,
+            "role": response.role if hasattr(response, "role") else "assistant",
         }
-        
+
         return LLMResponse.create(
             provider=self.name,
             model=model,
@@ -191,7 +181,7 @@ class AnthropicProvider(BaseLLMProvider):
             usage=usage,
             cost=cost,
             metadata=metadata,
-            finish_reason=finish_reason
+            finish_reason=finish_reason,
         )
 
     async def _handle_streaming_response(self, api_params: Dict[str, Any], model: str) -> AsyncGenerator[str, None]:
@@ -201,14 +191,14 @@ class AnthropicProvider(BaseLLMProvider):
                 accumulated_tokens = 0
                 async for event in stream:
                     if event.type == "content_block_delta":
-                        if hasattr(event.delta, 'text'):
+                        if hasattr(event.delta, "text"):
                             content = event.delta.text
                             accumulated_tokens += len(content.split())  # Rough token count
                             yield content
                     elif event.type == "message_stop":
                         # Stream has ended
                         break
-                        
+
         except Exception as e:
             self.logger.error(f"Error in streaming response: {e}")
             yield f"[ERROR: {str(e)}]"
@@ -216,28 +206,30 @@ class AnthropicProvider(BaseLLMProvider):
     async def health_check(self) -> Dict[str, Any]:
         """Perform a health check specific to Anthropic."""
         health = await super().health_check()
-        
+
         if health["status"] == "healthy":
             try:
                 # Test with a minimal request
                 response = await self.client.messages.create(
                     model=self.default_model or "claude-3-haiku-20240307",
                     messages=[{"role": "user", "content": "ping"}],
-                    max_tokens=5
+                    max_tokens=5,
                 )
-                
+
                 if response.content and len(response.content) > 0:
                     health["api_response_time"] = "< 1s"  # You could measure this
-                    test_content = response.content[0].text if hasattr(response.content[0], 'text') else str(response.content[0])
+                    test_content = (
+                        response.content[0].text if hasattr(response.content[0], "text") else str(response.content[0])
+                    )
                     health["test_response"] = test_content[:50]
                 else:
                     health["status"] = "unhealthy"
                     health["error"] = "No response content received"
-                    
+
             except Exception as e:
                 health["status"] = "error"
                 health["error"] = f"Health check failed: {str(e)}"
-        
+
         return health
 
     def get_model_names(self) -> List[str]:
@@ -252,7 +244,7 @@ class AnthropicProvider(BaseLLMProvider):
             "fast": "claude-3-haiku-20240307",
             "analysis": "claude-3-opus-20240229",
             "creative": "claude-3-opus-20240229",
-            "cost_effective": "claude-3-haiku-20240307"
+            "cost_effective": "claude-3-haiku-20240307",
         }
-        
+
         return recommendations.get(task_type, self.default_model or "claude-3-5-sonnet-20241022")

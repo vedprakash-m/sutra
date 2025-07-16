@@ -7,6 +7,7 @@ Ved Mishra - July 2025 - Version: 1.0
 **Sutra** is a comprehensive Multi-LLM Prompt Studio that provides a systematic platform for designing, managing, and orchestrating effective AI prompts and workflows. The platform combines advanced prompt engineering capabilities with structured idea-to-implementation workflows through the integrated Forge feature.
 
 **Core Platform Capabilities:**
+
 - **Multi-LLM Prompt Engineering:** Advanced prompt creation, optimization, and A/B testing across GPT-4, Claude, Gemini, and custom models
 - **Collections Management:** Hierarchical organization and sharing of prompts, templates, and project artifacts
 - **Playbooks Orchestration:** Multi-step AI workflow execution and automation supporting both general workflows and structured product development
@@ -15,6 +16,7 @@ Ved Mishra - July 2025 - Version: 1.0
 - **Cost Management:** Intelligent budget tracking, automated LLM routing, and comprehensive usage analytics
 
 **Technical Architecture:**
+
 - **Frontend:** React 18/TypeScript interface with comprehensive prompt engineering tools and integrated Forge workspace
 - **Backend:** Azure Functions (Python 3.12) API ecosystem supporting prompts, collections, playbooks, and structured product development workflows
 - **Database:** Cosmos DB with collections for Users, Prompts, Collections, Playbooks (including Forge project data), and comprehensive cost tracking
@@ -62,6 +64,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 ### 2.1. Application Structure
 
 **Core Technology Stack:**
+
 - React 18 with TypeScript for type safety and modern development practices
 - Responsive design system supporting desktop, tablet, and mobile viewports
 - Real-time collaboration infrastructure with WebSocket connections
@@ -69,6 +72,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 - Multi-LLM selection and execution interfaces with cost tracking
 
 **Primary Application Components:**
+
 - **PromptStudio**: Advanced prompt creation, optimization, and A/B testing interface
 - **CollectionsManager**: Hierarchical organization and sharing of prompts, templates, and project artifacts
 - **PlaybooksOrchestrator**: Multi-step workflow execution interface supporting general workflows and structured development processes
@@ -77,6 +81,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 - **AnalyticsDashboard**: Cost tracking, usage analytics, and performance monitoring interface
 
 **Application Navigation Structure:**
+
 ```typescript
 // Complete Sutra application routing structure
 /dashboard                      // Main dashboard with overview
@@ -87,7 +92,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 /playbooks                     // Playbooks orchestration
 /playbooks/:id                 // Playbook editor/executor
 /forge                         // Forge project dashboard
-/forge/project/:id             // Forge project workspace  
+/forge/project/:id             // Forge project workspace
 /forge/:id/idea                // Idea refinement stage
 /forge/:id/prd                 // PRD generation stage
 /forge/:id/ux                  // UX requirements stage
@@ -99,42 +104,44 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 ```
 
 **State Management Architecture:**
+
 - **React Query**: Server state management with intelligent caching and synchronization for Forge projects
 - **Zustand**: Global client state for user preferences, UI state, and real-time collaboration
 - **Context Providers**: Authentication context, theme context, and notification system
 
 **Enhanced Forge State Management (Zustand):**
+
 ```typescript
 interface ForgeState {
   // Current project state
   currentProject: ForgeProject | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Stage management
   currentStage: ForgeStage;
   stageProgress: Record<ForgeStage, number>;
   stageValidation: Record<ForgeStage, ValidationResult>;
-  
+
   // Real-time collaboration
   collaborators: CollaboratorInfo[];
   activeComments: Comment[];
   conflictResolution: ConflictState;
-  
+
   // Optimistic updates
   pendingChanges: PendingChange[];
   lastSyncTimestamp: number;
-  
+
   // Actions
   setCurrentProject: (project: ForgeProject) => void;
   updateStageData: (stage: ForgeStage, data: any) => void;
   progressToNextStage: (stage: ForgeStage) => Promise<void>;
-  
+
   // Collaboration actions
   addCollaborator: (userId: string) => void;
   addComment: (stageId: string, comment: Comment) => void;
   resolveConflict: (conflictId: string, resolution: ConflictResolution) => void;
-  
+
   // Optimistic update handling
   applyOptimisticUpdate: (change: PendingChange) => void;
   revertOptimisticUpdate: (changeId: string) => void;
@@ -160,6 +167,7 @@ interface OptimisticUpdateManager {
 ### 2.2. Backend Architecture
 
 **Core Technology Stack:**
+
 - Azure Functions (Python 3.12) providing serverless, event-driven architecture
 - Comprehensive API ecosystem with consistent authentication, error handling, and monitoring
 - Robust logging, monitoring, and cost tracking infrastructure
@@ -168,11 +176,13 @@ interface OptimisticUpdateManager {
 **API Function Categories:**
 
 **Authentication & User Management:**
+
 - **auth_api**: User authentication, token validation, and session management
 - **user_management**: User profiles, preferences, and account operations
 - **role_management**: Role-based access control and permission management
 
 **Core Platform Functions:**
+
 - **prompts_api**: CRUD operations for prompt management, versioning, and optimization
 - **collections_api**: Hierarchical organization, sharing, and template management
 - **playbooks_api**: Multi-step workflow orchestration supporting both general and structured development workflows
@@ -181,6 +191,7 @@ interface OptimisticUpdateManager {
 - **admin_api**: Administrative functions, analytics, and system configuration
 
 **Forge Project Functions:**
+
 - **forge_project_api**: CRUD operations for Forge projects stored as specialized Playbooks
 - **idea_refinement_api**: AI-powered idea validation and systematic questioning
 - **prd_generation_api**: Structured PRD document generation from validated ideas
@@ -191,25 +202,24 @@ interface OptimisticUpdateManager {
 - **forge_sharing_api**: Read-only sharing and comment management
 
 **Integration Functions:**
+
 - **integrations_api**: External tool connections (GitHub, Jira, Linear, Asana)
 - **export_services**: Documentation platform integration (Confluence, Notion, GitBook)
 - **webhooks_api**: Real-time notifications and external system callbacks
 
-**Common Function Architecture Pattern:```python
+\*\*Common Function Architecture Pattern:```python
+
 # Standard Azure Function structure used across all Sutra APIs
+
 import azure.functions as func
 from shared.auth import validate_token
 from shared.llm_orchestrator import LLMOrchestrator
 from shared.cosmos_client import CosmosClient
 from shared.cost_tracker import CostTracker
 
-async def main(req: func.HttpRequest) -> func.HttpResponse:
-    # Authentication validation using Microsoft Entra ID (no guest access)
-    # Request validation and input sanitization
-    # Business logic execution with appropriate LLM selection
-    # Cost tracking and usage monitoring
-    # Response formatting with proper error handling and logging
-```
+async def main(req: func.HttpRequest) -> func.HttpResponse: # Authentication validation using Microsoft Entra ID (no guest access) # Request validation and input sanitization # Business logic execution with appropriate LLM selection # Cost tracking and usage monitoring # Response formatting with proper error handling and logging
+
+````
 
 ### 2.3. Database Architecture
 
@@ -238,9 +248,10 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   "createdAt": "datetime",
   "lastActive": "datetime"
 }
-```
+````
 
 **Prompts Collection**: Core prompt management supporting all AI interactions
+
 ```json
 {
   "id": "prompt_guid",
@@ -249,7 +260,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   "userId": "user_guid",
   "tags": ["marketing", "email"],
   "llmModel": "gpt-4o",
-  "variables": [{"name": "product_name", "type": "string"}],
+  "variables": [{ "name": "product_name", "type": "string" }],
   "performance": {
     "avgLatency": 1200,
     "successRate": 0.98,
@@ -262,6 +273,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
 ```
 
 **Collections Collection**: Hierarchical organization of templates and artifacts
+
 ```json
 {
   "id": "collection_guid",
@@ -272,7 +284,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   "items": ["prompt_guid_1", "prompt_guid_2"],
   "sharing": {
     "isPublic": false,
-    "sharedWith": [{"userId": "user_guid", "permission": "read|write"}]
+    "sharedWith": [{ "userId": "user_guid", "permission": "read|write" }]
   },
   "usage": {
     "totalViews": 156,
@@ -284,6 +296,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
 ```
 
 **Playbooks Collection**: Multi-step workflow orchestration and Forge project data
+
 ```json
 {
   "id": "playbook_guid",
@@ -298,7 +311,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
       "promptId": "prompt_guid",
       "llmModel": "gpt-4o",
       "order": 1,
-      "conditions": {"if": "variable_value", "then": "next_step"}
+      "conditions": { "if": "variable_value", "then": "next_step" }
     }
   ],
   "status": "draft|active|completed|archived",
@@ -312,7 +325,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   ],
   "sharing": {
     "isPublic": false,
-    "sharedWith": [{"userId": "user_guid", "permission": "read|execute"}]
+    "sharedWith": [{ "userId": "user_guid", "permission": "read|execute" }]
   },
   "createdAt": "datetime",
   "updatedAt": "datetime"
@@ -365,11 +378,31 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
           "status": "approved|pending_review|draft",
           "qualityScore": 89
         },
-        "problemStatement": { "content": "string", "status": "approved", "qualityScore": 92 },
-        "targetUsers": { "content": "string", "status": "approved", "qualityScore": 88 },
-        "featureSpecifications": { "content": "string", "status": "pending_review", "qualityScore": 76 },
-        "successMetrics": { "content": "string", "status": "draft", "qualityScore": 65 },
-        "technicalRequirements": { "content": "string", "status": "pending", "qualityScore": 0 }
+        "problemStatement": {
+          "content": "string",
+          "status": "approved",
+          "qualityScore": 92
+        },
+        "targetUsers": {
+          "content": "string",
+          "status": "approved",
+          "qualityScore": 88
+        },
+        "featureSpecifications": {
+          "content": "string",
+          "status": "pending_review",
+          "qualityScore": 76
+        },
+        "successMetrics": {
+          "content": "string",
+          "status": "draft",
+          "qualityScore": 65
+        },
+        "technicalRequirements": {
+          "content": "string",
+          "status": "pending",
+          "qualityScore": 0
+        }
       },
       "overallQualityScore": 81
     },
@@ -462,15 +495,15 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
     "costTracking": {
       "totalTokensUsed": 15420,
       "costByStage": {
-        "ideaRefinement": 0.50,
-        "prdGeneration": 2.10,
-        "uxRequirements": 0.00,
-        "technicalAnalysis": 1.20,
-        "implementationPlaybook": 0.00
+        "ideaRefinement": 0.5,
+        "prdGeneration": 2.1,
+        "uxRequirements": 0.0,
+        "technicalAnalysis": 1.2,
+        "implementationPlaybook": 0.0
       },
-      "totalCost": 3.80,
-      "budgetLimit": 50.00,
-      "projectedCost": 8.40
+      "totalCost": 3.8,
+      "budgetLimit": 50.0,
+      "projectedCost": 8.4
     },
     "collaboration": {
       "sharedWith": [
@@ -508,6 +541,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   }
 }
 ```
+
           "problemDefinition": 95,
           "marketAnalysis": 88,
           "userFocus": 92,
@@ -615,7 +649,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
         ],
         "qualityGates": [
           {
-            "phase": "Development", 
+            "phase": "Development",
             "criteria": ["Unit test coverage >80%", "Code review approval"],
             "tools": ["Jest", "ESLint", "SonarQube"]
           }
@@ -705,9 +739,11 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
       "estimatedTimeline": "thorough",
       "tags": ["mobile", "collaboration", "mvp"]
     }
-  }
+
 }
-```
+}
+
+````
 
 ## 3. LLM Integration Architecture
 
@@ -728,13 +764,13 @@ class SutraLLMOrchestrator:
         self.forge_default_model = "gemini-flash"  # Default for all Forge stages
         self.admin_configured_models = ["gpt-4", "claude-3", "gemini-flash"]
         self.forge_locked_model = None  # Set at project start, locked for consistency
-    
+
     def select_forge_llm(self, project_id: str, user_selection: str = None):
         """One-time LLM selection for Forge project consistency"""
         selected_model = user_selection or self.forge_default_model
         self.forge_locked_model = selected_model
         return selected_model
-    
+
     def execute_forge_stage(self, stage: str, project_id: str):
         """Execute Forge stage with appropriate LLM strategy"""
         if stage == "technical_analysis":
@@ -743,42 +779,44 @@ class SutraLLMOrchestrator:
         else:
             # Stages 1-3, 5: Use locked model for consistency
             return self.single_llm_execution(self.forge_locked_model)
-```
+````
+
         self.default_model = 'gemini-flash'  # Optimal cost/performance ratio
         self.available_models = ['gemini-flash', 'gpt-4o', 'claude-3', 'custom-models']
-        
+
     async def execute_general_workflow(self, playbook_id: str, step: str, data: dict):
         """Execute general playbook steps using user-selected or default LLM"""
         playbook = await self.get_playbook(playbook_id)
         selected_llm = playbook.get('preferredLLM', self.default_model)
         return await self.execute_with_model(selected_llm, step, data)
-        
+
     async def execute_forge_workflow(self, project_id: str, stage: str, data: dict):
         """Execute Forge project stages with stage-specific LLM strategy"""
         project = await self.get_forge_project(project_id)
         selected_llm = project.forgeData.selectedLLM
-        
+
         if stage == 'tech_analysis':
             # Automatically use all admin-configured LLMs for comprehensive technical evaluation
             return await self.multi_llm_technical_analysis(data)
         else:
             # Use project's selected LLM for consistency across stages
             return await self.execute_with_model(selected_llm, stage, data)
-    
+
     async def multi_llm_technical_analysis(self, requirements: dict):
         """Multi-LLM technical analysis for comprehensive evaluation"""
         admin_configured_llms = await self.get_admin_configured_llms()
         results = {}
-        
+
         for llm in admin_configured_llms:
             try:
                 analysis = await self.execute_with_model(llm, 'technical_analysis', requirements)
                 results[llm] = analysis
             except Exception as e:
                 results[llm] = {"error": str(e), "status": "failed"}
-        
+
         return await self.synthesize_tech_analysis(results)
-```
+
+````
 
 ### 3.2. Prompt Engineering Framework
 
@@ -794,17 +832,17 @@ class SutraPromptLibrary:
         "performance_tuning": "Optimize this prompt for better LLM performance...",
         "bias_detection": "Review this prompt for potential biases..."
     }
-    
+
     # Forge-specific structured prompts for product development
     FORGE_PROMPTS = {
         "IDEA_REFINEMENT": """
         System: You are a product development expert helping refine a raw idea.
-        
+
         Context: {idea_context}
         Current Understanding: {current_understanding}
-        
+
         Task: Generate 5 clarifying questions focusing on {focus_area}
-        
+
         Output Format:
         - Question 1: [Clear, specific question]
         - Question 2: [Clear, specific question]
@@ -812,72 +850,73 @@ class SutraPromptLibrary:
         - Question 4: [Clear, specific question]
         - Question 5: [Clear, specific question]
         """,
-        
+
         "UX_REQUIREMENTS_ANALYSIS": """
         System: You are a UX/UI expert helping define user experience requirements.
-        
+
         PRD Context: {prd_context}
         User Personas: {user_personas}
         Platform Requirements: {platform_requirements}
-        
+
         Task: Analyze the product requirements and generate comprehensive UX requirements
-        
+
         Focus Areas:
         1. User Journey Mapping
         2. Interface Design Requirements
         3. Accessibility Considerations
         4. Platform-Specific Guidelines
         5. Interaction Patterns
-        
+
         Output Format:
         - User Journeys: [Detailed step-by-step user flows]
         - Design Requirements: [UI patterns, components, layouts]
         - Accessibility: [WCAG compliance, inclusive design]
         - Platform Considerations: [Web, mobile, desktop specific requirements]
         """,
-        
+
         "TECH_STACK_ANALYSIS": """
         System: You are a senior software architect evaluating technical stack options.
-        
+
         Requirements: {prd_requirements}
         UX Requirements: {ux_requirements}
         Team Context: {team_capabilities}
         Constraints: {technical_constraints}
-        
+
         Task: Evaluate the following technical stack hypothesis:
         {tech_stack_hypothesis}
-        
+
         Analyze across dimensions:
         1. Scalability (1-10 score + reasoning)
-        2. Maintainability (1-10 score + reasoning)  
+        2. Maintainability (1-10 score + reasoning)
         3. Development Speed (1-10 score + reasoning)
         4. Cost Efficiency (1-10 score + reasoning)
         5. Risk Level (1-10 score + reasoning)
         6. Team Fit (1-10 score + reasoning)
-        
+
         Output JSON format with scores and detailed reasoning for each dimension.
         """
     }
-    
+
     # Collaborative prompt optimization
     COLLABORATION_PROMPTS = {
         "peer_review": "Review this prompt for effectiveness and suggest improvements...",
         "version_comparison": "Compare these two prompt versions and recommend the better approach..."
     }
-```
+````
 
 ## 2.5. Quality Scoring Framework Implementation
 
 **CRITICAL IMPLEMENTATION REQUIREMENT:** This framework provides concrete prompts and evaluation criteria for LLM agents to implement quality scoring consistently across all Forge stages.
 
 #### Quality Metrics System
+
 ```python
 class ForgeQualityScorer:
     """
     Concrete implementation of quality scoring for LLM agents.
     Each metric uses specific prompts and weighted evaluation criteria.
     """
-    
+
     def calculate_idea_refinement_quality(self, idea_data: dict) -> dict:
         """
         Quality scoring for Stage 1: Idea Refinement
@@ -910,7 +949,7 @@ class ForgeQualityScorer:
                 "weight": 0.15
             }
         }
-        
+
         # Implementation: Use these prompts to calculate individual scores
         scores = {}
         for metric, config in scoring_prompts.items():
@@ -919,18 +958,18 @@ class ForgeQualityScorer:
                 content=idea_data,
                 criteria=config["criteria"]
             )
-        
+
         # Weighted overall calculation
-        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"] 
+        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"]
                           for metric in scores)
-        
+
         return {
             **scores,
             "overall": round(overall_score, 1),
             "calculation_method": "weighted_average",
             "quality_gate_threshold": 70.0
         }
-    
+
     def calculate_prd_section_quality(self, section_content: str, section_type: str) -> float:
         """
         Quality scoring for Stage 2: PRD Generation sections
@@ -944,13 +983,13 @@ class ForgeQualityScorer:
             "successMetrics": "Rate success metrics on scale 0-100. Consider: Are metrics measurable? Are targets realistic? Are KPIs aligned with goals?",
             "technicalRequirements": "Rate technical requirements on scale 0-100. Consider: Are requirements specific? Are constraints identified? Is architecture outlined?"
         }
-        
+
         return self.llm_evaluate(
             prompt=section_prompts.get(section_type, "Rate content quality on scale 0-100"),
             content=section_content,
             criteria=["clarity", "completeness", "actionability", "specificity"]
         )
-    
+
     def calculate_overall_prd_quality(self, prd_sections: dict) -> float:
         """
         Calculate overall PRD quality from individual section scores
@@ -963,23 +1002,23 @@ class ForgeQualityScorer:
             "successMetrics": 0.15,
             "technicalRequirements": 0.05
         }
-        
+
         weighted_score = 0
         total_weight = 0
-        
+
         for section, data in prd_sections.items():
             if section in section_weights and data.get("qualityScore", 0) > 0:
                 weighted_score += data["qualityScore"] * section_weights[section]
                 total_weight += section_weights[section]
-        
+
         return round(weighted_score / total_weight if total_weight > 0 else 0, 1)
-    
+
     def evaluate_quality_gate(self, overall_score: float, minimum_threshold: float = 70.0) -> dict:
         """
         Quality gate evaluation with specific recommendations
         """
         status = "passed" if overall_score >= minimum_threshold else "failed"
-        
+
         recommendations = []
         if overall_score < minimum_threshold:
             gap = minimum_threshold - overall_score
@@ -989,7 +1028,7 @@ class ForgeQualityScorer:
                 recommendations.append("Moderate improvements needed in key areas")
             else:
                 recommendations.append("Minor improvements needed to meet quality standards")
-        
+
         return {
             "status": status,
             "score": overall_score,
@@ -1021,13 +1060,14 @@ QUALITY_SCORING_SYSTEM = {
 **CRITICAL IMPLEMENTATION REQUIREMENT:** This framework defines how real-time collaboration conflicts are detected, resolved, and synchronized across multiple users working on the same Forge project.
 
 #### Conflict Detection and Resolution System
+
 ```python
 class ForgeCollaborationManager:
     """
     Handles real-time collaboration conflicts for Forge projects
     Implements optimistic updates with conflict resolution strategies
     """
-    
+
     def __init__(self):
         self.conflict_resolution_strategies = {
             "last_write_wins": self.resolve_last_write_wins,
@@ -1037,7 +1077,7 @@ class ForgeCollaborationManager:
         }
         self.update_buffer = {}  # Temporary storage for pending updates
         self.version_vector = {}  # Track document versions
-    
+
     def detect_conflict(self, update: dict) -> dict:
         """
         Detect collaboration conflicts using vector clocks and content comparison
@@ -1048,9 +1088,9 @@ class ForgeCollaborationManager:
             "stage_progression": self.check_stage_conflicts(update),
             "quality_score_conflict": self.check_quality_conflicts(update)
         }
-        
+
         active_conflicts = {k: v for k, v in conflict_types.items() if v}
-        
+
         return {
             "has_conflict": bool(active_conflicts),
             "conflict_types": active_conflicts,
@@ -1058,14 +1098,14 @@ class ForgeCollaborationManager:
             "affected_sections": self.identify_affected_sections(update),
             "conflicting_users": self.get_conflicting_users(update)
         }
-    
+
     def resolve_last_write_wins(self, conflict_data: dict) -> dict:
         """
         Simple conflict resolution: Most recent update wins
         Used for: Non-critical updates, user preference changes, comment additions
         """
         latest_update = max(conflict_data["updates"], key=lambda x: x["timestamp"])
-        
+
         return {
             "resolution_method": "last_write_wins",
             "winning_update": latest_update,
@@ -1073,7 +1113,7 @@ class ForgeCollaborationManager:
             "discarded_updates": [u for u in conflict_data["updates"] if u != latest_update],
             "notification_required": True
         }
-    
+
     def resolve_merge_content(self, conflict_data: dict) -> dict:
         """
         Intelligent content merging for non-conflicting sections
@@ -1081,7 +1121,7 @@ class ForgeCollaborationManager:
         """
         merged_content = {}
         conflict_sections = []
-        
+
         for update in conflict_data["updates"]:
             for section, content in update["changes"].items():
                 if section not in merged_content:
@@ -1096,7 +1136,7 @@ class ForgeCollaborationManager:
                         "versions": [merged_content[section], content],
                         "requires_user_input": True
                     })
-        
+
         return {
             "resolution_method": "merge_content",
             "merged_content": merged_content,
@@ -1104,7 +1144,7 @@ class ForgeCollaborationManager:
             "auto_merged_sections": list(merged_content.keys()),
             "user_resolution_required": bool(conflict_sections)
         }
-    
+
     def resolve_user_choice(self, conflict_data: dict) -> dict:
         """
         Present conflict to users for manual resolution
@@ -1123,7 +1163,7 @@ class ForgeCollaborationManager:
                         "timestamp": conflict_data["updates"][0]["timestamp"]
                     },
                     {
-                        "id": "version_b", 
+                        "id": "version_b",
                         "label": f"Use {conflict_data['users'][1]}'s version",
                         "preview": conflict_data["updates"][1]["preview"],
                         "timestamp": conflict_data["updates"][1]["timestamp"]
@@ -1138,17 +1178,17 @@ class ForgeCollaborationManager:
             "pending_resolution": True,
             "timeout": 300  # 5 minutes to resolve
         }
-    
+
     def handle_optimistic_updates(self, project_id: str, user_update: dict) -> dict:
         """
         Implement optimistic updates with rollback capability
         """
         # 1. Apply update immediately for responsive UX
         optimistic_state = self.apply_update_locally(user_update)
-        
+
         # 2. Send to server for validation and conflict detection
         server_response = self.send_update_to_server(project_id, user_update)
-        
+
         # 3. Handle server response
         if server_response.get("conflict_detected"):
             # Rollback optimistic update and present conflict resolution
@@ -1156,7 +1196,7 @@ class ForgeCollaborationManager:
             conflict_resolution = self.initiate_conflict_resolution(
                 server_response["conflict_data"]
             )
-            
+
             return {
                 "status": "conflict",
                 "local_state": rollback_state,
@@ -1177,11 +1217,11 @@ class ForgeWebSocketHandler:
     """
     WebSocket handlers for real-time Forge collaboration
     """
-    
+
     def __init__(self):
         self.collaboration_manager = ForgeCollaborationManager()
         self.active_sessions = {}  # Track active user sessions per project
-    
+
     async def handle_forge_update(self, websocket, project_id: str, update_data: dict):
         """
         Handle real-time Forge project updates
@@ -1190,10 +1230,10 @@ class ForgeWebSocketHandler:
         user_id = update_data["user_id"]
         self.active_sessions[project_id] = self.active_sessions.get(project_id, set())
         self.active_sessions[project_id].add(user_id)
-        
+
         # Process update with conflict detection
         conflict_check = self.collaboration_manager.detect_conflict(update_data)
-        
+
         if conflict_check["has_conflict"]:
             # Handle conflict according to resolution strategy
             resolution = await self.resolve_conflict(conflict_check, update_data)
@@ -1201,10 +1241,10 @@ class ForgeWebSocketHandler:
         else:
             # Broadcast successful update to all collaborators
             await self.broadcast_update(project_id, update_data, exclude_user=user_id)
-        
+
         # Update project state in database
         await self.persist_project_state(project_id, update_data)
-    
+
     async def broadcast_conflict_resolution(self, project_id: str, resolution: dict):
         """
         Broadcast conflict resolution to all active collaborators
@@ -1216,7 +1256,7 @@ class ForgeWebSocketHandler:
             "timestamp": datetime.utcnow().isoformat(),
             "requires_action": resolution.get("user_resolution_required", False)
         }
-        
+
         # Send to all active users in the project
         for user_id in self.active_sessions.get(project_id, set()):
             await self.send_to_user(user_id, notification)
@@ -1225,7 +1265,7 @@ class ForgeWebSocketHandler:
 async def handle_collaboration_conflict(req: func.HttpRequest) -> func.HttpResponse:
     """
     POST /api/forge/projects/{project_id}/collaboration/resolve-conflict
-    
+
     Resolve collaboration conflicts with user input
     Input: {
         "conflict_id": "string",
@@ -1247,13 +1287,14 @@ async def handle_collaboration_conflict(req: func.HttpRequest) -> func.HttpRespo
 **CRITICAL IMPLEMENTATION REQUIREMENT:** This section defines the explicit mapping logic for transforming rich Forge project data into executable Sutra Playbooks.
 
 #### Transformation Mapping Rules
+
 ```python
 class ForgeToPlaybookTransformer:
     """
     Explicit transformation logic for converting Forge project data into executable Playbooks.
     LLM agents must implement these exact mapping rules for consistent output generation.
     """
-    
+
     def transform_forge_to_playbook(self, forge_project: dict) -> dict:
         """
         Master transformation function that orchestrates the complete mapping process
@@ -1265,31 +1306,31 @@ class ForgeToPlaybookTransformer:
             "steps": [],
             "metadata": self.extract_metadata(forge_project)
         }
-        
+
         # Sequential transformation based on completed stages
         if forge_project["forgeData"]["ideaRefinement"]["status"] == "completed":
             playbook["steps"].extend(self.transform_idea_refinement(forge_project))
-        
+
         if forge_project["forgeData"]["prdGeneration"]["status"] == "completed":
             playbook["steps"].extend(self.transform_prd_generation(forge_project))
-        
+
         if forge_project["forgeData"]["uxRequirements"]["status"] == "completed":
             playbook["steps"].extend(self.transform_ux_requirements(forge_project))
         elif forge_project["forgeData"]["uxRequirements"]["status"] == "skipped":
             playbook["steps"].extend(self.apply_ux_compensation(forge_project))
-        
+
         if forge_project["forgeData"]["technicalAnalysis"]["status"] == "completed":
             playbook["steps"].extend(self.transform_technical_analysis(forge_project))
-        
+
         # Final integration and validation steps
         playbook["steps"].extend(self.generate_integration_steps(forge_project))
-        
+
         return playbook
-    
+
     def transform_idea_refinement(self, forge_project: dict) -> list:
         """
         Stage 1: Idea Refinement → Playbook Introduction
-        
+
         Mapping Rules:
         - refinedConcept.problemStatement → First step with context comment
         - refinedConcept.targetAudience → User persona definition step
@@ -1297,7 +1338,7 @@ class ForgeToPlaybookTransformer:
         - marketAnalysis → Competitive research task
         """
         idea_data = forge_project["forgeData"]["ideaRefinement"]
-        
+
         steps = [
             {
                 "id": "project_context",
@@ -1324,13 +1365,13 @@ class ForgeToPlaybookTransformer:
                 ]
             }
         ]
-        
+
         return steps
-    
+
     def transform_prd_generation(self, forge_project: dict) -> list:
         """
         Stage 2: PRD Generation → Development Requirements & User Stories
-        
+
         Mapping Rules:
         - prdGeneration.sections.executiveSummary → Project overview comment
         - prdGeneration.sections.problemStatement → Detailed requirements documentation
@@ -1339,7 +1380,7 @@ class ForgeToPlaybookTransformer:
         - prdGeneration.sections.successMetrics → Testing and validation checkpoints
         """
         prd_data = forge_project["forgeData"]["prdGeneration"]
-        
+
         steps = [
             {
                 "id": "requirements_documentation",
@@ -1349,7 +1390,7 @@ class ForgeToPlaybookTransformer:
                 "requirements_quality_score": prd_data["overallQualityScore"]
             }
         ]
-        
+
         # Generate feature implementation tasks from specifications
         if prd_data["sections"]["featureSpecifications"]["content"]:
             steps.append({
@@ -1364,7 +1405,7 @@ class ForgeToPlaybookTransformer:
                     }
                 ]
             })
-        
+
         # Generate validation tasks from success metrics
         if prd_data["sections"]["successMetrics"]["content"]:
             steps.append({
@@ -1374,22 +1415,22 @@ class ForgeToPlaybookTransformer:
                 "description": f"Implement validation for success metrics: {prd_data['sections']['successMetrics']['content']}",
                 "validation_criteria": prd_data["sections"]["successMetrics"]["content"]
             })
-        
+
         return steps
-    
+
     def transform_ux_requirements(self, forge_project: dict) -> list:
         """
         Stage 3: UX Requirements → User Interface Implementation
-        
+
         Mapping Rules:
         - userJourneys → User flow implementation tasks
         - wireframes → UI component development tasks
         - designSystem → Styling and theming setup
         """
         ux_data = forge_project["forgeData"]["uxRequirements"]
-        
+
         steps = []
-        
+
         # Transform user journeys into implementation tasks
         for journey in ux_data.get("userJourneys", []):
             steps.append({
@@ -1406,7 +1447,7 @@ class ForgeToPlaybookTransformer:
                     }
                 ]
             })
-        
+
         # Transform wireframes into component tasks
         for wireframe in ux_data.get("wireframes", []):
             steps.append({
@@ -1422,7 +1463,7 @@ class ForgeToPlaybookTransformer:
                     }
                 ]
             })
-        
+
         # Add design system implementation if specified
         if ux_data.get("designSystem"):
             steps.append({
@@ -1432,20 +1473,20 @@ class ForgeToPlaybookTransformer:
                 "description": f"Implement design system with color palette: {ux_data['designSystem']['colorPalette']}, typography: {ux_data['designSystem']['typography']}, components: {ux_data['designSystem']['componentLibrary']}",
                 "design_tokens": ux_data["designSystem"]
             })
-        
+
         return steps
-    
+
     def apply_ux_compensation(self, forge_project: dict) -> list:
         """
         Stage 3 Skipped: Apply selected compensation strategy
-        
+
         Mapping Rules:
         - skipDecision.reason → Context comment explaining skip
         - skipDecision.compensationApplied → Specific compensation implementation
         """
         ux_data = forge_project["forgeData"]["uxRequirements"]
         compensation = ux_data["skipDecision"]["compensationApplied"]
-        
+
         compensation_steps = {
             "comprehensive_ux_prompts": [
                 {
@@ -1491,20 +1532,20 @@ class ForgeToPlaybookTransformer:
             ],
             "no_compensation": []
         }
-        
+
         return compensation_steps.get(compensation, [])
-    
+
     def transform_technical_analysis(self, forge_project: dict) -> list:
         """
         Stage 4: Technical Analysis → Architecture & Stack Implementation
-        
+
         Mapping Rules:
         - recommendedStack → Environment setup and dependency installation tasks
         - architectureDecisions → Implementation guidance comments
         - multiLLMAnalysis → Quality checkpoints from different perspectives
         """
         tech_data = forge_project["forgeData"]["technicalAnalysis"]
-        
+
         steps = [
             {
                 "id": "environment_setup",
@@ -1520,7 +1561,7 @@ class ForgeToPlaybookTransformer:
                 ]
             }
         ]
-        
+
         # Add architecture decision implementation steps
         for decision in tech_data.get("architectureDecisions", []):
             steps.append({
@@ -1536,7 +1577,7 @@ class ForgeToPlaybookTransformer:
                     }
                 ]
             })
-        
+
         # Add multi-LLM perspective checkpoints
         if tech_data.get("multiLLMAnalysis"):
             steps.append({
@@ -1549,17 +1590,17 @@ class ForgeToPlaybookTransformer:
                 "gemini_perspective": tech_data["multiLLMAnalysis"].get("geminiAnalysis", {}),
                 "validation_checklist": [
                     "Business impact aligns with user needs (GPT-4 perspective)",
-                    "Technical implementation is feasible and scalable (Claude perspective)", 
+                    "Technical implementation is feasible and scalable (Claude perspective)",
                     "Solution has competitive advantages and innovation opportunities (Gemini perspective)"
                 ]
             })
-        
+
         return steps
-    
+
     def generate_integration_steps(self, forge_project: dict) -> list:
         """
         Final Steps: Integration, Testing, and Deployment
-        
+
         Generates final integration steps based on all previous stages
         """
         steps = [
@@ -1590,25 +1631,25 @@ class ForgeToPlaybookTransformer:
                 ]
             }
         ]
-        
+
         return steps
 
 # API Integration for Transformation
 async def generate_implementation_playbook(req: func.HttpRequest) -> func.HttpResponse:
     """
     POST /api/forge/projects/{project_id}/playbook/generate
-    
+
     Transforms completed Forge project into executable Playbook using defined mapping rules
     """
     project_id = req.route_params.get('project_id')
     forge_project = await get_forge_project(project_id)
-    
+
     transformer = ForgeToPlaybookTransformer()
     playbook = transformer.transform_forge_to_playbook(forge_project)
-    
+
     # Store as executable Playbook in Sutra system
     playbook_id = await create_playbook(playbook)
-    
+
     return func.HttpResponse(
         json.dumps({
             "playbook_id": playbook_id,
@@ -1620,4 +1661,4 @@ async def generate_implementation_playbook(req: func.HttpRequest) -> func.HttpRe
         }),
         status_code=200
     )
-````
+```

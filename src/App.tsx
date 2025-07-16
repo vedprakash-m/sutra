@@ -3,19 +3,32 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import React, { useEffect, Suspense } from "react";
 import { AuthProvider, useAuth } from "@/components/auth/UnifiedAuthProvider";
 import { apiService } from "@/services/api";
+import { performanceMonitor } from "@/utils/performance-monitor";
 import LoginPage from "@/components/auth/LoginPage";
 import NavBar from "@/components/layout/NavBar";
 
 // Lazy load major components for better performance
 const Dashboard = React.lazy(() => import("@/components/dashboard/Dashboard"));
-const PromptBuilder = React.lazy(() => import("@/components/prompt/PromptBuilder"));
-const CollectionsPage = React.lazy(() => import("@/components/collections/CollectionsPage"));
-const PlaybookBuilder = React.lazy(() => import("@/components/playbooks/PlaybookBuilder"));
-const PlaybookRunner = React.lazy(() => import("@/components/playbooks/PlaybookRunner"));
-const IntegrationsPage = React.lazy(() => import("@/components/integrations/IntegrationsPage"));
+const PromptBuilder = React.lazy(
+  () => import("@/components/prompt/PromptBuilder"),
+);
+const CollectionsPage = React.lazy(
+  () => import("@/components/collections/CollectionsPage"),
+);
+const PlaybookBuilder = React.lazy(
+  () => import("@/components/playbooks/PlaybookBuilder"),
+);
+const PlaybookRunner = React.lazy(
+  () => import("@/components/playbooks/PlaybookRunner"),
+);
+const IntegrationsPage = React.lazy(
+  () => import("@/components/integrations/IntegrationsPage"),
+);
 const AdminPanel = React.lazy(() => import("@/components/admin/AdminPanel"));
 const ForgePage = React.lazy(() => import("@/components/forge/ForgePage"));
-const AnalyticsPage = React.lazy(() => import("@/components/analytics/AnalyticsPage"));
+const AnalyticsPage = React.lazy(
+  () => import("@/components/analytics/AnalyticsPage"),
+);
 
 const queryClient = new QueryClient();
 
@@ -34,6 +47,16 @@ function AppContent() {
 
   // Initialize API service with auth token provider
   useEffect(() => {
+    // Initialize performance monitoring
+    console.log("🔍 Initializing performance monitoring");
+    
+    // Track page navigation
+    performanceMonitor.trackUserAction('app_load', performance.now(), {
+      path: window.location.pathname,
+      userAgent: navigator.userAgent
+    });
+
+    // Set up API service token provider
     if (isAuthenticated && getAccessToken) {
       console.log("🔗 Connecting API service to MSAL auth provider");
       apiService.setTokenProvider({

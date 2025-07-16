@@ -1,20 +1,31 @@
 /**
  * ForgeProjectCard - Individual project card component for the Forge project list
  */
-import { 
-  CalendarIcon, 
-  UserGroupIcon, 
+import {
+  CalendarIcon,
+  UserGroupIcon,
   DocumentTextIcon,
-  ArrowRightIcon 
-} from '@heroicons/react/24/outline';
+  ArrowRightIcon,
+} from "@heroicons/react/24/outline";
 
 interface ForgeProject {
   id: string;
   name: string;
   description: string;
-  currentStage: 'idea_refinement' | 'prd_generation' | 'ux_requirements' | 'technical_analysis' | 'implementation_playbook';
-  status: 'draft' | 'active' | 'on_hold' | 'completed' | 'archived' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  currentStage:
+    | "idea_refinement"
+    | "prd_generation"
+    | "ux_requirements"
+    | "technical_analysis"
+    | "implementation_playbook";
+  status:
+    | "draft"
+    | "active"
+    | "on_hold"
+    | "completed"
+    | "archived"
+    | "cancelled";
+  priority: "low" | "medium" | "high" | "critical";
   progressPercentage: number;
   createdAt: string;
   updatedAt: string;
@@ -43,30 +54,35 @@ interface ForgeProjectCardProps {
   statusConfig: Record<string, StatusConfig>;
 }
 
-export default function ForgeProjectCard({ 
-  project, 
-  onSelect, 
-  stageConfig, 
-  statusConfig 
+export default function ForgeProjectCard({
+  project,
+  onSelect,
+  stageConfig,
+  statusConfig,
 }: ForgeProjectCardProps) {
   const stage = stageConfig[project.currentStage];
   const status = statusConfig[project.status];
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "critical":
+        return "bg-red-100 text-red-800";
+      case "high":
+        return "bg-orange-100 text-orange-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "low":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -88,15 +104,22 @@ export default function ForgeProjectCard({
 
         {/* Stage and Status */}
         <div className="flex items-center space-x-2 mb-4">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${stage.color}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${stage.color}`}
+          >
             <span className="mr-1">{stage.icon}</span>
             {stage.name}
           </span>
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}
+          >
             {status.name}
           </span>
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}>
-            {project.priority.charAt(0).toUpperCase() + project.priority.slice(1)}
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}
+          >
+            {project.priority.charAt(0).toUpperCase() +
+              project.priority.slice(1)}
           </span>
         </div>
 
@@ -107,7 +130,7 @@ export default function ForgeProjectCard({
             <span>{project.progressPercentage}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${project.progressPercentage}%` }}
             />
@@ -119,7 +142,7 @@ export default function ForgeProjectCard({
           <div className="mb-4">
             <div className="flex flex-wrap gap-1">
               {project.tags.slice(0, 3).map((tag, index) => (
-                <span 
+                <span
                   key={index}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
                 >

@@ -45,7 +45,7 @@ class PerformanceMonitor {
    * Initialize Performance Observer for Core Web Vitals
    */
   private initializePerformanceObserver(): void {
-    if (typeof window === 'undefined' || !('PerformanceObserver' in window)) {
+    if (typeof window === "undefined" || !("PerformanceObserver" in window)) {
       return;
     }
 
@@ -54,43 +54,46 @@ class PerformanceMonitor {
       this.observer = new PerformanceObserver((list) => {
         list.getEntries().forEach((entry) => {
           this.recordMetric(entry.name, entry.startTime, {
-            entryType: entry.entryType
+            entryType: entry.entryType,
           });
         });
       });
 
       // Start observing
-      this.observer.observe({ entryTypes: ['paint', 'navigation', 'measure'] });
+      this.observer.observe({ entryTypes: ["paint", "navigation", "measure"] });
 
       // Observe LCP (Largest Contentful Paint)
-      if ('PerformanceObserver' in window) {
+      if ("PerformanceObserver" in window) {
         const lcpObserver = new PerformanceObserver((list) => {
           list.getEntries().forEach((entry: any) => {
-            this.recordMetric('largest-contentful-paint', entry.startTime);
+            this.recordMetric("largest-contentful-paint", entry.startTime);
           });
         });
-        lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+        lcpObserver.observe({ entryTypes: ["largest-contentful-paint"] });
 
         // Observe FID (First Input Delay)
         const fidObserver = new PerformanceObserver((list) => {
           list.getEntries().forEach((entry: any) => {
-            this.recordMetric('first-input-delay', entry.processingStart - entry.startTime);
+            this.recordMetric(
+              "first-input-delay",
+              entry.processingStart - entry.startTime,
+            );
           });
         });
-        fidObserver.observe({ entryTypes: ['first-input'] });
+        fidObserver.observe({ entryTypes: ["first-input"] });
 
         // Observe CLS (Cumulative Layout Shift)
         const clsObserver = new PerformanceObserver((list) => {
           list.getEntries().forEach((entry: any) => {
             if (!entry.hadRecentInput) {
-              this.recordMetric('cumulative-layout-shift', entry.value);
+              this.recordMetric("cumulative-layout-shift", entry.value);
             }
           });
         });
-        clsObserver.observe({ entryTypes: ['layout-shift'] });
+        clsObserver.observe({ entryTypes: ["layout-shift"] });
       }
     } catch (error) {
-      console.warn('Performance Observer not supported:', error);
+      console.warn("Performance Observer not supported:", error);
     }
   }
 
@@ -98,27 +101,43 @@ class PerformanceMonitor {
    * Capture navigation timing metrics
    */
   private captureNavigationTiming(): void {
-    if (typeof window === 'undefined' || !window.performance) {
+    if (typeof window === "undefined" || !window.performance) {
       return;
     }
 
     // Wait for page to load before capturing timing
-    window.addEventListener('load', () => {
+    window.addEventListener("load", () => {
       setTimeout(() => {
-        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const navigation = performance.getEntriesByType(
+          "navigation",
+        )[0] as PerformanceNavigationTiming;
         if (navigation) {
           this.navigationTiming = {
-            domContentLoaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
+            domContentLoaded:
+              navigation.domContentLoadedEventEnd -
+              navigation.domContentLoadedEventStart,
             firstPaint: 0, // Will be updated by observer
             firstContentfulPaint: 0, // Will be updated by observer
             largestContentfulPaint: 0, // Will be updated by observer
           };
 
           // Record navigation metrics
-          this.recordMetric('navigation-time', navigation.loadEventEnd - navigation.fetchStart);
-          this.recordMetric('dom-content-loaded', this.navigationTiming.domContentLoaded);
-          this.recordMetric('dns-lookup', navigation.domainLookupEnd - navigation.domainLookupStart);
-          this.recordMetric('server-response', navigation.responseEnd - navigation.requestStart);
+          this.recordMetric(
+            "navigation-time",
+            navigation.loadEventEnd - navigation.fetchStart,
+          );
+          this.recordMetric(
+            "dom-content-loaded",
+            this.navigationTiming.domContentLoaded,
+          );
+          this.recordMetric(
+            "dns-lookup",
+            navigation.domainLookupEnd - navigation.domainLookupStart,
+          );
+          this.recordMetric(
+            "server-response",
+            navigation.responseEnd - navigation.requestStart,
+          );
         }
       }, 100);
     });
@@ -127,12 +146,16 @@ class PerformanceMonitor {
   /**
    * Record a performance metric
    */
-  recordMetric(name: string, value: number, tags?: Record<string, string>): void {
+  recordMetric(
+    name: string,
+    value: number,
+    tags?: Record<string, string>,
+  ): void {
     const metric: PerformanceMetric = {
       name,
       value,
       timestamp: Date.now(),
-      tags
+      tags,
     };
 
     this.metrics.push(metric);
@@ -148,10 +171,16 @@ class PerformanceMonitor {
   /**
    * Record API performance
    */
-  recordAPICall(endpoint: string, method: string, duration: number, status: number, options?: {
-    size?: number;
-    cached?: boolean;
-  }): void {
+  recordAPICall(
+    endpoint: string,
+    method: string,
+    duration: number,
+    status: number,
+    options?: {
+      size?: number;
+      cached?: boolean;
+    },
+  ): void {
     const apiMetric: APIPerformance = {
       endpoint,
       method,
@@ -159,7 +188,7 @@ class PerformanceMonitor {
       status,
       timestamp: Date.now(),
       size: options?.size,
-      cached: options?.cached
+      cached: options?.cached,
     };
 
     this.apiMetrics.push(apiMetric);
@@ -169,8 +198,10 @@ class PerformanceMonitor {
       this.apiMetrics = this.apiMetrics.slice(-500);
     }
 
-    const cacheStatus = options?.cached ? '(cached)' : '';
-    console.log(`🌐 API call: ${method} ${endpoint} - ${duration.toFixed(2)}ms ${cacheStatus}`);
+    const cacheStatus = options?.cached ? "(cached)" : "";
+    console.log(
+      `🌐 API call: ${method} ${endpoint} - ${duration.toFixed(2)}ms ${cacheStatus}`,
+    );
   }
 
   /**
@@ -185,7 +216,7 @@ class PerformanceMonitor {
       return result;
     } catch (error) {
       const duration = performance.now() - startTime;
-      this.recordMetric(`${name}-error`, duration, { error: 'true' });
+      this.recordMetric(`${name}-error`, duration, { error: "true" });
       throw error;
     }
   }
@@ -202,7 +233,7 @@ class PerformanceMonitor {
       return result;
     } catch (error) {
       const duration = performance.now() - startTime;
-      this.recordMetric(`${name}-error`, duration, { error: 'true' });
+      this.recordMetric(`${name}-error`, duration, { error: "true" });
       throw error;
     }
   }
@@ -215,39 +246,63 @@ class PerformanceMonitor {
     const last5Minutes = now - 5 * 60 * 1000;
 
     // Filter recent metrics
-    const recentMetrics = this.metrics.filter(m => m.timestamp >= last5Minutes);
-    const recentAPIMetrics = this.apiMetrics.filter(m => m.timestamp >= last5Minutes);
+    const recentMetrics = this.metrics.filter(
+      (m) => m.timestamp >= last5Minutes,
+    );
+    const recentAPIMetrics = this.apiMetrics.filter(
+      (m) => m.timestamp >= last5Minutes,
+    );
 
     // Calculate averages
-    const avgMetrics: Record<string, { avg: number; count: number; min: number; max: number }> = {};
-    
-    recentMetrics.forEach(metric => {
+    const avgMetrics: Record<
+      string,
+      { avg: number; count: number; min: number; max: number }
+    > = {};
+
+    recentMetrics.forEach((metric) => {
       if (!avgMetrics[metric.name]) {
-        avgMetrics[metric.name] = { avg: 0, count: 0, min: Infinity, max: -Infinity };
+        avgMetrics[metric.name] = {
+          avg: 0,
+          count: 0,
+          min: Infinity,
+          max: -Infinity,
+        };
       }
       avgMetrics[metric.name].count++;
       avgMetrics[metric.name].avg += metric.value;
-      avgMetrics[metric.name].min = Math.min(avgMetrics[metric.name].min, metric.value);
-      avgMetrics[metric.name].max = Math.max(avgMetrics[metric.name].max, metric.value);
+      avgMetrics[metric.name].min = Math.min(
+        avgMetrics[metric.name].min,
+        metric.value,
+      );
+      avgMetrics[metric.name].max = Math.max(
+        avgMetrics[metric.name].max,
+        metric.value,
+      );
     });
 
     // Finalize averages
-    Object.keys(avgMetrics).forEach(key => {
+    Object.keys(avgMetrics).forEach((key) => {
       avgMetrics[key].avg /= avgMetrics[key].count;
     });
 
     // API metrics summary
     const apiSummary = {
       totalCalls: recentAPIMetrics.length,
-      averageResponseTime: recentAPIMetrics.length > 0 
-        ? recentAPIMetrics.reduce((sum, m) => sum + m.duration, 0) / recentAPIMetrics.length 
-        : 0,
-      cacheHitRate: recentAPIMetrics.length > 0
-        ? recentAPIMetrics.filter(m => m.cached).length / recentAPIMetrics.length
-        : 0,
-      errorRate: recentAPIMetrics.length > 0
-        ? recentAPIMetrics.filter(m => m.status >= 400).length / recentAPIMetrics.length
-        : 0
+      averageResponseTime:
+        recentAPIMetrics.length > 0
+          ? recentAPIMetrics.reduce((sum, m) => sum + m.duration, 0) /
+            recentAPIMetrics.length
+          : 0,
+      cacheHitRate:
+        recentAPIMetrics.length > 0
+          ? recentAPIMetrics.filter((m) => m.cached).length /
+            recentAPIMetrics.length
+          : 0,
+      errorRate:
+        recentAPIMetrics.length > 0
+          ? recentAPIMetrics.filter((m) => m.status >= 400).length /
+            recentAPIMetrics.length
+          : 0,
     };
 
     return {
@@ -255,7 +310,7 @@ class PerformanceMonitor {
       metrics: avgMetrics,
       apiMetrics: apiSummary,
       totalMetrics: this.metrics.length,
-      totalAPICalls: this.apiMetrics.length
+      totalAPICalls: this.apiMetrics.length,
     };
   }
 
@@ -270,18 +325,18 @@ class PerformanceMonitor {
       fcp: null as number | null, // First Contentful Paint
     };
 
-    this.metrics.forEach(metric => {
+    this.metrics.forEach((metric) => {
       switch (metric.name) {
-        case 'largest-contentful-paint':
+        case "largest-contentful-paint":
           vitals.lcp = metric.value;
           break;
-        case 'first-input-delay':
+        case "first-input-delay":
           vitals.fid = metric.value;
           break;
-        case 'cumulative-layout-shift':
+        case "cumulative-layout-shift":
           vitals.cls = (vitals.cls || 0) + metric.value;
           break;
-        case 'first-contentful-paint':
+        case "first-contentful-paint":
           vitals.fcp = metric.value;
           break;
       }
@@ -294,18 +349,23 @@ class PerformanceMonitor {
    * Start periodic performance reporting
    */
   private startPeriodicReporting(): void {
-    setInterval(() => {
-      const summary = this.getPerformanceSummary();
-      const vitals = this.getCoreWebVitals();
-      
-      console.log('📊 Performance Summary (last 5 minutes):', {
-        apiCalls: summary.apiMetrics.totalCalls,
-        avgResponseTime: summary.apiMetrics.averageResponseTime.toFixed(2) + 'ms',
-        cacheHitRate: (summary.apiMetrics.cacheHitRate * 100).toFixed(1) + '%',
-        errorRate: (summary.apiMetrics.errorRate * 100).toFixed(1) + '%',
-        coreWebVitals: vitals
-      });
-    }, 5 * 60 * 1000); // Report every 5 minutes
+    setInterval(
+      () => {
+        const summary = this.getPerformanceSummary();
+        const vitals = this.getCoreWebVitals();
+
+        console.log("📊 Performance Summary (last 5 minutes):", {
+          apiCalls: summary.apiMetrics.totalCalls,
+          avgResponseTime:
+            summary.apiMetrics.averageResponseTime.toFixed(2) + "ms",
+          cacheHitRate:
+            (summary.apiMetrics.cacheHitRate * 100).toFixed(1) + "%",
+          errorRate: (summary.apiMetrics.errorRate * 100).toFixed(1) + "%",
+          coreWebVitals: vitals,
+        });
+      },
+      5 * 60 * 1000,
+    ); // Report every 5 minutes
   }
 
   /**
@@ -318,7 +378,7 @@ class PerformanceMonitor {
       navigationTiming: this.navigationTiming,
       summary: this.getPerformanceSummary(),
       coreWebVitals: this.getCoreWebVitals(),
-      exportedAt: new Date().toISOString()
+      exportedAt: new Date().toISOString(),
     };
   }
 

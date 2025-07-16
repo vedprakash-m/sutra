@@ -1,10 +1,10 @@
 /**
  * ImplementationPlaybookStage.tsx
- * 
+ *
  * React component for Task 2.7 - Implementation Playbook Generation Stage of Forge Module
  * Generates step-by-step coding agent prompts and execution guides for systematic development
  * with complete project context integration and quality validation.
- * 
+ *
  * Features:
  * - Context Integration: Full project context from all stages informs prompt generation
  * - Agent Optimization: Prompts specifically designed for coding agent consumption
@@ -12,22 +12,17 @@
  * - Deployment Readiness: Complete environment setup and deployment procedures
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  CheckCircle, 
-  Clock, 
-  Download, 
-  Code, 
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  CheckCircle,
+  Clock,
+  Download,
+  Code,
   GitBranch,
   Zap,
   Settings,
@@ -40,24 +35,24 @@ import {
   Brain,
   Rocket,
   Package,
-  TestTube
-} from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from '@/hooks/use-toast';
+  TestTube,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "@/hooks/use-toast";
 
 // Import existing components
-import QualityGate from '@/components/forge/QualityGate';
-import ProgressIndicator from '@/components/forge/ProgressIndicator';
-import { useAuth } from '@/hooks/useAuth';
-import { useLLMCost } from '@/hooks/useLLMCost';
+import { QualityGate } from "@/components/forge/QualityGate";
+import { ProgressIndicator } from "@/components/forge/ProgressIndicator";
+import { useAuth } from "@/hooks/useAuth";
+import { useLLMCost } from "@/hooks/useLLMCost";
 
 // Types for Implementation Playbook
 interface ImplementationPlaybookProps {
@@ -74,10 +69,85 @@ interface ProjectContext {
   technicalAnalysis: any;
 }
 
+interface Dependency {
+  name: string;
+  version?: string;
+  type: 'runtime' | 'development' | 'peer';
+}
+
+interface Milestone {
+  name: string;
+  description: string;
+  dueDate: string;
+  progress: number;
+}
+
+interface Risk {
+  description: string;
+  impact: 'low' | 'medium' | 'high';
+  probability: 'low' | 'medium' | 'high';
+  mitigation: string;
+}
+
+interface QualityGateType {
+  name: string;
+  criteria: string[];
+  threshold: number;
+}
+
+interface EnvironmentConfig {
+  name: string;
+  variables: Record<string, string>;
+  requirements: string[];
+}
+
+interface BuildStep {
+  name: string;
+  command: string;
+  description: string;
+}
+
+interface DeploymentStep {
+  name: string;
+  command: string;
+  description: string;
+  environment: string;
+}
+
+interface MonitoringConfig {
+  metrics: string[];
+  alerts: string[];
+  dashboards: string[];
+}
+
+interface BackupConfig {
+  frequency: string;
+  retention: string;
+  strategy: string;
+}
+
+interface RollbackConfig {
+  strategy: string;
+  steps: string[];
+  verification: string[];
+}
+
+interface SecurityConfig {
+  authentication: string[];
+  authorization: string[];
+  encryption: string[];
+}
+
 interface CodingPrompt {
   id: string;
   title: string;
-  category: 'setup' | 'architecture' | 'frontend' | 'backend' | 'testing' | 'deployment';
+  category:
+    | "setup"
+    | "architecture"
+    | "frontend"
+    | "backend"
+    | "testing"
+    | "deployment";
   content: string;
   agentInstructions: string[];
   validationCriteria: string[];
@@ -88,13 +158,13 @@ interface CodingPrompt {
 }
 
 interface DevelopmentWorkflow {
-  methodology: 'agile_sprints' | 'waterfall' | 'kanban';
+  methodology: "agile_sprints" | "waterfall" | "kanban";
   phases: WorkflowPhase[];
   sprints: Sprint[];
   dependencies: Dependency[];
   criticalPath: string[];
   milestones: Milestone[];
-  qualityGates: QualityGate[];
+  qualityGates: QualityGateType[];
   riskMitigation: Risk[];
 }
 
@@ -154,7 +224,7 @@ interface DeploymentGuide {
 interface PlaybookSection {
   id: string;
   title: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'error';
+  status: "pending" | "in-progress" | "completed" | "error";
   progress: number;
   data: any;
   quality: QualityAssessment;
@@ -176,18 +246,20 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   projectId,
   projectContext,
   onStageComplete,
-  onQualityUpdate
+  onQualityUpdate,
 }) => {
   // State management
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [isGenerating, setIsGenerating] = useState(false);
   const [sections, setSections] = useState<Record<string, PlaybookSection>>({});
-  const [overallQuality, setOverallQuality] = useState<QualityAssessment | null>(null);
+  const [overallQuality, setOverallQuality] =
+    useState<QualityAssessment | null>(null);
   const [contextValidation, setContextValidation] = useState<any>(null);
-  const [exportFormat, setExportFormat] = useState('json');
-  const [agentType, setAgentType] = useState('general');
-  const [workflowMethodology, setWorkflowMethodology] = useState('agile_sprints');
-  
+  const [exportFormat, setExportFormat] = useState("json");
+  const [agentType, setAgentType] = useState("general");
+  const [workflowMethodology, setWorkflowMethodology] =
+    useState("agile_sprints");
+
   // Hooks
   const { user } = useAuth();
   const { trackCost } = useLLMCost();
@@ -200,45 +272,45 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   const initializeSections = () => {
     const initialSections: Record<string, PlaybookSection> = {
       codingPrompts: {
-        id: 'codingPrompts',
-        title: 'Coding Agent Prompts',
-        status: 'pending',
+        id: "codingPrompts",
+        title: "Coding Agent Prompts",
+        status: "pending",
         progress: 0,
         data: null,
-        quality: getInitialQuality()
+        quality: getInitialQuality(),
       },
       developmentWorkflow: {
-        id: 'developmentWorkflow',
-        title: 'Development Workflow',
-        status: 'pending',
+        id: "developmentWorkflow",
+        title: "Development Workflow",
+        status: "pending",
         progress: 0,
         data: null,
-        quality: getInitialQuality()
+        quality: getInitialQuality(),
       },
       testingStrategy: {
-        id: 'testingStrategy',
-        title: 'Testing Strategy',
-        status: 'pending',
+        id: "testingStrategy",
+        title: "Testing Strategy",
+        status: "pending",
         progress: 0,
         data: null,
-        quality: getInitialQuality()
+        quality: getInitialQuality(),
       },
       deploymentGuide: {
-        id: 'deploymentGuide',
-        title: 'Deployment Guide',
-        status: 'pending',
+        id: "deploymentGuide",
+        title: "Deployment Guide",
+        status: "pending",
         progress: 0,
         data: null,
-        quality: getInitialQuality()
+        quality: getInitialQuality(),
       },
       finalPlaybook: {
-        id: 'finalPlaybook',
-        title: 'Complete Playbook',
-        status: 'pending',
+        id: "finalPlaybook",
+        title: "Complete Playbook",
+        status: "pending",
         progress: 0,
         data: null,
-        quality: getInitialQuality()
-      }
+        quality: getInitialQuality(),
+      },
     };
     setSections(initialSections);
   };
@@ -249,54 +321,54 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
       contextIntegration: 0,
       agentOptimization: 0,
       completeness: 0,
-      actionability: 0
+      actionability: 0,
     },
     recommendations: [],
-    readyForImplementation: false
+    readyForImplementation: false,
   });
 
   // Generate coding prompts
   const generateCodingPrompts = useCallback(async () => {
     try {
-      updateSectionStatus('codingPrompts', 'in-progress');
+      updateSectionStatus("codingPrompts", "in-progress");
       setIsGenerating(true);
 
-      const response = await fetch('/api/forge/generate-coding-prompts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/forge/generate-coding-prompts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           project_id: projectId,
           context_data: projectContext,
-          prompt_focus: 'full-stack',
-          optimization_level: 'production',
-          agent_type: agentType
-        })
+          prompt_focus: "full-stack",
+          optimization_level: "production",
+          agent_type: agentType,
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate coding prompts');
-      
+      if (!response.ok) throw new Error("Failed to generate coding prompts");
+
       const data = await response.json();
-      
+
       // Track cost
       if (data.cost_info) {
         trackCost(data.cost_info);
       }
 
-      updateSectionData('codingPrompts', data.coding_prompts);
-      updateSectionStatus('codingPrompts', 'completed');
-      
+      updateSectionData("codingPrompts", data.coding_prompts);
+      updateSectionStatus("codingPrompts", "completed");
+
       toast({
         title: "Coding Prompts Generated",
-        description: "Agent-optimized coding prompts have been created successfully."
+        description:
+          "Agent-optimized coding prompts have been created successfully.",
       });
-
     } catch (error) {
-      console.error('Error generating coding prompts:', error);
-      updateSectionStatus('codingPrompts', 'error');
+      console.error("Error generating coding prompts:", error);
+      updateSectionStatus("codingPrompts", "error");
       toast({
         title: "Generation Failed",
         description: "Failed to generate coding prompts. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
@@ -306,38 +378,39 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Create development workflow
   const createDevelopmentWorkflow = useCallback(async () => {
     try {
-      updateSectionStatus('developmentWorkflow', 'in-progress');
+      updateSectionStatus("developmentWorkflow", "in-progress");
 
-      const response = await fetch('/api/forge/create-development-workflow', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/forge/create-development-workflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           project_id: projectId,
           technical_analysis: projectContext.technicalAnalysis,
           ux_requirements: projectContext.uxRequirements,
           prd_data: projectContext.prdGeneration,
-          workflow_type: workflowMethodology
-        })
+          workflow_type: workflowMethodology,
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to create development workflow');
-      
+      if (!response.ok)
+        throw new Error("Failed to create development workflow");
+
       const data = await response.json();
-      updateSectionData('developmentWorkflow', data.development_workflow);
-      updateSectionStatus('developmentWorkflow', 'completed');
-      
+      updateSectionData("developmentWorkflow", data.development_workflow);
+      updateSectionStatus("developmentWorkflow", "completed");
+
       toast({
         title: "Development Workflow Created",
-        description: "Systematic development workflow has been generated successfully."
+        description:
+          "Systematic development workflow has been generated successfully.",
       });
-
     } catch (error) {
-      console.error('Error creating development workflow:', error);
-      updateSectionStatus('developmentWorkflow', 'error');
+      console.error("Error creating development workflow:", error);
+      updateSectionStatus("developmentWorkflow", "error");
       toast({
         title: "Creation Failed",
         description: "Failed to create development workflow. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }, [projectId, projectContext, workflowMethodology]);
@@ -345,35 +418,35 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Generate testing strategy
   const generateTestingStrategy = useCallback(async () => {
     try {
-      updateSectionStatus('testingStrategy', 'in-progress');
+      updateSectionStatus("testingStrategy", "in-progress");
 
-      const response = await fetch('/api/forge/generate-testing-strategy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/forge/generate-testing-strategy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           project_context: projectContext,
-          testing_scope: 'comprehensive'
-        })
+          testing_scope: "comprehensive",
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate testing strategy');
-      
+      if (!response.ok) throw new Error("Failed to generate testing strategy");
+
       const data = await response.json();
-      updateSectionData('testingStrategy', data.testing_strategy);
-      updateSectionStatus('testingStrategy', 'completed');
-      
+      updateSectionData("testingStrategy", data.testing_strategy);
+      updateSectionStatus("testingStrategy", "completed");
+
       toast({
         title: "Testing Strategy Generated",
-        description: "Comprehensive testing strategy has been created successfully."
+        description:
+          "Comprehensive testing strategy has been created successfully.",
       });
-
     } catch (error) {
-      console.error('Error generating testing strategy:', error);
-      updateSectionStatus('testingStrategy', 'error');
+      console.error("Error generating testing strategy:", error);
+      updateSectionStatus("testingStrategy", "error");
       toast({
         title: "Generation Failed",
         description: "Failed to generate testing strategy. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }, [projectContext]);
@@ -381,36 +454,36 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Create deployment guide
   const createDeploymentGuide = useCallback(async () => {
     try {
-      updateSectionStatus('deploymentGuide', 'in-progress');
+      updateSectionStatus("deploymentGuide", "in-progress");
 
-      const response = await fetch('/api/forge/create-deployment-guide', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/forge/create-deployment-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           technical_specs: projectContext.technicalAnalysis,
-          deployment_target: 'cloud',
-          environment_requirements: {}
-        })
+          deployment_target: "cloud",
+          environment_requirements: {},
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to create deployment guide');
-      
+      if (!response.ok) throw new Error("Failed to create deployment guide");
+
       const data = await response.json();
-      updateSectionData('deploymentGuide', data.deployment_guide);
-      updateSectionStatus('deploymentGuide', 'completed');
-      
+      updateSectionData("deploymentGuide", data.deployment_guide);
+      updateSectionStatus("deploymentGuide", "completed");
+
       toast({
         title: "Deployment Guide Created",
-        description: "Comprehensive deployment guide has been generated successfully."
+        description:
+          "Comprehensive deployment guide has been generated successfully.",
       });
-
     } catch (error) {
-      console.error('Error creating deployment guide:', error);
-      updateSectionStatus('deploymentGuide', 'error');
+      console.error("Error creating deployment guide:", error);
+      updateSectionStatus("deploymentGuide", "error");
       toast({
         title: "Creation Failed",
         description: "Failed to create deployment guide. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }, [projectContext]);
@@ -418,53 +491,52 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Compile final playbook
   const compileFinalPlaybook = useCallback(async () => {
     try {
-      updateSectionStatus('finalPlaybook', 'in-progress');
+      updateSectionStatus("finalPlaybook", "in-progress");
 
-      const response = await fetch('/api/forge/compile-playbook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/forge/compile-playbook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           project_id: projectId,
           coding_prompts: sections.codingPrompts.data,
           development_workflow: sections.developmentWorkflow.data,
           testing_strategy: sections.testingStrategy.data,
-          deployment_guide: sections.deploymentGuide.data
-        })
+          deployment_guide: sections.deploymentGuide.data,
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to compile playbook');
-      
+      if (!response.ok) throw new Error("Failed to compile playbook");
+
       const data = await response.json();
-      updateSectionData('finalPlaybook', data.implementation_playbook);
+      updateSectionData("finalPlaybook", data.implementation_playbook);
       setContextValidation(data.context_validation);
-      updateSectionStatus('finalPlaybook', 'completed');
-      
+      updateSectionStatus("finalPlaybook", "completed");
+
       // Calculate overall quality
       const quality = calculateOverallQuality();
       setOverallQuality(quality);
       onQualityUpdate(quality);
-      
+
       // Check if stage is complete
       if (quality.score >= 85) {
         onStageComplete({
           implementation_playbook: data.implementation_playbook,
           context_validation: data.context_validation,
-          quality_assessment: quality
+          quality_assessment: quality,
         });
       }
-      
+
       toast({
         title: "Playbook Compiled",
-        description: "Implementation playbook has been compiled successfully."
+        description: "Implementation playbook has been compiled successfully.",
       });
-
     } catch (error) {
-      console.error('Error compiling playbook:', error);
-      updateSectionStatus('finalPlaybook', 'error');
+      console.error("Error compiling playbook:", error);
+      updateSectionStatus("finalPlaybook", "error");
       toast({
         title: "Compilation Failed",
         description: "Failed to compile playbook. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }, [projectId, sections, onStageComplete, onQualityUpdate]);
@@ -472,30 +544,31 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Validate context integration
   const validateContextIntegration = useCallback(async () => {
     try {
-      const response = await fetch('/api/forge/validate-context-integration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/forge/validate-context-integration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          project_id: projectId
-        })
+          project_id: projectId,
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to validate context integration');
-      
+      if (!response.ok)
+        throw new Error("Failed to validate context integration");
+
       const data = await response.json();
       setContextValidation(data.validation_result);
-      
+
       toast({
         title: "Context Validated",
-        description: `Context integration score: ${data.validation_result.overall_score}%`
+        description: `Context integration score: ${data.validation_result.overall_score}%`,
       });
-
     } catch (error) {
-      console.error('Error validating context integration:', error);
+      console.error("Error validating context integration:", error);
       toast({
         title: "Validation Failed",
-        description: "Failed to validate context integration. Please try again.",
-        variant: "destructive"
+        description:
+          "Failed to validate context integration. Please try again.",
+        variant: "destructive",
       });
     }
   }, [projectId]);
@@ -503,57 +576,63 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Export playbook
   const exportPlaybook = useCallback(async () => {
     try {
-      const response = await fetch(`/api/forge/export-playbook/${projectId}?format=${exportFormat}`, {
-        method: 'GET'
-      });
+      const response = await fetch(
+        `/api/forge/export-playbook/${projectId}?format=${exportFormat}`,
+        {
+          method: "GET",
+        },
+      );
 
-      if (!response.ok) throw new Error('Failed to export playbook');
-      
+      if (!response.ok) throw new Error("Failed to export playbook");
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `implementation_playbook.${exportFormat}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast({
         title: "Playbook Exported",
-        description: `Playbook exported successfully as ${exportFormat.toUpperCase()}.`
+        description: `Playbook exported successfully as ${exportFormat.toUpperCase()}.`,
       });
-
     } catch (error) {
-      console.error('Error exporting playbook:', error);
+      console.error("Error exporting playbook:", error);
       toast({
         title: "Export Failed",
         description: "Failed to export playbook. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }, [projectId, exportFormat]);
 
   // Helper functions
-  const updateSectionStatus = (sectionId: string, status: PlaybookSection['status']) => {
-    setSections(prev => ({
+  const updateSectionStatus = (
+    sectionId: string,
+    status: PlaybookSection["status"],
+  ) => {
+    setSections((prev) => ({
       ...prev,
       [sectionId]: {
         ...prev[sectionId],
         status,
-        progress: status === 'completed' ? 100 : status === 'in-progress' ? 50 : 0
-      }
+        progress:
+          status === "completed" ? 100 : status === "in-progress" ? 50 : 0,
+      },
     }));
   };
 
   const updateSectionData = (sectionId: string, data: any) => {
-    setSections(prev => ({
+    setSections((prev) => ({
       ...prev,
       [sectionId]: {
         ...prev[sectionId],
         data,
-        quality: assessSectionQuality(data)
-      }
+        quality: assessSectionQuality(data),
+      },
     }));
   };
 
@@ -565,39 +644,48 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
         contextIntegration: 85,
         agentOptimization: 90,
         completeness: 80,
-        actionability: 85
+        actionability: 85,
       },
       recommendations: [],
-      readyForImplementation: true
+      readyForImplementation: true,
     };
   };
 
   const calculateOverallQuality = (): QualityAssessment => {
-    const completedSections = Object.values(sections).filter(section => section.status === 'completed');
+    const completedSections = Object.values(sections).filter(
+      (section) => section.status === "completed",
+    );
     if (completedSections.length === 0) return getInitialQuality();
 
-    const avgScore = completedSections.reduce((sum, section) => sum + section.quality.score, 0) / completedSections.length;
-    
+    const avgScore =
+      completedSections.reduce(
+        (sum, section) => sum + section.quality.score,
+        0,
+      ) / completedSections.length;
+
     return {
       score: avgScore,
       dimensions: {
         contextIntegration: avgScore,
         agentOptimization: avgScore,
         completeness: avgScore,
-        actionability: avgScore
+        actionability: avgScore,
       },
-      recommendations: avgScore < 85 ? ['Improve prompt quality', 'Add more context integration'] : [],
-      readyForImplementation: avgScore >= 85
+      recommendations:
+        avgScore < 85
+          ? ["Improve prompt quality", "Add more context integration"]
+          : [],
+      readyForImplementation: avgScore >= 85,
     };
   };
 
-  const getStatusIcon = (status: PlaybookSection['status']) => {
+  const getStatusIcon = (status: PlaybookSection["status"]) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'in-progress':
+      case "in-progress":
         return <RefreshCw className="h-5 w-5 text-blue-600 animate-spin" />;
-      case 'error':
+      case "error":
         return <AlertTriangle className="h-5 w-5 text-red-600" />;
       default:
         return <Clock className="h-5 w-5 text-gray-400" />;
@@ -606,19 +694,26 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
 
   const canProceedToNext = (sectionId: string): boolean => {
     const dependencies: Record<string, string[]> = {
-      developmentWorkflow: ['codingPrompts'],
-      testingStrategy: ['codingPrompts'],
-      deploymentGuide: ['codingPrompts'],
-      finalPlaybook: ['codingPrompts', 'developmentWorkflow', 'testingStrategy', 'deploymentGuide']
+      developmentWorkflow: ["codingPrompts"],
+      testingStrategy: ["codingPrompts"],
+      deploymentGuide: ["codingPrompts"],
+      finalPlaybook: [
+        "codingPrompts",
+        "developmentWorkflow",
+        "testingStrategy",
+        "deploymentGuide",
+      ],
     };
 
     const deps = dependencies[sectionId] || [];
-    return deps.every(dep => sections[dep]?.status === 'completed');
+    return deps.every((dep) => sections[dep]?.status === "completed");
   };
 
   const overallProgress = useMemo(() => {
     const totalSections = Object.keys(sections).length;
-    const completedSections = Object.values(sections).filter(s => s.status === 'completed').length;
+    const completedSections = Object.values(sections).filter(
+      (s) => s.status === "completed",
+    ).length;
     return totalSections > 0 ? (completedSections / totalSections) * 100 : 0;
   }, [sections]);
 
@@ -627,9 +722,12 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Implementation Playbook Generation</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Implementation Playbook Generation
+          </h2>
           <p className="mt-1 text-sm text-gray-600">
-            Generate comprehensive implementation guides with coding agent prompts
+            Generate comprehensive implementation guides with coding agent
+            prompts
           </p>
         </div>
         <div className="flex space-x-3">
@@ -644,8 +742,11 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Select value={workflowMethodology} onValueChange={setWorkflowMethodology}>
+
+          <Select
+            value={workflowMethodology}
+            onValueChange={setWorkflowMethodology}
+          >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Methodology" />
             </SelectTrigger>
@@ -665,11 +766,23 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
             <CardTitle>Overall Progress</CardTitle>
             {overallQuality && (
               <div className="flex items-center space-x-4">
-                <Badge variant={overallQuality.readyForImplementation ? "success" : "secondary"}>
+                <Badge
+                  variant={
+                    overallQuality.readyForImplementation
+                      ? "success"
+                      : "secondary"
+                  }
+                >
                   Quality: {overallQuality.score.toFixed(0)}%
                 </Badge>
                 {contextValidation && (
-                  <Badge variant={contextValidation.context_integrity ? "success" : "warning"}>
+                  <Badge
+                    variant={
+                      contextValidation.context_integrity
+                        ? "success"
+                        : "warning"
+                    }
+                  >
                     Context: {contextValidation.overall_score || 0}%
                   </Badge>
                 )}
@@ -681,10 +794,12 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Stage Progress</span>
-              <span className="text-sm text-gray-600">{overallProgress.toFixed(0)}%</span>
+              <span className="text-sm text-gray-600">
+                {overallProgress.toFixed(0)}%
+              </span>
             </div>
             <Progress value={overallProgress} className="w-full" />
-            
+
             {overallQuality && (
               <QualityGate
                 quality={overallQuality}
@@ -701,8 +816,10 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
         <Alert>
           <Target className="h-4 w-4" />
           <AlertDescription>
-            Context Integration: {contextValidation.overall_score}% - 
-            {contextValidation.context_integrity ? ' All stages properly integrated' : ' Some context issues detected'}
+            Context Integration: {contextValidation.overall_score}% -
+            {contextValidation.context_integrity
+              ? " All stages properly integrated"
+              : " Some context issues detected"}
           </AlertDescription>
         </Alert>
       )}
@@ -724,21 +841,32 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
             {Object.entries(sections).map(([key, section]) => (
               <Card key={key} className="relative">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{section.title}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {section.title}
+                  </CardTitle>
                   {getStatusIcon(section.status)}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-gray-600">Progress</span>
-                      <span className="text-xs font-medium">{section.progress}%</span>
+                      <span className="text-xs font-medium">
+                        {section.progress}%
+                      </span>
                     </div>
                     <Progress value={section.progress} className="w-full" />
-                    
+
                     {section.quality.score > 0 && (
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-600">Quality</span>
-                        <Badge variant={section.quality.readyForImplementation ? "success" : "secondary"} className="text-xs">
+                        <Badge
+                          variant={
+                            section.quality.readyForImplementation
+                              ? "success"
+                              : "secondary"
+                          }
+                          className="text-xs"
+                        >
                           {section.quality.score.toFixed(0)}%
                         </Badge>
                       </div>
@@ -748,51 +876,65 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               </Card>
             ))}
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3">
-            <Button 
+            <Button
               onClick={generateCodingPrompts}
-              disabled={isGenerating || sections.codingPrompts.status === 'completed'}
+              disabled={
+                isGenerating || sections.codingPrompts.status === "completed"
+              }
               className="flex items-center space-x-2"
             >
               <Brain className="h-4 w-4" />
               <span>Generate Coding Prompts</span>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={createDevelopmentWorkflow}
-              disabled={!canProceedToNext('developmentWorkflow') || sections.developmentWorkflow.status === 'completed'}
+              disabled={
+                !canProceedToNext("developmentWorkflow") ||
+                sections.developmentWorkflow.status === "completed"
+              }
               variant="outline"
               className="flex items-center space-x-2"
             >
               <GitBranch className="h-4 w-4" />
               <span>Create Workflow</span>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={generateTestingStrategy}
-              disabled={!canProceedToNext('testingStrategy') || sections.testingStrategy.status === 'completed'}
+              disabled={
+                !canProceedToNext("testingStrategy") ||
+                sections.testingStrategy.status === "completed"
+              }
               variant="outline"
               className="flex items-center space-x-2"
             >
               <TestTube className="h-4 w-4" />
               <span>Generate Testing Strategy</span>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={createDeploymentGuide}
-              disabled={!canProceedToNext('deploymentGuide') || sections.deploymentGuide.status === 'completed'}
+              disabled={
+                !canProceedToNext("deploymentGuide") ||
+                sections.deploymentGuide.status === "completed"
+              }
               variant="outline"
               className="flex items-center space-x-2"
             >
               <Rocket className="h-4 w-4" />
               <span>Create Deployment Guide</span>
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={compileFinalPlaybook}
-              disabled={!canProceedToNext('finalPlaybook') || sections.finalPlaybook.status === 'completed'}
+              disabled={
+                !canProceedToNext("finalPlaybook") ||
+                sections.finalPlaybook.status === "completed"
+              }
               variant="default"
               className="flex items-center space-x-2"
             >
@@ -809,13 +951,17 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               <div className="flex items-center justify-between">
                 <CardTitle>Agent-Optimized Coding Prompts</CardTitle>
                 <div className="flex space-x-2">
-                  <Button 
+                  <Button
                     onClick={generateCodingPrompts}
                     disabled={isGenerating}
                     size="sm"
                   >
-                    {isGenerating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
-                    {isGenerating ? 'Generating...' : 'Generate Prompts'}
+                    {isGenerating ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Brain className="h-4 w-4" />
+                    )}
+                    {isGenerating ? "Generating..." : "Generate Prompts"}
                   </Button>
                 </div>
               </div>
@@ -823,54 +969,81 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
             <CardContent>
               {sections.codingPrompts.data ? (
                 <div className="space-y-4">
-                  {Object.entries(sections.codingPrompts.data).map(([key, prompt]: [string, any]) => (
-                    <Card key={key} className="border-l-4 border-blue-500">
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg capitalize">{key.replace(/([A-Z])/g, ' $1')}</CardTitle>
-                          <Badge variant="outline">{prompt.category || 'general'}</Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="prose max-w-none">
-                            <p className="text-sm text-gray-700">{prompt.content?.substring(0, 200)}...</p>
+                  {Object.entries(sections.codingPrompts.data).map(
+                    ([key, prompt]: [string, any]) => (
+                      <Card key={key} className="border-l-4 border-blue-500">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg capitalize">
+                              {key.replace(/([A-Z])/g, " $1")}
+                            </CardTitle>
+                            <Badge variant="outline">
+                              {prompt.category || "general"}
+                            </Badge>
                           </div>
-                          
-                          {prompt.agent_instructions && (
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-900 mb-2">Agent Instructions:</h4>
-                              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                                {prompt.agent_instructions.slice(0, 3).map((instruction: string, idx: number) => (
-                                  <li key={idx}>{instruction}</li>
-                                ))}
-                              </ul>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="prose max-w-none">
+                              <p className="text-sm text-gray-700">
+                                {prompt.content?.substring(0, 200)}...
+                              </p>
                             </div>
-                          )}
-                          
-                          {prompt.validation_criteria && (
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-900 mb-2">Validation Criteria:</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {prompt.validation_criteria.slice(0, 3).map((criteria: string, idx: number) => (
-                                  <Badge key={idx} variant="secondary" className="text-xs">
-                                    {criteria}
-                                  </Badge>
-                                ))}
+
+                            {prompt.agent_instructions && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-900 mb-2">
+                                  Agent Instructions:
+                                </h4>
+                                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                                  {prompt.agent_instructions
+                                    .slice(0, 3)
+                                    .map((instruction: string, idx: number) => (
+                                      <li key={idx}>{instruction}</li>
+                                    ))}
+                                </ul>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                            )}
+
+                            {prompt.validation_criteria && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-900 mb-2">
+                                  Validation Criteria:
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {prompt.validation_criteria
+                                    .slice(0, 3)
+                                    .map((criteria: string, idx: number) => (
+                                      <Badge
+                                        key={idx}
+                                        variant="secondary"
+                                        className="text-xs"
+                                      >
+                                        {criteria}
+                                      </Badge>
+                                    ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ),
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12">
                   <Code className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Coding Prompts Generated</h3>
-                  <p className="text-gray-600 mb-4">Generate agent-optimized coding prompts to get started.</p>
-                  <Button onClick={generateCodingPrompts} disabled={isGenerating}>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Coding Prompts Generated
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Generate agent-optimized coding prompts to get started.
+                  </p>
+                  <Button
+                    onClick={generateCodingPrompts}
+                    disabled={isGenerating}
+                  >
                     Generate Prompts
                   </Button>
                 </div>
@@ -896,11 +1069,15 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               ) : (
                 <div className="text-center py-12">
                   <GitBranch className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Workflow Created</h3>
-                  <p className="text-gray-600 mb-4">Create a systematic development workflow.</p>
-                  <Button 
-                    onClick={createDevelopmentWorkflow} 
-                    disabled={!canProceedToNext('developmentWorkflow')}
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Workflow Created
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Create a systematic development workflow.
+                  </p>
+                  <Button
+                    onClick={createDevelopmentWorkflow}
+                    disabled={!canProceedToNext("developmentWorkflow")}
                   >
                     Create Workflow
                   </Button>
@@ -926,11 +1103,15 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               ) : (
                 <div className="text-center py-12">
                   <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Testing Strategy</h3>
-                  <p className="text-gray-600 mb-4">Generate comprehensive testing strategy.</p>
-                  <Button 
-                    onClick={generateTestingStrategy} 
-                    disabled={!canProceedToNext('testingStrategy')}
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Testing Strategy
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Generate comprehensive testing strategy.
+                  </p>
+                  <Button
+                    onClick={generateTestingStrategy}
+                    disabled={!canProceedToNext("testingStrategy")}
                   >
                     Generate Strategy
                   </Button>
@@ -956,11 +1137,15 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               ) : (
                 <div className="text-center py-12">
                   <Rocket className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Deployment Guide</h3>
-                  <p className="text-gray-600 mb-4">Create comprehensive deployment guide.</p>
-                  <Button 
-                    onClick={createDeploymentGuide} 
-                    disabled={!canProceedToNext('deploymentGuide')}
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No Deployment Guide
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Create comprehensive deployment guide.
+                  </p>
+                  <Button
+                    onClick={createDeploymentGuide}
+                    disabled={!canProceedToNext("deploymentGuide")}
                   >
                     Create Guide
                   </Button>
@@ -986,8 +1171,8 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
                       <SelectItem value="zip">ZIP Archive</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  <Button 
+
+                  <Button
                     onClick={exportPlaybook}
                     disabled={!sections.finalPlaybook.data}
                     size="sm"
@@ -1005,10 +1190,18 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
                   {/* Final playbook content */}
                   <div className="text-center py-12">
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Implementation Playbook Ready</h3>
-                    <p className="text-gray-600 mb-4">Complete implementation playbook has been generated and validated.</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Implementation Playbook Ready
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Complete implementation playbook has been generated and
+                      validated.
+                    </p>
                     <div className="flex justify-center space-x-3">
-                      <Button onClick={validateContextIntegration} variant="outline">
+                      <Button
+                        onClick={validateContextIntegration}
+                        variant="outline"
+                      >
                         <Target className="h-4 w-4 mr-2" />
                         Validate Context
                       </Button>
@@ -1022,11 +1215,15 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               ) : (
                 <div className="text-center py-12">
                   <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Playbook Not Compiled</h3>
-                  <p className="text-gray-600 mb-4">Complete all sections to compile the final playbook.</p>
-                  <Button 
-                    onClick={compileFinalPlaybook} 
-                    disabled={!canProceedToNext('finalPlaybook')}
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Playbook Not Compiled
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Complete all sections to compile the final playbook.
+                  </p>
+                  <Button
+                    onClick={compileFinalPlaybook}
+                    disabled={!canProceedToNext("finalPlaybook")}
                   >
                     Compile Playbook
                   </Button>

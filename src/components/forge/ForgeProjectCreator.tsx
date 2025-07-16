@@ -1,17 +1,28 @@
 /**
  * ForgeProjectCreator - Component for creating new Forge projects
  */
-import React, { useState } from 'react';
-import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { XMarkIcon, SparklesIcon } from "@heroicons/react/24/outline";
 // import { forgeApiService } from '../services/forgeApi';
 
 interface ForgeProject {
   id: string;
   name: string;
   description: string;
-  currentStage: 'idea_refinement' | 'prd_generation' | 'ux_requirements' | 'technical_analysis' | 'implementation_playbook';
-  status: 'draft' | 'active' | 'on_hold' | 'completed' | 'archived' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  currentStage:
+    | "idea_refinement"
+    | "prd_generation"
+    | "ux_requirements"
+    | "technical_analysis"
+    | "implementation_playbook";
+  status:
+    | "draft"
+    | "active"
+    | "on_hold"
+    | "completed"
+    | "archived"
+    | "cancelled";
+  priority: "low" | "medium" | "high" | "critical";
   progressPercentage: number;
   createdAt: string;
   updatedAt: string;
@@ -28,107 +39,116 @@ interface ForgeProjectCreatorProps {
 
 const PROJECT_TEMPLATES = [
   {
-    id: 'ai-app',
-    name: 'AI Application',
-    description: 'Build an AI-powered application with systematic analysis',
-    icon: '🤖',
-    tags: ['ai', 'application', 'technology'],
-    sampleIdea: 'An AI-powered customer support chatbot that can handle common inquiries and escalate complex issues to human agents. Need comprehensive analysis of user flows, technical architecture, and implementation strategy.'
+    id: "ai-app",
+    name: "AI Application",
+    description: "Build an AI-powered application with systematic analysis",
+    icon: "🤖",
+    tags: ["ai", "application", "technology"],
+    sampleIdea:
+      "An AI-powered customer support chatbot that can handle common inquiries and escalate complex issues to human agents. Need comprehensive analysis of user flows, technical architecture, and implementation strategy.",
   },
   {
-    id: 'saas-product',
-    name: 'SaaS Product',
-    description: 'Create a software-as-a-service product with detailed requirements',
-    icon: '💼',
-    tags: ['saas', 'product', 'business'],
-    sampleIdea: 'A project management tool that helps remote teams collaborate more effectively. Requires thorough market analysis, user journey mapping, and technical specification for scalable architecture.'
+    id: "saas-product",
+    name: "SaaS Product",
+    description:
+      "Create a software-as-a-service product with detailed requirements",
+    icon: "💼",
+    tags: ["saas", "product", "business"],
+    sampleIdea:
+      "A project management tool that helps remote teams collaborate more effectively. Requires thorough market analysis, user journey mapping, and technical specification for scalable architecture.",
   },
   {
-    id: 'mobile-app',
-    name: 'Mobile App',
-    description: 'Develop a mobile application with comprehensive planning',
-    icon: '📱',
-    tags: ['mobile', 'app', 'ios', 'android'],
-    sampleIdea: 'A fitness tracking app that gamifies workouts and connects users with personal trainers. Need detailed UX requirements, technical stack analysis, and step-by-step implementation guide.'
+    id: "mobile-app",
+    name: "Mobile App",
+    description: "Develop a mobile application with comprehensive planning",
+    icon: "📱",
+    tags: ["mobile", "app", "ios", "android"],
+    sampleIdea:
+      "A fitness tracking app that gamifies workouts and connects users with personal trainers. Need detailed UX requirements, technical stack analysis, and step-by-step implementation guide.",
   },
   {
-    id: 'ecommerce',
-    name: 'E-commerce Platform',
-    description: 'Build an online marketplace with detailed specifications',
-    icon: '🛒',
-    tags: ['ecommerce', 'marketplace', 'retail'],
-    sampleIdea: 'A sustainable fashion marketplace that connects eco-conscious consumers with ethical clothing brands. Requires market validation, complex user flows, and scalable technical architecture.'
+    id: "ecommerce",
+    name: "E-commerce Platform",
+    description: "Build an online marketplace with detailed specifications",
+    icon: "🛒",
+    tags: ["ecommerce", "marketplace", "retail"],
+    sampleIdea:
+      "A sustainable fashion marketplace that connects eco-conscious consumers with ethical clothing brands. Requires market validation, complex user flows, and scalable technical architecture.",
   },
   {
-    id: 'data-platform',
-    name: 'Data Platform',
-    description: 'Create a data analytics platform with systematic design',
-    icon: '📊',
-    tags: ['data', 'analytics', 'visualization'],
-    sampleIdea: 'A business intelligence platform that automatically generates insights from company data. Need comprehensive technical analysis for data processing, visualization requirements, and implementation roadmap.'
+    id: "data-platform",
+    name: "Data Platform",
+    description: "Create a data analytics platform with systematic design",
+    icon: "📊",
+    tags: ["data", "analytics", "visualization"],
+    sampleIdea:
+      "A business intelligence platform that automatically generates insights from company data. Need comprehensive technical analysis for data processing, visualization requirements, and implementation roadmap.",
   },
   {
-    id: 'custom',
-    name: 'Custom Project',
-    description: 'Start from scratch with systematic idea development',
-    icon: '✨',
-    tags: ['custom'],
-    sampleIdea: ''
-  }
+    id: "custom",
+    name: "Custom Project",
+    description: "Start from scratch with systematic idea development",
+    icon: "✨",
+    tags: ["custom"],
+    sampleIdea: "",
+  },
 ];
 
-export default function ForgeProjectCreator({ onProjectCreated, onCancel }: ForgeProjectCreatorProps) {
+export default function ForgeProjectCreator({
+  onProjectCreated,
+  onCancel,
+}: ForgeProjectCreatorProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    priority: 'medium' as const,
+    name: "",
+    description: "",
+    priority: "medium" as const,
     tags: [] as string[],
-    initialIdea: ''
+    initialIdea: "",
   });
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
-    const template = PROJECT_TEMPLATES.find(t => t.id === templateId);
+    const template = PROJECT_TEMPLATES.find((t) => t.id === templateId);
     if (template) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         tags: [...template.tags],
-        initialIdea: template.sampleIdea
+        initialIdea: template.sampleIdea,
       }));
     }
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
   const handleAddTag = () => {
     const tag = tagInput.trim().toLowerCase();
     if (tag && !formData.tags.includes(tag)) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        tags: [...prev.tags, tag]
+        tags: [...prev.tags, tag],
       }));
-      setTagInput('');
+      setTagInput("");
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddTag();
     }
@@ -138,15 +158,15 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Project name is required';
+      newErrors.name = "Project name is required";
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Project description is required';
+      newErrors.description = "Project description is required";
     }
 
     if (!formData.initialIdea.trim()) {
-      newErrors.initialIdea = 'Initial idea is required';
+      newErrors.initialIdea = "Initial idea is required";
     }
 
     setErrors(newErrors);
@@ -155,7 +175,7 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -167,10 +187,11 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
         description: formData.description.trim(),
         priority: formData.priority,
         tags: formData.tags,
-        templateId: selectedTemplate !== 'custom' ? selectedTemplate : undefined,
+        templateId:
+          selectedTemplate !== "custom" ? selectedTemplate : undefined,
         customFields: {
-          initialIdea: formData.initialIdea.trim()
-        }
+          initialIdea: formData.initialIdea.trim(),
+        },
       };
 
       // TODO: Implement forgeApiService.createProject
@@ -179,8 +200,8 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
         id: Date.now().toString(),
         name: projectData.name,
         description: projectData.description,
-        currentStage: 'idea_refinement',
-        status: 'active',
+        currentStage: "idea_refinement",
+        status: "active",
         priority: projectData.priority,
         progressPercentage: 0,
         createdAt: new Date().toISOString(),
@@ -188,13 +209,13 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
         tags: projectData.tags,
         collaboratorsCount: 1,
         artifactsCount: 0,
-        ownerId: 'current-user'
+        ownerId: "current-user",
       };
-      
+
       onProjectCreated(project);
     } catch (error) {
-      console.error('Error creating project:', error);
-      setErrors({ submit: 'Failed to create project. Please try again.' });
+      console.error("Error creating project:", error);
+      setErrors({ submit: "Failed to create project. Please try again." });
     } finally {
       setIsSubmitting(false);
     }
@@ -205,7 +226,9 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Create New Project</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Create New Project
+          </h1>
           <p className="mt-2 text-gray-600">
             Start your journey from idea to deployment with AI-powered guidance
           </p>
@@ -221,20 +244,24 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Template Selection */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Choose a Template</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Choose a Template
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {PROJECT_TEMPLATES.map((template) => (
               <div
                 key={template.id}
                 className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                   selectedTemplate === template.id
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? "border-indigo-500 bg-indigo-50"
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => handleTemplateSelect(template.id)}
               >
                 <div className="text-3xl mb-2">{template.icon}</div>
-                <h3 className="font-semibold text-gray-900 mb-1">{template.name}</h3>
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  {template.name}
+                </h3>
                 <p className="text-sm text-gray-600">{template.description}</p>
               </div>
             ))}
@@ -243,36 +270,46 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
 
         {/* Project Details */}
         <div className="bg-white p-6 rounded-lg border border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Project Details</h2>
-          
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Project Details
+          </h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Project Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Project Name *
               </label>
               <input
                 type="text"
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-                  errors.name ? 'border-red-300' : 'border-gray-300'
+                  errors.name ? "border-red-300" : "border-gray-300"
                 }`}
                 placeholder="Enter project name"
               />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              )}
             </div>
 
             {/* Priority */}
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="priority"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Priority
               </label>
               <select
                 id="priority"
                 value={formData.priority}
-                onChange={(e) => handleInputChange('priority', e.target.value)}
+                onChange={(e) => handleInputChange("priority", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="low">Low</option>
@@ -285,26 +322,34 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
 
           {/* Description */}
           <div className="mt-6">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Project Description *
             </label>
             <textarea
               id="description"
               rows={3}
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              onChange={(e) => handleInputChange("description", e.target.value)}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-                errors.description ? 'border-red-300' : 'border-gray-300'
+                errors.description ? "border-red-300" : "border-gray-300"
               }`}
               placeholder="Describe your project in a few sentences"
             />
-            {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+            {errors.description && (
+              <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+            )}
           </div>
 
           {/* Initial Idea */}
           <div className="mt-6">
             <div className="flex items-center mb-2">
-              <label htmlFor="initialIdea" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="initialIdea"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Initial Idea *
               </label>
               <SparklesIcon className="h-4 w-4 text-indigo-500 ml-2" />
@@ -313,13 +358,15 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
               id="initialIdea"
               rows={4}
               value={formData.initialIdea}
-              onChange={(e) => handleInputChange('initialIdea', e.target.value)}
+              onChange={(e) => handleInputChange("initialIdea", e.target.value)}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
-                errors.initialIdea ? 'border-red-300' : 'border-gray-300'
+                errors.initialIdea ? "border-red-300" : "border-gray-300"
               }`}
               placeholder="Describe your initial idea in detail. What problem does it solve? Who is your target audience?"
             />
-            {errors.initialIdea && <p className="mt-1 text-sm text-red-600">{errors.initialIdea}</p>}
+            {errors.initialIdea && (
+              <p className="mt-1 text-sm text-red-600">{errors.initialIdea}</p>
+            )}
             <p className="mt-1 text-sm text-gray-500">
               This will be enhanced with AI suggestions in the Conception stage
             </p>
@@ -327,7 +374,10 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
 
           {/* Tags */}
           <div className="mt-6">
-            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="tags"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Tags
             </label>
             <div className="flex flex-wrap gap-2 mb-2">
@@ -388,7 +438,7 @@ export default function ForgeProjectCreator({ onProjectCreated, onCancel }: Forg
             disabled={isSubmitting}
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Creating...' : 'Create Project'}
+            {isSubmitting ? "Creating..." : "Create Project"}
           </button>
         </div>
       </form>

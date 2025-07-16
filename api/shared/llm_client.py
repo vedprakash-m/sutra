@@ -3,23 +3,16 @@
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union, AsyncGenerator
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
+from azure.cosmos.aio import CosmosClient
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
-from azure.cosmos.aio import CosmosClient
 
-from .llm_providers import (
-    BaseLLMProvider,
-    OpenAIProvider,
-    AnthropicProvider,
-    GoogleProvider,
-    LLMResponse,
-    TokenUsage
-)
+from .budget_manager import BudgetManager, BudgetValidationError, get_budget_manager
 from .cost_tracker import CostTracker
 from .cost_tracking_middleware import CostTrackingMiddleware, get_cost_tracking_middleware
-from .budget_manager import BudgetManager, get_budget_manager, BudgetValidationError
+from .llm_providers import AnthropicProvider, BaseLLMProvider, GoogleProvider, LLMResponse, OpenAIProvider, TokenUsage
 
 
 class LLMManager:
@@ -34,14 +27,14 @@ class LLMManager:
         self._kv_client: Optional[SecretClient] = None
         self._initialized = False
         self.logger = logging.getLogger("sutra.llm_manager")
-        
+
         # Cost tracking components
         self.cost_tracker: Optional[CostTracker] = None
         self.cost_middleware: Optional[CostTrackingMiddleware] = None
-        
+
         # Budget management
         self.budget_manager: Optional[BudgetManager] = None
-        
+
         if cosmos_client:
             self.cost_tracker = CostTracker(cosmos_client, database_name)
             self.cost_middleware = CostTrackingMiddleware(self.cost_tracker)
@@ -73,7 +66,7 @@ class LLMManager:
 
         try:
             kv_client = self.kv_client
-            
+
             initialization_results = {}
             for name, provider in self.providers.items():
                 try:
@@ -89,12 +82,12 @@ class LLMManager:
 
             # Consider it successful if at least one provider initialized
             self._initialized = any(initialization_results.values())
-            
+
             if self._initialized:
                 self.logger.info(f"LLM Manager initialized with {sum(initialization_results.values())} providers")
             else:
                 self.logger.error("Failed to initialize any LLM providers")
-            
+
             return self._initialized
 
         except Exception as e:
@@ -116,13 +109,13 @@ class LLMManager:
         return available
 
     async def execute_prompt(
-        self, 
-        provider_name: str, 
-        prompt: str, 
+        self,
+        provider_name: str,
+        prompt: str,
         context: Dict[str, Any] = None,
         model: str = None,
         stream: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Union[LLMResponse, AsyncGenerator[str, None]]:
         """Execute a prompt with the specified provider."""
         if not await self.initialize():
@@ -139,13 +132,7 @@ class LLMManager:
             raise RuntimeError(f"Provider {provider_name} not initialized")
 
         # Execute the prompt
-        return await provider.execute_prompt(
-            prompt=prompt, 
-            context=context or {}, 
-            model=model,
-            stream=stream,
-            **kwargs
-        )
+        return await provider.execute_prompt(prompt=prompt, context=context or {}, model=model, stream=stream, **kwargs)
 
     async def execute_multi_llm(
         self,
@@ -153,7 +140,7 @@ class LLMManager:
         provider_names: List[str] = None,
         context: Dict[str, Any] = None,
         model_preferences: Dict[str, str] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """Execute a prompt across multiple LLM providers."""
         if provider_names is None:
@@ -170,15 +157,9 @@ class LLMManager:
                 model = None
                 if model_preferences and provider_name in model_preferences:
                     model = model_preferences[provider_name]
-                
-                result = await self.execute_prompt(
-                    provider_name, 
-                    prompt, 
-                    context, 
-                    model=model,
-                    **kwargs
-                )
-                
+
+                result = await self.execute_prompt(provider_name, prompt, context, model=model, **kwargs)
+
                 if isinstance(result, LLMResponse):
                     results.append(result)
                 else:
@@ -188,6 +169,7 @@ class LLMManager:
                         collected += chunk
                     # Create a mock response for streaming
                     from .llm_providers.base_provider import TokenUsage
+
                     usage = TokenUsage(
                         prompt_tokens=len(prompt.split()),
                         completion_tokens=len(collected.split()),
@@ -197,10 +179,10 @@ class LLMManager:
                         model=model or "unknown",
                         response=collected,
                         usage=usage,
-                        cost=0.0  # Streaming cost tracking would need to be implemented separately
+                        cost=0.0,  # Streaming cost tracking would need to be implemented separately
                     )
                     results.append(mock_response)
-                    
+
             except Exception as e:
                 error_info = {
                     "provider": provider_name,
@@ -216,7 +198,7 @@ class LLMManager:
             "total_providers": len(provider_names),
             "successful_providers": len(results),
             "failed_providers": len(errors),
-            "timestamp": datetime.now(timezone.utc).isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     async def execute_prompt_with_cost_tracking(
@@ -229,11 +211,11 @@ class LLMManager:
         model: Optional[str] = None,
         stream: bool = False,
         validate_budget: bool = True,
-        **kwargs
+        **kwargs,
     ) -> Union[LLMResponse, AsyncGenerator[str, None]]:
         """
         Execute a prompt with automatic cost tracking and budget validation.
-        
+
         Args:
             provider_name: LLM provider to use
             prompt: Prompt to execute
@@ -244,7 +226,7 @@ class LLMManager:
             stream: Whether to stream response
             validate_budget: Whether to validate budget before execution
             **kwargs: Additional provider-specific arguments
-            
+
         Returns:
             LLM response or streaming generator
         """
@@ -265,61 +247,54 @@ class LLMManager:
         if validate_budget and self.cost_middleware:
             # Estimate token count for budget validation
             estimated_tokens = len(prompt.split()) * 1.3  # Rough estimation
-            
+
             validation_result = await self.cost_middleware.validate_budget_before_execution(
                 user_id=user_id,
                 provider=provider_name,
                 model=model or provider.models[0]["id"] if provider.models else "unknown",
-                estimated_tokens=int(estimated_tokens)
+                estimated_tokens=int(estimated_tokens),
             )
-            
+
             if not validation_result["can_execute"]:
                 raise BudgetValidationError(
-                    message=validation_result["warnings"][0]["message"] if validation_result["warnings"] else "Budget exceeded",
+                    message=(
+                        validation_result["warnings"][0]["message"] if validation_result["warnings"] else "Budget exceeded"
+                    ),
                     current_spend=validation_result["current_spend"],
                     estimated_cost=validation_result["estimated_cost"],
-                    limit=validation_result["budget_limits"].get("emergency", 0)
+                    limit=validation_result["budget_limits"].get("emergency", 0),
                 )
-            
+
             # Log warnings if any
             for warning in validation_result["warnings"]:
                 self.logger.warning(f"Budget warning: {warning['message']}")
 
         # Execute with cost tracking if middleware is available
         if self.cost_middleware:
+
             @self.cost_middleware.track_llm_execution(user_id=user_id, session_id=session_id)
             async def tracked_execution():
                 return await provider.execute_prompt(
-                    prompt=prompt,
-                    context=context or {},
-                    model=model,
-                    stream=stream,
-                    **kwargs
+                    prompt=prompt, context=context or {}, model=model, stream=stream, **kwargs
                 )
-            
+
             return await tracked_execution()
         else:
             # Fallback to regular execution
-            return await provider.execute_prompt(
-                prompt=prompt, 
-                context=context or {}, 
-                model=model,
-                stream=stream,
-                **kwargs
-            )
+            return await provider.execute_prompt(prompt=prompt, context=context or {}, model=model, stream=stream, **kwargs)
 
     async def get_cost_summary(self, user_id: str, days: int = 30) -> Optional[Dict[str, Any]]:
         """Get cost summary for a user."""
         if not self.cost_tracker:
             return None
-        
+
         return await self.cost_tracker.get_cost_analytics(user_id=user_id, days=days)
 
     async def get_real_time_usage(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get real-time usage statistics for a user."""
         if not self.cost_middleware:
             return None
-        
+
         return await self.cost_middleware.get_real_time_usage_stats(user_id)
 
     async def get_provider_status(self) -> Dict[str, Dict[str, Any]]:
@@ -340,21 +315,21 @@ class LLMManager:
 
         health_results = {}
         overall_status = "healthy"
-        
+
         for name, provider in self.providers.items():
             try:
                 health = await provider.health_check()
                 health_results[name] = health
-                
+
                 if health["status"] != "healthy":
                     overall_status = "degraded"
-                    
+
             except Exception as e:
                 health_results[name] = {
                     "provider": name,
                     "status": "error",
                     "error": str(e),
-                    "timestamp": datetime.now(timezone.utc).isoformat()
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
                 overall_status = "degraded"
 
@@ -362,7 +337,7 @@ class LLMManager:
             "overall_status": overall_status,
             "providers": health_results,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "manager_initialized": self._initialized
+            "manager_initialized": self._initialized,
         }
 
     def get_provider(self, provider_name: str) -> BaseLLMProvider:
@@ -381,17 +356,17 @@ class LLMManager:
                 provider_name: {
                     "models": provider.get_models(),
                     "default_model": provider.default_model,
-                    "provider_name": provider.provider_name
+                    "provider_name": provider.provider_name,
                 }
             }
-        
+
         # Return info for all providers
         model_info = {}
         for name, provider in self.providers.items():
             model_info[name] = {
                 "models": provider.get_models(),
                 "default_model": provider.default_model,
-                "provider_name": provider.provider_name
+                "provider_name": provider.provider_name,
             }
         return model_info
 
@@ -401,18 +376,18 @@ class LLMManager:
         model_rankings = {
             "openai": ["gpt-4", "gpt-4-turbo", "gpt-4o", "gpt-3.5-turbo"],
             "anthropic": ["claude-3-opus-20240229", "claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
-            "google": ["gemini-1.5-pro", "gemini-pro", "gemini-1.5-flash"]
+            "google": ["gemini-1.5-pro", "gemini-pro", "gemini-1.5-flash"],
         }
-        
+
         if provider_name not in model_rankings:
             return []
-        
+
         ranking = model_rankings[provider_name]
-        
+
         try:
             current_index = ranking.index(current_model)
             # Return models that are cheaper (later in the list)
-            return ranking[current_index + 1:]
+            return ranking[current_index + 1 :]
         except ValueError:
             # Model not found in ranking, return all models as potential alternatives
             return ranking[1:] if len(ranking) > 1 else []
@@ -421,7 +396,7 @@ class LLMManager:
         """Get current budget status for a user."""
         if not self.budget_manager:
             return None
-        
+
         return await self.budget_manager.get_budget_report(user_id=user_id)
 
     async def create_admin_override(
@@ -432,13 +407,14 @@ class LLMManager:
         override_type: str,
         new_limit: float,
         reason: str,
-        expires_hours: Optional[int] = None
+        expires_hours: Optional[int] = None,
     ) -> Optional[Dict[str, Any]]:
         """Create an admin override for budget restrictions."""
         if not self.budget_manager:
             return None
-        
+
         from decimal import Decimal
+
         override = await self.budget_manager.create_admin_override(
             budget_id=budget_id,
             user_id=user_id,
@@ -446,9 +422,9 @@ class LLMManager:
             override_type=override_type,
             new_limit=Decimal(str(new_limit)),
             reason=reason,
-            expires_hours=expires_hours
+            expires_hours=expires_hours,
         )
-        
+
         return {
             "id": override.id,
             "budget_id": override.budget_id,
@@ -459,6 +435,5 @@ class LLMManager:
             "new_limit": float(override.new_limit),
             "reason": override.reason,
             "expires_at": override.expires_at.isoformat() if override.expires_at else None,
-            "created_at": override.created_at.isoformat()
+            "created_at": override.created_at.isoformat(),
         }
-

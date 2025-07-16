@@ -23,13 +23,13 @@ logger = logging.getLogger(__name__)
 
 class MockSecretClient:
     """Mock Secret Client for testing without Azure Key Vault."""
-    
+
     def __init__(self):
         self.secrets = {
             "anthropic-api-key": type('Secret', (), {"value": "test-api-key"})(),
             "anthropic-config": type('Secret', (), {"value": '{"budget_limit": 100.0, "priority": 1, "enabled": true, "default_model": "claude-3-5-sonnet-20241022"}'})()
         }
-    
+
     def get_secret(self, secret_name: str):
         if secret_name in self.secrets:
             return self.secrets[secret_name]
@@ -39,13 +39,13 @@ class MockSecretClient:
 async def test_anthropic_provider_initialization():
     """Test Anthropic provider initialization."""
     print("🧪 Testing Anthropic Provider Initialization...")
-    
+
     provider = AnthropicProvider()
     mock_kv_client = MockSecretClient()
-    
+
     # Test initialization
     result = await provider.initialize(mock_kv_client)
-    
+
     if result:
         print("✅ Anthropic provider initialized successfully")
         print(f"   - Provider name: {provider.provider_name}")
@@ -61,10 +61,10 @@ async def test_anthropic_provider_initialization():
 async def test_model_info():
     """Test model information retrieval."""
     print("\n🧪 Testing Anthropic Model Information...")
-    
+
     provider = AnthropicProvider()
     models = provider._get_available_models()
-    
+
     print(f"✅ Found {len(models)} Anthropic models:")
     for name, model_info in models.items():
         print(f"   - {model_info.display_name} ({name})")
@@ -73,37 +73,37 @@ async def test_model_info():
         print(f"     Capabilities: {[cap.value for cap in model_info.capabilities]}")
         print(f"     Context window: {model_info.context_window:,} tokens")
         print()
-    
+
     return True
 
 
 async def test_cost_estimation():
     """Test cost estimation functionality."""
     print("🧪 Testing Anthropic Cost Estimation...")
-    
+
     provider = AnthropicProvider()
     mock_kv_client = MockSecretClient()
     await provider.initialize(mock_kv_client)
-    
+
     test_prompt = "Write a comprehensive analysis of renewable energy trends in 2025."
-    
+
     for model in ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307", "claude-3-opus-20240229"]:
         cost = provider.estimate_cost(test_prompt, model, max_tokens=1000)
         print(f"✅ Estimated cost for {model}: ${cost:.6f}")
-    
+
     return True
 
 
 async def test_status_reporting():
     """Test provider status reporting."""
     print("\n🧪 Testing Anthropic Status Reporting...")
-    
+
     provider = AnthropicProvider()
     mock_kv_client = MockSecretClient()
     await provider.initialize(mock_kv_client)
-    
+
     status = provider.get_status()
-    
+
     print("✅ Anthropic Provider Status:")
     print(f"   - Name: {status['name']}")
     print(f"   - Provider: {status['provider']}")
@@ -113,23 +113,23 @@ async def test_status_reporting():
     print(f"   - Available: {status['available']}")
     print(f"   - Models: {len(status['models'])}")
     print(f"   - Default model: {status['default_model']}")
-    
+
     return True
 
 
 async def test_model_recommendations():
     """Test model recommendation system."""
     print("\n🧪 Testing Anthropic Model Recommendations...")
-    
+
     provider = AnthropicProvider()
-    
+
     task_types = ["general", "code", "fast", "analysis", "creative", "cost_effective"]
-    
+
     print("✅ Model Recommendations:")
     for task_type in task_types:
         recommended = provider.get_recommended_model(task_type)
         print(f"   - {task_type}: {recommended}")
-    
+
     return True
 
 
@@ -137,7 +137,7 @@ async def main():
     """Run all tests."""
     print("🚀 Starting Anthropic Provider Tests")
     print("=" * 50)
-    
+
     tests = [
         test_anthropic_provider_initialization,
         test_model_info,
@@ -145,7 +145,7 @@ async def main():
         test_status_reporting,
         test_model_recommendations
     ]
-    
+
     results = []
     for test in tests:
         try:
@@ -154,10 +154,10 @@ async def main():
         except Exception as e:
             print(f"❌ Test {test.__name__} failed: {e}")
             results.append(False)
-    
+
     print("\n" + "=" * 50)
     print(f"🏁 Test Results: {sum(results)}/{len(results)} passed")
-    
+
     if all(results):
         print("🎉 All tests passed! Anthropic integration is working correctly.")
         return 0

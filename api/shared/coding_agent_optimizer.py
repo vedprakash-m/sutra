@@ -2,10 +2,11 @@
 Coding Agent Optimizer module for the Forge implementation playbook generation.
 Provides agent-specific prompt optimization and context-aware development workflow generation.
 """
+
 import json
 import logging
-from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -15,35 +16,32 @@ class CodingAgentOptimizer:
     Optimizes prompts and workflows specifically for coding agent consumption
     with complete project context integration.
     """
-    
+
     def __init__(self):
         self.optimization_report = {}
         self.agent_templates = self._load_agent_templates()
-    
+
     def generate_context_optimized_prompts(
-        self, 
-        project_context: Dict, 
-        focus_area: str = 'full-stack',
-        optimization_level: str = 'production'
+        self, project_context: Dict, focus_area: str = "full-stack", optimization_level: str = "production"
     ) -> Dict[str, Any]:
         """
         Generate coding-agent-optimized prompts using complete project context.
-        
+
         Args:
             project_context: Complete context from all Forge stages
             focus_area: Area of focus (frontend, backend, full-stack, mobile)
             optimization_level: Level of optimization (development, staging, production)
-        
+
         Returns:
             Dictionary of optimized coding prompts
         """
         try:
             # Extract key information from project context
-            idea_data = project_context.get('idea_refinement', {})
-            prd_data = project_context.get('prd_generation', {})
-            ux_data = project_context.get('ux_requirements', {})
-            tech_data = project_context.get('technical_analysis', {})
-            
+            idea_data = project_context.get("idea_refinement", {})
+            prd_data = project_context.get("prd_generation", {})
+            ux_data = project_context.get("ux_requirements", {})
+            tech_data = project_context.get("technical_analysis", {})
+
             # Generate context-aware prompts
             prompts = {
                 "project_setup": self._generate_project_setup_prompt(tech_data, optimization_level),
@@ -57,38 +55,34 @@ class CodingAgentOptimizer:
                 "security_implementation": self._generate_security_prompt(tech_data, prd_data),
                 "performance_optimization": self._generate_performance_prompt(tech_data),
                 "monitoring_setup": self._generate_monitoring_prompt(tech_data),
-                "documentation_generation": self._generate_documentation_prompt(project_context)
+                "documentation_generation": self._generate_documentation_prompt(project_context),
             }
-            
+
             # Apply focus area filtering
-            if focus_area != 'full-stack':
+            if focus_area != "full-stack":
                 prompts = self._filter_by_focus_area(prompts, focus_area)
-            
+
             # Apply agent-specific optimizations
             optimized_prompts = self._apply_agent_optimizations(prompts)
-            
+
             return optimized_prompts
-            
+
         except Exception as e:
             logger.error(f"Error generating context-optimized prompts: {str(e)}")
             return {}
-    
+
     def create_systematic_workflow(
-        self,
-        technical_specs: Dict,
-        ux_specs: Dict,
-        requirements: Dict,
-        workflow_methodology: str = 'agile_sprints'
+        self, technical_specs: Dict, ux_specs: Dict, requirements: Dict, workflow_methodology: str = "agile_sprints"
     ) -> Dict[str, Any]:
         """
         Create step-by-step development workflow based on specifications.
-        
+
         Args:
             technical_specs: Technical analysis results
             ux_specs: UX requirements data
             requirements: PRD requirements data
             workflow_methodology: Methodology (agile_sprints, waterfall, kanban)
-        
+
         Returns:
             Systematic development workflow
         """
@@ -101,33 +95,29 @@ class CodingAgentOptimizer:
                 "critical_path": self._identify_critical_path(technical_specs, requirements),
                 "milestones": self._define_milestones(requirements),
                 "quality_gates": self._define_quality_gates(technical_specs),
-                "risk_mitigation": self._identify_risks_and_mitigation(technical_specs)
+                "risk_mitigation": self._identify_risks_and_mitigation(technical_specs),
             }
-            
+
             return workflow
-            
+
         except Exception as e:
             logger.error(f"Error creating systematic workflow: {str(e)}")
             return {}
-    
-    def optimize_for_coding_agents(
-        self, 
-        prompts: Dict, 
-        agent_type: str = 'general'
-    ) -> Dict[str, Any]:
+
+    def optimize_for_coding_agents(self, prompts: Dict, agent_type: str = "general") -> Dict[str, Any]:
         """
         Optimize prompts specifically for coding agent consumption.
-        
+
         Args:
             prompts: Raw prompts to optimize
             agent_type: Type of coding agent (general, cursor, copilot, custom)
-        
+
         Returns:
             Agent-optimized prompts
         """
         try:
             optimized = {}
-            
+
             for prompt_key, prompt_content in prompts.items():
                 optimized[prompt_key] = {
                     "original": prompt_content,
@@ -136,58 +126,58 @@ class CodingAgentOptimizer:
                     "context_awareness": self._add_context_awareness(prompt_content),
                     "validation_criteria": self._define_validation_criteria(prompt_content),
                     "output_format": self._define_output_format(prompt_content),
-                    "error_handling": self._add_error_handling(prompt_content)
+                    "error_handling": self._add_error_handling(prompt_content),
                 }
-            
+
             # Update optimization report
             self.optimization_report = {
                 "agent_type": agent_type,
                 "optimizations_applied": len(optimized),
                 "optimization_timestamp": datetime.now().isoformat(),
-                "agent_specific_features": self._get_agent_features(agent_type)
+                "agent_specific_features": self._get_agent_features(agent_type),
             }
-            
+
             return optimized
-            
+
         except Exception as e:
             logger.error(f"Error optimizing for coding agents: {str(e)}")
             return {}
-    
+
     def get_optimization_report(self) -> Dict[str, Any]:
         """Get the latest optimization report."""
         return self.optimization_report
-    
+
     # Private helper methods
-    
+
     def _load_agent_templates(self) -> Dict[str, Any]:
         """Load agent-specific templates and configurations."""
         return {
             "general": {
                 "instruction_format": "Step-by-step instructions with clear objectives",
                 "code_style": "Clean, well-commented, production-ready",
-                "validation": "Include test cases and validation steps"
+                "validation": "Include test cases and validation steps",
             },
             "cursor": {
                 "instruction_format": "Context-aware prompts with file references",
                 "code_style": "TypeScript/Python focused with modern patterns",
-                "validation": "Inline testing and immediate feedback"
+                "validation": "Inline testing and immediate feedback",
             },
             "copilot": {
                 "instruction_format": "Comment-driven development prompts",
                 "code_style": "GitHub-style with comprehensive documentation",
-                "validation": "Built-in testing suggestions"
+                "validation": "Built-in testing suggestions",
             },
             "custom": {
                 "instruction_format": "Flexible format based on agent capabilities",
                 "code_style": "Adaptable to project requirements",
-                "validation": "Custom validation based on project needs"
-            }
+                "validation": "Custom validation based on project needs",
+            },
         }
-    
+
     def _generate_project_setup_prompt(self, tech_data: Dict, optimization_level: str) -> str:
         """Generate project setup prompt based on technical specifications."""
-        stack = tech_data.get('recommended_stack', {})
-        
+        stack = tech_data.get("recommended_stack", {})
+
         prompt = f"""
 # Project Setup Instructions
 
@@ -219,12 +209,12 @@ Set up a {stack.get('type', 'web')} application with the following technology st
 - Basic tests passing
 """
         return prompt
-    
+
     def _generate_architecture_prompt(self, tech_data: Dict, prd_data: Dict) -> str:
         """Generate architecture implementation prompt."""
-        architecture = tech_data.get('architecture_recommendation', {})
-        features = prd_data.get('features', [])
-        
+        architecture = tech_data.get("architecture_recommendation", {})
+        features = prd_data.get("features", [])
+
         prompt = f"""
 # Architecture Implementation
 
@@ -258,12 +248,12 @@ Implement {architecture.get('pattern', 'microservices')} architecture with the f
 - Performance meets requirements
 """
         return prompt
-    
+
     def _generate_frontend_prompt(self, ux_data: Dict, tech_data: Dict) -> str:
         """Generate frontend development prompt."""
-        ui_framework = tech_data.get('recommended_stack', {}).get('frontend', 'React')
-        design_system = ux_data.get('design_system', {})
-        
+        ui_framework = tech_data.get("recommended_stack", {}).get("frontend", "React")
+        design_system = ux_data.get("design_system", {})
+
         prompt = f"""
 # Frontend Development Guide
 
@@ -295,12 +285,12 @@ Implement using {ui_framework} with modern development practices
 - Cumulative Layout Shift: < 0.1
 """
         return prompt
-    
+
     def _generate_backend_prompt(self, prd_data: Dict, tech_data: Dict) -> str:
         """Generate backend development prompt."""
-        backend_framework = tech_data.get('recommended_stack', {}).get('backend', 'FastAPI')
-        business_logic = prd_data.get('business_logic', [])
-        
+        backend_framework = tech_data.get("recommended_stack", {}).get("backend", "FastAPI")
+        business_logic = prd_data.get("business_logic", [])
+
         prompt = f"""
 # Backend Development Guide
 
@@ -332,11 +322,11 @@ Implement using {backend_framework} with production-ready patterns
 - Cross-site scripting (XSS) protection
 """
         return prompt
-    
+
     def _generate_api_prompt(self, prd_data: Dict, tech_data: Dict) -> str:
         """Generate API development prompt."""
-        endpoints = prd_data.get('api_requirements', [])
-        
+        endpoints = prd_data.get("api_requirements", [])
+
         prompt = f"""
 # API Development Guide
 
@@ -364,12 +354,12 @@ Implement using {backend_framework} with production-ready patterns
 - Security testing for vulnerabilities
 """
         return prompt
-    
+
     def _generate_database_prompt(self, tech_data: Dict, prd_data: Dict) -> str:
         """Generate database implementation prompt."""
-        database_type = tech_data.get('recommended_stack', {}).get('database', 'PostgreSQL')
-        data_models = prd_data.get('data_models', [])
-        
+        database_type = tech_data.get("recommended_stack", {}).get("database", "PostgreSQL")
+        data_models = prd_data.get("data_models", [])
+
         prompt = f"""
 # Database Implementation Guide
 
@@ -400,11 +390,11 @@ Implement using {database_type} with proper schema design
 - Regular security audits
 """
         return prompt
-    
+
     def _generate_testing_prompt(self, tech_data: Dict, prd_data: Dict) -> str:
         """Generate testing implementation prompt."""
-        testing_framework = tech_data.get('testing_framework', 'Jest/Pytest')
-        
+        testing_framework = tech_data.get("testing_framework", "Jest/Pytest")
+
         prompt = f"""
 # Testing Implementation Guide
 
@@ -435,11 +425,11 @@ Implement comprehensive testing using {testing_framework}
 - Security vulnerability scanning
 """
         return prompt
-    
+
     def _generate_deployment_prompt(self, tech_data: Dict) -> str:
         """Generate deployment automation prompt."""
-        deployment_target = tech_data.get('deployment_target', 'Azure')
-        
+        deployment_target = tech_data.get("deployment_target", "Azure")
+
         prompt = f"""
 # Deployment Automation Guide
 
@@ -473,11 +463,11 @@ Deploy to {deployment_target} with automated CI/CD pipeline
 - Alert configuration for critical issues
 """
         return prompt
-    
+
     def _generate_security_prompt(self, tech_data: Dict, prd_data: Dict) -> str:
         """Generate security implementation prompt."""
-        security_requirements = prd_data.get('security_requirements', [])
-        
+        security_requirements = prd_data.get("security_requirements", [])
+
         prompt = f"""
 # Security Implementation Guide
 
@@ -512,11 +502,11 @@ Deploy to {deployment_target} with automated CI/CD pipeline
 - Penetration testing
 """
         return prompt
-    
+
     def _generate_performance_prompt(self, tech_data: Dict) -> str:
         """Generate performance optimization prompt."""
-        performance_targets = tech_data.get('performance_targets', {})
-        
+        performance_targets = tech_data.get("performance_targets", {})
+
         prompt = f"""
 # Performance Optimization Guide
 
@@ -552,11 +542,11 @@ Deploy to {deployment_target} with automated CI/CD pipeline
 - Performance regression testing
 """
         return prompt
-    
+
     def _generate_monitoring_prompt(self, tech_data: Dict) -> str:
         """Generate monitoring setup prompt."""
-        monitoring_stack = tech_data.get('monitoring_stack', 'Azure Monitor')
-        
+        monitoring_stack = tech_data.get("monitoring_stack", "Azure Monitor")
+
         prompt = f"""
 # Monitoring and Observability Setup
 
@@ -592,7 +582,7 @@ Implement comprehensive monitoring using {monitoring_stack}
 - Continuous improvement process
 """
         return prompt
-    
+
     def _generate_documentation_prompt(self, project_context: Dict) -> str:
         """Generate documentation generation prompt."""
         prompt = f"""
@@ -634,40 +624,53 @@ Implement comprehensive monitoring using {monitoring_stack}
 - Collaborative editing capabilities
 """
         return prompt
-    
+
     def _filter_by_focus_area(self, prompts: Dict, focus_area: str) -> Dict:
         """Filter prompts based on focus area."""
         focus_filters = {
-            'frontend': ['project_setup', 'frontend_development', 'testing_implementation', 'deployment_automation'],
-            'backend': ['project_setup', 'backend_development', 'api_development', 'database_implementation', 'testing_implementation', 'deployment_automation'],
-            'mobile': ['project_setup', 'frontend_development', 'api_development', 'testing_implementation', 'deployment_automation'],
-            'devops': ['project_setup', 'deployment_automation', 'monitoring_setup', 'security_implementation']
+            "frontend": ["project_setup", "frontend_development", "testing_implementation", "deployment_automation"],
+            "backend": [
+                "project_setup",
+                "backend_development",
+                "api_development",
+                "database_implementation",
+                "testing_implementation",
+                "deployment_automation",
+            ],
+            "mobile": [
+                "project_setup",
+                "frontend_development",
+                "api_development",
+                "testing_implementation",
+                "deployment_automation",
+            ],
+            "devops": ["project_setup", "deployment_automation", "monitoring_setup", "security_implementation"],
         }
-        
+
         if focus_area in focus_filters:
             return {key: prompts[key] for key in focus_filters[focus_area] if key in prompts}
-        
+
         return prompts
-    
+
     def _apply_agent_optimizations(self, prompts: Dict) -> Dict:
         """Apply agent-specific optimizations to prompts."""
         optimized = {}
-        
+
         for key, prompt in prompts.items():
             optimized[key] = {
                 "content": prompt,
-                "agent_instructions": self._generate_agent_instructions(prompt, 'general'),
+                "agent_instructions": self._generate_agent_instructions(prompt, "general"),
                 "validation_criteria": self._define_validation_criteria(prompt),
                 "output_format": self._define_output_format(prompt),
-                "context_requirements": self._add_context_awareness(prompt)
+                "context_requirements": self._add_context_awareness(prompt),
             }
-        
+
         return optimized
-    
+
     def _optimize_single_prompt(self, prompt: str, agent_type: str) -> str:
         """Optimize a single prompt for specific agent type."""
-        template = self.agent_templates.get(agent_type, self.agent_templates['general'])
-        
+        template = self.agent_templates.get(agent_type, self.agent_templates["general"])
+
         # Add agent-specific optimizations
         optimized = f"""
 {prompt}
@@ -689,7 +692,7 @@ Implement comprehensive monitoring using {monitoring_stack}
 - Include relevant tests
 """
         return optimized
-    
+
     def _generate_agent_instructions(self, prompt: str, agent_type: str) -> List[str]:
         """Generate specific instructions for coding agents."""
         return [
@@ -698,18 +701,18 @@ Implement comprehensive monitoring using {monitoring_stack}
             "Implement comprehensive error handling",
             "Add appropriate tests for all functionality",
             "Include performance and security considerations",
-            "Maintain code quality and documentation standards"
+            "Maintain code quality and documentation standards",
         ]
-    
+
     def _add_context_awareness(self, prompt: str) -> Dict[str, str]:
         """Add context awareness requirements to prompts."""
         return {
             "project_context": "Use information from all previous Forge stages",
             "consistency": "Maintain consistency with established patterns",
             "dependencies": "Consider dependencies and integrations",
-            "quality_standards": "Follow project quality standards"
+            "quality_standards": "Follow project quality standards",
         }
-    
+
     def _define_validation_criteria(self, prompt: str) -> List[str]:
         """Define validation criteria for prompt outputs."""
         return [
@@ -717,18 +720,18 @@ Implement comprehensive monitoring using {monitoring_stack}
             "All tests pass successfully",
             "Code follows project conventions",
             "Performance requirements met",
-            "Security requirements satisfied"
+            "Security requirements satisfied",
         ]
-    
+
     def _define_output_format(self, prompt: str) -> Dict[str, str]:
         """Define expected output format for prompts."""
         return {
             "code_files": "Complete, working code files",
             "tests": "Comprehensive test files",
             "documentation": "Clear documentation and comments",
-            "configuration": "Necessary configuration files"
+            "configuration": "Necessary configuration files",
         }
-    
+
     def _add_error_handling(self, prompt: str) -> List[str]:
         """Add error handling requirements to prompts."""
         return [
@@ -736,93 +739,101 @@ Implement comprehensive monitoring using {monitoring_stack}
             "Add appropriate logging for debugging",
             "Handle edge cases and invalid inputs",
             "Provide meaningful error messages",
-            "Implement graceful degradation where appropriate"
+            "Implement graceful degradation where appropriate",
         ]
-    
+
     def _get_agent_features(self, agent_type: str) -> List[str]:
         """Get features specific to agent type."""
         features = {
-            'general': ['Clear instructions', 'Comprehensive validation', 'Flexible format'],
-            'cursor': ['Context awareness', 'File references', 'Real-time feedback'],
-            'copilot': ['Comment-driven', 'GitHub integration', 'Code suggestions'],
-            'custom': ['Adaptable format', 'Custom validation', 'Flexible requirements']
+            "general": ["Clear instructions", "Comprehensive validation", "Flexible format"],
+            "cursor": ["Context awareness", "File references", "Real-time feedback"],
+            "copilot": ["Comment-driven", "GitHub integration", "Code suggestions"],
+            "custom": ["Adaptable format", "Custom validation", "Flexible requirements"],
         }
-        return features.get(agent_type, features['general'])
-    
+        return features.get(agent_type, features["general"])
+
     # Formatting helper methods
-    
+
     def _format_components(self, components: List) -> str:
         """Format architecture components for prompt."""
-        return '\n'.join([f"- {comp}" for comp in components]) if components else "- Core application components"
-    
+        return "\n".join([f"- {comp}" for comp in components]) if components else "- Core application components"
+
     def _format_features(self, features: List) -> str:
         """Format features for prompt."""
-        return '\n'.join([f"- {feature}" for feature in features]) if features else "- Core application features"
-    
+        return "\n".join([f"- {feature}" for feature in features]) if features else "- Core application features"
+
     def _format_design_system(self, design_system: Dict) -> str:
         """Format design system for prompt."""
         if not design_system:
             return "- Implement consistent design system with reusable components"
-        return f"- Colors: {design_system.get('colors', 'Default')}\n- Typography: {design_system.get('typography', 'Default')}"
-    
+        return (
+            f"- Colors: {design_system.get('colors', 'Default')}\n- Typography: {design_system.get('typography', 'Default')}"
+        )
+
     def _format_ux_requirements(self, ux_data: Dict) -> str:
         """Format UX requirements for prompt."""
         return "- Responsive design for all devices\n- Accessibility compliance (WCAG 2.1 AA)\n- Intuitive user interface"
-    
+
     def _format_business_logic(self, business_logic: List) -> str:
         """Format business logic for prompt."""
-        return '\n'.join([f"- {logic}" for logic in business_logic]) if business_logic else "- Core business logic implementation"
-    
+        return (
+            "\n".join([f"- {logic}" for logic in business_logic]) if business_logic else "- Core business logic implementation"
+        )
+
     def _format_api_endpoints(self, endpoints: List) -> str:
         """Format API endpoints for prompt."""
-        return '\n'.join([f"- {endpoint}" for endpoint in endpoints]) if endpoints else "- RESTful API endpoints"
-    
+        return "\n".join([f"- {endpoint}" for endpoint in endpoints]) if endpoints else "- RESTful API endpoints"
+
     def _format_data_models(self, data_models: List) -> str:
         """Format data models for prompt."""
-        return '\n'.join([f"- {model}" for model in data_models]) if data_models else "- Core data models"
-    
+        return "\n".join([f"- {model}" for model in data_models]) if data_models else "- Core data models"
+
     def _format_test_requirements(self, prd_data: Dict) -> str:
         """Format test requirements for prompt."""
         return "- Test all user stories and acceptance criteria\n- Test error handling and edge cases\n- Test performance requirements"
-    
+
     def _format_security_requirements(self, security_requirements: List) -> str:
         """Format security requirements for prompt."""
-        return '\n'.join([f"- {req}" for req in security_requirements]) if security_requirements else "- Standard security requirements"
-    
+        return (
+            "\n".join([f"- {req}" for req in security_requirements])
+            if security_requirements
+            else "- Standard security requirements"
+        )
+
     def _format_performance_targets(self, performance_targets: Dict) -> str:
         """Format performance targets for prompt."""
         if not performance_targets:
             return "- Response time: < 300ms\n- Throughput: High\n- Availability: 99.9%"
-        return '\n'.join([f"- {key}: {value}" for key, value in performance_targets.items()])
-    
+        return "\n".join([f"- {key}: {value}" for key, value in performance_targets.items()])
+
     # Workflow generation methods
-    
+
     def _generate_development_phases(self, technical_specs: Dict, requirements: Dict) -> List[Dict]:
         """Generate development phases for workflow."""
         return [
             {"phase": "Planning", "duration": "1 week", "activities": ["Requirements analysis", "Technical design"]},
             {"phase": "Development", "duration": "8 weeks", "activities": ["Core development", "Feature implementation"]},
             {"phase": "Testing", "duration": "2 weeks", "activities": ["Testing", "Bug fixes"]},
-            {"phase": "Deployment", "duration": "1 week", "activities": ["Production deployment", "Monitoring setup"]}
+            {"phase": "Deployment", "duration": "1 week", "activities": ["Production deployment", "Monitoring setup"]},
         ]
-    
+
     def _generate_sprint_breakdown(self, requirements: Dict, ux_specs: Dict) -> List[Dict]:
         """Generate sprint breakdown for agile workflow."""
         return [
             {"sprint": 1, "duration": "2 weeks", "focus": "Project setup and architecture"},
             {"sprint": 2, "duration": "2 weeks", "focus": "Core functionality implementation"},
             {"sprint": 3, "duration": "2 weeks", "focus": "User interface development"},
-            {"sprint": 4, "duration": "2 weeks", "focus": "Integration and testing"}
+            {"sprint": 4, "duration": "2 weeks", "focus": "Integration and testing"},
         ]
-    
+
     def _analyze_dependencies(self, technical_specs: Dict) -> List[Dict]:
         """Analyze project dependencies."""
         return [
             {"dependency": "Database setup", "blocks": ["Backend development"]},
             {"dependency": "API development", "blocks": ["Frontend integration"]},
-            {"dependency": "Authentication", "blocks": ["Protected features"]}
+            {"dependency": "Authentication", "blocks": ["Protected features"]},
         ]
-    
+
     def _identify_critical_path(self, technical_specs: Dict, requirements: Dict) -> List[str]:
         """Identify critical path for project completion."""
         return [
@@ -832,44 +843,44 @@ Implement comprehensive monitoring using {monitoring_stack}
             "Authentication implementation",
             "Frontend development",
             "Integration testing",
-            "Deployment"
+            "Deployment",
         ]
-    
+
     def _define_milestones(self, requirements: Dict) -> List[Dict]:
         """Define project milestones."""
         return [
             {"milestone": "MVP Ready", "date": "Week 6", "criteria": ["Core features working"]},
             {"milestone": "Beta Release", "date": "Week 10", "criteria": ["All features complete"]},
-            {"milestone": "Production Ready", "date": "Week 12", "criteria": ["Testing complete"]}
+            {"milestone": "Production Ready", "date": "Week 12", "criteria": ["Testing complete"]},
         ]
-    
+
     def _define_quality_gates(self, technical_specs: Dict) -> List[Dict]:
         """Define quality gates for workflow."""
         return [
             {"gate": "Code Review", "criteria": ["Code quality", "Security review"]},
             {"gate": "Testing", "criteria": ["Test coverage", "Performance testing"]},
             {"gate": "Security Scan", "criteria": ["Vulnerability scan", "Compliance check"]},
-            {"gate": "Deployment", "criteria": ["All tests pass", "Security clear"]}
+            {"gate": "Deployment", "criteria": ["All tests pass", "Security clear"]},
         ]
-    
+
     def _identify_risks_and_mitigation(self, technical_specs: Dict) -> List[Dict]:
         """Identify risks and mitigation strategies."""
         return [
             {"risk": "Technical complexity", "mitigation": "Prototype critical components early"},
             {"risk": "Performance issues", "mitigation": "Regular performance testing"},
             {"risk": "Security vulnerabilities", "mitigation": "Security reviews and scanning"},
-            {"risk": "Timeline delays", "mitigation": "Buffer time and priority management"}
+            {"risk": "Timeline delays", "mitigation": "Buffer time and priority management"},
         ]
 
 
-def generate_coding_prompts(project_context: Dict, optimization_level: str = 'production') -> Dict[str, Any]:
+def generate_coding_prompts(project_context: Dict, optimization_level: str = "production") -> Dict[str, Any]:
     """
     Convenience function to generate coding prompts.
-    
+
     Args:
         project_context: Complete project context from all Forge stages
         optimization_level: Level of optimization (development, staging, production)
-    
+
     Returns:
         Dictionary of optimized coding prompts
     """

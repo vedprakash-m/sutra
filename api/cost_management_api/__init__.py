@@ -388,8 +388,9 @@ async def handle_create_budget_limit(req: HttpRequest, user_info: Dict[str, Any]
                 headers={"Content-Type": "application/json"},
             )
 
-        from shared.budget_manager import BudgetPeriod, BudgetAction
         from decimal import Decimal
+
+        from shared.budget_manager import BudgetAction, BudgetPeriod
 
         # Create budget limit
         budget_limit = await budget_manager.create_budget_limit(
@@ -399,7 +400,7 @@ async def handle_create_budget_limit(req: HttpRequest, user_info: Dict[str, Any]
             applies_to=request_body["applies_to"],
             admin_user_id=user_info["user_id"],
             threshold_percentages=request_body.get("threshold_percentages"),
-            actions={int(k): BudgetAction(v) for k, v in request_body.get("actions", {}).items()}
+            actions={int(k): BudgetAction(v) for k, v in request_body.get("actions", {}).items()},
         )
 
         response_data = {
@@ -410,11 +411,11 @@ async def handle_create_budget_limit(req: HttpRequest, user_info: Dict[str, Any]
                 "amount": float(budget_limit.amount),
                 "period": budget_limit.period.value,
                 "threshold_percentages": budget_limit.threshold_percentages,
-                "actions": {k: v.value if hasattr(v, 'value') else v for k, v in budget_limit.actions.items()},
+                "actions": {k: v.value if hasattr(v, "value") else v for k, v in budget_limit.actions.items()},
                 "applies_to": budget_limit.applies_to,
                 "is_active": budget_limit.is_active,
-                "created_at": budget_limit.created_at.isoformat()
-            }
+                "created_at": budget_limit.created_at.isoformat(),
+            },
         }
 
         return HttpResponse(
@@ -494,7 +495,7 @@ async def handle_create_admin_override(req: HttpRequest, user_info: Dict[str, An
             override_type=request_body["override_type"],
             new_limit=Decimal(str(request_body["new_limit"])),
             reason=request_body["reason"],
-            expires_hours=request_body.get("expires_hours")
+            expires_hours=request_body.get("expires_hours"),
         )
 
         response_data = {
@@ -510,8 +511,8 @@ async def handle_create_admin_override(req: HttpRequest, user_info: Dict[str, An
                 "reason": override.reason,
                 "expires_at": override.expires_at.isoformat() if override.expires_at else None,
                 "is_active": override.is_active,
-                "created_at": override.created_at.isoformat()
-            }
+                "created_at": override.created_at.isoformat(),
+            },
         }
 
         return HttpResponse(
@@ -547,9 +548,7 @@ async def handle_get_budget_report(req: HttpRequest, user_info: Dict[str, Any], 
 
         # Generate budget report
         report = await budget_manager.get_budget_report(
-            user_id=entity_id,
-            organization_id=organization_id,
-            period_days=period_days
+            user_id=entity_id, organization_id=organization_id, period_days=period_days
         )
 
         return HttpResponse(

@@ -18,10 +18,10 @@ class APICache {
   private cache = new Map<string, CacheItem<any>>();
   private accessOrder = new Map<string, number>();
   private accessCounter = 0;
-  
+
   private config: CacheConfig = {
     defaultTTL: 5 * 60 * 1000, // 5 minutes default TTL
-    maxSize: 100 // Maximum cache entries
+    maxSize: 100, // Maximum cache entries
   };
 
   constructor(config?: Partial<CacheConfig>) {
@@ -35,7 +35,7 @@ class APICache {
    */
   get<T>(key: string): T | null {
     const item = this.cache.get(key);
-    
+
     if (!item) {
       return null;
     }
@@ -49,7 +49,7 @@ class APICache {
 
     // Update access order for LRU
     this.accessOrder.set(key, ++this.accessCounter);
-    
+
     return item.data;
   }
 
@@ -60,7 +60,7 @@ class APICache {
     const cacheItem: CacheItem<T> = {
       data,
       timestamp: Date.now(),
-      ttl: ttl || this.config.defaultTTL
+      ttl: ttl || this.config.defaultTTL,
     };
 
     // If cache is full, remove least recently used item
@@ -110,7 +110,7 @@ class APICache {
       validEntries: valid,
       expiredEntries: expired,
       maxSize: this.config.maxSize,
-      hitRate: this.getHitRate()
+      hitRate: this.getHitRate(),
     };
   }
 
@@ -155,7 +155,7 @@ class APICache {
       }
     }
 
-    expiredKeys.forEach(key => {
+    expiredKeys.forEach((key) => {
       this.cache.delete(key);
       this.accessOrder.delete(key);
     });
@@ -171,8 +171,8 @@ class APICache {
 
     const sortedParams = Object.keys(params)
       .sort()
-      .map(key => `${key}=${encodeURIComponent(String(params[key]))}`)
-      .join('&');
+      .map((key) => `${key}=${encodeURIComponent(String(params[key]))}`)
+      .join("&");
 
     return `${url}?${sortedParams}`;
   }
@@ -181,20 +181,23 @@ class APICache {
 // Create singleton cache instance
 export const apiCache = new APICache({
   defaultTTL: 5 * 60 * 1000, // 5 minutes
-  maxSize: 100
+  maxSize: 100,
 });
 
 // Cache configurations for different endpoint types
 export const CacheTTL = {
-  SHORT: 1 * 60 * 1000,    // 1 minute - for dynamic data
-  MEDIUM: 5 * 60 * 1000,   // 5 minutes - for semi-static data
-  LONG: 30 * 60 * 1000,    // 30 minutes - for static data
-  VERY_LONG: 2 * 60 * 60 * 1000 // 2 hours - for rarely changing data
+  SHORT: 1 * 60 * 1000, // 1 minute - for dynamic data
+  MEDIUM: 5 * 60 * 1000, // 5 minutes - for semi-static data
+  LONG: 30 * 60 * 1000, // 30 minutes - for static data
+  VERY_LONG: 2 * 60 * 60 * 1000, // 2 hours - for rarely changing data
 };
 
 // Set up automatic cleanup every 5 minutes
-setInterval(() => {
-  apiCache.cleanup();
-}, 5 * 60 * 1000);
+setInterval(
+  () => {
+    apiCache.cleanup();
+  },
+  5 * 60 * 1000,
+);
 
 export default APICache;

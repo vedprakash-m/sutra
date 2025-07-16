@@ -1,8 +1,8 @@
 # Sutra Multi-LLM Prompt Studio - Complete Platform UX/UI Specification
 
-**Document Version:** 2.0  
-**Last Updated:** July 14, 2025  
-**Authority:** Complete UX/UI specification for Sutra Multi-LLM Prompt Studio with integrated Forge capabilities  
+**Document Version:** 2.0
+**Last Updated:** July 14, 2025
+**Authority:** Complete UX/UI specification for Sutra Multi-LLM Prompt Studio with integrated Forge capabilities
 **Target Audience:** LLM Coding Agents and Development Teams
 
 ---
@@ -15,10 +15,10 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides a systematic plat
 
 ### 1.1 Platform Integration Philosophy
 
-**🔗 Unified AI Operations Platform:** All modules work seamlessly together, sharing data, authentication, and collaboration infrastructure  
-**🎯 Progressive Complexity:** Users naturally advance from simple prompt creation to complex systematic development workflows  
-**🤝 Comprehensive Collaboration:** Consistent sharing, permissions, and real-time collaboration across all platform features  
-**⚡ Platform Continuity:** Unified data architecture, persistent state, and consistent UX patterns across all modules  
+**🔗 Unified AI Operations Platform:** All modules work seamlessly together, sharing data, authentication, and collaboration infrastructure
+**🎯 Progressive Complexity:** Users naturally advance from simple prompt creation to complex systematic development workflows
+**🤝 Comprehensive Collaboration:** Consistent sharing, permissions, and real-time collaboration across all platform features
+**⚡ Platform Continuity:** Unified data architecture, persistent state, and consistent UX patterns across all modules
 **📱 Universal Mobile Experience:** Complete functionality across all modules with responsive design patterns
 
 ### 1.2 Core UX Principles (Complete Sutra Platform)
@@ -40,12 +40,14 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides a systematic plat
 **Platform Access Policy:** All Sutra features require Microsoft Entra ID authentication for data persistence, collaboration, and cost tracking. No guest or anonymous access is provided.
 
 **Immediate Value Demonstration:**
+
 - **Landing Page:** Clear demo videos and interactive previews showcasing platform capabilities
 - **Trial Account:** Free tier with 50 LLM calls per month to experience full platform functionality
 - **Quick Onboarding:** Streamlined signup process with immediate access to all modules
 - **Success Stories:** Customer testimonials and case studies demonstrating ROI
 
 **Platform Benefits for Authenticated Users:**
+
 - Unlimited LLM calls across GPT-4, Claude, Gemini (within budget limits)
 - Save & organize prompts in Collections with team sharing
 - Create and execute automated Playbooks
@@ -56,24 +58,28 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides a systematic plat
 ### 2.2 Primary User Personas (Complete Platform)
 
 #### **Persona 1: Content Creator / "Prompter"**
+
 - **Profile:** Marketing professionals, content creators, copywriters
 - **Primary Platform Usage:** Prompt Studio for content creation, Collections for organization, basic Playbooks for content workflows
 - **Forge Interest:** Occasional use for content strategy development and campaign planning
 - **Key Metrics:** Time to first prompt, prompt reuse rate, content quality satisfaction
 
 #### **Persona 2: Customer Service Professional**
+
 - **Profile:** Support teams, customer success managers
 - **Primary Platform Usage:** Prompt Studio for response templates, Collections for team sharing, Playbooks for escalation workflows
 - **Forge Interest:** Process improvement and workflow optimization projects
 - **Key Metrics:** Response time reduction, consistency score, customer satisfaction improvement
 
 #### **Persona 3: Developer / Prompt Engineer**
+
 - **Profile:** Software engineers, AI/ML engineers, technical leads
 - **Primary Platform Usage:** Advanced Prompt Studio features, API integrations, complex Playbooks, Analytics for optimization
 - **Forge Interest:** Heavy usage for technical project planning and architecture decisions
 - **Key Metrics:** Code generation accuracy, automation efficiency, integration success rate
 
 #### **Persona 4: Product Manager**
+
 - **Profile:** Product managers, business analysts, strategy consultants
 - **Primary Platform Usage:** All modules for documentation, team collaboration, process workflows
 - **Forge Interest:** Primary user for complete product development planning workflows
@@ -84,12 +90,14 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides a systematic plat
 #### **🔐 Discovery & Onboarding (Authenticated Platform)**
 
 **Landing Experience:**
+
 - Value proposition: "Complete AI Operations Platform: From Prompts to Products"
 - **Interactive Demos:** Live demonstrations of prompt engineering, workflow orchestration, and Forge capabilities
 - **Platform Preview:** Clear showcase of all five integrated modules with real examples
 - **Success Stories:** Customer testimonials across different use cases and measurable outcomes
 
 **Streamlined Authentication & Setup:**
+
 ```
 Landing Page → Value Demo → Motivated Signup → Role Selection → Module Introduction → First Success
      ↓            ↓             ↓               ↓              ↓                ↓
@@ -100,6 +108,7 @@ demo videos     Clear ROI       Entra ID       Content/CS/       Dev/PM         
 ```
 
 **Progressive Feature Introduction:**
+
 1. **Week 1:** Prompt Studio mastery, first Collection creation, team invitation
 2. **Week 2:** Playbook introduction, workflow automation, collaboration basics
 3. **Week 3:** Analytics insights, cost optimization, advanced prompt techniques
@@ -108,6 +117,7 @@ demo videos     Clear ROI       Entra ID       Content/CS/       Dev/PM         
 #### **🚀 Module Navigation & Integration**
 
 **Main Platform Navigation:**
+
 1. **Dashboard** - Overview of all activities, quick actions, team updates
 2. **Prompt Studio** - Individual prompt creation, multi-LLM testing, optimization
 3. **Collections** - Prompt organization, sharing, team libraries
@@ -126,6 +136,7 @@ demo videos     Clear ROI       Entra ID       Content/CS/       Dev/PM         
 **🎯 Design Philosophy:** "Guided creation with expert control across all AI models"
 
 **Desktop Prompt Studio Experience:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Prompt Studio: Marketing Email Generator                         │
@@ -152,6 +163,7 @@ demo videos     Clear ROI       Entra ID       Content/CS/       Dev/PM         
 ```
 
 **Mobile Prompt Studio Experience:**
+
 ```
 ┌─────────────────────┐
 │ 📝 Prompt Studio    │
@@ -180,6 +192,7 @@ demo videos     Clear ROI       Entra ID       Content/CS/       Dev/PM         
 **🎯 Design Philosophy:** "Organized discovery with seamless team sharing"
 
 **Collections Hierarchy:**
+
 ```
 My Workspace
 ├── 📁 Marketing Prompts (15)
@@ -198,6 +211,7 @@ My Workspace
 ```
 
 **Desktop Collections Interface:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Collections: Prompt Organization & Team Sharing                  │
@@ -227,6 +241,7 @@ My Workspace
 **🎯 Design Philosophy:** "Visual workflow automation with intelligent execution"
 
 **Playbook Builder Interface:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Playbook Builder: Customer Onboarding Workflow                   │
@@ -255,6 +270,7 @@ My Workspace
 ```
 
 **Mobile Playbook Execution:**
+
 ```
 ┌─────────────────────┐
 │ 🔄 Active Playbooks │
@@ -284,6 +300,7 @@ My Workspace
 **🎯 Design Philosophy:** "Actionable insights across all platform activities"
 
 **Analytics Dashboard:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Analytics: Platform Performance & Optimization                   │
@@ -321,6 +338,7 @@ My Workspace
 **Quality Gate User Interface Design:**
 
 **1. Real-Time Quality Scoring Display**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Current Stage: PRD Generation                                     │
@@ -344,6 +362,7 @@ My Workspace
 ```
 
 **2. Quality Gate Decision Interface**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ ⚠️  Quality Gate Decision Required                                │
@@ -371,6 +390,7 @@ My Workspace
 ```
 
 **3. Adaptive Quality Thresholds Display**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ 🎯 Quality Standards for This Project                            │
@@ -393,6 +413,7 @@ My Workspace
 ```
 
 **4. Cross-Stage Quality Validation UX**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ 🔄 Context Quality Validation                                    │
@@ -415,6 +436,7 @@ My Workspace
 ```
 
 **5. Quality Learning Dashboard**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ 📈 Your Quality Progress                                         │
@@ -439,6 +461,7 @@ My Workspace
 ```
 
 **Quality-Enhanced Forge Project Overview:**
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Forge: Task Management App Development                    🎯 87% │
@@ -472,9 +495,10 @@ My Workspace
 ```
 
 **Forge Integration with Other Modules:**
+
 - **Collections Integration:** Forge templates stored as specialized Collections with quality benchmarks
 - **Playbook Output:** Final implementation plan becomes executable Playbook with quality validation
-- **Analytics Tracking:** Forge projects included in platform-wide analytics with quality trend analysis  
+- **Analytics Tracking:** Forge projects included in platform-wide analytics with quality trend analysis
 - **Team Collaboration:** Consistent sharing model across all platform features with quality context
 - **Quality Governance:** Enterprise-level quality standards and reporting across all development workflows
 
@@ -483,6 +507,7 @@ My Workspace
 #### **🧠 Intelligent Questioning Interface**
 
 **Core UX Pattern:**
+
 - **Conversational Flow:** AI asks clarifying questions using selected LLM (default: Gemini Flash)
 - **Progressive Disclosure:** Questions revealed based on previous answers
 - **Persistent State:** All responses saved automatically for multi-session workflow
@@ -492,6 +517,7 @@ My Workspace
 #### **Quality Impact Warning for Stage Skipping**
 
 **UX Stage Skip Warning Modal (When User Attempts to Skip UX Requirements Stage):**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ ⚠️  Skip UX Requirements Stage?                                │
@@ -524,6 +550,7 @@ My Workspace
 #### **One-Time LLM Selection Interface**
 
 **Forge Project LLM Selection (At Project Start):**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 🎯 Choose Your AI Model for This Forge Project                 │
@@ -560,6 +587,7 @@ My Workspace
 ```
 
 **Mobile Idea Refinement:**
+
 ```
 ┌─────────────────────┐
 │ 💡 Idea Refinement  │
@@ -593,21 +621,24 @@ My Workspace
 ### 4.1 Leverage Existing Sutra Components
 
 **Reused Components:**
+
 - **Collections Integration:** Forge templates stored as specialized Collections
 - **Playbook Schema:** Enhanced to support Forge multi-stage data
 - **Collaboration System:** Existing sharing, permissions, and real-time editing
 - **Navigation Patterns:** Consistent with existing Sutra tab structure
 - **Mobile Experience:** Full mobile support using existing responsive design
 
-### 4.2 Enhanced User Experience Features  
+### 4.2 Enhanced User Experience Features
 
 **Multi-Session Support:**
+
 - **Persistent State:** All progress automatically saved to enhanced Playbook
 - **Resume Workflow:** Users can return to any stage at any time
 - **Team Continuity:** Multiple team members can contribute across sessions
 - **Mobile Sync:** Real-time synchronization between devices
 
 **LLM Selection & Consistency:**
+
 - **One-Time Choice:** Select LLM model once at project start (default: Gemini Flash)
 - **Consistent Experience:** Same AI model throughout entire workflow
 - **Multi-LLM Analysis:** Technical evaluation uses all admin-configured LLMs when available
@@ -616,6 +647,7 @@ My Workspace
 #### **Forge Template Selection Interface**
 
 **Template Selection with Preview (When Starting New Forge Project):**
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 📋 Start from Template or Create New Project                   │
@@ -668,6 +700,7 @@ My Workspace
 **🎯 Design Philosophy:** "Seamless progression through systematic development with clear value at each stage"
 
 #### End-to-End User Flow Diagram
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                     FORGE: COMPLETE USER JOURNEY FLOW                                  │
@@ -689,7 +722,7 @@ Concept Input → AI Questioning → Iterative Refinement → Validation → Sta
 "Task mgmt      "Who is your       Refine answers      Quality       Proceed to
 app idea"       target user?"      until complete      Score 87%     Stage 2
 
-📋 STAGE 2: PRD GENERATION (Required - Quality Gate)  
+📋 STAGE 2: PRD GENERATION (Required - Quality Gate)
 ────────────────────────────────────────────────────
 Template Selection → Section Generation → Review & Edit → Quality Check → Stage Complete
         ↓                  ↓                ↓              ↓             ↓
@@ -720,7 +753,7 @@ Transformation → Playbook Generation → Integration → Export Options → Pr
 🎯 VALUE DELIVERED AT EACH STAGE:
 ─────────────────────────────────────
 Stage 1: ✅ Validated, structured problem statement with market insights
-Stage 2: ✅ Complete PRD with user stories, requirements, and success metrics  
+Stage 2: ✅ Complete PRD with user stories, requirements, and success metrics
 Stage 3: ✅ UX specifications with user journeys (or appropriate compensation)
 Stage 4: ✅ Technical architecture with multi-LLM validation and recommendations
 Stage 5: ✅ Executable implementation guide ready for development teams
@@ -736,7 +769,7 @@ Stage 5: ✅ Executable implementation guide ready for development teams
 📱 RESPONSIVE JOURNEY ADAPTATION:
 ──────────────────────────────────
 Desktop: Full-featured experience with side-by-side editing and detailed analytics
-Tablet:  Touch-optimized interface with swipe navigation between stages  
+Tablet:  Touch-optimized interface with swipe navigation between stages
 Mobile:  Progressive disclosure with stage-by-stage focus and simplified inputs
 
 🚨 QUALITY GATES & DECISION POINTS:
@@ -750,13 +783,14 @@ Mobile:  Progressive disclosure with stage-by-stage focus and simplified inputs
 ──────────────────────────────────
 First-time users receive:
 • Interactive tutorial with sample project
-• Contextual tips at each decision point  
+• Contextual tips at each decision point
 • Progressive complexity introduction
 • Success celebration at each completed stage
 • Template suggestions based on project outcomes
 ```
 
 #### User Journey Decision Matrix
+
 ```
 ┌──────────────────┬─────────────────┬─────────────────┬──────────────────┐
 │ User Type        │ Typical Path    │ Skip Decisions  │ Template Usage   │
@@ -770,10 +804,11 @@ First-time users receive:
 ```
 
 #### Stage Transition Animations & Feedback
+
 ```
 Stage Completion Visual Feedback:
 ✅ Stage 1: "Idea Validated!" + progress celebration
-✅ Stage 2: "Requirements Complete!" + quality score display  
+✅ Stage 2: "Requirements Complete!" + quality score display
 ✅ Stage 3: "UX Defined!" or "UX Compensation Applied" with impact note
 ✅ Stage 4: "Technical Analysis Complete!" + multi-LLM insights summary
 ✅ Stage 5: "Implementation Ready!" + playbook generation celebration

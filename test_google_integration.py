@@ -23,13 +23,13 @@ logger = logging.getLogger(__name__)
 
 class MockSecretClient:
     """Mock Secret Client for testing without Azure Key Vault."""
-    
+
     def __init__(self):
         self.secrets = {
             "google-api-key": type('Secret', (), {"value": "test-api-key"})(),
             "google-config": type('Secret', (), {"value": '{"budget_limit": 100.0, "priority": 1, "enabled": true, "default_model": "gemini-1.5-flash"}'})()
         }
-    
+
     def get_secret(self, secret_name: str):
         if secret_name in self.secrets:
             return self.secrets[secret_name]
@@ -39,13 +39,13 @@ class MockSecretClient:
 async def test_google_provider_initialization():
     """Test Google provider initialization."""
     print("🧪 Testing Google AI Provider Initialization...")
-    
+
     provider = GoogleProvider()
     mock_kv_client = MockSecretClient()
-    
+
     # Test initialization
     result = await provider.initialize(mock_kv_client)
-    
+
     if result:
         print("✅ Google AI provider initialized successfully")
         print(f"   - Provider name: {provider.provider_name}")
@@ -61,10 +61,10 @@ async def test_google_provider_initialization():
 async def test_model_info():
     """Test model information retrieval."""
     print("\n🧪 Testing Google AI Model Information...")
-    
+
     provider = GoogleProvider()
     models = provider._get_available_models()
-    
+
     print(f"✅ Found {len(models)} Google AI models:")
     for name, model_info in models.items():
         print(f"   - {model_info.display_name} ({name})")
@@ -73,37 +73,37 @@ async def test_model_info():
         print(f"     Capabilities: {[cap.value for cap in model_info.capabilities]}")
         print(f"     Context window: {model_info.context_window:,} tokens")
         print()
-    
+
     return True
 
 
 async def test_cost_estimation():
     """Test cost estimation functionality."""
     print("🧪 Testing Google AI Cost Estimation...")
-    
+
     provider = GoogleProvider()
     mock_kv_client = MockSecretClient()
     await provider.initialize(mock_kv_client)
-    
+
     test_prompt = "Explain the latest developments in quantum computing and their potential impact on cryptography."
-    
+
     for model in ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"]:
         cost = provider.estimate_cost(test_prompt, model, max_tokens=1500)
         print(f"✅ Estimated cost for {model}: ${cost:.6f}")
-    
+
     return True
 
 
 async def test_status_reporting():
     """Test provider status reporting."""
     print("\n🧪 Testing Google AI Status Reporting...")
-    
+
     provider = GoogleProvider()
     mock_kv_client = MockSecretClient()
     await provider.initialize(mock_kv_client)
-    
+
     status = provider.get_status()
-    
+
     print("✅ Google AI Provider Status:")
     print(f"   - Name: {status['name']}")
     print(f"   - Provider: {status['provider']}")
@@ -113,38 +113,38 @@ async def test_status_reporting():
     print(f"   - Available: {status['available']}")
     print(f"   - Models: {len(status['models'])}")
     print(f"   - Default model: {status['default_model']}")
-    
+
     return True
 
 
 async def test_model_recommendations():
     """Test model recommendation system."""
     print("\n🧪 Testing Google AI Model Recommendations...")
-    
+
     provider = GoogleProvider()
-    
+
     task_types = ["general", "code", "fast", "analysis", "creative", "cost_effective"]
-    
+
     print("✅ Model Recommendations:")
     for task_type in task_types:
         recommended = provider.get_recommended_model(task_type)
         print(f"   - {task_type}: {recommended}")
-    
+
     return True
 
 
 async def test_multimodal_capabilities():
     """Test multimodal capabilities detection."""
     print("\n🧪 Testing Google AI Multimodal Capabilities...")
-    
+
     provider = GoogleProvider()
     models = provider._get_available_models()
-    
+
     print("✅ Multimodal Capabilities:")
     for name, model_info in models.items():
         has_image_analysis = any(cap.value == "image_analysis" for cap in model_info.capabilities)
         print(f"   - {model_info.display_name}: {'🖼️  Image Analysis' if has_image_analysis else '📝 Text Only'}")
-    
+
     return True
 
 
@@ -152,7 +152,7 @@ async def main():
     """Run all tests."""
     print("🚀 Starting Google AI Provider Tests")
     print("=" * 50)
-    
+
     tests = [
         test_google_provider_initialization,
         test_model_info,
@@ -161,7 +161,7 @@ async def main():
         test_model_recommendations,
         test_multimodal_capabilities
     ]
-    
+
     results = []
     for test in tests:
         try:
@@ -170,10 +170,10 @@ async def main():
         except Exception as e:
             print(f"❌ Test {test.__name__} failed: {e}")
             results.append(False)
-    
+
     print("\n" + "=" * 50)
     print(f"🏁 Test Results: {sum(results)}/{len(results)} passed")
-    
+
     if all(results):
         print("🎉 All tests passed! Google AI integration is working correctly.")
         return 0

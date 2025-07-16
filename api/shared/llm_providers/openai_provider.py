@@ -3,18 +3,12 @@
 import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional, AsyncGenerator, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import openai
 from openai import AsyncOpenAI
 
-from .base_provider import (
-    BaseLLMProvider, 
-    ModelInfo, 
-    ModelCapability, 
-    TokenUsage, 
-    LLMResponse
-)
+from .base_provider import BaseLLMProvider, LLMResponse, ModelCapability, ModelInfo, TokenUsage
 
 
 class OpenAIProvider(BaseLLMProvider):
@@ -44,10 +38,10 @@ class OpenAIProvider(BaseLLMProvider):
                     ModelCapability.STREAMING,
                     ModelCapability.FUNCTION_CALLING,
                     ModelCapability.CODE_GENERATION,
-                    ModelCapability.JSON_MODE
+                    ModelCapability.JSON_MODE,
                 ],
                 context_window=8192,
-                supports_streaming=True
+                supports_streaming=True,
             ),
             "gpt-4-1106-preview": ModelInfo(
                 name="gpt-4-1106-preview",
@@ -60,10 +54,10 @@ class OpenAIProvider(BaseLLMProvider):
                     ModelCapability.STREAMING,
                     ModelCapability.FUNCTION_CALLING,
                     ModelCapability.CODE_GENERATION,
-                    ModelCapability.JSON_MODE
+                    ModelCapability.JSON_MODE,
                 ],
                 context_window=128000,
-                supports_streaming=True
+                supports_streaming=True,
             ),
             "gpt-4o": ModelInfo(
                 name="gpt-4o",
@@ -77,10 +71,10 @@ class OpenAIProvider(BaseLLMProvider):
                     ModelCapability.FUNCTION_CALLING,
                     ModelCapability.CODE_GENERATION,
                     ModelCapability.JSON_MODE,
-                    ModelCapability.IMAGE_ANALYSIS
+                    ModelCapability.IMAGE_ANALYSIS,
                 ],
                 context_window=128000,
-                supports_streaming=True
+                supports_streaming=True,
             ),
             "gpt-3.5-turbo": ModelInfo(
                 name="gpt-3.5-turbo",
@@ -93,10 +87,10 @@ class OpenAIProvider(BaseLLMProvider):
                     ModelCapability.STREAMING,
                     ModelCapability.FUNCTION_CALLING,
                     ModelCapability.CODE_GENERATION,
-                    ModelCapability.JSON_MODE
+                    ModelCapability.JSON_MODE,
                 ],
                 context_window=16385,
-                supports_streaming=True
+                supports_streaming=True,
             ),
         }
 
@@ -107,16 +101,15 @@ class OpenAIProvider(BaseLLMProvider):
 
         try:
             # Initialize OpenAI client
-            self.client = AsyncOpenAI(
-                api_key=self.api_key,
-                organization=self.organization
-            )
+            self.client = AsyncOpenAI(api_key=self.api_key, organization=self.organization)
 
             # Set default model
             if not self.default_model:
                 self.default_model = "gpt-4o"  # Use GPT-4o as default
 
-            self.logger.info(f"OpenAI client initialized with API key ending in: ...{self.api_key[-4:] if self.api_key else 'None'}")
+            self.logger.info(
+                f"OpenAI client initialized with API key ending in: ...{self.api_key[-4:] if self.api_key else 'None'}"
+            )
             return True
 
         except Exception as e:
@@ -134,11 +127,7 @@ class OpenAIProvider(BaseLLMProvider):
         return input_cost + output_cost
 
     async def _execute_request(
-        self, 
-        prompt: str, 
-        model: str, 
-        context: Dict[str, Any],
-        stream: bool = False
+        self, prompt: str, model: str, context: Dict[str, Any], stream: bool = False
     ) -> Union[LLMResponse, AsyncGenerator[str, None]]:
         """Execute the actual OpenAI API request."""
         if not self.client:
@@ -146,7 +135,7 @@ class OpenAIProvider(BaseLLMProvider):
 
         # Prepare the messages
         messages = [{"role": "user", "content": prompt}]
-        
+
         # Add system message if provided in context
         if "system_prompt" in context:
             messages.insert(0, {"role": "system", "content": context["system_prompt"]})
@@ -157,7 +146,7 @@ class OpenAIProvider(BaseLLMProvider):
             "messages": messages,
             "max_tokens": context.get("max_tokens", self.models[model].max_tokens),
             "temperature": context.get("temperature", 0.7),
-            "stream": stream
+            "stream": stream,
         }
 
         # Add JSON mode if requested and supported
@@ -173,11 +162,11 @@ class OpenAIProvider(BaseLLMProvider):
         except openai.RateLimitError as e:
             self.logger.warning(f"OpenAI rate limit exceeded: {e}")
             raise RuntimeError(f"Rate limit exceeded. Please try again later.")
-        
+
         except openai.APIError as e:
             self.logger.error(f"OpenAI API error: {e}")
             raise RuntimeError(f"OpenAI API error: {str(e)}")
-        
+
         except Exception as e:
             self.logger.error(f"Unexpected error in OpenAI request: {e}")
             raise RuntimeError(f"OpenAI request failed: {str(e)}")
@@ -185,29 +174,29 @@ class OpenAIProvider(BaseLLMProvider):
     async def _handle_standard_response(self, api_params: Dict[str, Any], model: str) -> LLMResponse:
         """Handle non-streaming OpenAI response."""
         response = await self.client.chat.completions.create(**api_params)
-        
+
         # Extract response data
         content = response.choices[0].message.content or ""
         finish_reason = response.choices[0].finish_reason
-        
+
         # Create usage object
         usage = TokenUsage(
             prompt_tokens=response.usage.prompt_tokens if response.usage else 0,
             completion_tokens=response.usage.completion_tokens if response.usage else 0,
-            total_tokens=response.usage.total_tokens if response.usage else 0
+            total_tokens=response.usage.total_tokens if response.usage else 0,
         )
-        
+
         # Calculate cost
         cost = self._calculate_cost(usage, model)
-        
+
         # Create metadata
         metadata = {
             "model": model,
             "finish_reason": finish_reason,
-            "response_id": response.id if hasattr(response, 'id') else None,
-            "created": response.created if hasattr(response, 'created') else None
+            "response_id": response.id if hasattr(response, "id") else None,
+            "created": response.created if hasattr(response, "created") else None,
         }
-        
+
         return LLMResponse.create(
             provider=self.name,
             model=model,
@@ -215,21 +204,21 @@ class OpenAIProvider(BaseLLMProvider):
             usage=usage,
             cost=cost,
             metadata=metadata,
-            finish_reason=finish_reason
+            finish_reason=finish_reason,
         )
 
     async def _handle_streaming_response(self, api_params: Dict[str, Any], model: str) -> AsyncGenerator[str, None]:
         """Handle streaming OpenAI response."""
         try:
             stream = await self.client.chat.completions.create(**api_params)
-            
+
             accumulated_tokens = 0
             async for chunk in stream:
                 if chunk.choices and chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
                     accumulated_tokens += len(content.split())  # Rough token count
                     yield content
-                    
+
         except Exception as e:
             self.logger.error(f"Error in streaming response: {e}")
             yield f"[ERROR: {str(e)}]"
@@ -237,27 +226,25 @@ class OpenAIProvider(BaseLLMProvider):
     async def health_check(self) -> Dict[str, Any]:
         """Perform a health check specific to OpenAI."""
         health = await super().health_check()
-        
+
         if health["status"] == "healthy":
             try:
                 # Test with a minimal request
                 response = await self.client.chat.completions.create(
-                    model=self.default_model or "gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": "ping"}],
-                    max_tokens=5
+                    model=self.default_model or "gpt-3.5-turbo", messages=[{"role": "user", "content": "ping"}], max_tokens=5
                 )
-                
+
                 if response.choices and response.choices[0].message.content:
                     health["api_response_time"] = "< 1s"  # You could measure this
                     health["test_response"] = response.choices[0].message.content[:50]
                 else:
                     health["status"] = "unhealthy"
                     health["error"] = "No response content received"
-                    
+
             except Exception as e:
                 health["status"] = "error"
                 health["error"] = f"Health check failed: {str(e)}"
-        
+
         return health
 
     def get_model_names(self) -> List[str]:
@@ -272,7 +259,7 @@ class OpenAIProvider(BaseLLMProvider):
             "fast": "gpt-3.5-turbo",
             "analysis": "gpt-4-1106-preview",
             "creative": "gpt-4",
-            "cost_effective": "gpt-3.5-turbo"
+            "cost_effective": "gpt-3.5-turbo",
         }
-        
+
         return recommendations.get(task_type, self.default_model or "gpt-4o")

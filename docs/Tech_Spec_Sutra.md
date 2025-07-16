@@ -7,6 +7,7 @@ Ved Mishra - July 2025 - Version: 2.0
 **Sutra** is a comprehensive Multi-LLM Prompt Studio that provides a systematic platform for designing, managing, and orchestrating effective AI prompts and workflows. The platform combines advanced prompt engineering capabilities with structured idea-to-implementation workflows through the integrated Forge feature with revolutionary adaptive quality measurement.
 
 **Core Platform Capabilities:**
+
 - **Multi-LLM Prompt Engineering:** Advanced prompt creation, optimization, and A/B testing across GPT-4, Claude, Gemini, and custom models
 - **Collections Management:** Hierarchical organization and sharing of prompts, templates, and project artifacts
 - **Playbooks Orchestration:** Multi-step AI workflow execution and automation supporting both general workflows and structured product development
@@ -16,6 +17,7 @@ Ved Mishra - July 2025 - Version: 2.0
 - **Cost Management:** Intelligent budget tracking, automated LLM routing, and comprehensive usage analytics with quality-cost optimization
 
 **Technical Architecture:**
+
 - **Frontend:** React 18/TypeScript interface with comprehensive prompt engineering tools, integrated Forge workspace, and real-time quality assessment
 - **Backend:** Azure Functions (Python 3.12) API ecosystem supporting prompts, collections, playbooks, structured product development workflows, and quality measurement infrastructure
 - **Database:** Cosmos DB with collections for Users, Prompts, Collections, Playbooks (including Forge project data), quality tracking, and comprehensive cost analytics
@@ -24,6 +26,7 @@ Ved Mishra - July 2025 - Version: 2.0
 - **Storage:** Azure Blob Storage for document exports, artifacts, large file management, and quality reports
 
 **Quality Innovation Architecture:**
+
 - **Real-time Quality Engine:** Continuous assessment with multi-dimensional scoring and intelligent improvement suggestions
 - **Progressive Threshold System:** Adaptive quality gates that increase rigor as projects advance through stages
 - **Context Preservation Engine:** Advanced context management that ensures each stage builds upon validated, high-quality foundations
@@ -69,6 +72,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 ### 2.1. Application Structure
 
 **Core Technology Stack:**
+
 - React 18 with TypeScript for type safety and modern development practices
 - Responsive design system supporting desktop, tablet, and mobile viewports
 - Real-time collaboration infrastructure with WebSocket connections
@@ -76,6 +80,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 - Multi-LLM selection and execution interfaces with cost tracking
 
 **Primary Application Components:**
+
 - **PromptStudio**: Advanced prompt creation, optimization, and A/B testing interface
 - **CollectionsManager**: Hierarchical organization and sharing of prompts, templates, and project artifacts
 - **PlaybooksOrchestrator**: Multi-step workflow execution interface supporting general workflows and structured development processes
@@ -84,6 +89,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 - **AnalyticsDashboard**: Cost tracking, usage analytics, and performance monitoring interface
 
 **Application Navigation Structure:**
+
 ```typescript
 // Complete Sutra application routing structure
 /dashboard                      // Main dashboard with overview
@@ -94,7 +100,7 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 /playbooks                     // Playbooks orchestration
 /playbooks/:id                 // Playbook editor/executor
 /forge                         // Forge project dashboard
-/forge/project/:id             // Forge project workspace  
+/forge/project/:id             // Forge project workspace
 /forge/:id/idea                // Idea refinement stage
 /forge/:id/prd                 // PRD generation stage
 /forge/:id/ux                  // UX requirements stage
@@ -106,42 +112,44 @@ Sutra is built on a modern serverless, event-driven architecture that scales aut
 ```
 
 **State Management Architecture:**
+
 - **React Query**: Server state management with intelligent caching and synchronization for Forge projects
 - **Zustand**: Global client state for user preferences, UI state, and real-time collaboration
 - **Context Providers**: Authentication context, theme context, and notification system
 
 **Enhanced Forge State Management (Zustand):**
+
 ```typescript
 interface ForgeState {
   // Current project state
   currentProject: ForgeProject | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Stage management
   currentStage: ForgeStage;
   stageProgress: Record<ForgeStage, number>;
   stageValidation: Record<ForgeStage, ValidationResult>;
-  
+
   // Real-time collaboration
   collaborators: CollaboratorInfo[];
   activeComments: Comment[];
   conflictResolution: ConflictState;
-  
+
   // Optimistic updates
   pendingChanges: PendingChange[];
   lastSyncTimestamp: number;
-  
+
   // Actions
   setCurrentProject: (project: ForgeProject) => void;
   updateStageData: (stage: ForgeStage, data: any) => void;
   progressToNextStage: (stage: ForgeStage) => Promise<void>;
-  
+
   // Collaboration actions
   addCollaborator: (userId: string) => void;
   addComment: (stageId: string, comment: Comment) => void;
   resolveConflict: (conflictId: string, resolution: ConflictResolution) => void;
-  
+
   // Optimistic update handling
   applyOptimisticUpdate: (change: PendingChange) => void;
   revertOptimisticUpdate: (changeId: string) => void;
@@ -167,6 +175,7 @@ interface OptimisticUpdateManager {
 ### 2.2. Backend Architecture
 
 **Core Technology Stack:**
+
 - Azure Functions (Python 3.12) providing serverless, event-driven architecture
 - Comprehensive API ecosystem with consistent authentication, error handling, and monitoring
 - Robust logging, monitoring, and cost tracking infrastructure
@@ -175,11 +184,13 @@ interface OptimisticUpdateManager {
 **API Function Categories:**
 
 **Authentication & User Management:**
+
 - **auth_api**: User authentication, token validation, and session management
 - **user_management**: User profiles, preferences, and account operations
 - **role_management**: Role-based access control and permission management
 
 **Core Platform Functions:**
+
 - **prompts_api**: CRUD operations for prompt management, versioning, and optimization
 - **collections_api**: Hierarchical organization, sharing, and template management
 - **playbooks_api**: Multi-step workflow orchestration supporting both general and structured development workflows
@@ -188,6 +199,7 @@ interface OptimisticUpdateManager {
 - **admin_api**: Administrative functions, analytics, and system configuration
 
 **Forge Project Functions:**
+
 - **forge_project_api**: CRUD operations for Forge projects stored as specialized Playbooks
 - **idea_refinement_api**: AI-powered idea validation and systematic questioning
 - **prd_generation_api**: Structured PRD document generation from validated ideas
@@ -198,25 +210,24 @@ interface OptimisticUpdateManager {
 - **forge_sharing_api**: Read-only sharing and comment management
 
 **Integration Functions:**
+
 - **integrations_api**: External tool connections (GitHub, Jira, Linear, Asana)
 - **export_services**: Documentation platform integration (Confluence, Notion, GitBook)
 - **webhooks_api**: Real-time notifications and external system callbacks
 
-**Common Function Architecture Pattern:```python
+\*\*Common Function Architecture Pattern:```python
+
 # Standard Azure Function structure used across all Sutra APIs
+
 import azure.functions as func
 from shared.auth import validate_token
 from shared.llm_orchestrator import LLMOrchestrator
 from shared.cosmos_client import CosmosClient
 from shared.cost_tracker import CostTracker
 
-async def main(req: func.HttpRequest) -> func.HttpResponse:
-    # Authentication validation using Microsoft Entra ID (no guest access)
-    # Request validation and input sanitization
-    # Business logic execution with appropriate LLM selection
-    # Cost tracking and usage monitoring
-    # Response formatting with proper error handling and logging
-```
+async def main(req: func.HttpRequest) -> func.HttpResponse: # Authentication validation using Microsoft Entra ID (no guest access) # Request validation and input sanitization # Business logic execution with appropriate LLM selection # Cost tracking and usage monitoring # Response formatting with proper error handling and logging
+
+````
 
 ### 2.3. Database Architecture
 
@@ -245,9 +256,10 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   "createdAt": "datetime",
   "lastActive": "datetime"
 }
-```
+````
 
 **Prompts Collection**: Core prompt management supporting all AI interactions
+
 ```json
 {
   "id": "prompt_guid",
@@ -256,7 +268,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   "userId": "user_guid",
   "tags": ["marketing", "email"],
   "llmModel": "gpt-4o",
-  "variables": [{"name": "product_name", "type": "string"}],
+  "variables": [{ "name": "product_name", "type": "string" }],
   "performance": {
     "avgLatency": 1200,
     "successRate": 0.98,
@@ -269,6 +281,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
 ```
 
 **Collections Collection**: Hierarchical organization of templates and artifacts
+
 ```json
 {
   "id": "collection_guid",
@@ -279,7 +292,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   "items": ["prompt_guid_1", "prompt_guid_2"],
   "sharing": {
     "isPublic": false,
-    "sharedWith": [{"userId": "user_guid", "permission": "read|write"}]
+    "sharedWith": [{ "userId": "user_guid", "permission": "read|write" }]
   },
   "usage": {
     "totalViews": 156,
@@ -291,6 +304,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
 ```
 
 **Playbooks Collection**: Multi-step workflow orchestration and Forge project data
+
 ```json
 {
   "id": "playbook_guid",
@@ -305,7 +319,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
       "promptId": "prompt_guid",
       "llmModel": "gpt-4o",
       "order": 1,
-      "conditions": {"if": "variable_value", "then": "next_step"}
+      "conditions": { "if": "variable_value", "then": "next_step" }
     }
   ],
   "status": "draft|active|completed|archived",
@@ -319,7 +333,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   ],
   "sharing": {
     "isPublic": false,
-    "sharedWith": [{"userId": "user_guid", "permission": "read|execute"}]
+    "sharedWith": [{ "userId": "user_guid", "permission": "read|execute" }]
   },
   "createdAt": "datetime",
   "updatedAt": "datetime"
@@ -372,11 +386,31 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
           "status": "approved|pending_review|draft",
           "qualityScore": 89
         },
-        "problemStatement": { "content": "string", "status": "approved", "qualityScore": 92 },
-        "targetUsers": { "content": "string", "status": "approved", "qualityScore": 88 },
-        "featureSpecifications": { "content": "string", "status": "pending_review", "qualityScore": 76 },
-        "successMetrics": { "content": "string", "status": "draft", "qualityScore": 65 },
-        "technicalRequirements": { "content": "string", "status": "pending", "qualityScore": 0 }
+        "problemStatement": {
+          "content": "string",
+          "status": "approved",
+          "qualityScore": 92
+        },
+        "targetUsers": {
+          "content": "string",
+          "status": "approved",
+          "qualityScore": 88
+        },
+        "featureSpecifications": {
+          "content": "string",
+          "status": "pending_review",
+          "qualityScore": 76
+        },
+        "successMetrics": {
+          "content": "string",
+          "status": "draft",
+          "qualityScore": 65
+        },
+        "technicalRequirements": {
+          "content": "string",
+          "status": "pending",
+          "qualityScore": 0
+        }
       },
       "overallQualityScore": 81
     },
@@ -469,15 +503,15 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
     "costTracking": {
       "totalTokensUsed": 15420,
       "costByStage": {
-        "ideaRefinement": 0.50,
-        "prdGeneration": 2.10,
-        "uxRequirements": 0.00,
-        "technicalAnalysis": 1.20,
-        "implementationPlaybook": 0.00
+        "ideaRefinement": 0.5,
+        "prdGeneration": 2.1,
+        "uxRequirements": 0.0,
+        "technicalAnalysis": 1.2,
+        "implementationPlaybook": 0.0
       },
-      "totalCost": 3.80,
-      "budgetLimit": 50.00,
-      "projectedCost": 8.40
+      "totalCost": 3.8,
+      "budgetLimit": 50.0,
+      "projectedCost": 8.4
     },
     "collaboration": {
       "sharedWith": [
@@ -515,6 +549,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
   }
 }
 ```
+
           "problemDefinition": 95,
           "marketAnalysis": 88,
           "userFocus": 92,
@@ -622,7 +657,7 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
         ],
         "qualityGates": [
           {
-            "phase": "Development", 
+            "phase": "Development",
             "criteria": ["Unit test coverage >80%", "Code review approval"],
             "tools": ["Jest", "ESLint", "SonarQube"]
           }
@@ -712,9 +747,11 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
       "estimatedTimeline": "thorough",
       "tags": ["mobile", "collaboration", "mvp"]
     }
-  }
+
 }
-```
+}
+
+````
 
 ### 2.4. Quality Measurement Architecture
 
@@ -730,22 +767,22 @@ class QualityAssessmentEngine:
     def __init__(self):
         self.dimension_weights = {
             "completeness": 0.3,      # Content coverage and depth
-            "coherence": 0.25,        # Logical consistency and flow  
+            "coherence": 0.25,        # Logical consistency and flow
             "actionability": 0.25,    # Clear next steps and implementation guidance
             "specificity": 0.2        # Concrete details vs. vague statements
         }
-        
+
         self.stage_specific_metrics = {
             "idea_refinement": {
                 "problem_clarity": 0.25,
-                "target_audience_definition": 0.25, 
+                "target_audience_definition": 0.25,
                 "value_proposition_clarity": 0.25,
                 "market_viability": 0.25
             },
             "prd_generation": {
                 "requirement_completeness": 0.30,
                 "user_story_quality": 0.25,
-                "business_alignment": 0.25, 
+                "business_alignment": 0.25,
                 "implementation_clarity": 0.20
             },
             "ux_requirements": {
@@ -761,19 +798,20 @@ class QualityAssessmentEngine:
                 "multi_llm_consensus": 0.15
             }
         }
-```
+````
 
 **2. Adaptive Threshold Management**
+
 ```python
 class AdaptiveQualityThresholds:
     def __init__(self):
         self.base_thresholds = {
             "idea_refinement": {"minimum": 75, "recommended": 85},
-            "prd_generation": {"minimum": 80, "recommended": 90}, 
+            "prd_generation": {"minimum": 80, "recommended": 90},
             "ux_requirements": {"minimum": 82, "recommended": 90},
             "technical_analysis": {"minimum": 85, "recommended": 92}
         }
-        
+
         self.adjustment_factors = {
             "project_complexity": {
                 "simple": -10,     # More forgiving for simple projects
@@ -788,13 +826,14 @@ class AdaptiveQualityThresholds:
             },
             "project_type": {
                 "prototype": -15,   # Rapid iteration focus
-                "mvp": -5,         # Balanced approach  
+                "mvp": -5,         # Balanced approach
                 "production": +10   # Production-ready standards
             }
         }
 ```
 
 **3. Progressive Context Management**
+
 ```python
 class ContextualQualityValidator:
     def __init__(self):
@@ -804,21 +843,21 @@ class ContextualQualityValidator:
             "technical_analysis": ["idea_refinement", "prd_generation", "ux_requirements"],
             "implementation_playbook": ["idea_refinement", "prd_generation", "technical_analysis"]
         }
-    
+
     def validate_context_quality(self, current_stage: str, project_data: dict) -> ContextValidation:
         """Ensure current stage builds on high-quality previous work"""
         required_stages = self.context_dependencies.get(current_stage, [])
-        
+
         context_quality_scores = {}
         consistency_issues = []
         enhancement_opportunities = []
-        
+
         for required_stage in required_stages:
             stage_data = project_data.get(required_stage, {})
             stage_quality = stage_data.get("qualityMetrics", {}).get("overall", 0)
-            
+
             context_quality_scores[required_stage] = stage_quality
-            
+
             # Check for consistency issues
             if stage_quality < 75:
                 consistency_issues.append({
@@ -829,11 +868,12 @@ class ContextualQualityValidator:
 ```
 
 **Quality Database Schema Extensions:**
+
 ```json
 {
   "qualityTrackingCollection": {
     "id": "quality_tracking_guid",
-    "projectId": "forge_project_guid", 
+    "projectId": "forge_project_guid",
     "stageQualityHistory": [
       {
         "stage": "prd_generation",
@@ -848,7 +888,11 @@ class ContextualQualityValidator:
         "thresholds": {
           "minimum": 80,
           "recommended": 90,
-          "adjustments_applied": {"complexity": 0, "experience": 0, "type": -5}
+          "adjustments_applied": {
+            "complexity": 0,
+            "experience": 0,
+            "type": -5
+          }
         },
         "gateDecision": {
           "decision": "PROCEED_WITH_CAUTION",
@@ -867,7 +911,7 @@ class ContextualQualityValidator:
     },
     "learningMetrics": {
       "qualityProgressionRate": 0.15,
-      "crossStageConsistency": 0.92, 
+      "crossStageConsistency": 0.92,
       "userEngagementWithGuidance": 0.78,
       "projectSuccessPrediction": 0.87
     }
@@ -882,25 +926,27 @@ class ContextualQualityValidator:
 Sutra provides comprehensive multi-LLM orchestration supporting GPT-4, Claude, Gemini, and custom models. The platform includes intelligent routing, cost optimization, model comparison, and enterprise-grade LLM management capabilities.
 
 #### Forge Module LLM Strategy:
+
 - **Default LLM for All Forge Stages:** Gemini Flash (optimal speed and cost for systematic development workflows)
 - **One-time LLM Selection:** Selected at Forge project start and locked for consistency throughout all stages (default: Gemini Flash)
 - **Stage 4 Multi-LLM Analysis:** Automatically uses all admin-configured LLMs for comprehensive technical evaluation
 - **Platform LLM Flexibility:** Users maintain full LLM selection flexibility for all other Sutra features
 
 **LLM Selection Strategy:**
+
 ```python
 class SutraLLMOrchestrator:
     def __init__(self):
         self.forge_default_model = "gemini-flash"  # Default for all Forge stages
         self.admin_configured_models = ["gpt-4", "claude-3", "gemini-flash"]
         self.forge_locked_model = None  # Set at project start, locked for consistency
-    
+
     def select_forge_llm(self, project_id: str, user_selection: str = None):
         """One-time LLM selection for Forge project consistency"""
         selected_model = user_selection or self.forge_default_model
         self.forge_locked_model = selected_model
         return selected_model
-    
+
     def execute_forge_stage(self, stage: str, project_id: str):
         """Execute Forge stage with appropriate LLM strategy"""
         if stage == "technical_analysis":
@@ -910,41 +956,43 @@ class SutraLLMOrchestrator:
             # Stages 1-3, 5: Use locked model for consistency
             return self.single_llm_execution(self.forge_locked_model)
 ```
+
         self.default_model = 'gemini-flash'  # Optimal cost/performance ratio
         self.available_models = ['gemini-flash', 'gpt-4o', 'claude-3', 'custom-models']
-        
+
     async def execute_general_workflow(self, playbook_id: str, step: str, data: dict):
         """Execute general playbook steps using user-selected or default LLM"""
         playbook = await self.get_playbook(playbook_id)
         selected_llm = playbook.get('preferredLLM', self.default_model)
         return await self.execute_with_model(selected_llm, step, data)
-        
+
     async def execute_forge_workflow(self, project_id: str, stage: str, data: dict):
         """Execute Forge project stages with stage-specific LLM strategy"""
         project = await self.get_forge_project(project_id)
         selected_llm = project.forgeData.selectedLLM
-        
+
         if stage == 'tech_analysis':
             # Automatically use all admin-configured LLMs for comprehensive technical evaluation
             return await self.multi_llm_technical_analysis(data)
         else:
             # Use project's selected LLM for consistency across stages
             return await self.execute_with_model(selected_llm, stage, data)
-    
+
     async def multi_llm_technical_analysis(self, requirements: dict):
         """Multi-LLM technical analysis for comprehensive evaluation"""
         admin_configured_llms = await self.get_admin_configured_llms()
         results = {}
-        
+
         for llm in admin_configured_llms:
             try:
                 analysis = await self.execute_with_model(llm, 'technical_analysis', requirements)
                 results[llm] = analysis
             except Exception as e:
                 results[llm] = {"error": str(e), "status": "failed"}
-        
+
         return await self.synthesize_tech_analysis(results)
-```
+
+````
 
 ### 3.2. Prompt Engineering Framework
 
@@ -960,17 +1008,17 @@ class SutraPromptLibrary:
         "performance_tuning": "Optimize this prompt for better LLM performance...",
         "bias_detection": "Review this prompt for potential biases..."
     }
-    
+
     # Forge-specific structured prompts for product development
     FORGE_PROMPTS = {
         "IDEA_REFINEMENT": """
         System: You are a product development expert helping refine a raw idea.
-        
+
         Context: {idea_context}
         Current Understanding: {current_understanding}
-        
+
         Task: Generate 5 clarifying questions focusing on {focus_area}
-        
+
         Output Format:
         - Question 1: [Clear, specific question]
         - Question 2: [Clear, specific question]
@@ -978,72 +1026,73 @@ class SutraPromptLibrary:
         - Question 4: [Clear, specific question]
         - Question 5: [Clear, specific question]
         """,
-        
+
         "UX_REQUIREMENTS_ANALYSIS": """
         System: You are a UX/UI expert helping define user experience requirements.
-        
+
         PRD Context: {prd_context}
         User Personas: {user_personas}
         Platform Requirements: {platform_requirements}
-        
+
         Task: Analyze the product requirements and generate comprehensive UX requirements
-        
+
         Focus Areas:
         1. User Journey Mapping
         2. Interface Design Requirements
         3. Accessibility Considerations
         4. Platform-Specific Guidelines
         5. Interaction Patterns
-        
+
         Output Format:
         - User Journeys: [Detailed step-by-step user flows]
         - Design Requirements: [UI patterns, components, layouts]
         - Accessibility: [WCAG compliance, inclusive design]
         - Platform Considerations: [Web, mobile, desktop specific requirements]
         """,
-        
+
         "TECH_STACK_ANALYSIS": """
         System: You are a senior software architect evaluating technical stack options.
-        
+
         Requirements: {prd_requirements}
         UX Requirements: {ux_requirements}
         Team Context: {team_capabilities}
         Constraints: {technical_constraints}
-        
+
         Task: Evaluate the following technical stack hypothesis:
         {tech_stack_hypothesis}
-        
+
         Analyze across dimensions:
         1. Scalability (1-10 score + reasoning)
-        2. Maintainability (1-10 score + reasoning)  
+        2. Maintainability (1-10 score + reasoning)
         3. Development Speed (1-10 score + reasoning)
         4. Cost Efficiency (1-10 score + reasoning)
         5. Risk Level (1-10 score + reasoning)
         6. Team Fit (1-10 score + reasoning)
-        
+
         Output JSON format with scores and detailed reasoning for each dimension.
         """
     }
-    
+
     # Collaborative prompt optimization
     COLLABORATION_PROMPTS = {
         "peer_review": "Review this prompt for effectiveness and suggest improvements...",
         "version_comparison": "Compare these two prompt versions and recommend the better approach..."
     }
-```
+````
 
 ## 2.5. Quality Scoring Framework Implementation
 
 **CRITICAL IMPLEMENTATION REQUIREMENT:** This framework provides concrete prompts and evaluation criteria for LLM agents to implement quality scoring consistently across all Forge stages.
 
 #### Quality Metrics System
+
 ```python
 class ForgeQualityScorer:
     """
     Concrete implementation of quality scoring for LLM agents.
     Each metric uses specific prompts and weighted evaluation criteria.
     """
-    
+
     def calculate_idea_refinement_quality(self, idea_data: dict) -> dict:
         """
         Quality scoring for Stage 1: Idea Refinement
@@ -1076,7 +1125,7 @@ class ForgeQualityScorer:
                 "weight": 0.15
             }
         }
-        
+
         # Implementation: Use these prompts to calculate individual scores
         scores = {}
         for metric, config in scoring_prompts.items():
@@ -1085,18 +1134,18 @@ class ForgeQualityScorer:
                 content=idea_data,
                 criteria=config["criteria"]
             )
-        
+
         # Weighted overall calculation
-        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"] 
+        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"]
                           for metric in scores)
-        
+
         return {
             **scores,
             "overall": round(overall_score, 1),
             "calculation_method": "weighted_average",
             "quality_gate_threshold": 70.0
         }
-    
+
     def calculate_prd_section_quality(self, section_content: str, section_type: str) -> float:
         """
         Quality scoring for Stage 2: PRD Generation sections
@@ -1110,13 +1159,13 @@ class ForgeQualityScorer:
             "successMetrics": "Rate success metrics on scale 0-100. Consider: Are metrics measurable? Are targets realistic? Are KPIs aligned with goals?",
             "technicalRequirements": "Rate technical requirements on scale 0-100. Consider: Are requirements specific? Are constraints identified? Is architecture outlined?"
         }
-        
+
         return self.llm_evaluate(
             prompt=section_prompts.get(section_type, "Rate content quality on scale 0-100"),
             content=section_content,
             criteria=["clarity", "completeness", "actionability", "specificity"]
         )
-    
+
     def calculate_overall_prd_quality(self, prd_sections: dict) -> float:
         """
         Calculate overall PRD quality from individual section scores
@@ -1129,23 +1178,23 @@ class ForgeQualityScorer:
             "successMetrics": 0.15,
             "technicalRequirements": 0.05
         }
-        
+
         weighted_score = 0
         total_weight = 0
-        
+
         for section, data in prd_sections.items():
             if section in section_weights and data.get("qualityScore", 0) > 0:
                 weighted_score += data["qualityScore"] * section_weights[section]
                 total_weight += section_weights[section]
-        
+
         return round(weighted_score / total_weight if total_weight > 0 else 0, 1)
-    
+
     def evaluate_quality_gate(self, overall_score: float, minimum_threshold: float = 70.0) -> dict:
         """
         Quality gate evaluation with specific recommendations
         """
         status = "passed" if overall_score >= minimum_threshold else "failed"
-        
+
         recommendations = []
         if overall_score < minimum_threshold:
             gap = minimum_threshold - overall_score
@@ -1155,7 +1204,7 @@ class ForgeQualityScorer:
                 recommendations.append("Moderate improvements needed in key areas")
             else:
                 recommendations.append("Minor improvements needed to meet quality standards")
-        
+
         return {
             "status": status,
             "score": overall_score,
@@ -1189,6 +1238,7 @@ QUALITY_SCORING_SYSTEM = {
 ### 1.1.1. Quality Engine Infrastructure
 
 **Core Quality Components:**
+
 ```typescript
 // Quality measurement system architecture
 interface QualityEngine {
@@ -1200,9 +1250,16 @@ interface QualityEngine {
 }
 
 interface QualityAssessmentService {
-  assessStageOutput(stage: ForgeStage, output: any, context: StageContext): QualityScore;
+  assessStageOutput(
+    stage: ForgeStage,
+    output: any,
+    context: StageContext,
+  ): QualityScore;
   validateCrossStageConsistency(stageData: StageData[]): ConsistencyReport;
-  calculateProgressiveThreshold(stage: ForgeStage, previousScores: QualityScore[]): number;
+  calculateProgressiveThreshold(
+    stage: ForgeStage,
+    previousScores: QualityScore[],
+  ): number;
   generateImprovementSuggestions(score: QualityScore): ImprovementSuggestion[];
 }
 
@@ -1216,31 +1273,32 @@ interface QualityScore {
       issues: QualityIssue[];
     };
   };
-  gateStatus: 'blocker' | 'warning' | 'recommended' | 'excellent';
+  gateStatus: "blocker" | "warning" | "recommended" | "excellent";
   improvementPotential: number;
   contextQuality: number;
 }
 ```
 
 **Progressive Threshold Architecture:**
+
 ```typescript
 interface StageThresholds {
   ideaRefinement: {
     minimumScore: 75;
     dimensions: {
-      problemClarity: { threshold: 80, weight: 0.3 };
-      targetAudienceDefinition: { threshold: 75, weight: 0.25 };
-      valuePropositionClarity: { threshold: 85, weight: 0.25 };
-      marketViability: { threshold: 70, weight: 0.2 };
+      problemClarity: { threshold: 80; weight: 0.3 };
+      targetAudienceDefinition: { threshold: 75; weight: 0.25 };
+      valuePropositionClarity: { threshold: 85; weight: 0.25 };
+      marketViability: { threshold: 70; weight: 0.2 };
     };
   };
   prdGeneration: {
     minimumScore: 80;
     dimensions: {
-      requirementCompleteness: { threshold: 85, weight: 0.3 };
-      userStoryQuality: { threshold: 80, weight: 0.25 };
-      acceptanceCriteriaClarity: { threshold: 85, weight: 0.25 };
-      businessAlignment: { threshold: 80, weight: 0.2 };
+      requirementCompleteness: { threshold: 85; weight: 0.3 };
+      userStoryQuality: { threshold: 80; weight: 0.25 };
+      acceptanceCriteriaClarity: { threshold: 85; weight: 0.25 };
+      businessAlignment: { threshold: 80; weight: 0.2 };
     };
   };
   // ... additional stages
@@ -1250,6 +1308,7 @@ interface StageThresholds {
 ### 1.1.2. Context Preservation Engine
 
 **Adaptive Context Management:**
+
 ```typescript
 interface ContextPreservationEngine {
   stageContextBuilder: StageContextBuilder;
@@ -1275,60 +1334,71 @@ const buildPRDContext = (ideaData: IdeaRefinementData): string => `
   Value Proposition: ${ideaData.valueProposition}
   Market Context: ${JSON.stringify(ideaData.marketContext)}
   Technical Feasibility: ${JSON.stringify(ideaData.technicalFeasibility)}
-  
-  CONTEXT VALIDATION: 
+
+  CONTEXT VALIDATION:
   - Problem clarity verified at ${ideaData.dimensions.problemClarity}%
   - Market viability confirmed at ${ideaData.dimensions.marketViability}%
   - Quality foundation established for PRD generation
-  
+
   TASK: Generate comprehensive PRD building on this validated foundation...`;
 ```
 
 ### 1.1.3. Intelligent Improvement System
 
 **AI-Powered Quality Enhancement:**
+
 ```typescript
 interface ImprovementEngine {
   analyzeWeaknesses(score: QualityScore): WeaknessAnalysis;
   generateTargetedPrompts(weaknesses: string[]): ImprovementPrompt[];
   prioritizeImprovements(suggestions: ImprovementSuggestion[]): PriorityRanking;
-  trackImprovementEffectiveness(before: QualityScore, after: QualityScore): EffectivenessMetrics;
+  trackImprovementEffectiveness(
+    before: QualityScore,
+    after: QualityScore,
+  ): EffectivenessMetrics;
 }
 
 interface ImprovementPrompt {
   focus: string;
   prompt: string;
   expectedImprovement: number;
-  effort: 'low' | 'medium' | 'high';
-  impact: 'low' | 'medium' | 'high';
+  effort: "low" | "medium" | "high";
+  impact: "low" | "medium" | "high";
 }
 
 // Example improvement prompt generation
-const generateImprovementPrompt = (weakness: string, currentScore: number): ImprovementPrompt => ({
+const generateImprovementPrompt = (
+  weakness: string,
+  currentScore: number,
+): ImprovementPrompt => ({
   focus: weakness,
-  prompt: `Focus specifically on improving ${weakness}. 
+  prompt: `Focus specifically on improving ${weakness}.
            Current score: ${currentScore}%
            Target improvement: +15 points
            Specific improvements needed: ${getSpecificImprovements(weakness)}
            Maintain quality in other areas while enhancing this dimension.`,
   expectedImprovement: 15,
   effort: calculateEffort(weakness, currentScore),
-  impact: calculateImpact(weakness)
+  impact: calculateImpact(weakness),
 });
 ```
 
 ### 1.1.4. Quality Gate Implementation
 
 **Three-Tier Quality Experience:**
+
 ```typescript
 interface QualityGateSystem {
-  evaluateQualityGate(score: QualityScore, thresholds: StageThresholds): QualityGateResult;
+  evaluateQualityGate(
+    score: QualityScore,
+    thresholds: StageThresholds,
+  ): QualityGateResult;
   generateGateUI(gateResult: QualityGateResult): QualityGateDisplay;
-  handleUserDecision(decision: 'improve' | 'proceed' | 'bypass'): void;
+  handleUserDecision(decision: "improve" | "proceed" | "bypass"): void;
 }
 
 interface QualityGateResult {
-  gateType: 'blocker' | 'warning' | 'recommended' | 'excellent';
+  gateType: "blocker" | "warning" | "recommended" | "excellent";
   canProceed: boolean;
   requiresImprovement: boolean;
   showExpertBypass: boolean;
@@ -1337,14 +1407,17 @@ interface QualityGateResult {
 }
 
 // Quality gate decision logic
-const evaluateQualityGate = (score: number, thresholds: StageThresholds): QualityGateResult => {
+const evaluateQualityGate = (
+  score: number,
+  thresholds: StageThresholds,
+): QualityGateResult => {
   if (score < thresholds.blockerThreshold) {
     return {
-      gateType: 'blocker',
+      gateType: "blocker",
       canProceed: false,
       requiresImprovement: true,
       showExpertBypass: false,
-      improvementSuggestions: generateMandatoryImprovements(score)
+      improvementSuggestions: generateMandatoryImprovements(score),
     };
   }
   // ... additional gate logic
@@ -1354,6 +1427,7 @@ const evaluateQualityGate = (score: number, thresholds: StageThresholds): Qualit
 ### 1.1.5. Quality Analytics and Reporting
 
 **Comprehensive Quality Tracking:**
+
 ```typescript
 interface QualityAnalytics {
   projectQualityDashboard: ProjectQualityDashboard;
@@ -1382,6 +1456,7 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
 ```
 
 **Quality Measurement Database Schema:**
+
 ```json
 {
   "qualityAssessments": {
@@ -1391,8 +1466,12 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
     "qualityScore": {
       "overall": 85,
       "dimensions": {
-        "problemClarity": {"score": 88, "threshold": 80, "weight": 0.3},
-        "targetAudienceDefinition": {"score": 82, "threshold": 75, "weight": 0.25}
+        "problemClarity": { "score": 88, "threshold": 80, "weight": 0.3 },
+        "targetAudienceDefinition": {
+          "score": 82,
+          "threshold": 75,
+          "weight": 0.25
+        }
       },
       "gateStatus": "recommended",
       "improvementPotential": 12
@@ -1419,25 +1498,27 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
 Sutra provides comprehensive multi-LLM orchestration supporting GPT-4, Claude, Gemini, and custom models. The platform includes intelligent routing, cost optimization, model comparison, and enterprise-grade LLM management capabilities.
 
 #### Forge Module LLM Strategy:
+
 - **Default LLM for All Forge Stages:** Gemini Flash (optimal speed and cost for systematic development workflows)
 - **One-time LLM Selection:** Selected at Forge project start and locked for consistency throughout all stages (default: Gemini Flash)
 - **Stage 4 Multi-LLM Analysis:** Automatically uses all admin-configured LLMs for comprehensive technical evaluation
 - **Platform LLM Flexibility:** Users maintain full LLM selection flexibility for all other Sutra features
 
 **LLM Selection Strategy:**
+
 ```python
 class SutraLLMOrchestrator:
     def __init__(self):
         self.forge_default_model = "gemini-flash"  # Default for all Forge stages
         self.admin_configured_models = ["gpt-4", "claude-3", "gemini-flash"]
         self.forge_locked_model = None  # Set at project start, locked for consistency
-    
+
     def select_forge_llm(self, project_id: str, user_selection: str = None):
         """One-time LLM selection for Forge project consistency"""
         selected_model = user_selection or self.forge_default_model
         self.forge_locked_model = selected_model
         return selected_model
-    
+
     def execute_forge_stage(self, stage: str, project_id: str):
         """Execute Forge stage with appropriate LLM strategy"""
         if stage == "technical_analysis":
@@ -1447,41 +1528,43 @@ class SutraLLMOrchestrator:
             # Stages 1-3, 5: Use locked model for consistency
             return self.single_llm_execution(self.forge_locked_model)
 ```
+
         self.default_model = 'gemini-flash'  # Optimal cost/performance ratio
         self.available_models = ['gemini-flash', 'gpt-4o', 'claude-3', 'custom-models']
-        
+
     async def execute_general_workflow(self, playbook_id: str, step: str, data: dict):
         """Execute general playbook steps using user-selected or default LLM"""
         playbook = await self.get_playbook(playbook_id)
         selected_llm = playbook.get('preferredLLM', self.default_model)
         return await self.execute_with_model(selected_llm, step, data)
-        
+
     async def execute_forge_workflow(self, project_id: str, stage: str, data: dict):
         """Execute Forge project stages with stage-specific LLM strategy"""
         project = await self.get_forge_project(project_id)
         selected_llm = project.forgeData.selectedLLM
-        
+
         if stage == 'tech_analysis':
             # Automatically use all admin-configured LLMs for comprehensive technical evaluation
             return await self.multi_llm_technical_analysis(data)
         else:
             # Use project's selected LLM for consistency across stages
             return await self.execute_with_model(selected_llm, stage, data)
-    
+
     async def multi_llm_technical_analysis(self, requirements: dict):
         """Multi-LLM technical analysis for comprehensive evaluation"""
         admin_configured_llms = await self.get_admin_configured_llms()
         results = {}
-        
+
         for llm in admin_configured_llms:
             try:
                 analysis = await self.execute_with_model(llm, 'technical_analysis', requirements)
                 results[llm] = analysis
             except Exception as e:
                 results[llm] = {"error": str(e), "status": "failed"}
-        
+
         return await self.synthesize_tech_analysis(results)
-```
+
+````
 
 ### 3.2. Prompt Engineering Framework
 
@@ -1497,17 +1580,17 @@ class SutraPromptLibrary:
         "performance_tuning": "Optimize this prompt for better LLM performance...",
         "bias_detection": "Review this prompt for potential biases..."
     }
-    
+
     # Forge-specific structured prompts for product development
     FORGE_PROMPTS = {
         "IDEA_REFINEMENT": """
         System: You are a product development expert helping refine a raw idea.
-        
+
         Context: {idea_context}
         Current Understanding: {current_understanding}
-        
+
         Task: Generate 5 clarifying questions focusing on {focus_area}
-        
+
         Output Format:
         - Question 1: [Clear, specific question]
         - Question 2: [Clear, specific question]
@@ -1515,72 +1598,73 @@ class SutraPromptLibrary:
         - Question 4: [Clear, specific question]
         - Question 5: [Clear, specific question]
         """,
-        
+
         "UX_REQUIREMENTS_ANALYSIS": """
         System: You are a UX/UI expert helping define user experience requirements.
-        
+
         PRD Context: {prd_context}
         User Personas: {user_personas}
         Platform Requirements: {platform_requirements}
-        
+
         Task: Analyze the product requirements and generate comprehensive UX requirements
-        
+
         Focus Areas:
         1. User Journey Mapping
         2. Interface Design Requirements
         3. Accessibility Considerations
         4. Platform-Specific Guidelines
         5. Interaction Patterns
-        
+
         Output Format:
         - User Journeys: [Detailed step-by-step user flows]
         - Design Requirements: [UI patterns, components, layouts]
         - Accessibility: [WCAG compliance, inclusive design]
         - Platform Considerations: [Web, mobile, desktop specific requirements]
         """,
-        
+
         "TECH_STACK_ANALYSIS": """
         System: You are a senior software architect evaluating technical stack options.
-        
+
         Requirements: {prd_requirements}
         UX Requirements: {ux_requirements}
         Team Context: {team_capabilities}
         Constraints: {technical_constraints}
-        
+
         Task: Evaluate the following technical stack hypothesis:
         {tech_stack_hypothesis}
-        
+
         Analyze across dimensions:
         1. Scalability (1-10 score + reasoning)
-        2. Maintainability (1-10 score + reasoning)  
+        2. Maintainability (1-10 score + reasoning)
         3. Development Speed (1-10 score + reasoning)
         4. Cost Efficiency (1-10 score + reasoning)
         5. Risk Level (1-10 score + reasoning)
         6. Team Fit (1-10 score + reasoning)
-        
+
         Output JSON format with scores and detailed reasoning for each dimension.
         """
     }
-    
+
     # Collaborative prompt optimization
     COLLABORATION_PROMPTS = {
         "peer_review": "Review this prompt for effectiveness and suggest improvements...",
         "version_comparison": "Compare these two prompt versions and recommend the better approach..."
     }
-```
+````
 
 ## 2.5. Quality Scoring Framework Implementation
 
 **CRITICAL IMPLEMENTATION REQUIREMENT:** This framework provides concrete prompts and evaluation criteria for LLM agents to implement quality scoring consistently across all Forge stages.
 
 #### Quality Metrics System
+
 ```python
 class ForgeQualityScorer:
     """
     Concrete implementation of quality scoring for LLM agents.
     Each metric uses specific prompts and weighted evaluation criteria.
     """
-    
+
     def calculate_idea_refinement_quality(self, idea_data: dict) -> dict:
         """
         Quality scoring for Stage 1: Idea Refinement
@@ -1613,7 +1697,7 @@ class ForgeQualityScorer:
                 "weight": 0.15
             }
         }
-        
+
         # Implementation: Use these prompts to calculate individual scores
         scores = {}
         for metric, config in scoring_prompts.items():
@@ -1622,18 +1706,18 @@ class ForgeQualityScorer:
                 content=idea_data,
                 criteria=config["criteria"]
             )
-        
+
         # Weighted overall calculation
-        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"] 
+        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"]
                           for metric in scores)
-        
+
         return {
             **scores,
             "overall": round(overall_score, 1),
             "calculation_method": "weighted_average",
             "quality_gate_threshold": 70.0
         }
-    
+
     def calculate_prd_section_quality(self, section_content: str, section_type: str) -> float:
         """
         Quality scoring for Stage 2: PRD Generation sections
@@ -1647,13 +1731,13 @@ class ForgeQualityScorer:
             "successMetrics": "Rate success metrics on scale 0-100. Consider: Are metrics measurable? Are targets realistic? Are KPIs aligned with goals?",
             "technicalRequirements": "Rate technical requirements on scale 0-100. Consider: Are requirements specific? Are constraints identified? Is architecture outlined?"
         }
-        
+
         return self.llm_evaluate(
             prompt=section_prompts.get(section_type, "Rate content quality on scale 0-100"),
             content=section_content,
             criteria=["clarity", "completeness", "actionability", "specificity"]
         )
-    
+
     def calculate_overall_prd_quality(self, prd_sections: dict) -> float:
         """
         Calculate overall PRD quality from individual section scores
@@ -1666,23 +1750,23 @@ class ForgeQualityScorer:
             "successMetrics": 0.15,
             "technicalRequirements": 0.05
         }
-        
+
         weighted_score = 0
         total_weight = 0
-        
+
         for section, data in prd_sections.items():
             if section in section_weights and data.get("qualityScore", 0) > 0:
                 weighted_score += data["qualityScore"] * section_weights[section]
                 total_weight += section_weights[section]
-        
+
         return round(weighted_score / total_weight if total_weight > 0 else 0, 1)
-    
+
     def evaluate_quality_gate(self, overall_score: float, minimum_threshold: float = 70.0) -> dict:
         """
         Quality gate evaluation with specific recommendations
         """
         status = "passed" if overall_score >= minimum_threshold else "failed"
-        
+
         recommendations = []
         if overall_score < minimum_threshold:
             gap = minimum_threshold - overall_score
@@ -1692,7 +1776,7 @@ class ForgeQualityScorer:
                 recommendations.append("Moderate improvements needed in key areas")
             else:
                 recommendations.append("Minor improvements needed to meet quality standards")
-        
+
         return {
             "status": status,
             "score": overall_score,
@@ -1726,6 +1810,7 @@ QUALITY_SCORING_SYSTEM = {
 ### 1.1.1. Quality Engine Infrastructure
 
 **Core Quality Components:**
+
 ```typescript
 // Quality measurement system architecture
 interface QualityEngine {
@@ -1737,9 +1822,16 @@ interface QualityEngine {
 }
 
 interface QualityAssessmentService {
-  assessStageOutput(stage: ForgeStage, output: any, context: StageContext): QualityScore;
+  assessStageOutput(
+    stage: ForgeStage,
+    output: any,
+    context: StageContext,
+  ): QualityScore;
   validateCrossStageConsistency(stageData: StageData[]): ConsistencyReport;
-  calculateProgressiveThreshold(stage: ForgeStage, previousScores: QualityScore[]): number;
+  calculateProgressiveThreshold(
+    stage: ForgeStage,
+    previousScores: QualityScore[],
+  ): number;
   generateImprovementSuggestions(score: QualityScore): ImprovementSuggestion[];
 }
 
@@ -1753,31 +1845,32 @@ interface QualityScore {
       issues: QualityIssue[];
     };
   };
-  gateStatus: 'blocker' | 'warning' | 'recommended' | 'excellent';
+  gateStatus: "blocker" | "warning" | "recommended" | "excellent";
   improvementPotential: number;
   contextQuality: number;
 }
 ```
 
 **Progressive Threshold Architecture:**
+
 ```typescript
 interface StageThresholds {
   ideaRefinement: {
     minimumScore: 75;
     dimensions: {
-      problemClarity: { threshold: 80, weight: 0.3 };
-      targetAudienceDefinition: { threshold: 75, weight: 0.25 };
-      valuePropositionClarity: { threshold: 85, weight: 0.25 };
-      marketViability: { threshold: 70, weight: 0.2 };
+      problemClarity: { threshold: 80; weight: 0.3 };
+      targetAudienceDefinition: { threshold: 75; weight: 0.25 };
+      valuePropositionClarity: { threshold: 85; weight: 0.25 };
+      marketViability: { threshold: 70; weight: 0.2 };
     };
   };
   prdGeneration: {
     minimumScore: 80;
     dimensions: {
-      requirementCompleteness: { threshold: 85, weight: 0.3 };
-      userStoryQuality: { threshold: 80, weight: 0.25 };
-      acceptanceCriteriaClarity: { threshold: 85, weight: 0.25 };
-      businessAlignment: { threshold: 80, weight: 0.2 };
+      requirementCompleteness: { threshold: 85; weight: 0.3 };
+      userStoryQuality: { threshold: 80; weight: 0.25 };
+      acceptanceCriteriaClarity: { threshold: 85; weight: 0.25 };
+      businessAlignment: { threshold: 80; weight: 0.2 };
     };
   };
   // ... additional stages
@@ -1787,6 +1880,7 @@ interface StageThresholds {
 ### 1.1.2. Context Preservation Engine
 
 **Adaptive Context Management:**
+
 ```typescript
 interface ContextPreservationEngine {
   stageContextBuilder: StageContextBuilder;
@@ -1812,60 +1906,71 @@ const buildPRDContext = (ideaData: IdeaRefinementData): string => `
   Value Proposition: ${ideaData.valueProposition}
   Market Context: ${JSON.stringify(ideaData.marketContext)}
   Technical Feasibility: ${JSON.stringify(ideaData.technicalFeasibility)}
-  
-  CONTEXT VALIDATION: 
+
+  CONTEXT VALIDATION:
   - Problem clarity verified at ${ideaData.dimensions.problemClarity}%
   - Market viability confirmed at ${ideaData.dimensions.marketViability}%
   - Quality foundation established for PRD generation
-  
+
   TASK: Generate comprehensive PRD building on this validated foundation...`;
 ```
 
 ### 1.1.3. Intelligent Improvement System
 
 **AI-Powered Quality Enhancement:**
+
 ```typescript
 interface ImprovementEngine {
   analyzeWeaknesses(score: QualityScore): WeaknessAnalysis;
   generateTargetedPrompts(weaknesses: string[]): ImprovementPrompt[];
   prioritizeImprovements(suggestions: ImprovementSuggestion[]): PriorityRanking;
-  trackImprovementEffectiveness(before: QualityScore, after: QualityScore): EffectivenessMetrics;
+  trackImprovementEffectiveness(
+    before: QualityScore,
+    after: QualityScore,
+  ): EffectivenessMetrics;
 }
 
 interface ImprovementPrompt {
   focus: string;
   prompt: string;
   expectedImprovement: number;
-  effort: 'low' | 'medium' | 'high';
-  impact: 'low' | 'medium' | 'high';
+  effort: "low" | "medium" | "high";
+  impact: "low" | "medium" | "high";
 }
 
 // Example improvement prompt generation
-const generateImprovementPrompt = (weakness: string, currentScore: number): ImprovementPrompt => ({
+const generateImprovementPrompt = (
+  weakness: string,
+  currentScore: number,
+): ImprovementPrompt => ({
   focus: weakness,
-  prompt: `Focus specifically on improving ${weakness}. 
+  prompt: `Focus specifically on improving ${weakness}.
            Current score: ${currentScore}%
            Target improvement: +15 points
            Specific improvements needed: ${getSpecificImprovements(weakness)}
            Maintain quality in other areas while enhancing this dimension.`,
   expectedImprovement: 15,
   effort: calculateEffort(weakness, currentScore),
-  impact: calculateImpact(weakness)
+  impact: calculateImpact(weakness),
 });
 ```
 
 ### 1.1.4. Quality Gate Implementation
 
 **Three-Tier Quality Experience:**
+
 ```typescript
 interface QualityGateSystem {
-  evaluateQualityGate(score: QualityScore, thresholds: StageThresholds): QualityGateResult;
+  evaluateQualityGate(
+    score: QualityScore,
+    thresholds: StageThresholds,
+  ): QualityGateResult;
   generateGateUI(gateResult: QualityGateResult): QualityGateDisplay;
-  handleUserDecision(decision: 'improve' | 'proceed' | 'bypass'): void;
+  handleUserDecision(decision: "improve" | "proceed" | "bypass"): void;
 }
 
 interface QualityGateResult {
-  gateType: 'blocker' | 'warning' | 'recommended' | 'excellent';
+  gateType: "blocker" | "warning" | "recommended" | "excellent";
   canProceed: boolean;
   requiresImprovement: boolean;
   showExpertBypass: boolean;
@@ -1874,14 +1979,17 @@ interface QualityGateResult {
 }
 
 // Quality gate decision logic
-const evaluateQualityGate = (score: number, thresholds: StageThresholds): QualityGateResult => {
+const evaluateQualityGate = (
+  score: number,
+  thresholds: StageThresholds,
+): QualityGateResult => {
   if (score < thresholds.blockerThreshold) {
     return {
-      gateType: 'blocker',
+      gateType: "blocker",
       canProceed: false,
       requiresImprovement: true,
       showExpertBypass: false,
-      improvementSuggestions: generateMandatoryImprovements(score)
+      improvementSuggestions: generateMandatoryImprovements(score),
     };
   }
   // ... additional gate logic
@@ -1891,6 +1999,7 @@ const evaluateQualityGate = (score: number, thresholds: StageThresholds): Qualit
 ### 1.1.5. Quality Analytics and Reporting
 
 **Comprehensive Quality Tracking:**
+
 ```typescript
 interface QualityAnalytics {
   projectQualityDashboard: ProjectQualityDashboard;
@@ -1919,6 +2028,7 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
 ```
 
 **Quality Measurement Database Schema:**
+
 ```json
 {
   "qualityAssessments": {
@@ -1928,8 +2038,12 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
     "qualityScore": {
       "overall": 85,
       "dimensions": {
-        "problemClarity": {"score": 88, "threshold": 80, "weight": 0.3},
-        "targetAudienceDefinition": {"score": 82, "threshold": 75, "weight": 0.25}
+        "problemClarity": { "score": 88, "threshold": 80, "weight": 0.3 },
+        "targetAudienceDefinition": {
+          "score": 82,
+          "threshold": 75,
+          "weight": 0.25
+        }
       },
       "gateStatus": "recommended",
       "improvementPotential": 12
@@ -1956,25 +2070,27 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
 Sutra provides comprehensive multi-LLM orchestration supporting GPT-4, Claude, Gemini, and custom models. The platform includes intelligent routing, cost optimization, model comparison, and enterprise-grade LLM management capabilities.
 
 #### Forge Module LLM Strategy:
+
 - **Default LLM for All Forge Stages:** Gemini Flash (optimal speed and cost for systematic development workflows)
 - **One-time LLM Selection:** Selected at Forge project start and locked for consistency throughout all stages (default: Gemini Flash)
 - **Stage 4 Multi-LLM Analysis:** Automatically uses all admin-configured LLMs for comprehensive technical evaluation
 - **Platform LLM Flexibility:** Users maintain full LLM selection flexibility for all other Sutra features
 
 **LLM Selection Strategy:**
+
 ```python
 class SutraLLMOrchestrator:
     def __init__(self):
         self.forge_default_model = "gemini-flash"  # Default for all Forge stages
         self.admin_configured_models = ["gpt-4", "claude-3", "gemini-flash"]
         self.forge_locked_model = None  # Set at project start, locked for consistency
-    
+
     def select_forge_llm(self, project_id: str, user_selection: str = None):
         """One-time LLM selection for Forge project consistency"""
         selected_model = user_selection or self.forge_default_model
         self.forge_locked_model = selected_model
         return selected_model
-    
+
     def execute_forge_stage(self, stage: str, project_id: str):
         """Execute Forge stage with appropriate LLM strategy"""
         if stage == "technical_analysis":
@@ -1984,41 +2100,43 @@ class SutraLLMOrchestrator:
             # Stages 1-3, 5: Use locked model for consistency
             return self.single_llm_execution(self.forge_locked_model)
 ```
+
         self.default_model = 'gemini-flash'  # Optimal cost/performance ratio
         self.available_models = ['gemini-flash', 'gpt-4o', 'claude-3', 'custom-models']
-        
+
     async def execute_general_workflow(self, playbook_id: str, step: str, data: dict):
         """Execute general playbook steps using user-selected or default LLM"""
         playbook = await self.get_playbook(playbook_id)
         selected_llm = playbook.get('preferredLLM', self.default_model)
         return await self.execute_with_model(selected_llm, step, data)
-        
+
     async def execute_forge_workflow(self, project_id: str, stage: str, data: dict):
         """Execute Forge project stages with stage-specific LLM strategy"""
         project = await self.get_forge_project(project_id)
         selected_llm = project.forgeData.selectedLLM
-        
+
         if stage == 'tech_analysis':
             # Automatically use all admin-configured LLMs for comprehensive technical evaluation
             return await self.multi_llm_technical_analysis(data)
         else:
             # Use project's selected LLM for consistency across stages
             return await self.execute_with_model(selected_llm, stage, data)
-    
+
     async def multi_llm_technical_analysis(self, requirements: dict):
         """Multi-LLM technical analysis for comprehensive evaluation"""
         admin_configured_llms = await self.get_admin_configured_llms()
         results = {}
-        
+
         for llm in admin_configured_llms:
             try:
                 analysis = await self.execute_with_model(llm, 'technical_analysis', requirements)
                 results[llm] = analysis
             except Exception as e:
                 results[llm] = {"error": str(e), "status": "failed"}
-        
+
         return await self.synthesize_tech_analysis(results)
-```
+
+````
 
 ### 3.2. Prompt Engineering Framework
 
@@ -2034,17 +2152,17 @@ class SutraPromptLibrary:
         "performance_tuning": "Optimize this prompt for better LLM performance...",
         "bias_detection": "Review this prompt for potential biases..."
     }
-    
+
     # Forge-specific structured prompts for product development
     FORGE_PROMPTS = {
         "IDEA_REFINEMENT": """
         System: You are a product development expert helping refine a raw idea.
-        
+
         Context: {idea_context}
         Current Understanding: {current_understanding}
-        
+
         Task: Generate 5 clarifying questions focusing on {focus_area}
-        
+
         Output Format:
         - Question 1: [Clear, specific question]
         - Question 2: [Clear, specific question]
@@ -2052,72 +2170,73 @@ class SutraPromptLibrary:
         - Question 4: [Clear, specific question]
         - Question 5: [Clear, specific question]
         """,
-        
+
         "UX_REQUIREMENTS_ANALYSIS": """
         System: You are a UX/UI expert helping define user experience requirements.
-        
+
         PRD Context: {prd_context}
         User Personas: {user_personas}
         Platform Requirements: {platform_requirements}
-        
+
         Task: Analyze the product requirements and generate comprehensive UX requirements
-        
+
         Focus Areas:
         1. User Journey Mapping
         2. Interface Design Requirements
         3. Accessibility Considerations
         4. Platform-Specific Guidelines
         5. Interaction Patterns
-        
+
         Output Format:
         - User Journeys: [Detailed step-by-step user flows]
         - Design Requirements: [UI patterns, components, layouts]
         - Accessibility: [WCAG compliance, inclusive design]
         - Platform Considerations: [Web, mobile, desktop specific requirements]
         """,
-        
+
         "TECH_STACK_ANALYSIS": """
         System: You are a senior software architect evaluating technical stack options.
-        
+
         Requirements: {prd_requirements}
         UX Requirements: {ux_requirements}
         Team Context: {team_capabilities}
         Constraints: {technical_constraints}
-        
+
         Task: Evaluate the following technical stack hypothesis:
         {tech_stack_hypothesis}
-        
+
         Analyze across dimensions:
         1. Scalability (1-10 score + reasoning)
-        2. Maintainability (1-10 score + reasoning)  
+        2. Maintainability (1-10 score + reasoning)
         3. Development Speed (1-10 score + reasoning)
         4. Cost Efficiency (1-10 score + reasoning)
         5. Risk Level (1-10 score + reasoning)
         6. Team Fit (1-10 score + reasoning)
-        
+
         Output JSON format with scores and detailed reasoning for each dimension.
         """
     }
-    
+
     # Collaborative prompt optimization
     COLLABORATION_PROMPTS = {
         "peer_review": "Review this prompt for effectiveness and suggest improvements...",
         "version_comparison": "Compare these two prompt versions and recommend the better approach..."
     }
-```
+````
 
 ## 2.5. Quality Scoring Framework Implementation
 
 **CRITICAL IMPLEMENTATION REQUIREMENT:** This framework provides concrete prompts and evaluation criteria for LLM agents to implement quality scoring consistently across all Forge stages.
 
 #### Quality Metrics System
+
 ```python
 class ForgeQualityScorer:
     """
     Concrete implementation of quality scoring for LLM agents.
     Each metric uses specific prompts and weighted evaluation criteria.
     """
-    
+
     def calculate_idea_refinement_quality(self, idea_data: dict) -> dict:
         """
         Quality scoring for Stage 1: Idea Refinement
@@ -2150,7 +2269,7 @@ class ForgeQualityScorer:
                 "weight": 0.15
             }
         }
-        
+
         # Implementation: Use these prompts to calculate individual scores
         scores = {}
         for metric, config in scoring_prompts.items():
@@ -2159,18 +2278,18 @@ class ForgeQualityScorer:
                 content=idea_data,
                 criteria=config["criteria"]
             )
-        
+
         # Weighted overall calculation
-        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"] 
+        overall_score = sum(scores[metric] * scoring_prompts[metric]["weight"]
                           for metric in scores)
-        
+
         return {
             **scores,
             "overall": round(overall_score, 1),
             "calculation_method": "weighted_average",
             "quality_gate_threshold": 70.0
         }
-    
+
     def calculate_prd_section_quality(self, section_content: str, section_type: str) -> float:
         """
         Quality scoring for Stage 2: PRD Generation sections
@@ -2184,13 +2303,13 @@ class ForgeQualityScorer:
             "successMetrics": "Rate success metrics on scale 0-100. Consider: Are metrics measurable? Are targets realistic? Are KPIs aligned with goals?",
             "technicalRequirements": "Rate technical requirements on scale 0-100. Consider: Are requirements specific? Are constraints identified? Is architecture outlined?"
         }
-        
+
         return self.llm_evaluate(
             prompt=section_prompts.get(section_type, "Rate content quality on scale 0-100"),
             content=section_content,
             criteria=["clarity", "completeness", "actionability", "specificity"]
         )
-    
+
     def calculate_overall_prd_quality(self, prd_sections: dict) -> float:
         """
         Calculate overall PRD quality from individual section scores
@@ -2203,23 +2322,23 @@ class ForgeQualityScorer:
             "successMetrics": 0.15,
             "technicalRequirements": 0.05
         }
-        
+
         weighted_score = 0
         total_weight = 0
-        
+
         for section, data in prd_sections.items():
             if section in section_weights and data.get("qualityScore", 0) > 0:
                 weighted_score += data["qualityScore"] * section_weights[section]
                 total_weight += section_weights[section]
-        
+
         return round(weighted_score / total_weight if total_weight > 0 else 0, 1)
-    
+
     def evaluate_quality_gate(self, overall_score: float, minimum_threshold: float = 70.0) -> dict:
         """
         Quality gate evaluation with specific recommendations
         """
         status = "passed" if overall_score >= minimum_threshold else "failed"
-        
+
         recommendations = []
         if overall_score < minimum_threshold:
             gap = minimum_threshold - overall_score
@@ -2229,7 +2348,7 @@ class ForgeQualityScorer:
                 recommendations.append("Moderate improvements needed in key areas")
             else:
                 recommendations.append("Minor improvements needed to meet quality standards")
-        
+
         return {
             "status": status,
             "score": overall_score,
@@ -2263,6 +2382,7 @@ QUALITY_SCORING_SYSTEM = {
 ### 1.1.1. Quality Engine Infrastructure
 
 **Core Quality Components:**
+
 ```typescript
 // Quality measurement system architecture
 interface QualityEngine {
@@ -2274,9 +2394,16 @@ interface QualityEngine {
 }
 
 interface QualityAssessmentService {
-  assessStageOutput(stage: ForgeStage, output: any, context: StageContext): QualityScore;
+  assessStageOutput(
+    stage: ForgeStage,
+    output: any,
+    context: StageContext,
+  ): QualityScore;
   validateCrossStageConsistency(stageData: StageData[]): ConsistencyReport;
-  calculateProgressiveThreshold(stage: ForgeStage, previousScores: QualityScore[]): number;
+  calculateProgressiveThreshold(
+    stage: ForgeStage,
+    previousScores: QualityScore[],
+  ): number;
   generateImprovementSuggestions(score: QualityScore): ImprovementSuggestion[];
 }
 
@@ -2290,31 +2417,32 @@ interface QualityScore {
       issues: QualityIssue[];
     };
   };
-  gateStatus: 'blocker' | 'warning' | 'recommended' | 'excellent';
+  gateStatus: "blocker" | "warning" | "recommended" | "excellent";
   improvementPotential: number;
   contextQuality: number;
 }
 ```
 
 **Progressive Threshold Architecture:**
+
 ```typescript
 interface StageThresholds {
   ideaRefinement: {
     minimumScore: 75;
     dimensions: {
-      problemClarity: { threshold: 80, weight: 0.3 };
-      targetAudienceDefinition: { threshold: 75, weight: 0.25 };
-      valuePropositionClarity: { threshold: 85, weight: 0.25 };
-      marketViability: { threshold: 70, weight: 0.2 };
+      problemClarity: { threshold: 80; weight: 0.3 };
+      targetAudienceDefinition: { threshold: 75; weight: 0.25 };
+      valuePropositionClarity: { threshold: 85; weight: 0.25 };
+      marketViability: { threshold: 70; weight: 0.2 };
     };
   };
   prdGeneration: {
     minimumScore: 80;
     dimensions: {
-      requirementCompleteness: { threshold: 85, weight: 0.3 };
-      userStoryQuality: { threshold: 80, weight: 0.25 };
-      acceptanceCriteriaClarity: { threshold: 85, weight: 0.25 };
-      businessAlignment: { threshold: 80, weight: 0.2 };
+      requirementCompleteness: { threshold: 85; weight: 0.3 };
+      userStoryQuality: { threshold: 80; weight: 0.25 };
+      acceptanceCriteriaClarity: { threshold: 85; weight: 0.25 };
+      businessAlignment: { threshold: 80; weight: 0.2 };
     };
   };
   // ... additional stages
@@ -2324,6 +2452,7 @@ interface StageThresholds {
 ### 1.1.2. Context Preservation Engine
 
 **Adaptive Context Management:**
+
 ```typescript
 interface ContextPreservationEngine {
   stageContextBuilder: StageContextBuilder;
@@ -2349,60 +2478,71 @@ const buildPRDContext = (ideaData: IdeaRefinementData): string => `
   Value Proposition: ${ideaData.valueProposition}
   Market Context: ${JSON.stringify(ideaData.marketContext)}
   Technical Feasibility: ${JSON.stringify(ideaData.technicalFeasibility)}
-  
-  CONTEXT VALIDATION: 
+
+  CONTEXT VALIDATION:
   - Problem clarity verified at ${ideaData.dimensions.problemClarity}%
   - Market viability confirmed at ${ideaData.dimensions.marketViability}%
   - Quality foundation established for PRD generation
-  
+
   TASK: Generate comprehensive PRD building on this validated foundation...`;
 ```
 
 ### 1.1.3. Intelligent Improvement System
 
 **AI-Powered Quality Enhancement:**
+
 ```typescript
 interface ImprovementEngine {
   analyzeWeaknesses(score: QualityScore): WeaknessAnalysis;
   generateTargetedPrompts(weaknesses: string[]): ImprovementPrompt[];
   prioritizeImprovements(suggestions: ImprovementSuggestion[]): PriorityRanking;
-  trackImprovementEffectiveness(before: QualityScore, after: QualityScore): EffectivenessMetrics;
+  trackImprovementEffectiveness(
+    before: QualityScore,
+    after: QualityScore,
+  ): EffectivenessMetrics;
 }
 
 interface ImprovementPrompt {
   focus: string;
   prompt: string;
   expectedImprovement: number;
-  effort: 'low' | 'medium' | 'high';
-  impact: 'low' | 'medium' | 'high';
+  effort: "low" | "medium" | "high";
+  impact: "low" | "medium" | "high";
 }
 
 // Example improvement prompt generation
-const generateImprovementPrompt = (weakness: string, currentScore: number): ImprovementPrompt => ({
+const generateImprovementPrompt = (
+  weakness: string,
+  currentScore: number,
+): ImprovementPrompt => ({
   focus: weakness,
-  prompt: `Focus specifically on improving ${weakness}. 
+  prompt: `Focus specifically on improving ${weakness}.
            Current score: ${currentScore}%
            Target improvement: +15 points
            Specific improvements needed: ${getSpecificImprovements(weakness)}
            Maintain quality in other areas while enhancing this dimension.`,
   expectedImprovement: 15,
   effort: calculateEffort(weakness, currentScore),
-  impact: calculateImpact(weakness)
+  impact: calculateImpact(weakness),
 });
 ```
 
 ### 1.1.4. Quality Gate Implementation
 
 **Three-Tier Quality Experience:**
+
 ```typescript
 interface QualityGateSystem {
-  evaluateQualityGate(score: QualityScore, thresholds: StageThresholds): QualityGateResult;
+  evaluateQualityGate(
+    score: QualityScore,
+    thresholds: StageThresholds,
+  ): QualityGateResult;
   generateGateUI(gateResult: QualityGateResult): QualityGateDisplay;
-  handleUserDecision(decision: 'improve' | 'proceed' | 'bypass'): void;
+  handleUserDecision(decision: "improve" | "proceed" | "bypass"): void;
 }
 
 interface QualityGateResult {
-  gateType: 'blocker' | 'warning' | 'recommended' | 'excellent';
+  gateType: "blocker" | "warning" | "recommended" | "excellent";
   canProceed: boolean;
   requiresImprovement: boolean;
   showExpertBypass: boolean;
@@ -2411,14 +2551,17 @@ interface QualityGateResult {
 }
 
 // Quality gate decision logic
-const evaluateQualityGate = (score: number, thresholds: StageThresholds): QualityGateResult => {
+const evaluateQualityGate = (
+  score: number,
+  thresholds: StageThresholds,
+): QualityGateResult => {
   if (score < thresholds.blockerThreshold) {
     return {
-      gateType: 'blocker',
+      gateType: "blocker",
       canProceed: false,
       requiresImprovement: true,
       showExpertBypass: false,
-      improvementSuggestions: generateMandatoryImprovements(score)
+      improvementSuggestions: generateMandatoryImprovements(score),
     };
   }
   // ... additional gate logic
@@ -2428,6 +2571,7 @@ const evaluateQualityGate = (score: number, thresholds: StageThresholds): Qualit
 ### 1.1.5. Quality Analytics and Reporting
 
 **Comprehensive Quality Tracking:**
+
 ```typescript
 interface QualityAnalytics {
   projectQualityDashboard: ProjectQualityDashboard;
@@ -2456,6 +2600,7 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
 ```
 
 **Quality Measurement Database Schema:**
+
 ```json
 {
   "qualityAssessments": {
@@ -2465,8 +2610,12 @@ const QualityDashboard: React.FC<{tracker: ProjectQualityTracker}> = ({tracker})
     "qualityScore": {
       "overall": 85,
       "dimensions": {
-        "problemClarity": {"score": 88, "threshold": 80, "weight": 0.3},
-        "targetAudienceDefinition": {"score": 82, "threshold": 75, "weight": 0.25}
+        "problemClarity": { "score": 88, "threshold": 80, "weight": 0.3 },
+        "targetAudienceDefinition": {
+          "score": 82,
+          "threshold": 75,
+          "weight": 0.25
+        }
       },
       "gateStatus": "recommended",
       "improvementPotential": 12

@@ -655,9 +655,7 @@ export default function PRDGeneration({
             <CardTitle className="text-sm">Stage Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <ProgressIndicator
-              current={progressPercentage}
-            />
+            <ProgressIndicator current={progressPercentage} />
           </CardContent>
         </Card>
 

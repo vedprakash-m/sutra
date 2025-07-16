@@ -640,10 +640,7 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
             <Progress value={overallProgress} className="w-full" />
 
             {overallQuality && (
-              <QualityGate
-                quality={overallQuality}
-                threshold={85}
-              />
+              <QualityGate quality={overallQuality} threshold={85} />
             )}
           </div>
         </CardContent>

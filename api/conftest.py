@@ -21,7 +21,8 @@ if current_dir not in sys.path:
 
 # Import from the shared.models module (not the models package)
 import sys
-sys.path.insert(0, os.path.join(current_dir, 'shared'))
+
+sys.path.insert(0, os.path.join(current_dir, "shared"))
 from models import User, UserRole
 
 

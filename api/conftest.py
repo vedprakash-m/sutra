@@ -19,7 +19,10 @@ current_dir = os.path.dirname(__file__)
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-from shared.models import User, UserRole
+# Import from the shared.models module (not the models package)
+import sys
+sys.path.insert(0, os.path.join(current_dir, 'shared'))
+from models import User, UserRole
 
 
 # Ensure testing mode is enabled for all tests

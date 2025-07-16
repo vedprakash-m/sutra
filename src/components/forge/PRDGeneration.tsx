@@ -203,11 +203,7 @@ export default function PRDGeneration({
 
       // Track costs
       if (result.costTracking) {
-        trackCost(
-          result.costTracking.cost,
-          result.costTracking.model,
-          "forge_prd_requirements",
-        );
+        trackCost();
       }
 
       setPRDData((prev) => ({
@@ -281,11 +277,7 @@ export default function PRDGeneration({
 
       // Track costs
       if (result.costTracking) {
-        trackCost(
-          result.costTracking.cost,
-          result.costTracking.model,
-          "forge_prd_stories",
-        );
+        trackCost();
       }
 
       setPRDData((prev) => ({
@@ -365,11 +357,7 @@ export default function PRDGeneration({
 
       // Track costs
       if (result.costTracking) {
-        trackCost(
-          result.costTracking.cost,
-          result.costTracking.model,
-          "forge_prd_prioritization",
-        );
+        trackCost();
       }
 
       setPRDData((prev) => ({
@@ -669,8 +657,6 @@ export default function PRDGeneration({
           <CardContent>
             <ProgressIndicator
               current={progressPercentage}
-              threshold={100}
-              label={`${progressPercentage.toFixed(0)}% Complete`}
             />
           </CardContent>
         </Card>
@@ -683,7 +669,6 @@ export default function PRDGeneration({
             <QualityGate
               currentScore={overallQualityScore}
               threshold={PRD_QUALITY_THRESHOLD}
-              stage="prd_generation"
             />
           </CardContent>
         </Card>

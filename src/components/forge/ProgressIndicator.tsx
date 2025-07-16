@@ -18,7 +18,7 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   const currentIndex = currentStep ?? current ?? 0;
   const displaySteps =
     steps ?? Array.from({ length: totalSteps ?? 5 }, (_, i) => `Step ${i + 1}`);
-  
+
   return (
     <div className={`w-full ${className}`}>
       <div className="flex justify-between mb-2">

@@ -190,7 +190,7 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
 
       // Track cost
       if (data.cost_info) {
-        trackCost(data.cost_info);
+        trackCost();
       }
 
       updateSectionData("codingPrompts", data.coding_prompts);
@@ -643,7 +643,6 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
               <QualityGate
                 quality={overallQuality}
                 threshold={85}
-                onImprove={() => {}}
               />
             )}
           </div>

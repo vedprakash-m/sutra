@@ -61,7 +61,7 @@ describe("IdeaRefinementStage", () => {
     // Look for textarea or input field - the component should have input fields
     const textInputs = screen.getAllByRole("textbox");
     expect(textInputs.length).toBeGreaterThan(0);
-    
+
     fireEvent.change(textInputs[0], {
       target: { value: "A new social media platform" },
     });
@@ -113,7 +113,9 @@ describe("IdeaRefinementStage", () => {
 
     // Component should show Initial Idea section when in input mode
     expect(screen.getByText(/Initial Idea/i)).toBeInTheDocument();
-    expect(screen.getByText(/Describe your project idea in detail/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Describe your project idea in detail/i),
+    ).toBeInTheDocument();
   });
 
   it("renders with project context", () => {
@@ -135,7 +137,7 @@ describe("IdeaRefinementStage", () => {
     render(<IdeaRefinementStage {...mockProps} />);
 
     const textInputs = screen.getAllByRole("textbox");
-    
+
     if (textInputs.length > 0) {
       fireEvent.change(textInputs[0], {
         target: { value: "Updated idea content" },

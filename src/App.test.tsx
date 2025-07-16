@@ -191,7 +191,7 @@ describe("App", () => {
       },
       { timeout: 5000 },
     );
-    
+
     await waitFor(
       () => {
         expect(screen.getByTestId("prompt-builder")).toBeInTheDocument();
@@ -219,7 +219,7 @@ describe("App", () => {
       },
       { timeout: 5000 },
     );
-    
+
     await waitFor(
       () => {
         expect(screen.getByTestId("collections-page")).toBeInTheDocument();
@@ -249,7 +249,7 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    
+
     await waitFor(
       () => {
         expect(screen.getByTestId("playbook-builder")).toBeInTheDocument();
@@ -279,7 +279,7 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    
+
     await waitFor(
       () => {
         expect(screen.getByTestId("playbook-runner")).toBeInTheDocument();
@@ -309,7 +309,7 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    
+
     await waitFor(
       () => {
         expect(screen.getByTestId("integrations-page")).toBeInTheDocument();
@@ -339,7 +339,7 @@ describe("App", () => {
       },
       { timeout: 3000 },
     );
-    
+
     await waitFor(
       () => {
         expect(screen.getByTestId("admin-panel")).toBeInTheDocument();

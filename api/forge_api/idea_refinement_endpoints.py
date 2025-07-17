@@ -13,7 +13,7 @@ from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
-from shared.llm_client import LLMClient
+from shared.llm_client import LLMManager
 from shared.quality_engine import ContextualQualityValidator, QualityAssessmentEngine
 
 logger = logging.getLogger(__name__)
@@ -148,7 +148,7 @@ async def refine_idea_with_llm(req: func.HttpRequest, project_id: str) -> func.H
         refinement_prompt = _create_refinement_prompt(current_idea, improvement_focus, project_context)
 
         # Execute LLM call with cost tracking
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         # Track cost before execution
         await cost_tracker.track_llm_call_start(

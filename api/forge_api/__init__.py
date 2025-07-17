@@ -15,7 +15,7 @@ from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
-from shared.llm_client import LLMClient
+from shared.llm_client import LLMManager
 from shared.models.forge_models import (
     ArtifactType,
     ForgeAnalytics,
@@ -570,7 +570,7 @@ async def ai_enhance_project(req: func.HttpRequest) -> func.HttpResponse:
             return func.HttpResponse(json.dumps({"error": "Edit access denied"}), status_code=403, mimetype="application/json")
 
         # Generate AI enhancement
-        llm_client = LLMClient()
+        llm_client = LLMManager()
         enhancement_result = await generate_ai_enhancement(
             llm_client=llm_client,
             project=project,
@@ -727,7 +727,7 @@ async def track_forge_event(user_id: str, project_id: str, event_type: str, even
 
 
 async def generate_ai_enhancement(
-    llm_client: LLMClient, project: ForgeProject, enhancement_type: str, context: str, user_id: str
+    llm_client: LLMManager, project: ForgeProject, enhancement_type: str, context: str, user_id: str
 ) -> Dict[str, Any]:
     """Generate AI-powered enhancement for project content."""
 

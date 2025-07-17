@@ -19,11 +19,13 @@ current_dir = os.path.dirname(__file__)
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-# Import from the shared.models module (not the models package)
-import sys
-
-sys.path.insert(0, os.path.join(current_dir, "shared"))
-from models import User, UserRole
+# Import User and UserRole from the models.py file in shared directory
+import importlib.util
+models_spec = importlib.util.spec_from_file_location("models", os.path.join(current_dir, "shared", "models.py"))
+models_module = importlib.util.module_from_spec(models_spec)
+models_spec.loader.exec_module(models_module)
+User = models_module.User
+UserRole = models_module.UserRole
 
 
 # Ensure testing mode is enabled for all tests

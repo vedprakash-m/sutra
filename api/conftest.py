@@ -21,6 +21,7 @@ if current_dir not in sys.path:
 
 # Import User and UserRole from the models.py file in shared directory
 import importlib.util
+
 models_spec = importlib.util.spec_from_file_location("models", os.path.join(current_dir, "shared", "models.py"))
 models_module = importlib.util.module_from_spec(models_spec)
 models_spec.loader.exec_module(models_module)

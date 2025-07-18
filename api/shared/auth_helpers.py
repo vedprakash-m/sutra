@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Authentication helper functions for extracting user information from HTTP requests.
 This module provides utilities for authentication and user info extraction.

@@ -143,10 +143,10 @@ class TestLLMProviderBase:
 
     @pytest.mark.asyncio
     async def test_execute_prompt_not_implemented(self):
-        """Test that base provider execute_prompt raises NotImplementedError."""
+        """Test that base provider execute_prompt raises RuntimeError when not initialized."""
         provider = TestLLMProvider("TestProvider")
 
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(RuntimeError, match="TestProvider provider not initialized"):
             await provider.execute_prompt("test prompt", {})
 
 

@@ -11,21 +11,46 @@ import pytest
 
 from api.shared.llm_client import (
     AnthropicProvider,
+    BaseLLMProvider,
     GoogleProvider,
     LLMManager,
     LLMProvider,
+    LLMResponse,
     OpenAIProvider,
+    TokenUsage,
     get_llm_client,
     get_llm_manager,
 )
 
 
-class TestLLMProvider:
+class TestLLMProvider(BaseLLMProvider):
+    """Simple test implementation of LLMProvider for testing."""
+    
+    def __init__(self, name: str = "TestProvider"):
+        super().__init__(name)
+    
+    @property
+    def provider_name(self) -> str:
+        return self.name
+    
+    def _get_available_models(self):
+        return {"test-model": {"name": "test-model", "cost_per_1k_tokens": 0.01}}
+    
+    async def _execute_request(self, model: str, messages: list, **kwargs):
+        return LLMResponse(
+            content="Test response", 
+            usage=TokenUsage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
+            model=model,
+            provider=self.name
+        )
+
+
+class TestLLMProviderBase:
     """Test suite for LLMProvider base class."""
 
     def test_init(self):
         """Test LLMProvider initialization."""
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
 
         assert provider.name == "TestProvider"
         assert provider.enabled is False
@@ -47,7 +72,7 @@ class TestLLMProvider:
 
         mock_kv_client.get_secret.side_effect = [mock_api_secret, mock_config_secret]
 
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
         result = await provider.initialize(mock_kv_client)
 
         assert result is True
@@ -66,7 +91,7 @@ class TestLLMProvider:
 
         mock_kv_client.get_secret.side_effect = [mock_api_secret, None]
 
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
         result = await provider.initialize(mock_kv_client)
 
         assert result is True
@@ -80,7 +105,7 @@ class TestLLMProvider:
         mock_kv_client = Mock()
         mock_kv_client.get_secret.side_effect = Exception("Key Vault error")
 
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
         result = await provider.initialize(mock_kv_client)
 
         assert result is False
@@ -89,7 +114,7 @@ class TestLLMProvider:
     @pytest.mark.asyncio
     async def test_check_budget_no_limit(self):
         """Test budget check with no limit set."""
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
         provider.budget_limit = 0.0
         provider.current_usage = 50.0
 
@@ -99,7 +124,7 @@ class TestLLMProvider:
     @pytest.mark.asyncio
     async def test_check_budget_within_limit(self):
         """Test budget check within limit."""
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
 
@@ -109,7 +134,7 @@ class TestLLMProvider:
     @pytest.mark.asyncio
     async def test_check_budget_over_limit(self):
         """Test budget check over limit."""
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
         provider.budget_limit = 100.0
         provider.current_usage = 150.0
 
@@ -119,7 +144,7 @@ class TestLLMProvider:
     @pytest.mark.asyncio
     async def test_execute_prompt_not_implemented(self):
         """Test that base provider execute_prompt raises NotImplementedError."""
-        provider = LLMProvider("TestProvider")
+        provider = TestLLMProvider("TestProvider")
 
         with pytest.raises(NotImplementedError):
             await provider.execute_prompt("test prompt", {})

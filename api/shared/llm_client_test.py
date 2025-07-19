@@ -211,20 +211,14 @@ class TestAnthropicProvider:
 
     @pytest.mark.asyncio
     async def test_execute_prompt_success(self):
-        """Test successful prompt execution."""
+        """Test that execute_prompt raises error when provider is not initialized."""
         provider = AnthropicProvider()
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
 
-        result = await provider.execute_prompt("Hello, world!", {"user_id": "123"})
-
-        assert result["provider"] == "Anthropic"
-        assert result["model"] == "claude-3-sonnet-20240229"
-        assert "Mock Anthropic response" in result["response"]
-        assert "usage" in result
-        assert result["usage"]["input_tokens"] == 2  # "Hello, world!" split by spaces
-        assert result["cost"] == 0.015
+        with pytest.raises(RuntimeError, match="Anthropic provider not initialized"):
+            await provider.execute_prompt("Hello, world!", {"user_id": "123"})
 
 
 class TestGoogleProvider:

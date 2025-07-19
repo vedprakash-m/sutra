@@ -5,4 +5,7 @@ from .base_provider import BaseLLMProvider, LLMResponse, TokenUsage
 from .google_provider import GoogleProvider
 from .openai_provider import OpenAIProvider
 
-__all__ = ["BaseLLMProvider", "OpenAIProvider", "AnthropicProvider", "GoogleProvider", "LLMResponse", "TokenUsage"]
+# Alias for backward compatibility
+LLMProvider = BaseLLMProvider
+
+__all__ = ["BaseLLMProvider", "LLMProvider", "OpenAIProvider", "AnthropicProvider", "GoogleProvider", "LLMResponse", "TokenUsage"]

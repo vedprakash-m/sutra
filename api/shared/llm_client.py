@@ -12,7 +12,7 @@ from azure.keyvault.secrets import SecretClient
 from .budget_manager import BudgetManager, BudgetValidationError, get_budget_manager
 from .cost_tracker import CostTracker
 from .cost_tracking_middleware import CostTrackingMiddleware, get_cost_tracking_middleware
-from .llm_providers import AnthropicProvider, BaseLLMProvider, GoogleProvider, LLMResponse, OpenAIProvider, TokenUsage
+from .llm_providers import AnthropicProvider, BaseLLMProvider, GoogleProvider, LLMProvider, LLMResponse, OpenAIProvider, TokenUsage
 
 
 class LLMManager:
@@ -437,3 +437,21 @@ class LLMManager:
             "expires_at": override.expires_at.isoformat() if override.expires_at else None,
             "created_at": override.created_at.isoformat(),
         }
+
+
+# Global instance for singleton pattern
+_llm_manager_instance: Optional[LLMManager] = None
+
+
+def get_llm_manager(cosmos_client: Optional[CosmosClient] = None, database_name: str = "SutraDB") -> LLMManager:
+    """Get or create the global LLM manager instance."""
+    global _llm_manager_instance
+    if _llm_manager_instance is None:
+        _llm_manager_instance = LLMManager(cosmos_client, database_name)
+    return _llm_manager_instance
+
+
+def get_llm_client(provider_name: str) -> BaseLLMProvider:
+    """Get a specific LLM provider client."""
+    manager = get_llm_manager()
+    return manager.get_provider(provider_name)

@@ -177,22 +177,23 @@ class TestOpenAIProvider:
 
     @pytest.mark.asyncio
     async def test_execute_prompt_disabled(self):
-        """Test prompt execution when provider is disabled."""
+        """Test prompt execution when provider is disabled (uninitialized)."""
         provider = OpenAIProvider()
         provider.enabled = False
 
-        with pytest.raises(Exception, match="disabled or over budget"):
+        with pytest.raises(RuntimeError, match="OpenAI provider not initialized"):
             await provider.execute_prompt("Hello, world!", {})
 
     @pytest.mark.asyncio
     async def test_execute_prompt_over_budget(self):
-        """Test prompt execution when over budget."""
+        """Test prompt execution when over budget (uninitialized)."""
         provider = OpenAIProvider()
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 150.0
 
-        with pytest.raises(Exception, match="disabled or over budget"):
+        with pytest.raises(RuntimeError, match="OpenAI provider not initialized"):
+            await provider.execute_prompt("Hello, world!", {})
             await provider.execute_prompt("Hello, world!", {})
 
 

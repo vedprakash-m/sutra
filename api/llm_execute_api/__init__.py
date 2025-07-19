@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from shared.database import get_database_manager
 from shared.error_handling import SutraAPIError, handle_api_error
-from shared.llm_client import LLMProvider, get_llm_client
+from shared.llm_client import LLMManager, get_llm_client
 from shared.models import User
 from shared.real_time_cost import get_cost_manager
 

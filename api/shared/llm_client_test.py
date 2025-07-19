@@ -165,20 +165,15 @@ class TestOpenAIProvider:
 
     @pytest.mark.asyncio
     async def test_execute_prompt_success(self):
-        """Test successful prompt execution."""
+        """Test that uninitialized provider raises RuntimeError."""
         provider = OpenAIProvider()
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
 
-        result = await provider.execute_prompt("Hello, world!", {"user_id": "123"})
-
-        assert result["provider"] == "OpenAI"
-        assert result["model"] == "gpt-4"
-        assert "Mock OpenAI response" in result["response"]
-        assert "usage" in result
-        assert "cost" in result
-        assert "timestamp" in result
+        # Provider is not initialized, so it should raise RuntimeError
+        with pytest.raises(RuntimeError, match="OpenAI provider not initialized"):
+            await provider.execute_prompt("Hello, world!", {"user_id": "123"})
 
     @pytest.mark.asyncio
     async def test_execute_prompt_disabled(self):

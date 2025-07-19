@@ -205,8 +205,9 @@ class TestAnthropicProvider:
         provider = AnthropicProvider()
 
         assert provider.name == "Anthropic"
-        assert provider.model == "claude-3-sonnet-20240229"
-        assert provider.max_tokens == 2000
+        assert provider.provider_name == "Anthropic"
+        assert not provider.enabled
+        assert provider.client is None
 
     @pytest.mark.asyncio
     async def test_execute_prompt_success(self):

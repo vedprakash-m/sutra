@@ -158,9 +158,10 @@ class TestOpenAIProvider:
         provider = OpenAIProvider()
 
         assert provider.name == "OpenAI"
-        assert provider.model == "gpt-4"
-        assert provider.max_tokens == 2000
-        assert provider.temperature == 0.7
+        assert provider.provider_name == "OpenAI"
+        # OpenAI provider doesn't have a default model, models are selected per request
+        available_models = provider._get_available_models()
+        assert "gpt-4" in available_models
 
     @pytest.mark.asyncio
     async def test_execute_prompt_success(self):

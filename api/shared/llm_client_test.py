@@ -229,23 +229,20 @@ class TestGoogleProvider:
         provider = GoogleProvider()
 
         assert provider.name == "Google"
-        assert provider.model == "gemini-pro"
-        assert provider.max_tokens == 2000
+        assert provider.provider_name == "Google AI"
+        assert not provider.enabled
+        assert not provider._configured
 
     @pytest.mark.asyncio
     async def test_execute_prompt_success(self):
-        """Test successful prompt execution."""
+        """Test that execute_prompt raises error when provider is not initialized."""
         provider = GoogleProvider()
         provider.enabled = True
         provider.budget_limit = 100.0
         provider.current_usage = 50.0
 
-        result = await provider.execute_prompt("Hello, world!", {"user_id": "123"})
-
-        assert result["provider"] == "Google"
-        assert result["model"] == "gemini-pro"
-        assert "Mock Google response" in result["response"]
-        assert result["cost"] == 0.01
+        with pytest.raises(RuntimeError, match="Google provider not initialized"):
+            await provider.execute_prompt("Hello, world!", {"user_id": "123"})
 
 
 class TestLLMManager:

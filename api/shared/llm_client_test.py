@@ -25,23 +25,23 @@ from api.shared.llm_client import (
 
 class TestLLMProvider(BaseLLMProvider):
     """Simple test implementation of LLMProvider for testing."""
-    
+
     def __init__(self, name: str = "TestProvider"):
         super().__init__(name)
-    
+
     @property
     def provider_name(self) -> str:
         return self.name
-    
+
     def _get_available_models(self):
         return {"test-model": {"name": "test-model", "cost_per_1k_tokens": 0.01}}
-    
+
     async def _execute_request(self, model: str, messages: list, **kwargs):
         return LLMResponse(
-            content="Test response", 
+            content="Test response",
             usage=TokenUsage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
             model=model,
-            provider=self.name
+            provider=self.name,
         )
 
 

@@ -319,7 +319,7 @@ class TestLLMManager:
 
         # Mock providers since they won't be initialized without proper environment
         from unittest.mock import MagicMock
-        
+
         # Create mock providers
         openai_provider = MagicMock()
         openai_provider.enabled = True
@@ -340,11 +340,7 @@ class TestLLMManager:
         google_provider.check_budget = AsyncMock(return_value=True)
 
         # Set up the providers dict
-        manager.providers = {
-            "openai": openai_provider,
-            "anthropic": anthropic_provider,
-            "google": google_provider
-        }
+        manager.providers = {"openai": openai_provider, "anthropic": anthropic_provider, "google": google_provider}
 
         available = await manager.get_available_providers()
 

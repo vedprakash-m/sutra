@@ -397,7 +397,7 @@ class TestLLMManager:
         """Test multi-LLM execution success."""
         manager = LLMManager()
         manager.get_available_providers = AsyncMock(return_value=["openai", "anthropic"])
-        
+
         # Create proper LLMResponse objects
         openai_response = LLMResponse(
             response="OpenAI response",
@@ -405,21 +405,19 @@ class TestLLMManager:
             model="gpt-3.5-turbo",
             provider="openai",
             usage=TokenUsage(prompt_tokens=5, completion_tokens=5, total_tokens=10),
-            timestamp=None
+            timestamp=None,
         )
-        
+
         anthropic_response = LLMResponse(
-            response="Anthropic response", 
+            response="Anthropic response",
             cost=0.02,
             model="claude-3-haiku",
             provider="anthropic",
             usage=TokenUsage(prompt_tokens=5, completion_tokens=5, total_tokens=10),
-            timestamp=None
+            timestamp=None,
         )
-        
-        manager.execute_prompt = AsyncMock(
-            side_effect=[openai_response, anthropic_response]
-        )
+
+        manager.execute_prompt = AsyncMock(side_effect=[openai_response, anthropic_response])
 
         result = await manager.execute_multi_llm("Hello!")
 

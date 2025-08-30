@@ -317,18 +317,34 @@ class TestLLMManager:
         manager = LLMManager()
         manager.initialize = AsyncMock(return_value=True)
 
-        # Set up providers with different states
-        manager.providers["openai"].enabled = True
-        manager.providers["openai"].budget_limit = 100.0
-        manager.providers["openai"].current_usage = 50.0
-        manager.providers["openai"].priority = 2
+        # Mock providers since they won't be initialized without proper environment
+        from unittest.mock import MagicMock
+        
+        # Create mock providers
+        openai_provider = MagicMock()
+        openai_provider.enabled = True
+        openai_provider.budget_limit = 100.0
+        openai_provider.current_usage = 50.0
+        openai_provider.priority = 2
+        openai_provider.check_budget = AsyncMock(return_value=True)
 
-        manager.providers["anthropic"].enabled = True
-        manager.providers["anthropic"].budget_limit = 100.0
-        manager.providers["anthropic"].current_usage = 50.0
-        manager.providers["anthropic"].priority = 1
+        anthropic_provider = MagicMock()
+        anthropic_provider.enabled = True
+        anthropic_provider.budget_limit = 100.0
+        anthropic_provider.current_usage = 50.0
+        anthropic_provider.priority = 1
+        anthropic_provider.check_budget = AsyncMock(return_value=True)
 
-        manager.providers["google"].enabled = False
+        google_provider = MagicMock()
+        google_provider.enabled = False
+        google_provider.check_budget = AsyncMock(return_value=True)
+
+        # Set up the providers dict
+        manager.providers = {
+            "openai": openai_provider,
+            "anthropic": anthropic_provider,
+            "google": google_provider
+        }
 
         available = await manager.get_available_providers()
 

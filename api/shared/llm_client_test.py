@@ -275,7 +275,7 @@ class TestLLMManager:
         with patch.dict(os.environ, {}, clear=True):
             manager = LLMManager()
 
-            with pytest.raises(ValueError, match="KEY_VAULT_URI environment variable is required"):
+            with pytest.raises(ValueError, match="KEY_VAULT_URI or KEY_VAULT_URL environment variable is required"):
                 _ = manager.kv_client
 
     @pytest.mark.asyncio

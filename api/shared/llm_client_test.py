@@ -358,12 +358,12 @@ class TestLLMManager:
         mock_provider.enabled = True
         mock_provider.current_usage = 0.0  # Start with 0
         mock_provider.check_budget = AsyncMock(return_value=True)
-        
+
         # Mock the execute_prompt method to simulate cost tracking
         async def mock_execute_prompt(*args, **kwargs):
             mock_provider.current_usage += 0.02  # Simulate cost update
             return {"response": "Test response", "cost": 0.02}
-        
+
         mock_provider.execute_prompt = AsyncMock(side_effect=mock_execute_prompt)
         manager.providers["openai"] = mock_provider
 

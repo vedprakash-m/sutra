@@ -465,6 +465,7 @@ class TestLLMManager:
 
         # Set up provider states
         manager.providers["openai"].enabled = True
+        manager.providers["openai"]._initialized = True  # Important: provider must be initialized
         manager.providers["openai"].budget_limit = 100.0
         manager.providers["openai"].current_usage = 75.0
         manager.providers["openai"].priority = 1

@@ -3,6 +3,10 @@ node_modules/
 dist/
 build/
 
+# Archive files - legacy code should not be tracked
+.archive/
+**/.archive/
+
 # Development deployment scripts (use CI/CD instead)
 scripts/deploy-*.sh
 scripts/*-deploy.sh

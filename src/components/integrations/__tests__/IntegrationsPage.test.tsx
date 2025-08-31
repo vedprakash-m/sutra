@@ -35,7 +35,7 @@ global.alert = mockAlert;
 // Mock user for regular user tests
 const mockRegularUser = {
   id: "test@example.com",
-  email: "test@example.com", 
+  email: "test@example.com",
   name: "Test User",
   tenantId: "test-tenant",
   objectId: "test-object-id",
@@ -60,7 +60,7 @@ const mockRegularUser = {
 const mockAdminUser = {
   id: "admin@example.com",
   email: "admin@example.com",
-  name: "Admin User", 
+  name: "Admin User",
   tenantId: "test-tenant",
   objectId: "admin-object-id",
   role: "admin" as const,

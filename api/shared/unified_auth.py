@@ -7,6 +7,7 @@ Microsoft Entra ID integration with VedUser standard compliance
 import logging
 import os
 from abc import ABC, abstractmethod
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -14,7 +15,6 @@ import azure.functions as func
 
 from .auth_mocking import MockAuthManager
 from .auth_static_web_apps import StaticWebAppsAuthManager
-from .entra_auth import User as EntraUser
 from .entra_auth import validate_request_headers
 from .error_handling import ErrorType, SutraAPIError, SutraError
 from .models import User, UserRole
@@ -88,28 +88,21 @@ class EntraIdAuthProvider(AuthProvider):
         """Extract and validate user from request using Entra ID"""
         try:
             headers = dict(req.headers)
-            ved_user = validate_request_headers(headers)
+            ved_user = await validate_request_headers(headers)
 
             if ved_user:
-                # Convert EntraVedUser to legacy User model for compatibility
-                user = User(
+                return User(
                     id=ved_user.id,
                     email=ved_user.email,
                     name=ved_user.name,
                     role=UserRole.ADMIN if ved_user.role == "admin" else UserRole.USER,
-                    created_at=ved_user.created_at,
-                    updated_at=ved_user.updated_at,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
                 )
-
-                logger.info(f"✅ Entra ID user authenticated: {user.email} (role: {user.role})")
-                return user
-
-            logger.warning("❌ Entra ID authentication failed")
-            return None
-
         except Exception as e:
-            logger.error(f"❌ Entra ID authentication error: {e}")
-            return None
+            logger.warning(f"Failed to validate user from request: {e}")
+            
+        return None
 
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:
         """Validate user has required permissions"""

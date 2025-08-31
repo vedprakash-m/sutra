@@ -269,7 +269,7 @@ class TestCollectionsAPI:
         existing_collection = {
             "id": collection_id,
             "name": "Test Collection",
-            "ownerId": "test-user-123",
+            "userId": "test@example.com",
         }
 
         # Mock database responses
@@ -301,7 +301,7 @@ class TestCollectionsAPI:
         mock_database_manager.delete_item.assert_called_once_with(
             container_name="Collections",
             item_id=collection_id,
-            partition_key="test-user-123",
+            partition_key="test@example.com",
         )
 
     @pytest.mark.asyncio

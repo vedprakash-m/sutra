@@ -18,7 +18,7 @@ class TestPlaybooksAPI:
         """Mock successful authentication - now compatible with @require_auth decorator."""
         # The new auth system uses headers, so we don't need to patch functions
         # The create_auth_request helper provides the needed headers
-        return {"id": "test-user-123", "name": "Test User", "role": "user"}
+        return {"id": "test@example.com", "name": "Test User", "role": "user"}
 
     @pytest.fixture
     def mock_cosmos_client(self):
@@ -83,7 +83,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.create_item.return_value = {
             "id": "test-playbook-id",
             **playbook_data,
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
             "createdAt": "2025-06-15T10:00:00Z",
             "updatedAt": "2025-06-15T10:00:00Z",
         }
@@ -102,7 +102,7 @@ class TestPlaybooksAPI:
             assert response.status_code == 201
             response_data = json.loads(response.get_body())
             assert response_data["name"] == "Test Playbook"
-            assert response_data["creatorId"] == "test-user-123"
+            assert response_data["creatorId"] == "test@example.com"
             assert len(response_data["steps"]) == 1
             mock_cosmos_client.create_item.assert_called_once()
 
@@ -114,14 +114,14 @@ class TestPlaybooksAPI:
             {
                 "id": "playbook-1",
                 "name": "Playbook 1",
-                "creatorId": "test-user-123",
+                "creatorId": "test@example.com",
                 "visibility": "private",
                 "createdAt": "2025-06-15T09:00:00Z",
             },
             {
                 "id": "playbook-2",
                 "name": "Playbook 2",
-                "creatorId": "test-user-123",
+                "creatorId": "test@example.com",
                 "visibility": "shared",
                 "createdAt": "2025-06-15T10:00:00Z",
             },
@@ -153,7 +153,7 @@ class TestPlaybooksAPI:
         playbook = {
             "id": playbook_id,
             "name": "Test Playbook",
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
             "initialInputVariables": {"customer_name": {"type": "string", "required": True}},
             "steps": [
                 {
@@ -171,7 +171,7 @@ class TestPlaybooksAPI:
         mock_cosmos_client.get_container("Executions").create_item.return_value = {
             "id": "execution-123",
             "playbookId": playbook_id,
-            "userId": "test-user-123",
+            "userId": "test@example.com",
             "status": "running",
             "initialInputs": execution_input["initialInputs"],
         }
@@ -204,7 +204,7 @@ class TestPlaybooksAPI:
         playbook = {
             "id": playbook_id,
             "name": "Test Playbook",
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
             "initialInputVariables": {
                 "customer_name": {"type": "string", "required": True},
                 "product_name": {"type": "string", "required": True},
@@ -245,7 +245,7 @@ class TestPlaybooksAPI:
         execution = {
             "id": execution_id,
             "playbookId": "playbook-123",
-            "userId": "test-user-123",
+            "userId": "test@example.com",
             "status": "completed",
             "startTime": "2025-06-15T10:00:00Z",
             "endTime": "2025-06-15T10:05:00Z",
@@ -286,7 +286,7 @@ class TestPlaybooksAPI:
         execution = {
             "id": execution_id,
             "playbookId": "playbook-123",
-            "userId": "test-user-123",
+            "userId": "test@example.com",
             "status": "paused_for_review",
             "stepLogs": [
                 {
@@ -316,7 +316,7 @@ class TestPlaybooksAPI:
                 url=f"https://localhost/api/playbooks/executions/{execution_id}/continue",
                 route_params={"execution_id": execution_id},
                 body=continue_data,
-                user_id="test-user-123",
+                user_id="test@example.com",
             )
 
             # Act
@@ -337,7 +337,7 @@ class TestPlaybooksAPI:
         execution = {
             "id": execution_id,
             "playbookId": "playbook-123",
-            "userId": "test-user-123",
+            "userId": "test@example.com",
             "status": "completed",  # Not paused for review
             "stepLogs": [],
             "auditTrail": [],
@@ -351,7 +351,7 @@ class TestPlaybooksAPI:
             url=f"https://localhost/api/playbooks/executions/{execution_id}/continue",
             route_params={"execution_id": execution_id},
             body={"editedOutput": "some output"},
-            user_id="test-user-123",
+            user_id="test@example.com",
         )
 
         # Act
@@ -371,7 +371,7 @@ class TestPlaybooksAPI:
         playbook = {
             "id": playbook_id,
             "name": "Test Playbook",
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
         }
 
         # Mock database responses
@@ -385,7 +385,7 @@ class TestPlaybooksAPI:
             method="DELETE",
             url=f"https://localhost/api/playbooks/{playbook_id}",
             route_params={"id": playbook_id},
-            user_id="test-user-123",
+            user_id="test@example.com",
         )
 
         # Act
@@ -406,7 +406,7 @@ class TestPlaybooksAPI:
         existing_playbook = {
             "id": playbook_id,
             "name": "Old Name",
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
             "visibility": "private",
             "steps": [],
             "createdAt": "2025-06-15T09:00:00Z",
@@ -460,7 +460,7 @@ class TestPlaybooksAPI:
         playbook = {
             "id": playbook_id,
             "name": "Test Playbook",
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
             "description": "A test playbook",
             "steps": [{"stepId": "step1", "type": "prompt"}],
         }
@@ -507,7 +507,7 @@ class TestPlaybooksAPI:
         playbook = {
             "id": playbook_id,
             "name": "Test Playbook",
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
         }
 
         # Mock database responses
@@ -562,7 +562,7 @@ class TestPlaybooksAPI:
             url=f"https://localhost/api/playbooks/{playbook_id}",
             route_params={"id": playbook_id},
             body=update_data,
-            user_id="test-user-123",
+            user_id="test@example.com",
         )
 
         # Act
@@ -606,7 +606,7 @@ class TestPlaybooksAPI:
         existing_playbook = {
             "id": playbook_id,
             "name": "Old Name",
-            "creatorId": "test-user-123",
+            "creatorId": "test@example.com",
             "steps": [],
         }
 
@@ -627,7 +627,7 @@ class TestPlaybooksAPI:
                 url=f"https://localhost/api/playbooks/{playbook_id}",
                 route_params={"id": playbook_id},
                 body=update_data,
-                user_id="test-user-123",
+                user_id="test@example.com",
             )
 
             # Act
@@ -646,7 +646,7 @@ class TestPlaybooksAPI:
         req = create_auth_request(
             method="PATCH",
             url="https://localhost/api/playbooks",
-            user_id="test-user-123",
+            user_id="test@example.com",
         )
 
         # Act
@@ -671,7 +671,7 @@ class TestPlaybooksAPI:
             url=f"https://localhost/api/playbooks/executions/{execution_id}/continue",
             route_params={"execution_id": execution_id},
             body={"editedOutput": "some output"},
-            user_id="test-user-123",
+            user_id="test@example.com",
         )
 
         # Act
@@ -697,7 +697,7 @@ class TestPlaybooksAPI:
             method="GET",
             url=f"https://localhost/api/playbooks/executions/{execution_id}",
             route_params={"execution_id": execution_id},
-            user_id="test-user-123",
+            user_id="test@example.com",
         )
 
         # Act

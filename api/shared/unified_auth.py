@@ -407,7 +407,7 @@ class TestingAuthProvider(AuthProvider):
         headers = dict(req.headers) if hasattr(req, "headers") else {}
         # Headers are converted to lowercase by Azure Functions
         test_user_type = headers.get("x-test-user-type")
-        test_user_id = headers.get("x-test-user-id", "test-user-123")
+        test_user_id = headers.get("x-test-user-id", "test-user@example.com")
 
         if test_user_type:
             from datetime import datetime, timezone
@@ -419,11 +419,11 @@ class TestingAuthProvider(AuthProvider):
 
             user = User(
                 id=test_user_id,
-                email=f"{test_user_id}@test.example.com",
+                email=test_user_id,
                 name=f"Test {test_user_type.title()} User",
                 role=role,
                 created_at=now,
-                updated_at=now,
+                last_active=now,
             )
 
             # Add permissions for testing

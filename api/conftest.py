@@ -307,12 +307,26 @@ def unified_auth_setup():
 def mock_test_user():
     """Create a test user for unified auth tests."""
     user = User(
-        id="test-user-123",
+        id="test@example.com",
         email="test@example.com",
         name="Test User",
         role=UserRole.USER,
+        tenant_id="common",
+        object_id="test-object-123",
+        preferences={
+            "defaultLLM": "gpt-3.5-turbo",
+            "theme": "light",
+            "notifications": True
+        },
+        usage={
+            "total_prompts": 5,
+            "total_collections": 2,
+            "total_playbooks": 1,
+            "total_forge_projects": 0
+        },
         created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        last_active=datetime.now(timezone.utc),
+        is_active=True
     )
     # Add permissions attribute for testing using object.__setattr__ to bypass Pydantic validation
     object.__setattr__(
@@ -335,12 +349,26 @@ def mock_test_user():
 def mock_admin_user():
     """Create an admin user for unified auth tests."""
     user = User(
-        id="admin-user-123",
+        id="admin@example.com",
         email="admin@example.com",
         name="Admin User",
         role=UserRole.ADMIN,
+        tenant_id="common",
+        object_id="admin-object-123",
+        preferences={
+            "defaultLLM": "gpt-4",
+            "theme": "dark",
+            "notifications": True
+        },
+        usage={
+            "total_prompts": 0,
+            "total_collections": 0,
+            "total_playbooks": 0,
+            "total_forge_projects": 0
+        },
         created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        last_active=datetime.now(timezone.utc),
+        is_active=True
     )
     # Add permissions attribute for testing using object.__setattr__ to bypass Pydantic validation
     object.__setattr__(

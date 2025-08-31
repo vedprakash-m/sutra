@@ -10,7 +10,7 @@ import azure.functions as func
 import jwt
 import pytest
 
-from api.shared.auth import (
+from .auth import (
     AuthenticationError,
     AuthManager,
     AuthorizationError,
@@ -27,7 +27,7 @@ from api.shared.auth import (
     require_permission,
     verify_jwt_token,
 )
-from api.shared.models import User, UserRole
+from .models import User, UserRole
 
 from ..conftest import create_auth_request
 

@@ -3,17 +3,18 @@ Auth module - Legacy authentication functions
 This module provides compatibility for existing imports during migration to unified_auth.py
 """
 
-import azure.functions as func
 from typing import Optional
+
+import azure.functions as func
 
 
 def extract_token_from_request(req: func.HttpRequest) -> Optional[str]:
     """
     Extract authentication token from HTTP request.
-    
+
     Args:
         req: Azure Functions HTTP request object
-        
+
     Returns:
         Token string if found, None otherwise
     """
@@ -21,7 +22,7 @@ def extract_token_from_request(req: func.HttpRequest) -> Optional[str]:
     auth_header = req.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         return auth_header[7:]  # Remove "Bearer " prefix
-    
+
     # Check x-ms-token-aad-id-token header (for SWA)
     return req.headers.get("x-ms-token-aad-id-token")
 
@@ -29,7 +30,7 @@ def extract_token_from_request(req: func.HttpRequest) -> Optional[str]:
 def get_auth_manager():
     """
     Get the auth manager instance.
-    
+
     Returns:
         Auth manager instance - simplified for compatibility
     """
@@ -39,7 +40,7 @@ def get_auth_manager():
 
 class SimpleAuthManager:
     """Simplified auth manager for test compatibility"""
-    
+
     def get_user_from_token(self, token: str):
         """Simplified user retrieval for testing"""
         if token and (token.startswith("mock") or token.startswith("dev")):
@@ -49,7 +50,7 @@ class SimpleAuthManager:
 
 class MockUser:
     """Mock user for testing"""
-    
+
     def __init__(self):
         self.id = "mock-user-id"
         self.email = "test@sutra.ai"
@@ -60,44 +61,41 @@ class MockUser:
 # Legacy compatibility classes and exceptions
 class AuthenticationError(Exception):
     """Authentication error exception"""
+
     pass
 
 
 class AuthorizationError(Exception):
     """Authorization error exception"""
+
     pass
 
 
 class AuthManager:
     """Legacy AuthManager for compatibility"""
-    
+
     def __init__(self):
         self.simple_manager = SimpleAuthManager()
-    
+
     def get_user_from_token(self, token: str):
         """Get user from token using simple auth"""
         return self.simple_manager.get_user_from_token(token)
-    
+
     def validate_token(self, token: str):
         """Validate token - simplified version"""
         user = self.get_user_from_token(token)
         if user:
-            return {
-                "sub": user.id,
-                "email": user.email,
-                "name": user.name,
-                "roles": [user.role]
-            }
+            return {"sub": user.id, "email": user.email, "name": user.name, "roles": [user.role]}
         return None
-    
+
     def check_permission(self, user, resource: str, action: str) -> bool:
         """Check user permissions"""
         # Simplified permission check
-        if hasattr(user, 'role'):
-            if str(user.role).lower() == 'admin':
+        if hasattr(user, "role"):
+            if str(user.role).lower() == "admin":
                 return True
             # Basic permissions for regular users
-            if resource in ['prompts', 'collections'] and action in ['create', 'read']:
+            if resource in ["prompts", "collections"] and action in ["create", "read"]:
                 return True
         return False
 
@@ -115,14 +113,14 @@ def get_user_id_from_token(token: str) -> Optional[str]:
 
 def get_user_role(user) -> str:
     """Get user role - legacy compatibility"""
-    if hasattr(user, 'role'):
+    if hasattr(user, "role"):
         return str(user.role)
-    return 'user'
+    return "user"
 
 
 def check_admin_role(user) -> bool:
     """Check if user has admin role"""
-    return get_user_role(user).lower() == 'admin'
+    return get_user_role(user).lower() == "admin"
 
 
 def check_user_permissions(user, permissions: list) -> bool:
@@ -135,9 +133,11 @@ def check_user_permissions(user, permissions: list) -> bool:
 
 def require_admin(func):
     """Decorator to require admin role"""
+
     def wrapper(*args, **kwargs):
         # Simplified decorator for compatibility
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -151,6 +151,6 @@ def get_current_user(req: func.HttpRequest):
     token = extract_token_from_request(req)
     if not token:
         return None
-    
+
     manager = AuthManager()
     return manager.get_user_from_token(token)

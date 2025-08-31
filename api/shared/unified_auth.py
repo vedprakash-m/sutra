@@ -101,7 +101,7 @@ class EntraIdAuthProvider(AuthProvider):
                 )
         except Exception as e:
             logger.warning(f"Failed to validate user from request: {e}")
-            
+
         return None
 
     async def validate_user_permissions(self, user: User, required_permissions: List[str]) -> bool:

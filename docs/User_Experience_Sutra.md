@@ -37,7 +37,14 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides a systematic plat
 
 ### 2.1 Authentication-Required Platform Access
 
-**Platform Access Policy:** All Sutra features require Microsoft Entra ID authentication for data persistence, collaboration, and cost tracking. No guest or anonymous access is provided.
+**Platform Access Policy:** All Sutra features require Microsoft Entra ID authentication using the default tenant. User email address serves as the primary identifier for all user data and personalization.
+
+**Automatic User Registration:**
+
+- **First Authentication:** Automatically creates user profile in database using email as primary key
+- **Subsequent Logins:** Accesses personalized data, preferences, and usage history
+- **Data Persistence:** All prompts, collections, playbooks, and Forge projects linked to user email
+- **Cross-Session Continuity:** User preferences and work state maintained across all sessions
 
 **Immediate Value Demonstration:**
 
@@ -99,12 +106,11 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides a systematic plat
 **Streamlined Authentication & Setup:**
 
 ```
-Landing Page → Value Demo → Motivated Signup → Role Selection → Module Introduction → First Success
-     ↓            ↓             ↓               ↓              ↓                ↓
-Interactive     "I need this!"  Microsoft      Choose persona    Guided tour     Celebrate!
-demo videos     Clear ROI       Entra ID       Content/CS/       Dev/PM                            Save first prompt
-                benefits        signup         Collections/      All modules     to Collection
-                                                  Playbooks
+Landing Page → Value Demo → Motivated Signup → Automatic Registration → Personalized Onboarding → First Success
+     ↓            ↓             ↓                    ↓                      ↓                    ↓
+Interactive     "I need this!"  Microsoft          Email-based user       Guided tour         Celebrate!
+demo videos     Clear ROI       Entra ID           profile creation       All modules         Save first prompt
+                benefits        signup             with preferences       personalized        to Collection
 ```
 
 **Progressive Feature Introduction:**

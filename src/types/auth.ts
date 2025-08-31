@@ -1,13 +1,13 @@
 /**
- * VedUser Standard - Apps_Auth_Requirement.md Compliance
+ * Sutra User - Email-based authentication with Microsoft Entra ID default tenant
  *
- * This interface ensures 100% compliance with Vedprakash domain authentication requirements
- * and provides unified user data structure across all .vedprakash.net applications.
+ * This interface supports simplified authentication using any Microsoft account
+ * with email as the primary identifier and automatic user registration.
  */
 
-export interface VedUser {
-  /** Unique user identifier from Microsoft Entra ID (primary key) */
-  id: string;
+export interface SutraUser {
+  /** Email address serves as primary identifier */
+  id: string; // Email address
 
   /** Primary email address from Entra ID */
   email: string;
@@ -15,29 +15,39 @@ export interface VedUser {
   /** Full display name from Entra ID profile */
   name: string;
 
-  /** User's given name (first name) */
-  givenName: string;
+  /** Microsoft Entra ID tenant ID */
+  tenantId?: string;
 
-  /** User's family name (last name) */
-  familyName: string;
+  /** Microsoft Entra ID object ID */
+  objectId?: string;
 
-  /** App-specific permissions from JWT claims */
-  permissions: string[];
+  /** User role in Sutra application */
+  role: "user" | "admin";
 
-  /** Vedprakash domain profile information */
-  vedProfile: {
-    /** Vedprakash domain profile ID */
-    profileId: string;
-
-    /** User's subscription tier (guest for anonymous users) */
-    subscriptionTier: "free" | "premium" | "enterprise" | "guest";
-
-    /** List of enrolled Vedprakash apps */
-    appsEnrolled: string[];
-
-    /** User preferences across domain */
-    preferences: Record<string, any>;
+  /** User preferences */
+  preferences: {
+    defaultLLM: string;
+    theme: string;
+    notifications: boolean;
+    [key: string]: any;
   };
+
+  /** Usage statistics */
+  usage: {
+    totalPrompts: number;
+    totalCollections: number;
+    totalPlaybooks: number;
+    totalForgeProjects: number;
+  };
+
+  /** Account creation timestamp */
+  createdAt: string;
+
+  /** Last activity timestamp */
+  lastActive: string;
+
+  /** Account active status */
+  isActive: boolean;
 }
 
 /**
@@ -82,7 +92,7 @@ export interface GuestSession {
  */
 export interface AuthContextType {
   /** Current authenticated user or null */
-  user: VedUser | null;
+  user: SutraUser | null;
 
   /** Current guest session or null */
   guestSession: GuestSession | null;

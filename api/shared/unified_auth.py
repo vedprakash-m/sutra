@@ -14,7 +14,7 @@ import azure.functions as func
 
 from .auth_mocking import MockAuthManager
 from .auth_static_web_apps import StaticWebAppsAuthManager
-from .entra_auth import VedUser as EntraVedUser
+from .entra_auth import User as EntraUser
 from .entra_auth import validate_request_headers
 from .error_handling import ErrorType, SutraAPIError, SutraError
 from .models import User, UserRole

@@ -13,7 +13,7 @@ import {
   getSilentTokenRequestConfig,
   validateConfig,
 } from "@/config";
-import { VedUser, AuthContextType, EntraIdClaims } from "@/types/auth";
+import { SutraUser, AuthContextType, EntraIdClaims } from "@/types/auth";
 
 // Initialize MSAL with consolidated configuration
 const msalConfig = getMSALConfig();
@@ -60,21 +60,20 @@ interface AuthProviderProps {
  */
 function AuthProviderInternal({ children }: AuthProviderProps) {
   const { instance, accounts } = useMsal();
-  const [user, setUser] = useState<VedUser | null>(null);
+  const [user, setUser] = useState<SutraUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
-  const isAuthenticated =
-    !!user && user.vedProfile.subscriptionTier !== "guest";
-  const isGuest = user?.vedProfile.subscriptionTier === "guest";
-  const isAdmin = user?.permissions.includes("admin") || false;
+  const isAuthenticated = !!user;
+  const isGuest = false; // No guest role in new system
+  const isAdmin = user?.role === "admin";
 
   /**
    * Extract VedUser from MSAL account - Apps_Auth_Requirement.md Compliant
    */
   const createVedUserFromAccount = async (
     account: AccountInfo,
-  ): Promise<VedUser> => {
+  ): Promise<SutraUser> => {
     try {
       const idTokenClaims = account.idTokenClaims as unknown as EntraIdClaims;
 
@@ -103,22 +102,30 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
         userRole = "admin";
       }
 
-      const vedUser: VedUser = {
-        id: account.localAccountId || account.homeAccountId,
+      const sutraUser: SutraUser = {
+        id: account.username, // Use email as ID
         email: account.username,
         name: account.name || idTokenClaims?.name || account.username,
-        givenName: idTokenClaims?.given_name || "",
-        familyName: idTokenClaims?.family_name || "",
-        permissions: userRole === "admin" ? ["admin", "user"] : ["user"],
-        vedProfile: {
-          profileId: account.localAccountId || account.homeAccountId,
-          subscriptionTier: userRole === "admin" ? "enterprise" : "free",
-          appsEnrolled: ["sutra"],
-          preferences: {},
+        role: userRole,
+        tenantId: "common", // Using default tenant
+        objectId: account.localAccountId || account.homeAccountId,
+        preferences: {
+          defaultLLM: "gpt-4",
+          theme: "dark",
+          notifications: true,
         },
+        usage: {
+          totalPrompts: 0,
+          totalCollections: 0,
+          totalPlaybooks: 0,
+          totalForgeProjects: 0,
+        },
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        isActive: true,
       };
 
-      return vedUser;
+      return sutraUser;
     } catch (error) {
       console.error("Error creating VedUser from account:", error);
       throw error;
@@ -190,19 +197,27 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
               "🔧 Local development: creating mock authenticated user",
             );
 
-            const mockUser: VedUser = {
-              id: "admin-user-local-dev",
+            const mockUser: SutraUser = {
+              id: "vedprakash.m@outlook.com",
               email: "vedprakash.m@outlook.com",
               name: "Ved Prakash Mishra",
-              givenName: "Ved Prakash",
-              familyName: "Mishra",
-              permissions: ["admin", "user"],
-              vedProfile: {
-                profileId: "admin-user-local-dev",
-                subscriptionTier: "enterprise",
-                appsEnrolled: ["sutra"],
-                preferences: {},
+              role: "admin",
+              tenantId: "common",
+              objectId: "admin-user-local-dev",
+              preferences: {
+                defaultLLM: "gpt-4",
+                theme: "dark",
+                notifications: true,
               },
+              usage: {
+                totalPrompts: 0,
+                totalCollections: 0,
+                totalPlaybooks: 0,
+                totalForgeProjects: 0,
+              },
+              createdAt: new Date().toISOString(),
+              lastActive: new Date().toISOString(),
+              isActive: true,
             };
 
             setUser(mockUser);

@@ -13,7 +13,7 @@ export { useAuth } from "./UnifiedAuthProvider";
 // Re-export all auth-related types and interfaces from types
 export type {
   AuthContextType,
-  VedUser,
+  SutraUser,
   GuestSession,
   EntraIdClaims,
 } from "@/types/auth";

@@ -221,6 +221,61 @@ class DatabaseManager:
             logging.error(f"Error listing items from {container_name}: {e}")
             raise
 
+    # =============================================================================
+    # USER MANAGEMENT METHODS
+    # =============================================================================
+
+    async def get_user(self, email: str) -> Dict[str, Any]:
+        """Get a user by email address."""
+        if self._development_mode:
+            logging.info(f"DEV MODE: Getting user {email}")
+            # Return mock user for development
+            return {
+                "id": email,
+                "email": email,
+                "name": "Development User",
+                "tenant_id": "mock-tenant-id",
+                "object_id": "mock-object-id",
+                "role": "user",
+                "preferences": {"defaultLLM": "gpt-4", "theme": "light"},
+                "usage": {"total_prompts": 0, "total_collections": 0},
+                "created_at": "2025-08-30T00:00:00Z",
+                "last_active": "2025-08-30T00:00:00Z",
+                "is_active": True
+            }
+
+        try:
+            user_data = self.get_item("users", email, email)  # email as partition key
+            return user_data
+        except exceptions.CosmosResourceNotFoundError:
+            raise KeyError(f"User {email} not found")
+
+    async def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new user."""
+        if self._development_mode:
+            logging.info(f"DEV MODE: Creating user {user_data.get('email')}")
+            return user_data
+
+        return self.create_item("users", user_data)
+
+    async def update_user(self, email: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing user."""
+        if self._development_mode:
+            logging.info(f"DEV MODE: Updating user {email}")
+            # Get mock user and apply updates
+            user_data = await self.get_user(email)
+            user_data.update(updates)
+            return user_data
+
+        # Get existing user first
+        existing_user = await self.get_user(email)
+        
+        # Apply updates
+        existing_user.update(updates)
+        
+        # Save updated user
+        return self.upsert_item("users", existing_user)
+
 
 # Global database manager instance - initialized lazily
 _db_manager: Optional[DatabaseManager] = None

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.37.4.10188",
+      "templateHash": "12453361996301215284"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.KeyVault/vaults/{0}', 'sutra-kv')]",
+      "name": "[guid(resourceId('Microsoft.KeyVault/vaults', 'sutra-kv'), resourceId('Microsoft.Web/sites', 'sutra-flex-api-hvyqgbrvnx4ii'), 'Key Vault Secrets User')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', 'sutra-flex-api-hvyqgbrvnx4ii'), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.Storage/storageAccounts/{0}', 'sutrasa99')]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', 'sutrasa99'), resourceId('Microsoft.Web/sites', 'sutra-flex-api-hvyqgbrvnx4ii'), 'Storage Blob Data Contributor')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', 'sutra-flex-api-hvyqgbrvnx4ii'), '2023-12-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      }
+    }
+  ],
+  "outputs": {
+    "functionAppName": {
+      "type": "string",
+      "value": "sutra-flex-api-hvyqgbrvnx4ii"
+    },
+    "functionAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', 'sutra-flex-api-hvyqgbrvnx4ii'), '2023-12-01').defaultHostName)]"
+    },
+    "apiBaseUrl": {
+      "type": "string",
+      "value": "[format('https://{0}/api', reference(resourceId('Microsoft.Web/sites', 'sutra-flex-api-hvyqgbrvnx4ii'), '2023-12-01').defaultHostName)]"
+    },
+    "staticWebAppName": {
+      "type": "string",
+      "value": "sutra-frontend-hvyqgbrvnx4ii"
+    },
+    "staticWebAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/staticSites', 'sutra-frontend-hvyqgbrvnx4ii'), '2023-12-01').defaultHostname)]"
+    },
+    "appServicePlanName": {
+      "type": "string",
+      "value": "sutra-flex-plan"
+    },
+    "keyVaultUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', 'sutra-kv'), '2023-07-01').vaultUri]"
+    },
+    "storageAccountUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', 'sutrasa99'), '2023-01-01').primaryEndpoints.blob]"
+    },
+    "cosmosDbEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', 'sutra-db'), '2023-04-15').documentEndpoint]"
+    },
+    "resourceSummary": {
+      "type": "object",
+      "value": {
+        "consolidated": true,
+        "singleResourceGroup": true,
+        "singleSlot": true,
+        "singleEnvironment": true,
+        "costOptimized": true,
+        "resources": {
+          "cosmosDb": "sutra-db",
+          "keyVault": "sutra-kv",
+          "storageAccount": "sutrasa99",
+          "functionApp": "sutra-flex-api-hvyqgbrvnx4ii",
+          "appServicePlan": "sutra-flex-plan",
+          "staticWebApp": "sutra-frontend-hvyqgbrvnx4ii",
+          "logAnalytics": "sutra-logs",
+          "appInsights": "sutra-ai"
+        }
+      }
+    }
+  }
+}

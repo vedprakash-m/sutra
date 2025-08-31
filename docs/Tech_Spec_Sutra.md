@@ -21,7 +21,7 @@ Ved Mishra - July 2025 - Version: 2.0
 - **Frontend:** React 18/TypeScript interface with comprehensive prompt engineering tools, integrated Forge workspace, and real-time quality assessment
 - **Backend:** Azure Functions (Python 3.12) API ecosystem supporting prompts, collections, playbooks, structured product development workflows, and quality measurement infrastructure
 - **Database:** Cosmos DB with collections for Users, Prompts, Collections, Playbooks (including Forge project data), quality tracking, and comprehensive cost analytics
-- **Authentication:** Microsoft Entra ID integration with role-based access control (Agent, Contributor, PromptManager, Admin)
+- **Authentication:** Microsoft Entra ID default tenant integration with email-based user management
 - **LLM Integration:** Multi-LLM orchestration supporting GPT-4, Claude, Gemini, and custom models with intelligent routing, cost optimization, and quality-based model selection
 - **Storage:** Azure Blob Storage for document exports, artifacts, large file management, and quality reports
 
@@ -236,18 +236,30 @@ Sutra maintains a comprehensive Cosmos DB architecture optimized for multi-tenan
 
 **Database Collections:**
 
-**Users Collection**: Complete user profiles and authentication data
+**Users Collection**: Complete user profiles with email-based primary keys
 ```json
 {
-  "id": "user_guid",
-  "email": "user@domain.com",
-  "displayName": "User Name",
-  "role": "contributor|promptmanager|admin",
+  "id": "user_email@domain.com",
+  "email": "user_email@domain.com",
+  "name": "User Full Name",
+  "tenantId": "microsoft_tenant_id",
+  "objectId": "azure_ad_object_id",
+  "role": "Contributor",
   "preferences": {
-    "defaultLLM": "gpt-4o|claude-3|gemini-flash",
-    "theme": "light|dark",
-    "monthlyBudget": 100.00
+    "defaultLLM": "gpt-4",
+    "theme": "light",
+    "notifications": true
   },
+  "usage": {
+    "totalPrompts": 0,
+    "totalCollections": 0,
+    "totalPlaybooks": 0,
+    "totalForgeProjects": 0
+  },
+  "createdAt": "datetime",
+  "lastActive": "datetime",
+  "isActive": true
+}
   "usage": {
     "currentMonthCost": 45.60,
     "totalPrompts": 1247,

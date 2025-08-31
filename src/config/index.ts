@@ -29,16 +29,13 @@ const getEnvironmentInfo = () => {
   };
 };
 
-// Vedprakash Domain Authentication Constants (per Apps_Auth_Requirement.md)
+// Microsoft Entra ID Default Tenant Configuration (Simplified Authentication)
 export const AUTH_CONSTANTS = {
-  TENANT_ID: "80fe68b7-105c-4fb9-ab03-c9a818e35848", // vedid.onmicrosoft.com
-  CLIENT_ID: "db1e3417-e353-4255-b05e-2e1fffe25692", // Sutra app registration
-  AUTHORITY:
-    "https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848",
+  TENANT_ID: "common", // Use common for default tenant access
+  CLIENT_ID: import.meta.env.VITE_ENTRA_CLIENT_ID || "00000000-0000-0000-0000-000000000000", // App registration for default tenant
+  AUTHORITY: "https://login.microsoftonline.com/common",
   SCOPES: ["openid", "profile", "email", "offline_access"] as string[],
-  DOMAIN: "vedid.onmicrosoft.com",
-  ISSUER:
-    "https://login.microsoftonline.com/80fe68b7-105c-4fb9-ab03-c9a818e35848/v2.0",
+  ISSUER: "https://login.microsoftonline.com/common/v2.0",
 } as const;
 
 // API Configuration
@@ -47,7 +44,7 @@ export const getApiConfig = () => {
 
   return {
     baseUrl: env.isProduction
-      ? "https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api"
+      ? "https://sutra-flex-api-hvyqgbrvnx4ii.azurewebsites.net/api" // Updated to use Flex Function App
       : "/api", // Vite proxy handles local routing
     timeout: 30000,
     retryAttempts: 3,

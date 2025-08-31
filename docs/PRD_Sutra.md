@@ -204,9 +204,11 @@ Ved Mishra - July 2025 - Version: 3.0
 
 #### FR-012: Authentication & User Management
 
-- **Microsoft Entra ID Integration:** (vedid.onmicrosoft.com) for all platform features
+- **Microsoft Entra ID Default Tenant Integration:** Uses Microsoft's default tenant for seamless authentication
+- **Email-Based User Identity:** User email address serves as primary key for all user data
+- **Automatic User Registration:** First authentication automatically creates user profile in database
+- **Persistent User Data Management:** All subsequent logins access personalized data and preferences
 - **No Guest Access:** All platform modules require authentication for data persistence and collaboration
-- **VedUser Standard:** Interface compliance for consistent user experience
 - **Role-based Access Control:** Agent, Contributor, PromptManager, Admin roles across all modules
 
 #### FR-013: Analytics & Insights

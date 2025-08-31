@@ -25,7 +25,7 @@ export default function Dashboard() {
         activity: isFirstTime ? "first_visit" : "dashboard_visit",
         timestamp: new Date(),
         metadata: {
-          userRole: user.permissions.includes("admin") ? "admin" : "user",
+          userRole: user.role,
         },
       });
 

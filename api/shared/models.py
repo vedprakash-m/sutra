@@ -44,27 +44,34 @@ class LLMProvider(str, Enum):
 
 
 class User(BaseModel):
-    """User model."""
+    """User model with email-based primary key and Microsoft Entra ID integration."""
 
-    id: str
-    email: str
+    id: str  # Email address serves as primary key
+    email: str  # Same as id for consistency
     name: str
-    role: UserRole = UserRole.USER  # Single role, not array
+    tenant_id: Optional[str] = None  # Microsoft Entra ID tenant ID
+    object_id: Optional[str] = None  # Azure AD object ID
+    role: UserRole = UserRole.USER
+    preferences: Dict[str, Any] = Field(default_factory=dict)
+    usage: Dict[str, int] = Field(default_factory=lambda: {
+        "total_prompts": 0,
+        "total_collections": 0,
+        "total_playbooks": 0,
+        "total_forge_projects": 0
+    })
     created_at: datetime
-    updated_at: datetime
+    last_active: datetime
+    is_active: bool = True
 
     model_config = ConfigDict(use_enum_values=True)
 
-
-class UserPreferences(BaseModel):
-    """User preferences model."""
-
-    user_id: str
-    default_llm_providers: List[LLMProvider] = []
-    prompt_templates: Dict[str, str] = {}
-    ui_preferences: Dict[str, Any] = {}
-
-    model_config = ConfigDict(use_enum_values=True)
+    @field_validator('id', 'email')
+    @classmethod
+    def validate_email_format(cls, v: str) -> str:
+        """Ensure id and email are valid email addresses."""
+        if '@' not in v or '.' not in v.split('@')[-1]:
+            raise ValueError('Must be a valid email address')
+        return v.lower()  # Normalize to lowercase
 
 
 # =============================================================================
@@ -277,7 +284,7 @@ class CreatePromptRequest(BaseModel):
 
     @field_validator("tags")
     @classmethod
-    def validate_tags(cls, v):
+    def validate_tags(cls, v: List[str]) -> List[str]:
         return [tag.strip().lower() for tag in v if tag.strip()]
 
 
@@ -293,7 +300,7 @@ class UpdatePromptRequest(BaseModel):
 
     @field_validator("tags")
     @classmethod
-    def validate_tags(cls, v):
+    def validate_tags(cls, v: Optional[List[str]]) -> Optional[List[str]]:
         if v is not None:
             return [tag.strip().lower() for tag in v if tag.strip()]
         return v
@@ -309,7 +316,7 @@ class ExecutePromptRequest(BaseModel):
 
     @field_validator("providers")
     @classmethod
-    def validate_providers(cls, v):
+    def validate_providers(cls, v: List[LLMProvider]) -> List[LLMProvider]:
         if not v:
             return [LLMProvider.OPENAI]  # Default to OpenAI
         return v

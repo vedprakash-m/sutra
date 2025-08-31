@@ -19,5 +19,17 @@
     "healthCheckWindow": "00:02:00",
     "healthCheckThreshold": 6,
     "counterThreshold": 0.8
+  },
+  "concurrency": {
+    "dynamicConcurrencyEnabled": true,
+    "snapshotPersistenceEnabled": true
+  },
+  "customHandler": {
+    "description": {
+      "defaultExecutablePath": "python",
+      "workingDirectory": "",
+      "arguments": []
+    },
+    "enableForwardingHttpRequest": false
   }
 }

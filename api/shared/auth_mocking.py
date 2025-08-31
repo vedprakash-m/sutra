@@ -44,7 +44,7 @@ class MockAuthManager:
     async def validate_token(self, token: str) -> Dict[str, Any]:
         """Mock token validation."""
         if token == "invalid-token":
-            from .auth import AuthenticationError
+            from .entra_auth import AuthenticationError
 
             raise AuthenticationError("Invalid token")
 

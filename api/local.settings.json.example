@@ -11,7 +11,10 @@
     "STORAGE_ACCOUNT_URL": "https://sutrasa99.blob.core.windows.net/",
     "AZURE_CLIENT_ID": "production-client-id",
     "AZURE_CLIENT_SECRET": "production-client-secret",
-    "AZURE_TENANT_ID": "80fe68b7-105c-4fb9-ab03-c9a818e35848",
+    "AZURE_TENANT_ID": "common",
+    "ENTRA_CLIENT_ID": "00000000-0000-0000-0000-000000000000",
+    "ENTRA_TENANT_ID": "common",
+    "ENTRA_AUDIENCE": "00000000-0000-0000-0000-000000000000",
     "SUTRA_ENVIRONMENT": "production"
   }
 }

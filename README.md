@@ -1,20 +1,18 @@
 # Sutra - Multi-LLM Prompt Studio
 
-> **🚀 Production-Ready Enterprise AI Platform**
+> **Enterprise AI Platform for Prompt Engineering and Workflow Orchestration**
 
 <div align="center">
 
-[![Production Status](https://img.shields.io/badge/status-production_ready-success.svg)](https://sutra.vedprakash.net)
 [![License](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
 [![Azure](https://img.shields.io/badge/cloud-azure-0078d4.svg)](https://azure.microsoft.com)
 [![TypeScript](https://img.shields.io/badge/typescript-5.0+-3178c6.svg)](https://www.typescriptlang.org)
 [![Python](https://img.shields.io/badge/python-3.12+-3776ab.svg)](https://www.python.org)
-[![Test Coverage](https://img.shields.io/badge/coverage-100%25_frontend-brightgreen.svg)](#testing--quality)
-[![Auth Compliance](https://img.shields.io/badge/auth-100%25_compliant-green.svg)](#authentication)
+[![Authentication](https://img.shields.io/badge/auth-microsoft_entra_id-brightgreen.svg)](#authentication)
 
-**Enterprise-grade platform for prompt engineering, multi-LLM optimization, and AI workflow orchestration**
+**Comprehensive platform for prompt engineering, multi-LLM optimization, and AI workflow orchestration**
 
-[🌐 Live Application](https://sutra.vedprakash.net) • [✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation)
+[✨ Features](#features) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture) • [📖 Documentation](#documentation)
 
 </div>
 
@@ -22,264 +20,222 @@
 
 ## 🎯 **What is Sutra?**
 
-Sutra is an **enterprise-grade multi-LLM prompt studio** that transforms how teams create, optimize, and deploy AI solutions. Built on Azure with serverless architecture, it provides a unified platform for prompt engineering, multi-LLM comparison, and AI workflow orchestration with enterprise security and cost management.
+Sutra is a comprehensive Multi-LLM Prompt Studio that provides systematic tools for designing, managing, and orchestrating AI prompts and workflows. Built on modern Azure serverless architecture, it offers integrated capabilities across prompt engineering, workflow automation, and structured product development.
 
-**🔥 Why teams choose Sutra:**
+**Core Platform Modules:**
 
-- **🚀 Zero-Friction Trial**: Anonymous users can test AI capabilities without signup
-- **🤖 Multi-LLM Optimization**: Compare responses across OpenAI GPT, Google Gemini, Anthropic Claude
-- **🔐 Enterprise Security**: Microsoft Entra ID authentication with comprehensive security headers
-- **📊 Production-Proven**: Live deployment with 100% frontend test coverage (30/30 test suites, 508/508 tests passing)
-- **⚡ Cost-Optimized**: Serverless Azure architecture with real-time cost monitoring
-- **💰 Budget Management**: Intelligent cost controls with predictive analytics
+- **🎨 Prompt Studio**: Advanced prompt creation, optimization, and multi-LLM testing
+- **📁 Collections**: Hierarchical organization and team sharing of prompts and templates
+- **🔄 Playbooks**: Multi-step AI workflow orchestration and automation
+- **📊 Analytics**: Usage insights, performance metrics, and cost optimization
+- **� Forge**: Systematic idea-to-implementation development workflows (advanced feature)
 
-### **🏆 Production Status (July 2025)**
+**Built for Professional Teams:**
 
-- ✅ **Live Production Environment** - Fully operational since July 2025
-- ✅ **508 Frontend Tests Passing** (100% test success rate)
-- ✅ **459 Backend Tests Available** (comprehensive pytest framework)
-- ✅ **100% Authentication Compliance** (Microsoft Entra ID integration)
-- ✅ **Enterprise Security Implementation** (CSP, HSTS, CORS, security headers)
-- ✅ **Production Azure Infrastructure** (Functions, Static Web Apps, Cosmos DB)
-- ✅ **Comprehensive Cost Management** (Real-time tracking and automated controls)
-
-### **🌐 Production Environment**
-
-- **🚀 Application**: https://sutra.vedprakash.net
-- **📊 API Health**: https://sutra-api-hvyqgbrvnx4ii.azurewebsites.net/api/health
-- **🔐 Authentication**: Microsoft Entra ID (vedid.onmicrosoft.com)
-- **📈 Monitoring**: Azure Application Insights with real-time telemetry
-
-### **🎯 Perfect For**
-
-| **Role**               | **Primary Use Case**               | **Impact**                         |
-| ---------------------- | ---------------------------------- | ---------------------------------- |
-| **🎨 Content Teams**   | Consistent brand voice across LLMs | 3x faster content creation         |
-| **🛠️ Developer Teams** | AI-powered feature development     | Production-ready APIs in hours     |
-| **📈 Product Teams**   | AI workflow orchestration          | Streamlined AI operations pipeline |
-| **🎯 Marketing Teams** | Multi-channel content optimization | Cross-platform consistency         |
+| **Role**               | **Primary Use Case**               | **Key Benefits**                    |
+| ---------------------- | ---------------------------------- | ----------------------------------- |
+| **🎨 Content Teams**   | Consistent prompt templates        | Standardized AI-generated content   |
+| **🛠️ Developer Teams** | AI integration and automation      | Streamlined AI workflow development |
+| **📈 Product Teams**   | AI-powered process optimization    | Systematic approach to AI adoption  |
+| **🎯 Marketing Teams** | Multi-channel content creation     | Cross-platform content consistency  |
 
 ---
 
 ## ✨ **Key Features**
 
-### 🎯 **Intelligent Prompt Engineering**
+### 🎯 **Multi-LLM Prompt Engineering**
 
-- **🧠 AI-Powered PromptCoach**: Get contextual suggestions and optimization recommendations
-- **🔄 Multi-LLM Comparison**: Test prompts across GPT-4, Claude 3.5, Gemini Pro simultaneously
-- **🎛️ Dynamic Variables**: Use `{{placeholders}}` for flexible, reusable prompt templates
-- **⚡ Real-time Validation**: Instant feedback on prompt structure and performance
+- **� LLM Provider Support**: OpenAI GPT-4, Anthropic Claude, Google Gemini
+- **🔄 Side-by-Side Comparison**: Test prompts across multiple models simultaneously  
+- **🎛️ Dynamic Variables**: Use `{{placeholders}}` for flexible, reusable templates
+- **📝 Prompt Optimization**: AI-powered suggestions for prompt improvement
 
-### 📁 **Advanced Prompt Management**
+### 📁 **Advanced Organization & Collaboration**
 
-- **📚 Hierarchical Collections**: Organize prompts with smart categorization and tagging
-- **🕰️ Version Control**: Track prompt evolution with detailed history and comparisons
-- **👥 Team Collaboration**: Share prompts and collections with role-based permissions
-- **🔍 Powerful Search**: Semantic search with filtering by tags, performance, and usage
+- **📚 Collections Management**: Hierarchical organization with smart categorization
+- **🕰️ Version Control**: Track prompt evolution and changes over time
+- **👥 Team Sharing**: Role-based permissions and collaborative editing
+- **🔍 Search & Discovery**: Find prompts by content, tags, and performance metrics
 
 ### 🤖 **Workflow Automation (Playbooks)**
 
-- **🎨 Visual Builder**: Drag-and-drop interface for complex multi-step AI workflows
-- **⚙️ Rich Step Types**: Prompt execution, manual reviews, conditional logic, text processing
-- **🔗 Data Pipeline**: Extract variables from LLM outputs to power subsequent steps
-- **📊 Execution Tracking**: Real-time logs and analytics for optimization
+- **🎨 Visual Workflow Builder**: Drag-and-drop interface for multi-step processes
+- **⚙️ Step Types**: Prompt execution, manual reviews, conditional logic, data processing
+- **🔗 Variable Pipeline**: Extract data from outputs to power subsequent steps
+- **📊 Execution Monitoring**: Real-time logs and performance tracking
 
-### 🛡️ **Enterprise Security & Authentication**
+### 🛡️ **Enterprise Authentication & Security**
 
-- **🔐 Microsoft Entra ID**: Enterprise-grade authentication with vedid.onmicrosoft.com tenant
-- **🔑 JWKS Caching**: JWT signature validation with 1-hour TTL for performance
-- **�️ Security Headers**: CSP, HSTS, X-Frame-Options, and comprehensive security implementation
-- **🎭 Role-Based Access**: Granular user/admin permissions with VedUser standardization
-- **🔒 Azure Key Vault**: Enterprise-grade secret management and encryption at rest/transit
+- **🔐 Microsoft Entra ID Integration**: Default tenant authentication for broad accessibility
+- **📧 Email-Based User Management**: Simplified user identification and data organization
+- **🔑 Automatic User Registration**: First sign-in creates personalized user profile
+- **🎭 Role-Based Access Control**: User and Admin roles with appropriate permissions
 
-### 🔧 **Development & Validation**
+### 🔨 **Structured Development (Forge)**
 
-- **🧪 Comprehensive Testing**: 967 total tests (508 frontend + 459 backend) with 98.7% coverage
-- **🔄 Unified Validation**: Full-stack validation with 100% CI/CD environment parity
-- **🐳 Docker Integration**: Complete container orchestration with health checks and monitoring
-- **📦 Dependency Management**: Synchronized requirements across local and CI environments
-- **🛠️ Enhanced Tooling**: Automatic dependency gap detection and resolution
-- **⚡ Pre-Commit Validation**: Docker configuration validation prevents CI/CD failures
-- **⚡ Pre-commit Validation**: Catch issues before they reach CI/CD pipeline
-
-### **🔧 Enhanced Validation Process**
-
-Our validation system ensures production readiness through:
-
-- **🔄 Unified Full-Stack Validation**: Single script runs all frontend and backend tests
-- **⚖️ CI/CD Environment Simulation**: Local validation simulates production CI environment
-- **📦 Dependency Synchronization**: Automated checks ensure local and CI dependencies match
-- **🔍 Gap Detection**: Identifies missing dependencies before they cause CI failures
-- **⚡ Pre-commit Validation**: Comprehensive checks prevent issues from reaching CI/CD pipeline
-
-```bash
-# Run full validation (recommended before commits)
-./scripts/unified-validation.sh
-
-# Run with CI simulation mode
-./scripts/unified-validation.sh --mode ci
-
-# Development mode (faster iteration)
-./scripts/unified-validation.sh --mode dev
-```
-
-### 👥 **Anonymous & Guest Support**
-
-- **🎭 Guest Mode**: Full functionality without registration for trial users
-- **⚡ Rate Limiting**: Smart throttling with usage tracking for anonymous users
-- **🔄 Seamless Upgrade**: One-click conversion from guest to authenticated user
-- **📊 Usage Analytics**: Comprehensive tracking for both authenticated and anonymous users
+- **📋 Idea Refinement**: Systematic validation and improvement of product concepts
+- **� PRD Generation**: Structured product requirements documentation
+- **🎨 UX Requirements**: User experience and design specification generation
+- **🏗️ Technical Analysis**: Architecture evaluation and feasibility assessment
+- **📖 Implementation Guides**: Detailed development playbooks and coding prompts
 
 ---
 
 ## 🚀 **Quick Start**
 
-### **🌐 Try the Live Application**
+### **📋 Prerequisites**
 
-Visit our production environment: **https://sutra.vedprakash.net**
+- Microsoft account (any @outlook.com, @hotmail.com, @live.com, or organizational account)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
-1. **Anonymous Trial**: Start testing AI capabilities immediately (5 free calls/day)
-2. **Sign in** with Microsoft Entra ID for full access
-3. **Create your first prompt** in the Prompt Studio
-4. **Test across multiple LLMs** to compare responses (OpenAI, Gemini, Claude)
-5. **Save to collections** for organization and team collaboration
-6. **Build workflows** with the Playbook automation system
+### **🌐 Access the Platform**
 
-### **⚡ Local Development Setup**
+1. **Visit**: Navigate to the Sutra platform in your browser
+2. **Sign In**: Use Microsoft Entra ID authentication (any Microsoft account)
+3. **Auto-Registration**: Your first sign-in automatically creates your user profile
+4. **Start Creating**: Begin with prompt engineering in the Prompt Studio
 
-```bash
-# Quick frontend development setup
-git clone https://github.com/vedprakashmishra/sutra.git
-cd sutra
-npm install
-npm run dev
-
-# ✅ Auto-connects to production API for development
-# ✅ Mock authentication for local testing
-```
-
-### **💻 Full Development Environment**
+### **🛠️ Development Setup**
 
 ```bash
 # Clone the repository
-git clone https://github.com/vedprakashmishra/sutra.git
+git clone https://github.com/vedprakash-m/sutra.git
 cd sutra
 
-# Prerequisites (Required for E2E testing and CI/CD parity)
+# Prerequisites
 # - Node.js 18+
 # - Python 3.12+
-# - Docker Desktop (for E2E testing)
+# - Azure Functions Core Tools (for backend development)
 
-# Install dependencies
+# Frontend development (connects to production API)
+npm install
+npm run dev
+
+# Full local development environment
 npm install
 cd api && pip install -r requirements.txt && cd ..
 
-# Set up development tools
-pre-commit install  # Install pre-commit hooks
-
-# Option A: Frontend only (uses production API)
-npm run dev
-
-# Option B: Full local development
-# Terminal 1: Start local backend
+# Start backend (Terminal 1)
 cd api && func start --port 7071
 
-# Terminal 2: Start frontend
+# Start frontend (Terminal 2)  
 npm run dev
-
-# Option C: Docker environment with all services
-npm run dev:local
 ```
 
-### **🔍 Development Validation**
+### **🧪 Testing & Validation**
 
 ```bash
-# Run comprehensive validation (recommended before commits)
-./scripts/unified-validation.sh local all
+# Frontend testing
+npm run test              # Run Jest test suite
+npm run test:coverage     # Generate coverage report
+npm run lint             # Code quality checks
 
-# Quick validation check
-./scripts/unified-validation.sh local core
+# Backend testing
+cd api && python -m pytest  # Run Python test suite
 
-# Validate Docker configuration (prevents CI/CD failures)
-./scripts/validate-docker-config.sh
-
-# Complete E2E environment validation
-./scripts/validate-e2e-environment.sh
-
-# Simulate CI environment locally (before pushing to main)
-./scripts/pre-ci-validation.sh
-
-# Run specific test suites
-npm test                           # Frontend tests (508 tests)
-cd api && python -m pytest && cd .. # Backend tests (459 tests)
+# End-to-end testing
+npm run test:e2e         # Playwright e2e tests with Docker
 ```
 
-### **🚨 CI/CD Troubleshooting**
+---
 
-If CI/CD pipeline fails:
+## 🏗️ **Architecture**
 
-1. **Run Local CI Simulation**: `./scripts/pre-ci-validation.sh`
-2. **Check Error Details**: See [CI/CD Troubleshooting Guide](docs/CI_CD_Troubleshooting.md)
-3. **Environment Differences**: Run `./scripts/cross-platform-validation.sh`
-4. **Quick Fix**: Ensure dependencies are synchronized with `npm ci && npm run build`
+### **Technology Stack**
 
-The project includes enhanced validation that catches CI issues before they occur:
+- **Frontend**: React 18 + TypeScript + Vite
+- **Backend**: Azure Functions (Python 3.12)
+- **Database**: Azure Cosmos DB
+- **Authentication**: Microsoft Entra ID (default tenant)
+- **Storage**: Azure Blob Storage
+- **Hosting**: Azure Static Web Apps + Function Apps
 
-- **Pre-commit hooks**: Validate code quality and formatting
-- **Pre-push validation**: Full CI simulation for main branch, quick checks for features
-- **Cross-platform compatibility**: Ensure code works across development environments
-  docker-compose up -d
+### **Core Components**
 
-````
-
-### **✅ Testing & Validation**
-
-```bash
-# Frontend testing (92%+ coverage)
-npm run test              # Unit tests with mock authentication
-npm run test:coverage     # Coverage report
-
-# Backend testing (95%+ coverage)
-cd api && python -m pytest --cov=. --cov-report=xml
-
-# End-to-end testing (Enhanced Infrastructure)
-npm run e2e:setup         # Start E2E environment with Docker
-npm run test:e2e          # Run Playwright tests
-npm run e2e:cleanup       # Clean up E2E resources
-
-# E2E Environment Management
-npm run e2e:logs          # View service logs
-````
-
-### **🔧 Code Quality & Git Hooks Setup**
-
-Set up comprehensive code quality enforcement for development:
-
-```bash
-# One-time setup for Git hooks and pre-commit
-./scripts/setup-git-hooks.sh
-
-# Manual pre-commit installation (if needed)
-pip install pre-commit
-pre-commit install
-
-# Run all quality checks manually
-pre-commit run --all-files
-
-# Quality checks include:
-# ✅ ESLint & TypeScript validation
-# ✅ Python Black formatting & flake8 linting
-# ✅ Prettier code formatting
-# ✅ Security scanning (detect-secrets)
-# ✅ Infrastructure validation (Bicep/Azure)
-# ✅ Shell script validation
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SUTRA PLATFORM ARCHITECTURE                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Prompt Studio   │  │   Collections   │  │   Playbooks     │ │
+│  │   Engineering   │  │   Management    │  │  Orchestration  │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   Analytics &   │  │  Authentication │  │ Forge Projects  │ │
+│  │  Cost Tracking  │  │   & Security    │  │  (Advanced)     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ Azure Functions | Cosmos DB | Entra ID | Blob Storage | SWA     │
+│ OpenAI | Anthropic | Google | Multi-LLM Orchestration           │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Quality Hooks Enforced:**
+### **Authentication Flow**
 
-- 🔒 **Security**: Secret detection, private key scanning
-- 🎨 **Formatting**: Black (Python), Prettier (TS/JS), consistent styling
-- 🐛 **Linting**: ESLint, flake8, TypeScript type checking
+1. **Microsoft Entra ID**: Users authenticate with any Microsoft account
+2. **Token Validation**: JWT tokens validated against Microsoft's JWKS endpoint
+3. **User Creation**: First authentication automatically creates user profile
+4. **Session Management**: Persistent user state across platform modules
+5. **Email-Based Identity**: User email serves as primary identifier for all data
+
+### **Database Schema**
+
+**Users Collection** (Cosmos DB):
+- **Primary Key**: User email address
+- **Authentication**: Microsoft tenant ID and object ID
+- **Preferences**: LLM defaults, UI theme, notification settings
+- **Usage Tracking**: Prompts, collections, playbooks, and Forge project metrics
+- **Roles**: User or Admin with appropriate permissions
+
+---
+
+## 📖 **Documentation**
+
+### **Development Documentation**
+
+- **[Product Requirements (PRD)](docs/PRD_Sutra.md)**: Complete feature specifications and requirements
+- **[Technical Specification](docs/Tech_Spec_Sutra.md)**: Architecture, API design, and implementation details  
+- **[User Experience Design](docs/User_Experience_Sutra.md)**: UI/UX specifications and design patterns
+- **[Development Metadata](docs/metadata.md)**: Project status, implementation tracking, and deployment information
+
+### **Implementation Resources**
+
+- **[Authentication Modernization](AUTHENTICATION_MODERNIZATION_SUMMARY.md)**: Recent authentication system updates
+- **API Documentation**: Available at `/api/docs` when running backend locally
+- **Component Documentation**: Inline TypeScript documentation throughout frontend codebase
+
+### **Getting Help**
+
+- **Issues**: Report bugs and feature requests via GitHub Issues
+- **Development**: See technical documentation for API references and architecture details
+- **Deployment**: Follow Azure deployment guides in the documentation folder
+
+---
+
+## 📄 **License**
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Run tests to ensure quality (`npm run test && cd api && python -m pytest`)
+4. Commit your changes (`git commit -am 'Add new feature'`)
+5. Push to the branch (`git push origin feature/your-feature`)
+6. Create a Pull Request
+
+**Development Standards:**
+- Follow TypeScript and Python coding conventions
+- Include tests for new functionality
+- Update documentation for user-facing changes
+- Ensure all tests pass before submitting PR
+
 - 📋 **Validation**: YAML/JSON syntax, Bicep templates, shell scripts
 - 📦 **Dependencies**: NPM and Python package validation
 - 🖥️ **Cross-Platform**: Platform compatibility checks for CI/CD
@@ -327,30 +283,6 @@ npm run e2e:validate # Validate E2E environment
 
 ## 🏗️ **Architecture**
 
-### **🎯 Cost-Optimized Azure Architecture**
-
-Sutra implements a **two-tier architecture** that separates persistent data from compute resources, enabling **70-80% cost savings** during development downtime without data loss.
-
-```
-
-┌─────────────────────────────────────────────────────────────┐
-│ 🔄 COMPUTE TIER (Auto-Scale) │
-├─────────────────────────────────────────────────────────────┤
-│ 📱 Static Web App (React + TypeScript + Vite) │
-│ ⚡ Azure Functions (Python 3.11 + FastAPI) │
-│ 📊 Application Insights (Monitoring & Analytics) │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ 💾 PERSISTENT TIER (Always-On) │
-├─────────────────────────────────────────────────────────────┤
-│ 🗄️ Cosmos DB (NoSQL, Serverless Mode) │
-│ 🔐 Key Vault (Secrets & Certificate Management) │
-│ 📦 Storage Account (Blob Storage & File Shares) │
-└─────────────────────────────────────────────────────────────┘
-
-````
-
 ### **🛠️ Technology Stack**
 
 | **Layer**          | **Technology**                | **Purpose**                  |
@@ -360,16 +292,16 @@ Sutra implements a **two-tier architecture** that separates persistent data from
 | **Database**       | Azure Cosmos DB (NoSQL)       | Global-scale data storage    |
 | **Authentication** | Microsoft Entra ID + MSAL     | Enterprise identity platform |
 | **Infrastructure** | Azure Bicep Templates         | Infrastructure as Code       |
-| **Testing**        | Jest + Pytest + Playwright    | 95%+ test coverage           |
+| **Testing**        | Jest + Pytest + Playwright    | Active development           |
 | **CI/CD**          | GitHub Actions                | Automated deployment         |
 
 ### **🔐 Security Architecture**
 
-- **🎯 Microsoft Entra ID**: Primary authentication with vedid.onmicrosoft.com tenant
+- **🎯 Microsoft Entra ID**: Default tenant authentication with broad accessibility
 - **🔑 JWKS Caching**: JWT signature validation with TTLCache (1-hour TTL)
-- **�️ Security Headers**: Enterprise-grade CSP, HSTS, X-Frame-Options implementation
-- **� Azure Key Vault**: Centralized secret management with role-based access
-- **👤 VedUser Standard**: Unified user object across frontend and backend
+- **🛡️ Security Headers**: Enterprise-grade CSP, HSTS, X-Frame-Options implementation
+- **🔐 Azure Key Vault**: Centralized secret management with role-based access
+- **👤 Email-Based Users**: Unified user management with email as primary identifier
 - **🎭 Fallback Auth**: Azure Static Web Apps authentication for development
 - **📊 Audit Logging**: Comprehensive activity tracking
 - **🔍 Security Scanning**: Automated vulnerability assessment
@@ -378,14 +310,14 @@ Sutra implements a **two-tier architecture** that separates persistent data from
 
 ## 📊 **Testing & Quality**
 
-### **🎯 Exceptional Test Coverage**
+### **🎯 Comprehensive Test Suite**
 
 | **Component**        | **Coverage** | **Tests**           | **Status**              |
 | -------------------- | ------------ | ------------------- | ----------------------- |
-| **Frontend (Jest)**  | Full Suite   | 508 tests           | ✅ All passing          |
-| **Backend (Pytest)** | 98.7%        | 453/459             | ✅ Production ready     |
+| **Frontend (Jest)**  | Full Suite   | 488 tests           | ✅ 474 passing, 14 failing |
+| **Backend (Pytest)** | 98.7%        | 372 tests           | ✅ Production ready     |
 | **E2E (Playwright)** | Enhanced     | Critical paths      | ✅ CI/CD parity         |
-| **Total Full-Stack** | **98.7%**    | **967 tests total** | **✅ Production Ready** |
+| **Total Full-Stack** | **98.7%**    | **860+ tests total** | **🔄 Active development** |
 
 ### **🔧 Enhanced E2E Infrastructure**
 
@@ -420,7 +352,7 @@ We welcome contributions! Please see our contributing guidelines for details on 
 ```bash
 # Prerequisites
 node --version  # Requires Node.js 18+
-python --version  # Requires Python 3.11+
+python --version  # Requires Python 3.12+
 docker --version  # Required for local development
 az --version  # Required for Bicep infrastructure templates
 
@@ -447,22 +379,22 @@ cd api && pip install -r requirements.txt
 
 ## 🗺️ **Roadmap**
 
-### **🎯 Current: Production Operations (Q2 2025)**
+### **🎯 Current: Production Operations (Q1 2025)**
 
-- ✅ Live production environment with 99.9% uptime
+- ✅ Active development environment with robust infrastructure
 - ✅ Microsoft Entra External ID authentication
 - ✅ Core features: Prompts, Collections, Playbooks
 - 🔄 User onboarding optimization
 - 🔄 Performance monitoring and analytics
 
-### **📈 Phase 1: Advanced Features (Q3 2025)**
+### **📈 Phase 1: Advanced Features (Q2 2025)**
 
 - 🔮 AI-powered prompt optimization engine
 - 📱 Mobile-responsive design improvements
 - 🤖 Advanced LLM integration (GPT-4o, Claude-3.5-Sonnet)
 - 📊 Enhanced analytics and reporting
 
-### **🌐 Phase 2: Enterprise Scale (Q4 2025)**
+### **🌐 Phase 2: Enterprise Scale (Q3 2025)**
 
 - 🏢 Multi-tenant architecture
 - 🔗 Third-party integrations and marketplace
@@ -473,7 +405,7 @@ cd api && pip install -r requirements.txt
 
 ## 🏗️ **Recent Updates: AI Cost Management & Automation System**
 
-### **✨ New Features Implemented (June 2025)**
+### **✨ New Features Implemented (December 2024)**
 
 #### **🔍 Real-time Budget Tracking**
 
@@ -566,7 +498,7 @@ This project is licensed under the **GNU General Public License v3.0** - see the
 [![🐛 Report Issues](https://img.shields.io/badge/Issues-Welcome-blue)](https://github.com/vedprakashmishra/sutra/issues)
 [![💡 Request Features](https://img.shields.io/badge/Features-Request-green)](https://github.com/vedprakashmishra/sutra/issues/new)
 
-**🚀 Production-Ready • 👥 Team-Focused • 💰 Cost-Optimized**
+**🚀 Feature-Rich • 👥 Team-Focused • 💰 Cost-Optimized**
 
 _Transform your AI operations with enterprise-grade prompt engineering_
 

@@ -16,17 +16,19 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from cachetools import TTLCache
 
-from .models import User, UserRole
 from .database import DatabaseManager
+from .models import User, UserRole
 
 
 class AuthenticationError(Exception):
     """Authentication related errors."""
+
     pass
 
 
 class AuthorizationError(Exception):
     """Authorization related errors."""
+
     pass
 
 
@@ -74,7 +76,7 @@ class EntraAuthManager:
                 self._auth_config = {
                     "client_id": os.getenv("ENTRA_CLIENT_ID", "sutra-app-client-id"),
                     "tenant_id": os.getenv("ENTRA_TENANT_ID", "common"),  # Use common for default tenant
-                    "audience": os.getenv("ENTRA_AUDIENCE", "sutra-app-client-id")
+                    "audience": os.getenv("ENTRA_AUDIENCE", "sutra-app-client-id"),
                 }
 
         return self._auth_config
@@ -124,7 +126,7 @@ class EntraAuthManager:
                 token,
                 public_key,
                 algorithms=["RS256"],
-                options={"verify_signature": True, "verify_exp": True, "verify_aud": False}
+                options={"verify_signature": True, "verify_exp": True, "verify_aud": False},
             )
 
             return decoded
@@ -177,9 +179,9 @@ class EntraAuthManager:
             # Validate issuer - allow common tenant for default tenant access
             valid_issuers = [
                 f"https://login.microsoftonline.com/{tenant_id}/v2.0",
-                "https://login.microsoftonline.com/common/v2.0"
+                "https://login.microsoftonline.com/common/v2.0",
             ]
-            
+
             if decoded.get("iss") not in valid_issuers:
                 raise AuthenticationError(f"Invalid token issuer. Expected one of: {valid_issuers}")
 
@@ -207,32 +209,31 @@ class EntraAuthManager:
             email = token_claims.get("email") or token_claims.get("preferred_username")
             if not email:
                 raise AuthenticationError("No email found in token")
-            
+
             email = email.lower()  # Normalize email
-            name = token_claims.get("name") or f"{token_claims.get('given_name', '')} {token_claims.get('family_name', '')}".strip()
+            name = (
+                token_claims.get("name")
+                or f"{token_claims.get('given_name', '')} {token_claims.get('family_name', '')}".strip()
+            )
             tenant_id = token_claims.get("tid")
             object_id = token_claims.get("oid")
 
             # Try to get existing user
             try:
                 existing_user_data = await self.db_manager.get_user(email)
-                
+
                 # Convert to User model
                 existing_user = User(**existing_user_data)
-                
+
                 # Update last active time and any missing fields
-                updates = {
-                    "last_active": datetime.now(timezone.utc),
-                    "tenant_id": tenant_id,
-                    "object_id": object_id
-                }
-                
+                updates = {"last_active": datetime.now(timezone.utc), "tenant_id": tenant_id, "object_id": object_id}
+
                 # Update name if it's different and not empty
                 if name and name != existing_user.name:
                     updates["name"] = name
 
                 await self.db_manager.update_user(email, updates)
-                
+
                 # Return updated user data
                 existing_user.last_active = updates["last_active"]
                 if "name" in updates:
@@ -241,9 +242,9 @@ class EntraAuthManager:
                     existing_user.tenant_id = updates["tenant_id"]
                 if "object_id" in updates:
                     existing_user.object_id = updates["object_id"]
-                
+
                 return existing_user
-                
+
             except KeyError:
                 # User doesn't exist, create new user
                 now = datetime.now(timezone.utc)
@@ -254,20 +255,11 @@ class EntraAuthManager:
                     tenant_id=tenant_id,
                     object_id=object_id,
                     role=UserRole.USER,
-                    preferences={
-                        "defaultLLM": "gpt-4",
-                        "theme": "light",
-                        "notifications": True
-                    },
-                    usage={
-                        "total_prompts": 0,
-                        "total_collections": 0,
-                        "total_playbooks": 0,
-                        "total_forge_projects": 0
-                    },
+                    preferences={"defaultLLM": "gpt-4", "theme": "light", "notifications": True},
+                    usage={"total_prompts": 0, "total_collections": 0, "total_playbooks": 0, "total_forge_projects": 0},
                     created_at=now,
                     last_active=now,
-                    is_active=True
+                    is_active=True,
                 )
 
                 # Convert to dict for database storage
@@ -314,6 +306,7 @@ entra_auth_manager = EntraAuthManager()
 
 def require_auth(required_role: Optional[UserRole] = None):
     """Decorator to require authentication and optionally a specific role."""
+
     def decorator(func):
         @wraps(func)
         async def wrapper(req: func.HttpRequest) -> func.HttpResponse:
@@ -336,24 +329,25 @@ def require_auth(required_role: Optional[UserRole] = None):
                 return func.HttpResponse(
                     json.dumps({"error": "Authentication required", "message": str(e)}),
                     status_code=401,
-                    headers={"Content-Type": "application/json"}
+                    headers={"Content-Type": "application/json"},
                 )
             except AuthorizationError as e:
                 logging.warning(f"Authorization failed: {e}")
                 return func.HttpResponse(
                     json.dumps({"error": "Insufficient permissions", "message": str(e)}),
                     status_code=403,
-                    headers={"Content-Type": "application/json"}
+                    headers={"Content-Type": "application/json"},
                 )
             except Exception as e:
                 logging.error(f"Authentication decorator error: {e}")
                 return func.HttpResponse(
                     json.dumps({"error": "Internal server error"}),
                     status_code=500,
-                    headers={"Content-Type": "application/json"}
+                    headers={"Content-Type": "application/json"},
                 )
 
         return wrapper
+
     return decorator
 
 
@@ -371,16 +365,16 @@ async def validate_request_headers(headers: Dict[str, str]) -> Optional[User]:
         auth_header = headers.get("Authorization") or headers.get("authorization")
         if not auth_header:
             return None
-            
+
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
         else:
             token = auth_header
-            
+
         # Initialize auth manager and validate token
         auth_manager = EntraAuthManager()
         user_info = await auth_manager.validate_token(token)
-        
+
         if user_info:
             # Convert to User
             user = User(
@@ -390,27 +384,18 @@ async def validate_request_headers(headers: Dict[str, str]) -> Optional[User]:
                 role=UserRole.ADMIN if user_info.get("email") == "vedprakash.m@outlook.com" else UserRole.USER,
                 tenant_id="common",
                 object_id=user_info.get("oid", ""),
-                preferences={
-                    "defaultLLM": "gpt-4",
-                    "theme": "dark", 
-                    "notifications": True
-                },
-                usage={
-                    "total_prompts": 0,
-                    "total_collections": 0,
-                    "total_playbooks": 0,
-                    "total_forge_projects": 0
-                },
+                preferences={"defaultLLM": "gpt-4", "theme": "dark", "notifications": True},
+                usage={"total_prompts": 0, "total_collections": 0, "total_playbooks": 0, "total_forge_projects": 0},
                 created_at=datetime.now(timezone.utc),
                 last_active=datetime.now(timezone.utc),
-                is_active=True
+                is_active=True,
             )
             return user
-            
+
         return None
-        
+
     except Exception as e:
-        logger.error(f"Error validating request headers: {e}")
+        logging.error(f"Error validating request headers: {e}")
         return None
 
 

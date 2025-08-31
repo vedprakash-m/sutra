@@ -3,30 +3,33 @@ Compatibility auth module for legacy imports
 This module provides simplified compatibility functions during authentication system modernization
 """
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 import azure.functions as func
 
 
 class AuthenticationError(Exception):
     """Authentication related errors."""
+
     pass
 
 
 class AuthorizationError(Exception):
     """Authorization related errors."""
+
     pass
 
 
 class AuthManager:
     """Simplified auth manager for compatibility."""
-    
+
     def __init__(self):
         pass
-    
+
     def validate_token(self, token: str) -> bool:
         """Mock token validation for compatibility."""
         return True
-    
+
     def get_user_permissions(self, user_id: str) -> list:
         """Mock user permissions for compatibility."""
         return ["read", "write"]
@@ -57,33 +60,43 @@ def check_user_permissions(user: Dict[str, Any], required_permissions: list) -> 
 
 def require_auth(role: Optional[str] = None):
     """Decorator for requiring authentication - simplified for compatibility."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
 def require_admin(func):
     """Decorator for requiring admin role - simplified for compatibility."""
+
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
+
     return wrapper
 
 
 def require_admin_role(func):
     """Decorator for requiring admin role - simplified for compatibility."""
+
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
+
     return wrapper
 
 
 def require_permission(permission: str):
     """Decorator for requiring specific permission - simplified for compatibility."""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -105,6 +118,7 @@ def get_user_role(user: Dict[str, Any]) -> str:
 def verify_jwt_token(token: str) -> Dict[str, Any]:
     """Verify JWT token - mock for compatibility."""
     return {"sub": "test@example.com", "role": "user"}
+
 
 from typing import Optional
 

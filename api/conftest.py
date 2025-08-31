@@ -313,20 +313,11 @@ def mock_test_user():
         role=UserRole.USER,
         tenant_id="common",
         object_id="test-object-123",
-        preferences={
-            "defaultLLM": "gpt-3.5-turbo",
-            "theme": "light",
-            "notifications": True
-        },
-        usage={
-            "total_prompts": 5,
-            "total_collections": 2,
-            "total_playbooks": 1,
-            "total_forge_projects": 0
-        },
+        preferences={"defaultLLM": "gpt-3.5-turbo", "theme": "light", "notifications": True},
+        usage={"total_prompts": 5, "total_collections": 2, "total_playbooks": 1, "total_forge_projects": 0},
         created_at=datetime.now(timezone.utc),
         last_active=datetime.now(timezone.utc),
-        is_active=True
+        is_active=True,
     )
     # Add permissions attribute for testing using object.__setattr__ to bypass Pydantic validation
     object.__setattr__(
@@ -355,20 +346,11 @@ def mock_admin_user():
         role=UserRole.ADMIN,
         tenant_id="common",
         object_id="admin-object-123",
-        preferences={
-            "defaultLLM": "gpt-4",
-            "theme": "dark",
-            "notifications": True
-        },
-        usage={
-            "total_prompts": 0,
-            "total_collections": 0,
-            "total_playbooks": 0,
-            "total_forge_projects": 0
-        },
+        preferences={"defaultLLM": "gpt-4", "theme": "dark", "notifications": True},
+        usage={"total_prompts": 0, "total_collections": 0, "total_playbooks": 0, "total_forge_projects": 0},
         created_at=datetime.now(timezone.utc),
         last_active=datetime.now(timezone.utc),
-        is_active=True
+        is_active=True,
     )
     # Add permissions attribute for testing using object.__setattr__ to bypass Pydantic validation
     object.__setattr__(

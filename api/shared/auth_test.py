@@ -10,6 +10,7 @@ import azure.functions as func
 import jwt
 import pytest
 
+from ..conftest import create_auth_request
 from .auth import (
     AuthenticationError,
     AuthManager,
@@ -28,8 +29,6 @@ from .auth import (
     verify_jwt_token,
 )
 from .models import User, UserRole
-
-from ..conftest import create_auth_request
 
 
 class TestAuthManager:

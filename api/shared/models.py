@@ -53,24 +53,21 @@ class User(BaseModel):
     object_id: Optional[str] = None  # Azure AD object ID
     role: UserRole = UserRole.USER
     preferences: Dict[str, Any] = Field(default_factory=dict)
-    usage: Dict[str, int] = Field(default_factory=lambda: {
-        "total_prompts": 0,
-        "total_collections": 0,
-        "total_playbooks": 0,
-        "total_forge_projects": 0
-    })
+    usage: Dict[str, int] = Field(
+        default_factory=lambda: {"total_prompts": 0, "total_collections": 0, "total_playbooks": 0, "total_forge_projects": 0}
+    )
     created_at: datetime
     last_active: datetime
     is_active: bool = True
 
     model_config = ConfigDict(use_enum_values=True)
 
-    @field_validator('id', 'email')
+    @field_validator("id", "email")
     @classmethod
     def validate_email_format(cls, v: str) -> str:
         """Ensure id and email are valid email addresses."""
-        if '@' not in v or '.' not in v.split('@')[-1]:
-            raise ValueError('Must be a valid email address')
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("Must be a valid email address")
         return v.lower()  # Normalize to lowercase
 
 

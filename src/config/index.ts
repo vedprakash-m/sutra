@@ -32,7 +32,9 @@ const getEnvironmentInfo = () => {
 // Microsoft Entra ID Default Tenant Configuration (Simplified Authentication)
 export const AUTH_CONSTANTS = {
   TENANT_ID: "common", // Use common for default tenant access
-  CLIENT_ID: import.meta.env.VITE_ENTRA_CLIENT_ID || "00000000-0000-0000-0000-000000000000", // App registration for default tenant
+  CLIENT_ID:
+    import.meta.env.VITE_ENTRA_CLIENT_ID ||
+    "00000000-0000-0000-0000-000000000000", // App registration for default tenant
   AUTHORITY: "https://login.microsoftonline.com/common",
   SCOPES: ["openid", "profile", "email", "offline_access"] as string[],
   ISSUER: "https://login.microsoftonline.com/common/v2.0",

@@ -13,9 +13,9 @@ echo "🧹 Starting cleanup of temporary resources..."
 delete_resource() {
     local resource_name=$1
     local resource_type=$2
-    
+
     echo "🗑️  Checking for $resource_name ($resource_type)..."
-    
+
     if az resource show --resource-group $RESOURCE_GROUP --name $resource_name --resource-type $resource_type &>/dev/null; then
         echo "   Found $resource_name, deleting..."
         az resource delete --resource-group $RESOURCE_GROUP --name $resource_name --resource-type $resource_type --verbose

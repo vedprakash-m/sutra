@@ -241,7 +241,7 @@ class DatabaseManager:
                 "usage": {"total_prompts": 0, "total_collections": 0},
                 "created_at": "2025-08-30T00:00:00Z",
                 "last_active": "2025-08-30T00:00:00Z",
-                "is_active": True
+                "is_active": True,
             }
 
         try:
@@ -269,10 +269,10 @@ class DatabaseManager:
 
         # Get existing user first
         existing_user = await self.get_user(email)
-        
+
         # Apply updates
         existing_user.update(updates)
-        
+
         # Save updated user
         return self.upsert_item("users", existing_user)
 

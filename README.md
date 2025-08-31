@@ -32,12 +32,12 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides systematic tools 
 
 **Built for Professional Teams:**
 
-| **Role**               | **Primary Use Case**               | **Key Benefits**                    |
-| ---------------------- | ---------------------------------- | ----------------------------------- |
-| **🎨 Content Teams**   | Consistent prompt templates        | Standardized AI-generated content   |
-| **🛠️ Developer Teams** | AI integration and automation      | Streamlined AI workflow development |
-| **📈 Product Teams**   | AI-powered process optimization    | Systematic approach to AI adoption  |
-| **🎯 Marketing Teams** | Multi-channel content creation     | Cross-platform content consistency  |
+| **Role**               | **Primary Use Case**            | **Key Benefits**                    |
+| ---------------------- | ------------------------------- | ----------------------------------- |
+| **🎨 Content Teams**   | Consistent prompt templates     | Standardized AI-generated content   |
+| **🛠️ Developer Teams** | AI integration and automation   | Streamlined AI workflow development |
+| **📈 Product Teams**   | AI-powered process optimization | Systematic approach to AI adoption  |
+| **🎯 Marketing Teams** | Multi-channel content creation  | Cross-platform content consistency  |
 
 ---
 
@@ -46,7 +46,7 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides systematic tools 
 ### 🎯 **Multi-LLM Prompt Engineering**
 
 - **� LLM Provider Support**: OpenAI GPT-4, Anthropic Claude, Google Gemini
-- **🔄 Side-by-Side Comparison**: Test prompts across multiple models simultaneously  
+- **🔄 Side-by-Side Comparison**: Test prompts across multiple models simultaneously
 - **🎛️ Dynamic Variables**: Use `{{placeholders}}` for flexible, reusable templates
 - **📝 Prompt Optimization**: AI-powered suggestions for prompt improvement
 
@@ -118,7 +118,7 @@ cd api && pip install -r requirements.txt && cd ..
 # Start backend (Terminal 1)
 cd api && func start --port 7071
 
-# Start frontend (Terminal 2)  
+# Start frontend (Terminal 2)
 npm run dev
 ```
 
@@ -184,6 +184,7 @@ npm run test:e2e         # Playwright e2e tests with Docker
 ### **Database Schema**
 
 **Users Collection** (Cosmos DB):
+
 - **Primary Key**: User email address
 - **Authentication**: Microsoft tenant ID and object ID
 - **Preferences**: LLM defaults, UI theme, notification settings
@@ -197,7 +198,7 @@ npm run test:e2e         # Playwright e2e tests with Docker
 ### **Development Documentation**
 
 - **[Product Requirements (PRD)](docs/PRD_Sutra.md)**: Complete feature specifications and requirements
-- **[Technical Specification](docs/Tech_Spec_Sutra.md)**: Architecture, API design, and implementation details  
+- **[Technical Specification](docs/Tech_Spec_Sutra.md)**: Architecture, API design, and implementation details
 - **[User Experience Design](docs/User_Experience_Sutra.md)**: UI/UX specifications and design patterns
 - **[Development Metadata](docs/metadata.md)**: Project status, implementation tracking, and deployment information
 
@@ -231,6 +232,7 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 6. Create a Pull Request
 
 **Development Standards:**
+
 - Follow TypeScript and Python coding conventions
 - Include tests for new functionality
 - Update documentation for user-facing changes
@@ -277,7 +279,7 @@ npm run e2e:validate # Validate E2E environment
 ./scripts/deploy-production-config.sh
 ./scripts/test-production-auth.sh
 
-```
+````
 
 ---
 

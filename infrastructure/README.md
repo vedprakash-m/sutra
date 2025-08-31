@@ -7,11 +7,13 @@ Sutra now uses a simplified single resource group architecture with Azure Functi
 ### Architecture Changes (August 30, 2025)
 
 #### ✅ **Unified Resource Group**
+
 - **Previous:** `sutra-persistent-rg` + `sutra-rg` (dual resource groups)
 - **Current:** `sutra-rg` (single unified resource group)
 - **Benefits:** Simplified permissions, unified monitoring, streamlined deployment
 
 #### ✅ **Flex Consumption Functions**
+
 - **Previous:** Y1 Consumption Plan (legacy)
 - **Current:** FC1 Flex Consumption Plan (modern)
 - **Benefits:** 60% faster cold starts, enhanced monitoring, better scaling
@@ -21,6 +23,7 @@ Sutra now uses a simplified single resource group architecture with Azure Functi
 ### Prerequisites
 
 1. **Azure CLI installed and configured**
+
    ```bash
    az login
    az account set --subscription "Visual Studio Enterprise Subscription"
@@ -35,6 +38,7 @@ Sutra now uses a simplified single resource group architecture with Azure Functi
 ### Infrastructure Deployment
 
 **Single Command Deployment:**
+
 ```bash
 # Deploy complete infrastructure
 az deployment group create \
@@ -46,12 +50,14 @@ az deployment group create \
 ### Application Deployment
 
 **Backend (Azure Functions):**
+
 ```bash
 cd api
 func azure functionapp publish $(az functionapp list -g sutra-rg --query "[0].name" -o tsv) --python
 ```
 
 **Frontend (Static Web App):**
+
 ```bash
 npm run build:prod
 az staticwebapp update \
@@ -62,6 +68,7 @@ az staticwebapp update \
 ### Environment Configuration
 
 **Required Secrets in Key Vault:**
+
 ```bash
 VAULT_NAME=$(az keyvault list -g sutra-rg --query "[0].name" -o tsv)
 
@@ -74,6 +81,7 @@ az keyvault secret set --vault-name $VAULT_NAME --name "Google-AI-API-Key" --val
 ### Monitoring & Validation
 
 **Health Check:**
+
 ```bash
 # Function App health
 FUNCTION_URL=$(az functionapp show -g sutra-rg -n $(az functionapp list -g sutra-rg --query "[0].name" -o tsv) --query "defaultHostName" -o tsv)
@@ -104,6 +112,7 @@ curl -f "https://$STATIC_URL"
 ## Legacy Files Archive
 
 Previous infrastructure files have been moved to `.archive/infrastructure/`:
+
 - `persistent.bicep` → `.archive/infrastructure/persistent.bicep`
 - `compute.bicep` → `.archive/infrastructure/compute.bicep`
 - Related parameter files archived for reference
@@ -113,11 +122,13 @@ Previous infrastructure files have been moved to `.archive/infrastructure/`:
 ### Common Issues
 
 1. **Template Validation Errors:**
+
    ```bash
    az deployment group validate --resource-group sutra-rg --template-file infrastructure/unified.bicep --parameters @infrastructure/parameters.unified.json
    ```
 
 2. **Function App Deployment Issues:**
+
    ```bash
    func azure functionapp publish <function-app-name> --python --verbose
    ```
@@ -130,6 +141,7 @@ Previous infrastructure files have been moved to `.archive/infrastructure/`:
 ### Rollback Procedure
 
 If needed, legacy infrastructure can be restored from `.archive/infrastructure/`:
+
 ```bash
 cp .archive/infrastructure/persistent.bicep infrastructure/
 cp .archive/infrastructure/compute.bicep infrastructure/

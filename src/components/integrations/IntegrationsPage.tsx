@@ -11,7 +11,7 @@ interface Integration {
 }
 
 export default function IntegrationsPage() {
-  const { user } = useAuth();
+  const { isAdmin } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([
     {
       id: "1",
@@ -37,9 +37,6 @@ export default function IntegrationsPage() {
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Check if user is admin
-  const isAdmin = user?.role === "admin" || false;
 
   useEffect(() => {
     if (isAdmin) {

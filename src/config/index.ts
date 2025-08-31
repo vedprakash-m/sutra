@@ -29,12 +29,29 @@ const getEnvironmentInfo = () => {
   };
 };
 
+// Helper function to safely access environment variables in both Vite and Jest
+const getEnvVar = (key: string, defaultValue: string = ""): string => {
+  // Check if we're in a browser environment with Vite
+  try {
+    if (typeof window !== "undefined") {
+      return (import.meta.env as Record<string, string>)[key] || defaultValue;
+    }
+  } catch {
+    // Fallback for Jest environment
+  }
+  
+  // Check if we're in Node.js environment (Jest/SSR)
+  if (typeof process !== "undefined" && process.env) {
+    return process.env[key] || defaultValue;
+  }
+  
+  return defaultValue;
+};
+
 // Microsoft Entra ID Default Tenant Configuration (Simplified Authentication)
 export const AUTH_CONSTANTS = {
   TENANT_ID: "common", // Use common for default tenant access
-  CLIENT_ID:
-    import.meta.env.VITE_ENTRA_CLIENT_ID ||
-    "00000000-0000-0000-0000-000000000000", // App registration for default tenant
+  CLIENT_ID: getEnvVar("VITE_ENTRA_CLIENT_ID", "00000000-0000-0000-0000-000000000000"), // App registration for default tenant
   AUTHORITY: "https://login.microsoftonline.com/common",
   SCOPES: ["openid", "profile", "email", "offline_access"] as string[],
   ISSUER: "https://login.microsoftonline.com/common/v2.0",

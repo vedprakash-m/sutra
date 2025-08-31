@@ -2,6 +2,9 @@ export default {
   testEnvironment: "jsdom",
   setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
   moduleNameMapper: {
+    // Mock config to handle import.meta.env - must come before the general @/ pattern
+    "^@/config$": "<rootDir>/src/config/__mocks__/index.ts",
+    "^@/config/index$": "<rootDir>/src/config/__mocks__/index.ts",
     "^@/(.*)$": "<rootDir>/src/$1",
     "\\.(css|less|scss|sass)$": "identity-obj-proxy",
     "^@/services/api$": "<rootDir>/src/services/__mocks__/api.ts",

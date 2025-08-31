@@ -6,6 +6,8 @@ global.importMeta = {
     VITE_API_URL: "http://localhost:7071/api",
     VITE_AUTH_DOMAIN: "test-domain",
     VITE_AUTH_CLIENT_ID: "test-client-id",
+    VITE_ENTRA_CLIENT_ID: "test-entra-client-id",
+    VITE_ENTRA_TENANT_ID: "common",
     NODE_ENV: "test",
     MODE: "test",
     DEV: false,

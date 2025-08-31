@@ -34,34 +34,50 @@ global.alert = mockAlert;
 
 // Mock user for regular user tests
 const mockRegularUser = {
-  id: "test-user-1",
-  email: "test@example.com",
+  id: "test@example.com",
+  email: "test@example.com", 
   name: "Test User",
-  givenName: "Test",
-  familyName: "User",
-  permissions: ["user"],
-  vedProfile: {
-    profileId: "test-user-1",
-    subscriptionTier: "free" as const,
-    appsEnrolled: ["sutra"],
-    preferences: {},
+  tenantId: "test-tenant",
+  objectId: "test-object-id",
+  role: "user" as const,
+  preferences: {
+    defaultLLM: "gpt-3.5-turbo",
+    theme: "light",
+    notifications: true,
   },
+  usage: {
+    totalPrompts: 0,
+    totalCollections: 0,
+    totalPlaybooks: 0,
+    totalForgeProjects: 0,
+  },
+  createdAt: "2024-01-01T00:00:00Z",
+  lastActive: "2024-01-01T00:00:00Z",
+  isActive: true,
 };
 
 // Mock user for admin tests
 const mockAdminUser = {
-  id: "admin-user-1",
+  id: "admin@example.com",
   email: "admin@example.com",
-  name: "Admin User",
-  givenName: "Admin",
-  familyName: "User",
-  permissions: ["admin"],
-  vedProfile: {
-    profileId: "admin-user-1",
-    subscriptionTier: "free" as const,
-    appsEnrolled: ["sutra"],
-    preferences: {},
+  name: "Admin User", 
+  tenantId: "test-tenant",
+  objectId: "admin-object-id",
+  role: "admin" as const,
+  preferences: {
+    defaultLLM: "gpt-4",
+    theme: "light",
+    notifications: true,
   },
+  usage: {
+    totalPrompts: 100,
+    totalCollections: 10,
+    totalPlaybooks: 5,
+    totalForgeProjects: 3,
+  },
+  createdAt: "2024-01-01T00:00:00Z",
+  lastActive: "2024-01-01T00:00:00Z",
+  isActive: true,
 };
 
 // Mock the useAuth hook

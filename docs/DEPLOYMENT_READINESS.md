@@ -1,8 +1,8 @@
 # Sutra Platform - Deployment Readiness Guide
 
-**Document Version:** 1.0  
-**Last Updated:** October 16, 2025  
-**Status:** ✅ READY FOR STAGING DEPLOYMENT  
+**Document Version:** 1.0
+**Last Updated:** October 16, 2025
+**Status:** ✅ READY FOR STAGING DEPLOYMENT
 
 ---
 
@@ -11,6 +11,7 @@
 The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the successful completion of Phase 1 (Forge Module Enhancement). All core functionality has been implemented, tested, and validated with 954 passing tests (100% success rate) and zero breaking changes.
 
 **Current State:**
+
 - ✅ Phase 1: 100% Complete (October 16, 2025)
 - 🎯 Phase 2: Staging Deployment (Next)
 - 📅 Phase 3: Production Launch (Scheduled)
@@ -22,6 +23,7 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 ### 1.1 Code Quality Metrics ✅
 
 **Frontend Quality:**
+
 - **Tests:** 518/518 passing (100% success rate)
 - **Test Suites:** 31/31 passing
 - **TypeScript:** Strict mode enabled, no errors
@@ -30,6 +32,7 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 - **Bundle Size:** Optimized with lazy loading
 
 **Backend Quality:**
+
 - **Tests:** 436/436 passing (100% success rate)
 - **Coverage:** Core functionality comprehensively tested
 - **Python:** 3.12 with proper type hints
@@ -37,6 +40,7 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 - **Performance:** Optimized database queries
 
 **Quality System:**
+
 - **Forge Module:** 100% complete (all 5 stages enhanced)
 - **Quality Validation:** 9 consistency rule pairs implemented
 - **Multi-LLM Consensus:** Sophisticated weighted scoring operational
@@ -45,6 +49,7 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 ### 1.2 Infrastructure Status ✅
 
 **Azure Resources:**
+
 - Resource Group: `sutra-rg` (East US)
 - Infrastructure Templates: Validated unified Bicep templates
 - Function Apps: Flex Consumption (FC1) configured
@@ -54,6 +59,7 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 - Application Insights: Monitoring configured
 
 **Infrastructure Readiness:**
+
 - ✅ Bicep templates validated successfully
 - ✅ Resource naming conventions established
 - ✅ Network security configured
@@ -63,12 +69,14 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 ### 1.3 Security Validation ✅
 
 **Authentication & Authorization:**
+
 - ✅ Microsoft Entra ID integration (default tenant)
 - ✅ Role-based access control (User/Admin)
 - ✅ Token validation and session management
 - ✅ Development mode authentication bypass
 
 **Security Hardening:**
+
 - ✅ Comprehensive input validation
 - ✅ XSS and SQL injection protection
 - ✅ Rate limiting (global, per-user, per-IP, per-endpoint)
@@ -76,6 +84,7 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 - ✅ GDPR compliance framework
 
 **API Security:**
+
 - ✅ LLM provider API keys in Key Vault
 - ✅ Connection strings secured
 - ✅ Secrets rotation procedures documented
@@ -124,6 +133,7 @@ The Sutra Multi-LLM Prompt Studio platform is **production-ready** following the
 ### 2.2 Environment Configuration
 
 **Environment Hierarchy:**
+
 ```
 Development (Local)
     ↓
@@ -133,6 +143,7 @@ Production (Azure Production Environment)
 ```
 
 **Configuration Management:**
+
 - Local: `.env` files and `local.settings.json`
 - Staging: Azure App Configuration + Key Vault
 - Production: Azure App Configuration + Key Vault
@@ -178,13 +189,13 @@ KEYVAULT_NAME=$(az keyvault list -g sutra-rg --query "[0].name" -o tsv)
 
 az keyvault secret set --vault-name $KEYVAULT_NAME \
   --name "OpenAI-API-Key" --value "YOUR_OPENAI_KEY"
-  
+
 az keyvault secret set --vault-name $KEYVAULT_NAME \
   --name "Anthropic-API-Key" --value "YOUR_ANTHROPIC_KEY"
-  
+
 az keyvault secret set --vault-name $KEYVAULT_NAME \
   --name "Google-AI-API-Key" --value "YOUR_GOOGLE_KEY"
-  
+
 az keyvault secret set --vault-name $KEYVAULT_NAME \
   --name "Cosmos-Connection-String" --value "YOUR_COSMOS_CONN_STRING"
 
@@ -310,6 +321,7 @@ az staticwebapp deploy --name $STATIC_APP -g sutra-rg --app-location "dist.backu
 ### 4.1 Smoke Test Checklist
 
 **Infrastructure Validation:**
+
 - [ ] All Azure resources showing as "Running" status
 - [ ] Application Insights receiving telemetry
 - [ ] Key Vault secrets accessible by Function App
@@ -317,6 +329,7 @@ az staticwebapp deploy --name $STATIC_APP -g sutra-rg --app-location "dist.backu
 - [ ] Storage Account accessible
 
 **Application Validation:**
+
 - [ ] Frontend accessible via HTTPS
 - [ ] Authentication flow working (login/logout)
 - [ ] Backend API responding to requests
@@ -324,6 +337,7 @@ az staticwebapp deploy --name $STATIC_APP -g sutra-rg --app-location "dist.backu
 - [ ] LLM provider integrations working
 
 **Feature Validation:**
+
 - [ ] Prompt creation and execution
 - [ ] Collection management (create/read/update/delete)
 - [ ] Playbook creation and execution
@@ -335,12 +349,14 @@ az staticwebapp deploy --name $STATIC_APP -g sutra-rg --app-location "dist.backu
 ### 4.2 Performance Validation
 
 **Response Time Targets:**
+
 - Homepage Load: < 2 seconds
 - API Endpoint: < 500ms (95th percentile)
 - LLM Execution: < 5 seconds (for standard prompts)
 - Export Generation: < 3 seconds (JSON/Markdown), < 10 seconds (PDF/ZIP)
 
 **Load Testing:**
+
 ```bash
 # Using Artillery for load testing
 npm install -g artillery
@@ -355,6 +371,7 @@ artillery run tests/load/forge-workflow.yml
 ### 4.3 Security Validation
 
 **Security Checklist:**
+
 - [ ] HTTPS enforced on all endpoints
 - [ ] Authentication required for protected routes
 - [ ] Rate limiting active and effective
@@ -365,6 +382,7 @@ artillery run tests/load/forge-workflow.yml
 - [ ] Security headers present
 
 **Security Scan:**
+
 ```bash
 # OWASP ZAP scan
 docker run -t owasp/zap2docker-stable zap-baseline.py \
@@ -406,18 +424,21 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### 5.2 Alert Rules
 
 **Critical Alerts (Immediate Response Required):**
+
 - Application down (availability < 95%)
 - High error rate (> 5% of requests)
 - Database connection failures
 - LLM provider complete failure
 
 **Warning Alerts (Investigation Required):**
+
 - Response time degradation (> 1 second)
 - Increased error rate (> 1% of requests)
 - High cost usage (> 150% of budget)
 - Low cache hit rate (< 70%)
 
 **Information Alerts (For Awareness):**
+
 - New user registrations
 - Feature usage milestones
 - Cost threshold warnings
@@ -426,6 +447,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### 5.3 Dashboard Configuration
 
 **Operations Dashboard:**
+
 - System health overview
 - Real-time error rates
 - Active user count
@@ -433,6 +455,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 - Database performance metrics
 
 **Business Dashboard:**
+
 - User growth trends
 - Feature adoption rates
 - Forge workflow completion rates
@@ -448,24 +471,28 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 **Severity Levels:**
 
 **P0 - Critical (Response: Immediate)**
+
 - Application completely down
 - Data loss or corruption
 - Security breach
 - **Action:** Page on-call engineer, all hands on deck
 
 **P1 - High (Response: < 1 hour)**
+
 - Major feature broken
 - Performance severely degraded
 - LLM provider failures affecting all users
 - **Action:** Notify engineering team, begin investigation
 
 **P2 - Medium (Response: < 4 hours)**
+
 - Minor feature issues
 - Intermittent errors
 - Performance degradation for subset of users
 - **Action:** Create ticket, schedule for next sprint
 
 **P3 - Low (Response: < 24 hours)**
+
 - UI/UX issues
 - Enhancement requests
 - Documentation updates
@@ -474,17 +501,19 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### 6.2 Maintenance Windows
 
 **Regular Maintenance:**
+
 - **Frequency:** Monthly (first Sunday, 2-4 AM UTC)
 - **Duration:** 2 hours maximum
-- **Activities:** 
+- **Activities:**
   - Security patches
   - Dependency updates
   - Database optimization
   - Performance tuning
 
 **Emergency Maintenance:**
+
 - **Trigger:** Critical security vulnerability or data integrity issue
-- **Process:** 
+- **Process:**
   1. Assess severity and impact
   2. Notify users via status page
   3. Execute fix in staging
@@ -494,12 +523,14 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### 6.3 Backup & Recovery
 
 **Backup Schedule:**
+
 - **Database:** Automated daily backups (30-day retention)
 - **Configuration:** Git-based version control
 - **Secrets:** Key Vault with soft-delete enabled
 - **Application Code:** GitHub repository with tags
 
 **Recovery Procedures:**
+
 - **RTO (Recovery Time Objective):** 4 hours
 - **RPO (Recovery Point Objective):** 24 hours
 - **Backup Testing:** Quarterly restore validation
@@ -511,6 +542,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### 7.1 Staging Environment Success
 
 **Technical Success:**
+
 - ✅ All infrastructure resources deployed
 - ✅ Frontend and backend operational
 - ✅ All integration tests passing
@@ -518,6 +550,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 - ✅ Security scan passing
 
 **Functional Success:**
+
 - ✅ Authentication working correctly
 - ✅ All features accessible and functional
 - ✅ Forge workflow completing successfully
@@ -525,6 +558,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 - ✅ Cost tracking accurate
 
 **Quality Success:**
+
 - ✅ Zero critical bugs
 - ✅ User acceptance testing passed
 - ✅ Stakeholder approval obtained
@@ -533,6 +567,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### 7.2 Production Launch Success
 
 **Week 1 Targets:**
+
 - Uptime: > 99.5%
 - Error Rate: < 0.5%
 - Response Time: < 500ms (95th percentile)
@@ -540,6 +575,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 - Zero critical incidents
 
 **Month 1 Targets:**
+
 - Uptime: > 99.9%
 - Active Users: > 200
 - Forge Workflows Completed: > 100
@@ -553,6 +589,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ### Appendix A: Environment Variables
 
 **Backend (Function App):**
+
 ```
 COSMOS_DB_ENDPOINT=<Key Vault Reference>
 COSMOS_DB_KEY=<Key Vault Reference>
@@ -565,6 +602,7 @@ APP_INSIGHTS_CONNECTION_STRING=<Key Vault Reference>
 ```
 
 **Frontend (Static Web App):**
+
 ```
 VITE_API_BASE_URL=https://<function-app-name>.azurewebsites.net
 VITE_TENANT_ID=common
@@ -594,24 +632,28 @@ az deployment group list --resource-group sutra-rg --output table
 ### Appendix C: Troubleshooting Common Issues
 
 **Issue: Function App not starting**
+
 - Check: Application settings configured correctly
 - Check: Key Vault permissions granted
 - Check: Python runtime version matches (3.12)
 - Solution: Review Function App logs in Application Insights
 
 **Issue: Frontend not loading**
+
 - Check: Static Web App deployment successful
 - Check: API endpoint configuration correct
 - Check: CORS settings on backend
 - Solution: Clear CDN cache, redeploy frontend
 
 **Issue: Authentication failing**
+
 - Check: Azure AD app registration correct
 - Check: Redirect URIs configured
 - Check: Tenant ID matches
 - Solution: Verify MSAL configuration in frontend
 
 **Issue: LLM provider errors**
+
 - Check: API keys in Key Vault
 - Check: Key Vault permissions
 - Check: Rate limits not exceeded
@@ -621,14 +663,15 @@ az deployment group list --resource-group sutra-rg --output table
 
 ## Contact Information
 
-**Technical Lead:** Development Team  
-**Deployment Contact:** DevOps Team  
-**Support Contact:** support@sutra-platform.com  
+**Technical Lead:** Development Team
+**Deployment Contact:** DevOps Team
+**Support Contact:** support@sutra-platform.com
 **Status Page:** https://status.sutra-platform.com (TBD)
 
 ---
 
-**Document Status:** ✅ APPROVED FOR USE  
-**Next Review:** After staging deployment completion  
+**Document Status:** ✅ APPROVED FOR USE
+**Next Review:** After staging deployment completion
 **Version History:**
+
 - v1.0 (2025-10-16): Initial deployment readiness guide

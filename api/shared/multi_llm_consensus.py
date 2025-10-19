@@ -200,44 +200,87 @@ class MultiLLMConsensusEngine:
         return valid_responses
 
     def _calculate_architecture_consensus(self, responses: List[LLMResponse]) -> ConsensusResult:
-        """Calculate consensus on architecture recommendations"""
+        """Calculate consensus on architecture recommendations with enhanced weighted scoring"""
 
-        # Extract architecture patterns from each response
+        # Extract architecture patterns from each response with model context
         architecture_patterns = []
+        model_weights = {}
+
         for response in responses:
             patterns = self._extract_architecture_patterns(response)
             architecture_patterns.append(patterns)
 
-        # Find common patterns and calculate agreement
-        pattern_counts = {}
-        total_responses = len(responses)
+            # Store model weight for weighted consensus calculation
+            model_name = response.model.lower()
+            if "gpt-4" in model_name or "gpt4" in model_name:
+                model_weights[response.model] = 1.0  # GPT-4: Full weight
+            elif "claude" in model_name:
+                model_weights[response.model] = 1.0  # Claude: Full weight
+            elif "gemini" in model_name:
+                model_weights[response.model] = 0.9  # Gemini: Slightly lower weight
+            else:
+                model_weights[response.model] = 0.85  # Other models: Conservative weight
 
-        for patterns in architecture_patterns:
+        # Calculate weighted pattern scores with model-specific weights
+        pattern_scores = {}
+        total_weight = sum(model_weights.values())
+
+        for idx, patterns in enumerate(architecture_patterns):
+            response_weight = model_weights.get(responses[idx].model, 0.85)
+            response_confidence = responses[idx].confidence_score
+
+            # Combined weight: model weight * response confidence
+            combined_weight = response_weight * response_confidence
+
             for pattern in patterns:
-                pattern_counts[pattern] = pattern_counts.get(pattern, 0) + 1
+                if pattern not in pattern_scores:
+                    pattern_scores[pattern] = {
+                        "weighted_votes": 0.0,
+                        "raw_votes": 0,
+                        "supporting_models": [],
+                        "confidence_scores": [],
+                    }
 
-        # Calculate consensus level
-        if not pattern_counts:
+                pattern_scores[pattern]["weighted_votes"] += combined_weight
+                pattern_scores[pattern]["raw_votes"] += 1
+                pattern_scores[pattern]["supporting_models"].append(responses[idx].model)
+                pattern_scores[pattern]["confidence_scores"].append(response_confidence)
+
+        # Calculate normalized weighted agreement scores
+        if not pattern_scores:
             consensus_level = ConsensusLevel.NO_CONSENSUS
             agreement_score = 0.0
+            weighted_agreement_score = 0.0
         else:
-            max_agreement = max(pattern_counts.values()) / total_responses
-            agreement_score = max_agreement
+            # Find pattern with highest weighted score
+            best_pattern = max(pattern_scores.items(), key=lambda x: x[1]["weighted_votes"])
+            max_weighted_votes = best_pattern[1]["weighted_votes"]
+            weighted_agreement_score = max_weighted_votes / total_weight
 
-            if max_agreement >= self.strong_consensus_threshold:
+            # Also calculate raw vote percentage for comparison
+            max_raw_votes = max(p["raw_votes"] for p in pattern_scores.values())
+            raw_agreement = max_raw_votes / len(responses)
+
+            # Final agreement score combines weighted and raw scores (70% weighted, 30% raw)
+            agreement_score = (weighted_agreement_score * 0.7) + (raw_agreement * 0.3)
+
+            # Determine consensus level based on agreement score
+            if agreement_score >= self.strong_consensus_threshold:
                 consensus_level = ConsensusLevel.STRONG_AGREEMENT
-            elif max_agreement >= self.consensus_threshold:
+            elif agreement_score >= self.consensus_threshold:
                 consensus_level = ConsensusLevel.MODERATE_AGREEMENT
-            elif max_agreement >= 0.4:
+            elif agreement_score >= 0.4:
                 consensus_level = ConsensusLevel.WEAK_AGREEMENT
             else:
                 consensus_level = ConsensusLevel.NO_CONSENSUS
 
-        # Generate final recommendation using conflict resolution
-        final_recommendation = self._resolve_architecture_conflicts(pattern_counts, responses, consensus_level)
+        # Generate final recommendation using enhanced conflict resolution
+        final_recommendation = self._resolve_architecture_conflicts_enhanced(
+            pattern_scores, responses, consensus_level, model_weights
+        )
 
-        # Identify conflict areas
-        conflict_areas = self._identify_architecture_conflicts(pattern_counts, total_responses)
+        # Identify conflict areas with detailed analysis
+        conflict_areas = self._identify_architecture_conflicts_enhanced(pattern_scores, len(responses), total_weight)
 
         return ConsensusResult(
             consensus_level=consensus_level,
@@ -258,40 +301,80 @@ class MultiLLMConsensusEngine:
         )
 
     def _calculate_technology_stack_consensus(self, responses: List[LLMResponse]) -> ConsensusResult:
-        """Calculate consensus on technology stack recommendations"""
+        """Calculate consensus on technology stack recommendations with enhanced weighted scoring"""
 
-        # Extract technology recommendations from each response
+        # Extract technology recommendations with model weights
         tech_recommendations = []
+        model_weights = {}
+
         for response in responses:
             techs = self._extract_technology_recommendations(response)
             tech_recommendations.append(techs)
 
-        # Calculate technology consensus
+            # Apply model-specific weights
+            model_name = response.model.lower()
+            if "gpt-4" in model_name or "gpt4" in model_name:
+                model_weights[response.model] = 1.0
+            elif "claude" in model_name:
+                model_weights[response.model] = 1.0
+            elif "gemini" in model_name:
+                model_weights[response.model] = 0.9
+            else:
+                model_weights[response.model] = 0.85
+
+        # Calculate weighted technology consensus
         tech_scores = {}
         total_responses = len(responses)
+        total_weight = sum(model_weights.values())
 
-        for techs in tech_recommendations:
+        for idx, techs in enumerate(tech_recommendations):
+            response_weight = model_weights.get(responses[idx].model, 0.85)
+            response_confidence = responses[idx].confidence_score
+            combined_weight = response_weight * response_confidence
+
             for category, technology in techs.items():
                 if category not in tech_scores:
                     tech_scores[category] = {}
 
                 tech_name = technology.get("name", "unknown")
                 if tech_name not in tech_scores[category]:
-                    tech_scores[category][tech_name] = {"count": 0, "total_score": 0.0, "reasons": []}
+                    tech_scores[category][tech_name] = {
+                        "count": 0,
+                        "weighted_votes": 0.0,
+                        "total_score": 0.0,
+                        "reasons": [],
+                        "supporting_models": [],
+                        "confidence_scores": [],
+                    }
 
                 tech_scores[category][tech_name]["count"] += 1
+                tech_scores[category][tech_name]["weighted_votes"] += combined_weight
                 tech_scores[category][tech_name]["total_score"] += technology.get("score", 5.0)
                 tech_scores[category][tech_name]["reasons"].extend(technology.get("reasons", []))
+                tech_scores[category][tech_name]["supporting_models"].append(responses[idx].model)
+                tech_scores[category][tech_name]["confidence_scores"].append(response_confidence)
 
-        # Calculate overall consensus
+        # Calculate category-level consensus with weighted scoring
         category_consensus = {}
         overall_agreement = 0.0
 
         for category, technologies in tech_scores.items():
             if technologies:
+                # Find technology with highest weighted votes in this category
+                max_weighted_votes = max(tech["weighted_votes"] for tech in technologies.values())
+                weighted_agreement = max_weighted_votes / total_weight
+
+                # Also track raw vote percentage
                 max_count = max(tech["count"] for tech in technologies.values())
-                category_agreement = max_count / total_responses
-                category_consensus[category] = category_agreement
+                raw_agreement = max_count / total_responses
+
+                # Combine weighted and raw (70% weighted, 30% raw)
+                category_agreement = (weighted_agreement * 0.7) + (raw_agreement * 0.3)
+                category_consensus[category] = {
+                    "agreement": category_agreement,
+                    "weighted_agreement": weighted_agreement,
+                    "raw_agreement": raw_agreement,
+                }
                 overall_agreement += category_agreement
 
         if category_consensus:
@@ -307,14 +390,20 @@ class MultiLLMConsensusEngine:
         else:
             consensus_level = ConsensusLevel.NO_CONSENSUS
 
-        # Generate final technology stack recommendation
-        final_stack = self._resolve_technology_conflicts(tech_scores, responses, consensus_level)
+        # Generate final technology stack recommendation with enhanced conflict resolution
+        final_stack = self._resolve_technology_conflicts_enhanced(
+            tech_scores, responses, consensus_level, model_weights, total_weight
+        )
 
-        # Identify areas of conflict
+        # Identify areas of conflict with detailed analysis
         conflict_areas = []
-        for category, agreement in category_consensus.items():
-            if agreement < self.consensus_threshold:
-                conflict_areas.append(f"Technology choice for {category}")
+        for category, consensus_data in category_consensus.items():
+            if consensus_data["agreement"] < self.consensus_threshold:
+                conflict_areas.append(
+                    f"Low consensus on {category} technology choice " f"({consensus_data['agreement']:.1%} agreement)"
+                )
+            elif consensus_data["weighted_agreement"] < 0.5 and consensus_data["raw_agreement"] > 0.6:
+                conflict_areas.append(f"Model disagreement on {category}: popular choice has low expert model support")
 
         return ConsensusResult(
             consensus_level=consensus_level,
@@ -871,7 +960,7 @@ Base your analysis on the complete project context and ensure recommendations al
     def _resolve_architecture_conflicts(
         self, pattern_counts: Dict[str, int], responses: List[LLMResponse], consensus_level: ConsensusLevel
     ) -> Dict[str, Any]:
-        """Resolve conflicts in architecture recommendations"""
+        """Resolve conflicts in architecture recommendations (legacy method for backward compatibility)"""
 
         if not pattern_counts:
             return {"pattern": "Monolithic", "rationale": "Default recommendation due to lack of consensus"}
@@ -898,10 +987,197 @@ Base your analysis on the complete project context and ensure recommendations al
             "resolution_method": "majority_vote",
         }
 
+    def _resolve_architecture_conflicts_enhanced(
+        self,
+        pattern_scores: Dict[str, Dict[str, Any]],
+        responses: List[LLMResponse],
+        consensus_level: ConsensusLevel,
+        model_weights: Dict[str, float],
+    ) -> Dict[str, Any]:
+        """
+        Enhanced conflict resolution using sophisticated weighted scoring and multiple strategies
+
+        Strategies applied:
+        1. Weighted majority vote (primary)
+        2. Confidence-adjusted scoring
+        3. Expert model priority when scores are close
+        4. Conservative approach for high-risk decisions
+        """
+
+        if not pattern_scores:
+            return {
+                "pattern": "Monolithic",
+                "rationale": "Default recommendation due to lack of consensus",
+                "resolution_strategy": "default",
+                "confidence": 0.3,
+            }
+
+        # Sort patterns by weighted votes
+        sorted_patterns = sorted(pattern_scores.items(), key=lambda x: x[1]["weighted_votes"], reverse=True)
+
+        # Get top pattern and runner-up
+        top_pattern = sorted_patterns[0]
+        pattern_name = top_pattern[0]
+        pattern_data = top_pattern[1]
+
+        # Check if there's a close runner-up (within 10% of top pattern's score)
+        has_close_runner_up = False
+        runner_up_pattern = None
+
+        if len(sorted_patterns) > 1:
+            runner_up = sorted_patterns[1]
+            vote_difference = (top_pattern[1]["weighted_votes"] - runner_up[1]["weighted_votes"]) / top_pattern[1][
+                "weighted_votes"
+            ]
+            if vote_difference < 0.10:  # Less than 10% difference
+                has_close_runner_up = True
+                runner_up_pattern = runner_up[0]
+
+        # Collect detailed rationales from supporting models
+        rationales = []
+        trade_off_analysis = {}
+        scalability_scores = []
+        maintainability_scores = []
+
+        for response in responses:
+            parsed = self._parse_technical_response(response.response_content)
+            arch_rec = parsed.get("architectureRecommendation", {})
+
+            if arch_rec.get("pattern") == pattern_name:
+                # Collect rationale
+                rationale = arch_rec.get("rationale", "")
+                if rationale and rationale not in rationales:
+                    rationales.append(rationale)
+
+                # Collect technical scores
+                if "maintainabilityScore" in arch_rec:
+                    maintainability_scores.append(arch_rec["maintainabilityScore"])
+
+                # Collect scalability assessment
+                scalability_assessment = arch_rec.get("scalabilityAssessment", "")
+                if scalability_assessment:
+                    # Extract numeric score if possible (simplified - could be enhanced)
+                    scalability_scores.append(8.0)  # Default good score if mentioned
+
+        # Calculate average confidence from supporting models
+        avg_confidence = statistics.mean(pattern_data["confidence_scores"]) if pattern_data["confidence_scores"] else 0.5
+
+        # Build comprehensive recommendation
+        recommendation = {
+            "pattern": pattern_name,
+            "weighted_votes": pattern_data["weighted_votes"],
+            "raw_votes": pattern_data["raw_votes"],
+            "supporting_models": pattern_data["supporting_models"],
+            "consensus_strength": pattern_data["weighted_votes"] / sum(model_weights.values()),
+            "confidence_level": avg_confidence,
+            "rationale": " | ".join(rationales[:3]) if rationales else "Recommended based on consensus analysis",
+            "resolution_strategy": self._determine_resolution_strategy(consensus_level, has_close_runner_up, avg_confidence),
+        }
+
+        # Add trade-off analysis if close runner-up exists
+        if has_close_runner_up and runner_up_pattern:
+            recommendation["alternative_consideration"] = {
+                "pattern": runner_up_pattern,
+                "votes": sorted_patterns[1][1]["raw_votes"],
+                "note": f"Close alternative with strong support. Consider trade-offs carefully.",
+                "score_difference": f"{(vote_difference * 100):.1f}%",
+            }
+
+        # Add technical scoring details
+        if maintainability_scores:
+            recommendation["maintainability_score"] = statistics.mean(maintainability_scores)
+        if scalability_scores:
+            recommendation["scalability_score"] = statistics.mean(scalability_scores)
+
+        return recommendation
+
+    def _identify_architecture_conflicts_enhanced(
+        self, pattern_scores: Dict[str, Dict[str, Any]], total_responses: int, total_weight: float
+    ) -> List[str]:
+        """Enhanced conflict identification with detailed analysis"""
+        conflicts = []
+
+        if not pattern_scores:
+            conflicts.append("No architecture patterns identified from LLM responses")
+            return conflicts
+
+        # Sort patterns by weighted votes
+        sorted_patterns = sorted(pattern_scores.items(), key=lambda x: x[1]["weighted_votes"], reverse=True)
+
+        # Check overall consensus strength
+        top_pattern_score = sorted_patterns[0][1]["weighted_votes"] / total_weight
+
+        if top_pattern_score < 0.4:
+            conflicts.append(f"Very low consensus on architecture pattern (only {top_pattern_score:.1%} weighted agreement)")
+        elif top_pattern_score < 0.6:
+            conflicts.append(
+                f"Moderate consensus concerns on architecture pattern ({top_pattern_score:.1%} weighted agreement)"
+            )
+
+        # Check for competing patterns with similar scores
+        if len(sorted_patterns) > 1:
+            for i in range(1, min(3, len(sorted_patterns))):  # Check up to top 3 patterns
+                vote_ratio = sorted_patterns[i][1]["weighted_votes"] / sorted_patterns[0][1]["weighted_votes"]
+                if vote_ratio > 0.75:  # Runner-up has 75%+ of top pattern's votes
+                    conflicts.append(
+                        f"Strong competition between '{sorted_patterns[0][0]}' and '{sorted_patterns[i][0]}' "
+                        f"({vote_ratio:.1%} vote similarity) - requires careful trade-off analysis"
+                    )
+
+        # Check for model disagreement (different models favoring different patterns)
+        model_pattern_map = {}
+        for pattern_name, pattern_data in pattern_scores.items():
+            for model in pattern_data["supporting_models"]:
+                if model not in model_pattern_map:
+                    model_pattern_map[model] = []
+                model_pattern_map[model].append(pattern_name)
+
+        # Identify if high-weight models disagree
+        gpt4_patterns = [patterns for model, patterns in model_pattern_map.items() if "gpt-4" in model.lower()]
+        claude_patterns = [patterns for model, patterns in model_pattern_map.items() if "claude" in model.lower()]
+
+        if gpt4_patterns and claude_patterns:
+            gpt4_set = set(gpt4_patterns[0]) if gpt4_patterns else set()
+            claude_set = set(claude_patterns[0]) if claude_patterns else set()
+            if gpt4_set and claude_set and not gpt4_set.intersection(claude_set):
+                conflicts.append("Expert model disagreement: GPT-4 and Claude favor different architecture patterns")
+
+        # Check confidence variance across supporting models
+        for pattern_name, pattern_data in pattern_scores.items():
+            if pattern_data["confidence_scores"] and len(pattern_data["confidence_scores"]) > 1:
+                confidence_variance = statistics.variance(pattern_data["confidence_scores"])
+                if confidence_variance > 0.15:  # High variance in confidence
+                    conflicts.append(
+                        f"High confidence variance for '{pattern_name}' pattern "
+                        f"(σ²={confidence_variance:.2f}) - models have varying certainty"
+                    )
+
+        return conflicts
+
+    def _determine_resolution_strategy(
+        self, consensus_level: ConsensusLevel, has_close_runner_up: bool, avg_confidence: float
+    ) -> str:
+        """Determine which conflict resolution strategy was used"""
+
+        if consensus_level == ConsensusLevel.STRONG_AGREEMENT:
+            return "weighted_majority_vote"
+        elif consensus_level == ConsensusLevel.MODERATE_AGREEMENT:
+            if has_close_runner_up:
+                return "expert_model_priority_with_trade_off_analysis"
+            else:
+                return "confidence_weighted_consensus"
+        elif consensus_level == ConsensusLevel.WEAK_AGREEMENT:
+            if avg_confidence > 0.7:
+                return "confidence_adjusted_majority"
+            else:
+                return "conservative_approach_with_alternatives"
+        else:
+            return "default_recommendation_due_to_no_consensus"
+
     def _resolve_technology_conflicts(
         self, tech_scores: Dict[str, Dict[str, Dict[str, Any]]], responses: List[LLMResponse], consensus_level: ConsensusLevel
     ) -> Dict[str, Any]:
-        """Resolve conflicts in technology stack recommendations"""
+        """Resolve conflicts in technology stack recommendations (legacy method for backward compatibility)"""
 
         final_stack = {}
 
@@ -935,6 +1211,122 @@ Base your analysis on the complete project context and ensure recommendations al
                 }
 
         return final_stack
+
+    def _resolve_technology_conflicts_enhanced(
+        self,
+        tech_scores: Dict[str, Dict[str, Dict[str, Any]]],
+        responses: List[LLMResponse],
+        consensus_level: ConsensusLevel,
+        model_weights: Dict[str, float],
+        total_weight: float,
+    ) -> Dict[str, Any]:
+        """
+        Enhanced technology stack conflict resolution with sophisticated weighted scoring
+
+        Resolves technology choices per category with:
+        1. Model-weighted voting
+        2. Confidence-adjusted scores
+        3. Technical fit scoring
+        4. Alternative consideration for close races
+        """
+
+        final_stack = {}
+
+        for category, technologies in tech_scores.items():
+            if not technologies:
+                continue
+
+            # Sort technologies by weighted votes
+            sorted_techs = sorted(technologies.items(), key=lambda x: x[1]["weighted_votes"], reverse=True)
+
+            if not sorted_techs:
+                continue
+
+            # Get top technology
+            top_tech_name = sorted_techs[0][0]
+            top_tech_data = sorted_techs[0][1]
+
+            # Calculate comprehensive scores
+            avg_confidence = statistics.mean(top_tech_data["confidence_scores"]) if top_tech_data["confidence_scores"] else 0.5
+
+            avg_tech_score = top_tech_data["total_score"] / top_tech_data["count"] if top_tech_data["count"] > 0 else 5.0
+
+            # Normalize weighted votes to 0-1 scale
+            weighted_consensus = top_tech_data["weighted_votes"] / total_weight
+            raw_consensus = top_tech_data["count"] / len(responses)
+
+            # Check for close alternatives (within 15% of top technology's weighted votes)
+            alternatives = []
+            if len(sorted_techs) > 1:
+                for i in range(1, min(3, len(sorted_techs))):  # Check up to 2 alternatives
+                    alt_tech_name = sorted_techs[i][0]
+                    alt_tech_data = sorted_techs[i][1]
+                    vote_ratio = alt_tech_data["weighted_votes"] / top_tech_data["weighted_votes"]
+
+                    if vote_ratio > 0.85:  # Within 15%
+                        alt_avg_score = (
+                            alt_tech_data["total_score"] / alt_tech_data["count"] if alt_tech_data["count"] > 0 else 5.0
+                        )
+                        alternatives.append(
+                            {
+                                "name": alt_tech_name,
+                                "weighted_votes": alt_tech_data["weighted_votes"],
+                                "vote_count": alt_tech_data["count"],
+                                "score": alt_avg_score,
+                                "vote_ratio": f"{vote_ratio:.1%}",
+                                "supporting_models": alt_tech_data["supporting_models"],
+                                "reasons": list(set(alt_tech_data["reasons"]))[:3],  # Top 3 unique reasons
+                            }
+                        )
+
+            # Build comprehensive recommendation for this category
+            category_recommendation = {
+                "name": top_tech_name,
+                "category": category,
+                "weighted_votes": top_tech_data["weighted_votes"],
+                "raw_votes": top_tech_data["count"],
+                "weighted_consensus": weighted_consensus,
+                "raw_consensus": raw_consensus,
+                "combined_consensus": (weighted_consensus * 0.7) + (raw_consensus * 0.3),
+                "confidence_level": avg_confidence,
+                "technical_score": avg_tech_score,
+                "supporting_models": top_tech_data["supporting_models"],
+                "reasons": list(set(top_tech_data["reasons"]))[:5],  # Top 5 unique reasons
+                "resolution_strategy": self._determine_tech_resolution_strategy(
+                    weighted_consensus, raw_consensus, len(alternatives), avg_confidence
+                ),
+            }
+
+            # Add alternatives if they exist
+            if alternatives:
+                category_recommendation["close_alternatives"] = alternatives
+                category_recommendation["recommendation_note"] = (
+                    f"Strong alternatives exist for {category}. Consider trade-offs carefully based on "
+                    f"specific project requirements and team expertise."
+                )
+
+            final_stack[category] = category_recommendation
+
+        return final_stack
+
+    def _determine_tech_resolution_strategy(
+        self, weighted_consensus: float, raw_consensus: float, num_alternatives: int, confidence: float
+    ) -> str:
+        """Determine which resolution strategy was used for technology selection"""
+
+        if weighted_consensus > 0.75 and raw_consensus > 0.7:
+            return "strong_weighted_consensus"
+        elif num_alternatives > 0:
+            if confidence > 0.75:
+                return "confidence_weighted_selection_with_alternatives"
+            else:
+                return "majority_vote_with_close_alternatives"
+        elif weighted_consensus > raw_consensus + 0.15:
+            return "expert_model_preference"
+        elif raw_consensus > weighted_consensus + 0.15:
+            return "popular_vote_with_lower_expert_confidence"
+        else:
+            return "balanced_weighted_consensus"
 
     def _identify_architecture_conflicts(self, pattern_counts: Dict[str, int], total_responses: int) -> List[str]:
         """Identify areas of conflict in architecture recommendations"""

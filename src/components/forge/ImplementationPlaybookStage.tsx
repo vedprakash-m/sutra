@@ -415,6 +415,8 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Export playbook
   const exportPlaybook = useCallback(async () => {
     try {
+      setIsGenerating(true);
+
       const response = await fetch(
         `/api/forge/export-playbook/${projectId}?format=${exportFormat}`,
         {
@@ -422,29 +424,47 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
         },
       );
 
-      if (!response.ok) throw new Error("Failed to export playbook");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to export playbook");
+      }
 
+      // Get the appropriate file extension
+      const fileExtensions: Record<string, string> = {
+        json: "json",
+        markdown: "md",
+        pdf: "pdf",
+        zip: "zip",
+      };
+      const extension = fileExtensions[exportFormat] || exportFormat;
+
+      // Handle the download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `implementation_playbook.${exportFormat}`;
+      a.download = `implementation_playbook_${projectId.substring(0, 8)}.${extension}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
       toast({
-        title: "Playbook Exported",
-        description: `Playbook exported successfully as ${exportFormat.toUpperCase()}.`,
+        title: "Playbook Exported Successfully",
+        description: `Implementation playbook exported as ${exportFormat.toUpperCase()} format.`,
       });
     } catch (error) {
       console.error("Error exporting playbook:", error);
       toast({
         title: "Export Failed",
-        description: "Failed to export playbook. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to export playbook. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsGenerating(false);
     }
   }, [projectId, exportFormat]);
 
@@ -997,12 +1017,13 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
                 <CardTitle>Complete Implementation Playbook</CardTitle>
                 <div className="flex space-x-2">
                   <Select value={exportFormat} onValueChange={setExportFormat}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-40">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="json">JSON</SelectItem>
                       <SelectItem value="markdown">Markdown</SelectItem>
+                      <SelectItem value="pdf">PDF Document</SelectItem>
                       <SelectItem value="zip">ZIP Archive</SelectItem>
                     </SelectContent>
                   </Select>

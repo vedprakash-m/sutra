@@ -3,6 +3,8 @@ node_modules/
 .venv/
 .venv-test/
 venv/
+**/venv/
+**/.venv/
 __pycache__/
 
 # Build outputs
@@ -56,19 +58,10 @@ coverage.xml
 local.settings.json
 .azure/
 
-# Bicep generated files
-*.json
-!package.json
-!tsconfig*.json
-!jest.config.js
-!playwright.config.ts
-!postcss.config.js
-!tailwind.config.js
-!vite.config.ts
+# Large generated/cache files
+api/coverage.xml
+docs/*.md
+infrastructure/**/*.json
+.ci-simulation/
 
-# Exception: Allow formatting of specific config files
-!.eslintrc.json
-!.prettierrc.json
-!api/host.json
-!api/*/function.json
-!public/staticwebapp.config.json
+# Note: We format most JSON files, but exclude generated/lock files above

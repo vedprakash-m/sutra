@@ -1,7 +1,8 @@
 /**
  * ForgeProjectDetails - Detailed view of a Forge project with stage navigation
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeftIcon,
   PencilIcon,
@@ -15,6 +16,9 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/outline";
 import IdeaRefinementStage from "./IdeaRefinementStage";
+import PRDGeneration from "./PRDGeneration";
+import UXRequirementsStage from "./UXRequirementsStage";
+import TechnicalAnalysisStage from "./TechnicalAnalysisStage";
 import ImplementationPlaybookStage from "./ImplementationPlaybookStage";
 
 interface ForgeProject {
@@ -448,38 +452,52 @@ export default function ForgeProjectDetails({
               />
             )}
             {project.currentStage === "prd_generation" && (
-              <div className="text-center py-12">
-                <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  PRD Generation Stage
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Coming soon - Generate comprehensive Product Requirements
-                  Document
-                </p>
-              </div>
+              <PRDGeneration
+                projectId={project.id}
+                ideaRefinementData={stageData.idea_refinement || {}}
+                onStageComplete={(data) => {
+                  setStageData((prev) => ({ ...prev, prd_generation: data }));
+                  handleAdvanceStage();
+                }}
+                onQualityUpdate={(quality) => {
+                  console.log("PRD Generation Quality:", quality);
+                }}
+              />
             )}
             {project.currentStage === "ux_requirements" && (
-              <div className="text-center py-12">
-                <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  UX Requirements Stage
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Coming soon - Create user experience specifications
-                </p>
-              </div>
+              <UXRequirementsStage
+                projectId={project.id}
+                prdData={stageData.prd_generation || {}}
+                onStageComplete={(data) => {
+                  setStageData((prev) => ({ ...prev, ux_requirements: data }));
+                  handleAdvanceStage();
+                }}
+                onQualityUpdate={(quality) => {
+                  console.log("UX Requirements Quality:", quality);
+                }}
+              />
             )}
             {project.currentStage === "technical_analysis" && (
-              <div className="text-center py-12">
-                <CogIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  Technical Analysis Stage
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Coming soon - Multi-LLM technical architecture evaluation
-                </p>
-              </div>
+              <TechnicalAnalysisStage
+                userId={project.ownerId}
+                sessionId={project.id}
+                projectContext={{
+                  ideaRefinement: stageData.idea_refinement || {},
+                  prdGeneration: stageData.prd_generation || {},
+                  uxRequirements: stageData.ux_requirements || {},
+                }}
+                onComplete={(data) => {
+                  setStageData((prev) => ({
+                    ...prev,
+                    technical_analysis: data,
+                  }));
+                  handleAdvanceStage();
+                }}
+                onBack={() => {
+                  // Handle back navigation if needed
+                  setActiveTab("overview");
+                }}
+              />
             )}
             {project.currentStage === "implementation_playbook" && (
               <ImplementationPlaybookStage

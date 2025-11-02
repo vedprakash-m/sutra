@@ -113,6 +113,11 @@ function AppContent() {
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/forge" element={<ForgePage />} />
             <Route path="/forge/:projectId" element={<ForgePage />} />
+            <Route path="/forge/:projectId/idea" element={<ForgePage />} />
+            <Route path="/forge/:projectId/prd" element={<ForgePage />} />
+            <Route path="/forge/:projectId/ux" element={<ForgePage />} />
+            <Route path="/forge/:projectId/tech" element={<ForgePage />} />
+            <Route path="/forge/:projectId/playbook" element={<ForgePage />} />
           </Routes>
         </Suspense>
       </main>

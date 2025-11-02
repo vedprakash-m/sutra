@@ -512,6 +512,406 @@ export const guestApi = {
   getUsage: () => apiService.get("/guest-llm/usage"),
 };
 
+// Import Forge types
+import type {
+  ForgeProject,
+  IdeaData,
+  RefinementRequest,
+  AnalysisResult,
+  RefinedIdea,
+  QualityAssessment,
+  StageCompletionResponse,
+  UserStory,
+  FunctionalRequirement,
+  AcceptanceCriteria,
+  PRDDocument,
+  UserJourney,
+  Wireframe,
+  ComponentSpec,
+  UXDocument,
+  AccessibilityReport,
+  ArchitectureAnalysis,
+  StackRecommendation,
+  ScalabilityAssessment,
+  TechSpecDocument,
+  ConsensusResult,
+  CodingPrompt,
+  DevelopmentWorkflow,
+  TestingStrategy,
+  ImplementationPlaybook,
+  ExportFormat,
+  ExportResponse,
+} from "../types/forge";
+
+export const forgeApi = {
+  // ============================================================================
+  // Forge Project Management
+  // ============================================================================
+  
+  /**
+   * Create a new Forge project
+   */
+  createProject: (data: {
+    name: string;
+    description: string;
+    priority?: string;
+    tags?: string[];
+  }) => apiService.post<ForgeProject>("/forge/create", data),
+
+  /**
+   * List all Forge projects for the authenticated user
+   */
+  listProjects: (params?: {
+    status?: string;
+    stage?: string;
+    limit?: number;
+    offset?: number;
+  }) => apiService.get<{ projects: ForgeProject[]; total: number }>("/forge/list", params),
+
+  /**
+   * Get a specific Forge project by ID
+   */
+  getProject: (projectId: string) =>
+    apiService.get<ForgeProject>(`/forge/get?project_id=${projectId}`),
+
+  /**
+   * Update a Forge project
+   */
+  updateProject: (projectId: string, data: Partial<ForgeProject>) =>
+    apiService.put<ForgeProject>(`/forge/update?project_id=${projectId}`, data),
+
+  /**
+   * Delete a Forge project
+   */
+  deleteProject: (projectId: string) =>
+    apiService.delete(`/forge/delete?project_id=${projectId}`),
+
+  // ============================================================================
+  // Stage 1: Idea Refinement
+  // ============================================================================
+
+  /**
+   * Analyze idea with multi-dimensional quality assessment
+   */
+  analyzeIdea: (projectId: string, ideaData: IdeaData, projectContext?: Record<string, any>) =>
+    apiService.post<AnalysisResult>(
+      `/forge/idea-refinement/analyze?project_id=${projectId}`,
+      { ideaData, projectContext }
+    ),
+
+  /**
+   * Refine idea with LLM-powered suggestions
+   */
+  refineIdeaWithLLM: (projectId: string, request: RefinementRequest) =>
+    apiService.post<RefinedIdea>(
+      `/forge/idea-refinement/refine?project_id=${projectId}`,
+      request
+    ),
+
+  /**
+   * Get quality assessment for idea refinement stage
+   */
+  getIdeaQualityAssessment: (projectId: string) =>
+    apiService.get<QualityAssessment>(
+      `/forge/idea-refinement/assessment?project_id=${projectId}`
+    ),
+
+  /**
+   * Complete idea refinement stage
+   */
+  completeIdeaRefinement: (projectId: string, ideaData: IdeaData) =>
+    apiService.post<StageCompletionResponse>(
+      `/forge/idea-refinement/complete?project_id=${projectId}`,
+      { ideaData }
+    ),
+
+  // ============================================================================
+  // Stage 2: PRD Generation
+  // ============================================================================
+
+  /**
+   * Generate user stories from refined idea
+   */
+  generateUserStories: (projectId: string, context?: Record<string, any>) =>
+    apiService.post<{ userStories: UserStory[] }>(
+      `/forge/prd-generation/generate-user-stories?project_id=${projectId}`,
+      { context }
+    ),
+
+  /**
+   * Generate functional requirements from user stories
+   */
+  generateFunctionalRequirements: (projectId: string, userStories: UserStory[]) =>
+    apiService.post<{ requirements: FunctionalRequirement[] }>(
+      `/forge/prd-generation/generate-functional-requirements?project_id=${projectId}`,
+      { userStories }
+    ),
+
+  /**
+   * Generate acceptance criteria for a specific requirement
+   */
+  generateAcceptanceCriteria: (projectId: string, requirement: FunctionalRequirement) =>
+    apiService.post<{ acceptanceCriteria: AcceptanceCriteria[] }>(
+      `/forge/prd-generation/generate-acceptance-criteria?project_id=${projectId}`,
+      { requirement }
+    ),
+
+  /**
+   * Generate complete PRD document with all sections
+   */
+  generatePRDDocument: (projectId: string) =>
+    apiService.post<PRDDocument>(
+      `/forge/prd-generation/generate-prd-document?project_id=${projectId}`,
+      {}
+    ),
+
+  /**
+   * Get quality assessment for PRD generation stage
+   */
+  getPRDQualityAssessment: (projectId: string) =>
+    apiService.get<QualityAssessment>(
+      `/forge/prd-generation/quality-assessment?project_id=${projectId}`
+    ),
+
+  /**
+   * Complete PRD generation stage
+   */
+  completePRDGeneration: (projectId: string, prdData: PRDDocument) =>
+    apiService.post<StageCompletionResponse>(
+      `/forge/prd-generation/complete?project_id=${projectId}`,
+      { prdData }
+    ),
+
+  // ============================================================================
+  // Stage 3: UX Requirements
+  // ============================================================================
+
+  /**
+   * Generate user journeys from user stories
+   */
+  generateUserJourneys: (projectId: string, userStories: UserStory[]) =>
+    apiService.post<{ userJourneys: UserJourney[] }>(
+      `/forge/ux-requirements/generate-user-journeys?project_id=${projectId}`,
+      { userStories }
+    ),
+
+  /**
+   * Generate wireframes from user journeys
+   */
+  generateWireframes: (projectId: string, userJourneys: UserJourney[]) =>
+    apiService.post<{ wireframes: Wireframe[] }>(
+      `/forge/ux-requirements/generate-wireframes?project_id=${projectId}`,
+      { userJourneys }
+    ),
+
+  /**
+   * Generate component specifications
+   */
+  generateComponentSpecs: (projectId: string, wireframes: Wireframe[]) =>
+    apiService.post<{ componentSpecs: ComponentSpec[] }>(
+      `/forge/ux-requirements/generate-component-specs?project_id=${projectId}`,
+      { wireframes }
+    ),
+
+  /**
+   * Generate complete UX document
+   */
+  generateUXDocument: (projectId: string) =>
+    apiService.post<UXDocument>(
+      `/forge/ux-requirements/generate-ux-document?project_id=${projectId}`,
+      {}
+    ),
+
+  /**
+   * Validate accessibility compliance (WCAG 2.1 AA)
+   */
+  validateAccessibility: (projectId: string, uxData: Partial<UXDocument>) =>
+    apiService.post<AccessibilityReport>(
+      `/forge/ux-requirements/accessibility-validation?project_id=${projectId}`,
+      { uxData }
+    ),
+
+  /**
+   * Get quality assessment for UX requirements stage
+   */
+  getUXQualityAssessment: (projectId: string) =>
+    apiService.get<QualityAssessment>(
+      `/forge/ux-requirements/quality-assessment?project_id=${projectId}`
+    ),
+
+  /**
+   * Complete UX requirements stage
+   */
+  completeUXRequirements: (projectId: string, uxData: UXDocument) =>
+    apiService.post<StageCompletionResponse>(
+      `/forge/ux-requirements/complete?project_id=${projectId}`,
+      { uxData }
+    ),
+
+  // ============================================================================
+  // Stage 4: Technical Analysis
+  // ============================================================================
+
+  /**
+   * Analyze architecture with multi-LLM evaluation
+   */
+  analyzeArchitecture: (projectId: string, requirements: Record<string, any>) =>
+    apiService.post<{ analyses: ArchitectureAnalysis[] }>(
+      `/forge/technical-analysis/analyze-architecture?project_id=${projectId}`,
+      { requirements }
+    ),
+
+  /**
+   * Get technology stack recommendations
+   */
+  getStackRecommendations: (projectId: string, constraints?: Record<string, any>) =>
+    apiService.post<{ recommendations: StackRecommendation[] }>(
+      `/forge/technical-analysis/stack-recommendation?project_id=${projectId}`,
+      { constraints }
+    ),
+
+  /**
+   * Assess scalability of proposed architecture
+   */
+  assessScalability: (projectId: string, architecture: ArchitectureAnalysis) =>
+    apiService.post<ScalabilityAssessment>(
+      `/forge/technical-analysis/scalability-assessment?project_id=${projectId}`,
+      { architecture }
+    ),
+
+  /**
+   * Generate complete technical specification document
+   */
+  generateTechSpec: (projectId: string) =>
+    apiService.post<TechSpecDocument>(
+      `/forge/technical-analysis/generate-tech-spec?project_id=${projectId}`,
+      {}
+    ),
+
+  /**
+   * Get multi-LLM consensus analysis
+   */
+  getConsensusAnalysis: (projectId: string) =>
+    apiService.post<ConsensusResult>(
+      `/forge/technical-analysis/consensus-analysis?project_id=${projectId}`,
+      {}
+    ),
+
+  /**
+   * Get quality assessment for technical analysis stage
+   */
+  getTechQualityAssessment: (projectId: string) =>
+    apiService.get<QualityAssessment>(
+      `/forge/technical-analysis/quality-assessment?project_id=${projectId}`
+    ),
+
+  /**
+   * Complete technical analysis stage
+   */
+  completeTechnicalAnalysis: (projectId: string, techData: TechSpecDocument) =>
+    apiService.post<StageCompletionResponse>(
+      `/forge/technical-analysis/complete?project_id=${projectId}`,
+      { techData }
+    ),
+
+  // ============================================================================
+  // Stage 5: Implementation Playbook
+  // ============================================================================
+
+  /**
+   * Generate coding agent prompts
+   */
+  generateCodingPrompts: (projectId: string, techSpec: TechSpecDocument) =>
+    apiService.post<{ codingPrompts: CodingPrompt[] }>(
+      `/forge/generate-coding-prompts?project_id=${projectId}`,
+      { techSpec }
+    ),
+
+  /**
+   * Create development workflow
+   */
+  createDevelopmentWorkflow: (projectId: string, prompts: CodingPrompt[]) =>
+    apiService.post<DevelopmentWorkflow>(
+      `/forge/create-development-workflow?project_id=${projectId}`,
+      { prompts }
+    ),
+
+  /**
+   * Generate testing strategy
+   */
+  generateTestingStrategy: (projectId: string, requirements: Record<string, any>) =>
+    apiService.post<TestingStrategy>(
+      `/forge/generate-testing-strategy?project_id=${projectId}`,
+      { requirements }
+    ),
+
+  /**
+   * Compile complete implementation playbook
+   */
+  compilePlaybook: (projectId: string) =>
+    apiService.post<ImplementationPlaybook>(
+      `/forge/compile-playbook?project_id=${projectId}`,
+      {}
+    ),
+
+  /**
+   * Export playbook in specified format (JSON, Markdown, PDF, ZIP)
+   * Note: This method handles blob responses for non-JSON formats
+   */
+  exportPlaybook: async (projectId: string, format: ExportFormat, options?: {
+    includeArtifacts?: boolean;
+    stages?: string[];
+  }): Promise<ExportResponse> => {
+    // For JSON format, use standard API call
+    if (format === "json") {
+      return apiService.post<ExportResponse>(
+        `/forge/export-playbook?project_id=${projectId}`,
+        { format, ...options }
+      );
+    }
+
+    // For blob formats (markdown, pdf, zip), handle blob response
+    const response = await fetch(
+      `${API_BASE_URL}/forge/export-playbook?project_id=${projectId}`,
+      {
+        method: "POST",
+        headers: await (apiService as any).getHeaders(),
+        body: JSON.stringify({ format, ...options }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Export failed: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const filename = response.headers.get("content-disposition")?.split("filename=")[1] || `forge-playbook-${projectId}.${format}`;
+    
+    return {
+      success: true,
+      blob,
+      filename: filename.replace(/['"]/g, ""),
+    };
+  },
+
+  /**
+   * Get quality assessment for implementation playbook stage
+   */
+  getPlaybookQualityAssessment: (projectId: string) =>
+    apiService.get<QualityAssessment>(
+      `/forge/quality-validation?project_id=${projectId}`
+    ),
+
+  /**
+   * Complete implementation playbook stage
+   */
+  completeImplementationPlaybook: (projectId: string, playbookData: ImplementationPlaybook) =>
+    apiService.post<StageCompletionResponse>(
+      `/forge/implementation-playbook/complete?project_id=${projectId}`,
+      { playbookData }
+    ),
+};
+
 // Combined API export for easier access
 export const api = {
   prompts: promptsApi,
@@ -521,6 +921,7 @@ export const api = {
   admin: adminApi,
   llm: llmApi,
   guest: guestApi,
+  forge: forgeApi,
 };
 
 export default apiService;

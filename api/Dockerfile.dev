@@ -6,7 +6,8 @@ FROM mcr.microsoft.com/azure-functions/python:4-python3.12
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true \
     PYTHONPATH=/home/site/wwwroot \
-    FUNCTIONS_WORKER_RUNTIME=python
+    FUNCTIONS_WORKER_RUNTIME=python \
+    AZURE_FUNCTIONS_ENVIRONMENT=Development
 
 # Install system dependencies including curl for health checks
 RUN apt-get update && apt-get install -y \
@@ -22,6 +23,9 @@ RUN pip install --upgrade pip && \
 # Copy application code (will be overwritten by volume mount in dev/e2e)
 COPY . /home/site/wwwroot
 
+# Set working directory
+WORKDIR /home/site/wwwroot
+
 # Expose the default Azure Functions port
 EXPOSE 7071
 
@@ -29,5 +33,6 @@ EXPOSE 7071
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:7071/api/health || exit 1
 
-# Note: No CMD needed - the base image mcr.microsoft.com/azure-functions/python:4-python3.12
-# has a built-in entrypoint that starts the Azure Functions host automatically
+# Start the Azure Functions host - the base image includes the host at this path
+# We need to explicitly start it for standalone Docker (not Azure App Service)
+CMD ["/opt/startup/start_nonappservice.sh"]

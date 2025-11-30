@@ -24,7 +24,10 @@ export type ProjectStatus =
 
 export type ProjectPriority = "low" | "medium" | "high" | "critical";
 
-export type QualityGateStatus = "BLOCK" | "PROCEED_WITH_CAUTION" | "PROCEED_EXCELLENT";
+export type QualityGateStatus =
+  | "BLOCK"
+  | "PROCEED_WITH_CAUTION"
+  | "PROCEED_EXCELLENT";
 
 // ============================================================================
 // Stage 1: Idea Refinement Types
@@ -144,7 +147,13 @@ export interface FunctionalRequirement {
 
 export interface NonFunctionalRequirement {
   id: string;
-  category: "performance" | "security" | "scalability" | "usability" | "reliability" | "maintainability";
+  category:
+    | "performance"
+    | "security"
+    | "scalability"
+    | "usability"
+    | "reliability"
+    | "maintainability";
   description: string;
   metric: string;
   target: string;
@@ -226,7 +235,14 @@ export interface Wireframe {
 
 export interface WireframeElement {
   id: string;
-  type: "button" | "input" | "text" | "image" | "container" | "navigation" | "form";
+  type:
+    | "button"
+    | "input"
+    | "text"
+    | "image"
+    | "container"
+    | "navigation"
+    | "form";
   label: string;
   position: { x: number; y: number };
   size: { width: number; height: number };
@@ -381,7 +397,12 @@ export interface RiskAssessment {
 
 export interface Risk {
   id: string;
-  category: "technical" | "security" | "performance" | "scalability" | "maintainability";
+  category:
+    | "technical"
+    | "security"
+    | "performance"
+    | "scalability"
+    | "maintainability";
   description: string;
   probability: "high" | "medium" | "low";
   impact: "critical" | "high" | "medium" | "low";
@@ -389,7 +410,13 @@ export interface Risk {
 }
 
 export interface StackRecommendation {
-  category: "frontend" | "backend" | "database" | "infrastructure" | "devops" | "monitoring";
+  category:
+    | "frontend"
+    | "backend"
+    | "database"
+    | "infrastructure"
+    | "devops"
+    | "monitoring";
   recommendations: TechnologyRecommendation[];
 }
 

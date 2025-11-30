@@ -143,12 +143,9 @@ class TestForgeEndToEnd:
     def mock_cosmos_container(self):
         """Mock Cosmos DB container for testing."""
         container = MagicMock()
-        container.read_item = AsyncMock(return_value={
-            "id": "test-project-id",
-            "name": "Test Project",
-            "forgeData": {},
-            "userId": "test-user@example.com"
-        })
+        container.read_item = AsyncMock(
+            return_value={"id": "test-project-id", "name": "Test Project", "forgeData": {}, "userId": "test-user@example.com"}
+        )
         container.upsert_item = AsyncMock(return_value={"id": "test-project-id"})
         container.query_items = MagicMock(return_value=[])
         return container
@@ -211,13 +208,15 @@ class TestForgeEndToEnd:
     # ============================================================================
 
     @pytest.mark.asyncio
-    async def test_stage1_idea_refinement_success(self, sample_idea_data, mock_llm_manager, mock_cosmos_container, sample_quality_scores):
+    async def test_stage1_idea_refinement_success(
+        self, sample_idea_data, mock_llm_manager, mock_cosmos_container, sample_quality_scores
+    ):
         """Test successful idea refinement with quality gates."""
         # Test quality assessment with sample data
         from shared.quality_engine import QualityAssessmentEngine
-        
+
         quality_engine = QualityAssessmentEngine()
-        
+
         # Prepare idea data for quality assessment
         idea_content = {
             "initialIdea": sample_idea_data["description"],
@@ -225,19 +224,17 @@ class TestForgeEndToEnd:
             "targetAudience": sample_idea_data["targetAudience"],
             "valueProposition": sample_idea_data["valueProposition"],
         }
-        
+
         # Calculate quality score
         quality_result = quality_engine.calculate_quality_score(
-            stage="idea_refinement",
-            content=idea_content,
-            context={"complexity": "medium", "project_type": "mvp"}
+            stage="idea_refinement", content=idea_content, context={"complexity": "medium", "project_type": "mvp"}
         )
-        
+
         # Verify quality assessment structure
-        assert hasattr(quality_result, 'overall_score')
-        assert hasattr(quality_result, 'dimension_scores')
-        assert hasattr(quality_result, 'quality_gate_status')
-        
+        assert hasattr(quality_result, "overall_score")
+        assert hasattr(quality_result, "dimension_scores")
+        assert hasattr(quality_result, "quality_gate_status")
+
         # Quality should meet threshold (75%) for well-formed ideas
         assert quality_result.overall_score >= 50.0  # Base score for complete data
         assert quality_result.quality_gate_status in ["BLOCK", "PROCEED_WITH_CAUTION", "PROCEED_EXCELLENT"]
@@ -246,24 +243,22 @@ class TestForgeEndToEnd:
     async def test_stage1_quality_gate_blocked(self, mock_llm_manager, mock_cosmos_container):
         """Test idea refinement blocked by quality gate with incomplete data."""
         from shared.quality_engine import QualityAssessmentEngine
-        
+
         quality_engine = QualityAssessmentEngine()
-        
+
         # Create incomplete idea data that should fail quality gate
         incomplete_idea = {
             "initialIdea": "short",  # Too short
-            "problemStatement": "",   # Empty
-            "targetAudience": "",     # Empty
-            "valueProposition": "",   # Empty
+            "problemStatement": "",  # Empty
+            "targetAudience": "",  # Empty
+            "valueProposition": "",  # Empty
         }
-        
+
         # Calculate quality score
         quality_result = quality_engine.calculate_quality_score(
-            stage="idea_refinement",
-            content=incomplete_idea,
-            context={"complexity": "medium"}
+            stage="idea_refinement", content=incomplete_idea, context={"complexity": "medium"}
         )
-        
+
         # Verify low-quality data triggers BLOCK status
         assert quality_result.overall_score < 75.0  # Below minimum threshold
         assert quality_result.quality_gate_status == "BLOCK"
@@ -316,9 +311,9 @@ class TestForgeEndToEnd:
     ):
         """Test implementation playbook compilation with full context."""
         from shared.quality_validators import CrossStageQualityValidator
-        
+
         validator = CrossStageQualityValidator()
-        
+
         # Prepare complete project data with all required context keys for high completeness
         complete_project_data = {
             "forgeData": {
@@ -353,10 +348,10 @@ class TestForgeEndToEnd:
                 },
             }
         }
-        
+
         # Validate complete context is available for playbook compilation
         gap_result = validator.detect_context_gaps(complete_project_data["forgeData"])
-        
+
         # Verify completeness for playbook generation
         assert "completeness_score" in gap_result
         assert gap_result["completeness_score"] >= 0  # Verify valid completeness score returned
@@ -390,7 +385,7 @@ class TestForgeEndToEnd:
                 "coverage_target": 85,
             },
         }
-        
+
         # Verify JSON export structure
         json_output = json.dumps(playbook_data, indent=2)
         assert json.loads(json_output)  # Valid JSON
@@ -422,12 +417,9 @@ class TestForgeEndToEnd:
 - E2E Tests: Required
 - Coverage Target: 85%
 """
-        
-        markdown_output = markdown_template.format(
-            title=sample_idea_data["title"],
-            summary=sample_idea_data["description"]
-        )
-        
+
+        markdown_output = markdown_template.format(title=sample_idea_data["title"], summary=sample_idea_data["description"])
+
         # Verify markdown structure
         assert "# Implementation Playbook" in markdown_output
         assert "## Coding Prompts" in markdown_output
@@ -438,23 +430,23 @@ class TestForgeEndToEnd:
     async def test_stage5_export_zip(self, sample_idea_data, sample_prd_data, mock_cosmos_container):
         """Test ZIP archive export functionality."""
         import io
-        
+
         # Create sample files for ZIP export
         files_to_archive = {
             "playbook.json": json.dumps({"name": "Test Playbook", "version": "1.0"}),
             "README.md": "# Implementation Guide\n\nThis is the implementation playbook.",
             "coding_prompts/setup.md": "# Setup Instructions\n\nCreate project structure.",
         }
-        
+
         # Create in-memory ZIP file
         zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for filename, content in files_to_archive.items():
                 zip_file.writestr(filename, content)
-        
+
         # Verify ZIP structure
         zip_buffer.seek(0)
-        with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
+        with zipfile.ZipFile(zip_buffer, "r") as zip_file:
             file_list = zip_file.namelist()
             assert "playbook.json" in file_list
             assert "README.md" in file_list
@@ -541,12 +533,20 @@ class TestForgeEndToEnd:
     # ============================================================================
 
     @pytest.mark.asyncio
-    async def test_complete_forge_workflow(self, sample_idea_data, sample_prd_data, sample_technical_analysis, mock_llm_manager, mock_cosmos_container, quality_validator):
+    async def test_complete_forge_workflow(
+        self,
+        sample_idea_data,
+        sample_prd_data,
+        sample_technical_analysis,
+        mock_llm_manager,
+        mock_cosmos_container,
+        quality_validator,
+    ):
         """Test complete Forge workflow from idea to playbook with quality gates."""
         from shared.quality_engine import QualityAssessmentEngine
-        
+
         quality_engine = QualityAssessmentEngine()
-        
+
         # Stage 1: Idea Refinement Quality Check
         idea_content = {
             "initialIdea": sample_idea_data["description"],
@@ -554,22 +554,18 @@ class TestForgeEndToEnd:
             "targetAudience": sample_idea_data["targetAudience"],
             "valueProposition": sample_idea_data["valueProposition"],
         }
-        
+
         stage1_result = quality_engine.calculate_quality_score(
-            stage="idea_refinement",
-            content=idea_content,
-            context={"complexity": "medium"}
+            stage="idea_refinement", content=idea_content, context={"complexity": "medium"}
         )
         assert stage1_result.overall_score >= 0  # Baseline check
-        
+
         # Stage 2: PRD Quality Check
         stage2_result = quality_engine.calculate_quality_score(
-            stage="prd_generation",
-            content=sample_prd_data,
-            context={"complexity": "medium"}
+            stage="prd_generation", content=sample_prd_data, context={"complexity": "medium"}
         )
         assert stage2_result.overall_score >= 0  # Baseline check
-        
+
         # Cross-stage validation: Idea -> PRD
         project_data = {
             "forgeData": {
@@ -577,13 +573,11 @@ class TestForgeEndToEnd:
                 "prd_generation": sample_prd_data,
             }
         }
-        
+
         validation_result = quality_validator.validate_cross_stage_consistency(
-            source_stage="idea_refinement",
-            target_stage="prd_generation",
-            project_data=project_data
+            source_stage="idea_refinement", target_stage="prd_generation", project_data=project_data
         )
-        
+
         assert hasattr(validation_result, "is_consistent")
         assert hasattr(validation_result, "consistency_score")
 
@@ -591,7 +585,7 @@ class TestForgeEndToEnd:
     async def test_cost_tracking_throughout_workflow(self, sample_idea_data, mock_llm_manager, mock_cosmos_container):
         """Test cost tracking across all Forge stages."""
         from shared.cost_tracker import CostTracker
-        
+
         # Simulate cost entries for each stage
         stage_costs = {
             "idea_refinement": Decimal("0.05"),
@@ -600,17 +594,17 @@ class TestForgeEndToEnd:
             "technical_analysis": Decimal("0.15"),  # Multi-LLM analysis
             "implementation_playbook": Decimal("0.10"),
         }
-        
+
         total_cost = sum(stage_costs.values())
-        
+
         # Verify cost accumulation
         assert total_cost == Decimal("0.44")
-        
+
         # Verify cost breakdown structure
         for stage, cost in stage_costs.items():
             assert cost >= Decimal("0.01")  # Minimum cost per stage
             assert cost <= Decimal("0.50")  # Maximum reasonable cost per stage
-        
+
         # Verify technical analysis has highest cost (multi-LLM)
         assert stage_costs["technical_analysis"] == max(stage_costs.values())
 

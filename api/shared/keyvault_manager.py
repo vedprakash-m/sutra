@@ -7,10 +7,9 @@ import logging
 import os
 from typing import Optional
 
+from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
-from azure.core.exceptions import ResourceNotFoundError, HttpResponseError
-
 
 logger = logging.getLogger("sutra.keyvault")
 
@@ -20,13 +19,13 @@ class KeyVaultManager:
 
     def __init__(self, key_vault_uri: Optional[str] = None):
         """Initialize Key Vault manager.
-        
+
         Args:
             key_vault_uri: Azure Key Vault URI. If not provided, uses environment variable.
         """
         self._kv_client: Optional[SecretClient] = None
         self._key_vault_uri = key_vault_uri or os.getenv("KEY_VAULT_URI") or os.getenv("KEY_VAULT_URL")
-        
+
     @property
     def kv_client(self) -> SecretClient:
         """Get or create Key Vault client."""
@@ -42,13 +41,13 @@ class KeyVaultManager:
 
     def _generate_secret_name(self, user_id: str, provider: str) -> str:
         """Generate a unique secret name for storing API key.
-        
+
         Format: sutra-llm-{user_id_hash}-{provider}
-        
+
         Args:
             user_id: User's unique identifier
             provider: LLM provider name (openai, anthropic, google)
-            
+
         Returns:
             Secret name suitable for Key Vault
         """
@@ -60,55 +59,49 @@ class KeyVaultManager:
 
     async def store_api_key(self, user_id: str, provider: str, api_key: str) -> str:
         """Store an API key securely in Key Vault.
-        
+
         Args:
             user_id: User's unique identifier
             provider: LLM provider name
             api_key: The API key to store
-            
+
         Returns:
             Reference key to retrieve the stored secret
-            
+
         Raises:
             HttpResponseError: If Key Vault operation fails
         """
         secret_name = self._generate_secret_name(user_id, provider)
-        
+
         try:
             # Store the secret with metadata
             self.kv_client.set_secret(
-                name=secret_name, 
-                value=api_key,
-                tags={
-                    "user_id": user_id,
-                    "provider": provider,
-                    "app": "sutra"
-                }
+                name=secret_name, value=api_key, tags={"user_id": user_id, "provider": provider, "app": "sutra"}
             )
             logger.info(f"Stored API key for user {user_id}, provider {provider}")
             return secret_name
-            
+
         except HttpResponseError as e:
             logger.error(f"Failed to store API key in Key Vault: {e}")
             raise
 
     async def get_api_key(self, user_id: str, provider: str) -> Optional[str]:
         """Retrieve an API key from Key Vault.
-        
+
         Args:
             user_id: User's unique identifier
             provider: LLM provider name
-            
+
         Returns:
             The API key if found, None otherwise
         """
         secret_name = self._generate_secret_name(user_id, provider)
-        
+
         try:
             secret = self.kv_client.get_secret(secret_name)
             logger.info(f"Retrieved API key for user {user_id}, provider {provider}")
             return secret.value
-            
+
         except ResourceNotFoundError:
             logger.warning(f"API key not found for user {user_id}, provider {provider}")
             return None
@@ -118,16 +111,16 @@ class KeyVaultManager:
 
     async def delete_api_key(self, user_id: str, provider: str) -> bool:
         """Delete an API key from Key Vault.
-        
+
         Args:
             user_id: User's unique identifier
             provider: LLM provider name
-            
+
         Returns:
             True if deletion was successful or key didn't exist
         """
         secret_name = self._generate_secret_name(user_id, provider)
-        
+
         try:
             # Begin soft delete
             poller = self.kv_client.begin_delete_secret(secret_name)
@@ -135,7 +128,7 @@ class KeyVaultManager:
             poller.wait()
             logger.info(f"Deleted API key for user {user_id}, provider {provider}")
             return True
-            
+
         except ResourceNotFoundError:
             logger.info(f"API key already deleted for user {user_id}, provider {provider}")
             return True
@@ -145,12 +138,12 @@ class KeyVaultManager:
 
     async def update_api_key(self, user_id: str, provider: str, api_key: str) -> str:
         """Update an existing API key in Key Vault.
-        
+
         Args:
             user_id: User's unique identifier
             provider: LLM provider name
             api_key: The new API key
-            
+
         Returns:
             Reference key to retrieve the stored secret
         """
@@ -159,13 +152,13 @@ class KeyVaultManager:
 
     def key_vault_available(self) -> bool:
         """Check if Key Vault is configured and accessible.
-        
+
         Returns:
             True if Key Vault is available, False otherwise
         """
         if not self._key_vault_uri:
             return False
-            
+
         try:
             # Try to list secrets (just to verify connection)
             # This will fail early if credentials are invalid

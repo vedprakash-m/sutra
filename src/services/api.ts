@@ -547,7 +547,7 @@ export const forgeApi = {
   // ============================================================================
   // Forge Project Management
   // ============================================================================
-  
+
   /**
    * Create a new Forge project
    */
@@ -566,7 +566,11 @@ export const forgeApi = {
     stage?: string;
     limit?: number;
     offset?: number;
-  }) => apiService.get<{ projects: ForgeProject[]; total: number }>("/forge/list", params),
+  }) =>
+    apiService.get<{ projects: ForgeProject[]; total: number }>(
+      "/forge/list",
+      params,
+    ),
 
   /**
    * Get a specific Forge project by ID
@@ -593,10 +597,14 @@ export const forgeApi = {
   /**
    * Analyze idea with multi-dimensional quality assessment
    */
-  analyzeIdea: (projectId: string, ideaData: IdeaData, projectContext?: Record<string, any>) =>
+  analyzeIdea: (
+    projectId: string,
+    ideaData: IdeaData,
+    projectContext?: Record<string, any>,
+  ) =>
     apiService.post<AnalysisResult>(
       `/forge/idea-refinement/analyze?project_id=${projectId}`,
-      { ideaData, projectContext }
+      { ideaData, projectContext },
     ),
 
   /**
@@ -605,7 +613,7 @@ export const forgeApi = {
   refineIdeaWithLLM: (projectId: string, request: RefinementRequest) =>
     apiService.post<RefinedIdea>(
       `/forge/idea-refinement/refine?project_id=${projectId}`,
-      request
+      request,
     ),
 
   /**
@@ -613,7 +621,7 @@ export const forgeApi = {
    */
   getIdeaQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/idea-refinement/assessment?project_id=${projectId}`
+      `/forge/idea-refinement/assessment?project_id=${projectId}`,
     ),
 
   /**
@@ -622,7 +630,7 @@ export const forgeApi = {
   completeIdeaRefinement: (projectId: string, ideaData: IdeaData) =>
     apiService.post<StageCompletionResponse>(
       `/forge/idea-refinement/complete?project_id=${projectId}`,
-      { ideaData }
+      { ideaData },
     ),
 
   // ============================================================================
@@ -635,25 +643,31 @@ export const forgeApi = {
   generateUserStories: (projectId: string, context?: Record<string, any>) =>
     apiService.post<{ userStories: UserStory[] }>(
       `/forge/prd-generation/generate-user-stories?project_id=${projectId}`,
-      { context }
+      { context },
     ),
 
   /**
    * Generate functional requirements from user stories
    */
-  generateFunctionalRequirements: (projectId: string, userStories: UserStory[]) =>
+  generateFunctionalRequirements: (
+    projectId: string,
+    userStories: UserStory[],
+  ) =>
     apiService.post<{ requirements: FunctionalRequirement[] }>(
       `/forge/prd-generation/generate-functional-requirements?project_id=${projectId}`,
-      { userStories }
+      { userStories },
     ),
 
   /**
    * Generate acceptance criteria for a specific requirement
    */
-  generateAcceptanceCriteria: (projectId: string, requirement: FunctionalRequirement) =>
+  generateAcceptanceCriteria: (
+    projectId: string,
+    requirement: FunctionalRequirement,
+  ) =>
     apiService.post<{ acceptanceCriteria: AcceptanceCriteria[] }>(
       `/forge/prd-generation/generate-acceptance-criteria?project_id=${projectId}`,
-      { requirement }
+      { requirement },
     ),
 
   /**
@@ -662,7 +676,7 @@ export const forgeApi = {
   generatePRDDocument: (projectId: string) =>
     apiService.post<PRDDocument>(
       `/forge/prd-generation/generate-prd-document?project_id=${projectId}`,
-      {}
+      {},
     ),
 
   /**
@@ -670,7 +684,7 @@ export const forgeApi = {
    */
   getPRDQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/prd-generation/quality-assessment?project_id=${projectId}`
+      `/forge/prd-generation/quality-assessment?project_id=${projectId}`,
     ),
 
   /**
@@ -679,7 +693,7 @@ export const forgeApi = {
   completePRDGeneration: (projectId: string, prdData: PRDDocument) =>
     apiService.post<StageCompletionResponse>(
       `/forge/prd-generation/complete?project_id=${projectId}`,
-      { prdData }
+      { prdData },
     ),
 
   // ============================================================================
@@ -692,7 +706,7 @@ export const forgeApi = {
   generateUserJourneys: (projectId: string, userStories: UserStory[]) =>
     apiService.post<{ userJourneys: UserJourney[] }>(
       `/forge/ux-requirements/generate-user-journeys?project_id=${projectId}`,
-      { userStories }
+      { userStories },
     ),
 
   /**
@@ -701,7 +715,7 @@ export const forgeApi = {
   generateWireframes: (projectId: string, userJourneys: UserJourney[]) =>
     apiService.post<{ wireframes: Wireframe[] }>(
       `/forge/ux-requirements/generate-wireframes?project_id=${projectId}`,
-      { userJourneys }
+      { userJourneys },
     ),
 
   /**
@@ -710,7 +724,7 @@ export const forgeApi = {
   generateComponentSpecs: (projectId: string, wireframes: Wireframe[]) =>
     apiService.post<{ componentSpecs: ComponentSpec[] }>(
       `/forge/ux-requirements/generate-component-specs?project_id=${projectId}`,
-      { wireframes }
+      { wireframes },
     ),
 
   /**
@@ -719,7 +733,7 @@ export const forgeApi = {
   generateUXDocument: (projectId: string) =>
     apiService.post<UXDocument>(
       `/forge/ux-requirements/generate-ux-document?project_id=${projectId}`,
-      {}
+      {},
     ),
 
   /**
@@ -728,7 +742,7 @@ export const forgeApi = {
   validateAccessibility: (projectId: string, uxData: Partial<UXDocument>) =>
     apiService.post<AccessibilityReport>(
       `/forge/ux-requirements/accessibility-validation?project_id=${projectId}`,
-      { uxData }
+      { uxData },
     ),
 
   /**
@@ -736,7 +750,7 @@ export const forgeApi = {
    */
   getUXQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/ux-requirements/quality-assessment?project_id=${projectId}`
+      `/forge/ux-requirements/quality-assessment?project_id=${projectId}`,
     ),
 
   /**
@@ -745,7 +759,7 @@ export const forgeApi = {
   completeUXRequirements: (projectId: string, uxData: UXDocument) =>
     apiService.post<StageCompletionResponse>(
       `/forge/ux-requirements/complete?project_id=${projectId}`,
-      { uxData }
+      { uxData },
     ),
 
   // ============================================================================
@@ -758,16 +772,19 @@ export const forgeApi = {
   analyzeArchitecture: (projectId: string, requirements: Record<string, any>) =>
     apiService.post<{ analyses: ArchitectureAnalysis[] }>(
       `/forge/technical-analysis/analyze-architecture?project_id=${projectId}`,
-      { requirements }
+      { requirements },
     ),
 
   /**
    * Get technology stack recommendations
    */
-  getStackRecommendations: (projectId: string, constraints?: Record<string, any>) =>
+  getStackRecommendations: (
+    projectId: string,
+    constraints?: Record<string, any>,
+  ) =>
     apiService.post<{ recommendations: StackRecommendation[] }>(
       `/forge/technical-analysis/stack-recommendation?project_id=${projectId}`,
-      { constraints }
+      { constraints },
     ),
 
   /**
@@ -776,7 +793,7 @@ export const forgeApi = {
   assessScalability: (projectId: string, architecture: ArchitectureAnalysis) =>
     apiService.post<ScalabilityAssessment>(
       `/forge/technical-analysis/scalability-assessment?project_id=${projectId}`,
-      { architecture }
+      { architecture },
     ),
 
   /**
@@ -785,7 +802,7 @@ export const forgeApi = {
   generateTechSpec: (projectId: string) =>
     apiService.post<TechSpecDocument>(
       `/forge/technical-analysis/generate-tech-spec?project_id=${projectId}`,
-      {}
+      {},
     ),
 
   /**
@@ -794,7 +811,7 @@ export const forgeApi = {
   getConsensusAnalysis: (projectId: string) =>
     apiService.post<ConsensusResult>(
       `/forge/technical-analysis/consensus-analysis?project_id=${projectId}`,
-      {}
+      {},
     ),
 
   /**
@@ -802,7 +819,7 @@ export const forgeApi = {
    */
   getTechQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/technical-analysis/quality-assessment?project_id=${projectId}`
+      `/forge/technical-analysis/quality-assessment?project_id=${projectId}`,
     ),
 
   /**
@@ -811,7 +828,7 @@ export const forgeApi = {
   completeTechnicalAnalysis: (projectId: string, techData: TechSpecDocument) =>
     apiService.post<StageCompletionResponse>(
       `/forge/technical-analysis/complete?project_id=${projectId}`,
-      { techData }
+      { techData },
     ),
 
   // ============================================================================
@@ -824,7 +841,7 @@ export const forgeApi = {
   generateCodingPrompts: (projectId: string, techSpec: TechSpecDocument) =>
     apiService.post<{ codingPrompts: CodingPrompt[] }>(
       `/forge/generate-coding-prompts?project_id=${projectId}`,
-      { techSpec }
+      { techSpec },
     ),
 
   /**
@@ -833,16 +850,19 @@ export const forgeApi = {
   createDevelopmentWorkflow: (projectId: string, prompts: CodingPrompt[]) =>
     apiService.post<DevelopmentWorkflow>(
       `/forge/create-development-workflow?project_id=${projectId}`,
-      { prompts }
+      { prompts },
     ),
 
   /**
    * Generate testing strategy
    */
-  generateTestingStrategy: (projectId: string, requirements: Record<string, any>) =>
+  generateTestingStrategy: (
+    projectId: string,
+    requirements: Record<string, any>,
+  ) =>
     apiService.post<TestingStrategy>(
       `/forge/generate-testing-strategy?project_id=${projectId}`,
-      { requirements }
+      { requirements },
     ),
 
   /**
@@ -851,22 +871,26 @@ export const forgeApi = {
   compilePlaybook: (projectId: string) =>
     apiService.post<ImplementationPlaybook>(
       `/forge/compile-playbook?project_id=${projectId}`,
-      {}
+      {},
     ),
 
   /**
    * Export playbook in specified format (JSON, Markdown, PDF, ZIP)
    * Note: This method handles blob responses for non-JSON formats
    */
-  exportPlaybook: async (projectId: string, format: ExportFormat, options?: {
-    includeArtifacts?: boolean;
-    stages?: string[];
-  }): Promise<ExportResponse> => {
+  exportPlaybook: async (
+    projectId: string,
+    format: ExportFormat,
+    options?: {
+      includeArtifacts?: boolean;
+      stages?: string[];
+    },
+  ): Promise<ExportResponse> => {
     // For JSON format, use standard API call
     if (format === "json") {
       return apiService.post<ExportResponse>(
         `/forge/export-playbook?project_id=${projectId}`,
-        { format, ...options }
+        { format, ...options },
       );
     }
 
@@ -877,7 +901,7 @@ export const forgeApi = {
         method: "POST",
         headers: await (apiService as any).getHeaders(),
         body: JSON.stringify({ format, ...options }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -885,8 +909,10 @@ export const forgeApi = {
     }
 
     const blob = await response.blob();
-    const filename = response.headers.get("content-disposition")?.split("filename=")[1] || `forge-playbook-${projectId}.${format}`;
-    
+    const filename =
+      response.headers.get("content-disposition")?.split("filename=")[1] ||
+      `forge-playbook-${projectId}.${format}`;
+
     return {
       success: true,
       blob,
@@ -899,16 +925,19 @@ export const forgeApi = {
    */
   getPlaybookQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/quality-validation?project_id=${projectId}`
+      `/forge/quality-validation?project_id=${projectId}`,
     ),
 
   /**
    * Complete implementation playbook stage
    */
-  completeImplementationPlaybook: (projectId: string, playbookData: ImplementationPlaybook) =>
+  completeImplementationPlaybook: (
+    projectId: string,
+    playbookData: ImplementationPlaybook,
+  ) =>
     apiService.post<StageCompletionResponse>(
       `/forge/implementation-playbook/complete?project_id=${projectId}`,
-      { playbookData }
+      { playbookData },
     ),
 };
 

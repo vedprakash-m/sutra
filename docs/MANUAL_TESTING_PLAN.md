@@ -1,8 +1,8 @@
 # Forge Module - Manual Testing Plan
 
-**Date:** November 2, 2025  
-**Test Phase:** Manual Integration Testing  
-**Tester:** Development Team  
+**Date:** November 2, 2025
+**Test Phase:** Manual Integration Testing
+**Tester:** Development Team
 **Status:** 🔄 **READY TO EXECUTE**
 
 ---
@@ -64,8 +64,8 @@ func start
 
 **Objective:** Validate end-to-end workflow from idea refinement through implementation playbook
 
-**Priority:** HIGH (Critical Path)  
-**Duration:** 45-60 minutes  
+**Priority:** HIGH (Critical Path)
+**Duration:** 45-60 minutes
 **Prerequisites:** Clean database state, valid LLM API keys
 
 #### Step 1.1: Create New Forge Project
@@ -85,7 +85,7 @@ func start
 - [ ] Project ID visible in URL: `/forge/[project-id]/idea`
 - [ ] Stage progress indicator shows Stage 1 active, others locked
 
-**Pass/Fail:** ______  
+**Pass/Fail:** ______
 **Notes:** ________________________________
 
 ---
@@ -121,7 +121,7 @@ func start
 - Cost tracked: $______ for ______ tokens
 - Time to complete: ______ seconds
 
-**Pass/Fail:** ______  
+**Pass/Fail:** ______
 **Notes:** ________________________________
 
 ---
@@ -160,7 +160,7 @@ func start
 - Export file size: ______ KB
 - Time to complete: ______ seconds
 
-**Pass/Fail:** ______  
+**Pass/Fail:** ______
 **Notes:** ________________________________
 
 ---
@@ -209,7 +209,7 @@ func start
 - Export PDF size: ______ KB
 - Time to complete: ______ seconds
 
-**Pass/Fail:** ______  
+**Pass/Fail:** ______
 **Notes:** ________________________________
 
 ---
@@ -262,7 +262,7 @@ func start
 - Export JSON valid? Yes/No
 - Time to complete: ______ seconds
 
-**Pass/Fail:** ______  
+**Pass/Fail:** ______
 **Notes:** ________________________________
 
 ---
@@ -318,7 +318,7 @@ func start
 - ZIP export size: ______ KB
 - Time to complete: ______ seconds
 
-**Pass/Fail:** ______  
+**Pass/Fail:** ______
 **Notes:** ________________________________
 
 ---
@@ -327,7 +327,7 @@ func start
 
 **Objective:** Validate quality gates prevent progression with low-quality work
 
-**Priority:** HIGH  
+**Priority:** HIGH
 **Duration:** 15-20 minutes
 
 #### Step 2.1: Create Low-Quality Idea
@@ -371,7 +371,7 @@ Test quality gates for all stages:
 
 **Objective:** Verify data flows correctly between stages
 
-**Priority:** HIGH  
+**Priority:** HIGH
 **Duration:** 20-30 minutes
 
 #### Step 3.1: Track Context Through Workflow
@@ -406,7 +406,7 @@ Test quality gates for all stages:
 
 **Objective:** Validate navigation controls and URL routing
 
-**Priority:** MEDIUM  
+**Priority:** MEDIUM
 **Duration:** 15-20 minutes
 
 #### Step 4.1: Test Navigation Controls
@@ -436,7 +436,7 @@ Test quality gates for all stages:
 
 **Objective:** Verify real-time cost tracking across workflow
 
-**Priority:** MEDIUM  
+**Priority:** MEDIUM
 **Duration:** 10-15 minutes
 
 #### Step 5.1: Monitor Cost Throughout Workflow
@@ -480,7 +480,7 @@ Test quality gates for all stages:
 
 **Objective:** Test all export formats and verify quality
 
-**Priority:** MEDIUM  
+**Priority:** MEDIUM
 **Duration:** 20-25 minutes
 
 #### Step 6.1: Test Stage-Specific Exports
@@ -515,7 +515,7 @@ Test exports for each stage:
 
 **Objective:** Validate graceful error handling and user feedback
 
-**Priority:** MEDIUM  
+**Priority:** MEDIUM
 **Duration:** 15-20 minutes
 
 #### Step 7.1: Test API Failure Scenarios
@@ -632,21 +632,21 @@ Measure response times for key operations:
 
 ### Bug Report Format
 
-**Bug ID:** ______  
-**Date Found:** ______  
-**Severity:** Critical / High / Medium / Low  
-**Stage:** ______  
-**Description:** ______________________________  
+**Bug ID:** ______
+**Date Found:** ______
+**Severity:** Critical / High / Medium / Low
+**Stage:** ______
+**Description:** ______________________________
 **Steps to Reproduce:**
 1. ______
 2. ______
 3. ______
 
-**Expected Behavior:** ______________________________  
-**Actual Behavior:** ______________________________  
-**Screenshots/Logs:** ______________________________  
-**Assigned To:** ______  
-**Status:** Open / In Progress / Fixed / Closed  
+**Expected Behavior:** ______________________________
+**Actual Behavior:** ______________________________
+**Screenshots/Logs:** ______________________________
+**Assigned To:** ______
+**Status:** Open / In Progress / Fixed / Closed
 
 ---
 
@@ -654,11 +654,11 @@ Measure response times for key operations:
 
 ### 6.1 Test Execution Summary
 
-**Test Date:** ______  
-**Tester:** ______  
-**Total Scenarios:** 7  
-**Scenarios Passed:** ______  
-**Scenarios Failed:** ______  
+**Test Date:** ______
+**Tester:** ______
+**Total Scenarios:** 7
+**Scenarios Passed:** ______
+**Scenarios Failed:** ______
 **Pass Rate:** ______%
 
 ---
@@ -687,9 +687,9 @@ Measure response times for key operations:
 
 ### 6.4 Sign-Off
 
-**Tester Signature:** ______________________  
-**Date:** ______________________  
-**Approved for Staging:** Yes / No / Conditional  
+**Tester Signature:** ______________________
+**Date:** ______________________
+**Approved for Staging:** Yes / No / Conditional
 **Comments:** ______________________________
 
 ---
@@ -702,6 +702,6 @@ Measure response times for key operations:
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** November 2, 2025  
+**Document Version:** 1.0
+**Last Updated:** November 2, 2025
 **Owner:** Development Team

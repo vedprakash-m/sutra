@@ -195,7 +195,7 @@ Pre-commit Hooks     - Code quality gates
 
 **Backend Implementation:** ✅ Complete
 - File: `api/forge_api/idea_refinement_endpoints.py` (542 lines)
-- Endpoints: 
+- Endpoints:
   - ✅ `POST /analyze` - Multi-dimensional idea analysis
   - ✅ `POST /refine` - LLM-powered refinement
   - ✅ `GET /assessment` - Quality assessment retrieval
@@ -689,27 +689,27 @@ Pre-commit Hooks     - Code quality gates
    refineIdeaWithLLM(projectId: string, refinementRequest: RefinementRequest): Promise<RefinedIdea>
    getQualityAssessment(projectId: string, stage: string): Promise<QualityAssessment>
    completeStage(projectId: string, stage: string, data: StageData): Promise<CompletionResult>
-   
+
    // Stage 2: PRD Generation
    generateUserStories(projectId: string, context: IdeaContext): Promise<UserStory[]>
    generateFunctionalRequirements(projectId: string, userStories: UserStory[]): Promise<Requirement[]>
    generateAcceptanceCriteria(projectId: string, requirement: Requirement): Promise<AcceptanceCriteria[]>
    generatePRDDocument(projectId: string): Promise<PRDDocument>
-   
+
    // Stage 3: UX Requirements
    generateUserJourneys(projectId: string, userStories: UserStory[]): Promise<UserJourney[]>
    generateWireframes(projectId: string, userJourneys: UserJourney[]): Promise<Wireframe[]>
    generateComponentSpecs(projectId: string, wireframes: Wireframe[]): Promise<ComponentSpec[]>
    generateUXDocument(projectId: string): Promise<UXDocument>
    accessibilityValidation(projectId: string, uxData: UXData): Promise<AccessibilityReport>
-   
+
    // Stage 4: Technical Analysis
    analyzeArchitecture(projectId: string, requirements: Requirements): Promise<ArchitectureAnalysis>
    getStackRecommendations(projectId: string, constraints: Constraints): Promise<StackRecommendation[]>
    assessScalability(projectId: string, architecture: Architecture): Promise<ScalabilityAssessment>
    generateTechSpec(projectId: string): Promise<TechSpecDocument>
    getConsensusAnalysis(projectId: string): Promise<ConsensusResult>
-   
+
    // Stage 5: Implementation Playbook
    generateCodingPrompts(projectId: string, techSpec: TechSpec): Promise<CodingPrompt[]>
    createDevelopmentWorkflow(projectId: string, prompts: CodingPrompt[]): Promise<Workflow>
@@ -973,7 +973,7 @@ Pre-commit Hooks     - Code quality gates
 #### Risk 1: Forge Stage 2-3 Frontend Complexity
 - **Probability:** Medium
 - **Impact:** High (blocks full Forge workflow)
-- **Mitigation:** 
+- **Mitigation:**
   - Allocate experienced frontend developer
   - Use existing IdeaRefinementStage as template
   - Implement in incremental steps with daily testing

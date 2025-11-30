@@ -1,8 +1,7 @@
 /**
  * ForgeProjectDetails - Detailed view of a Forge project with stage navigation
  */
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
 import {
   ArrowLeftIcon,
   PencilIcon,

@@ -68,7 +68,17 @@ interface UserJourney {
 
 interface WireframeElement {
   id: string;
-  type: "container" | "header" | "nav" | "content" | "sidebar" | "footer" | "form" | "button" | "image" | "text";
+  type:
+    | "container"
+    | "header"
+    | "nav"
+    | "content"
+    | "sidebar"
+    | "footer"
+    | "form"
+    | "button"
+    | "image"
+    | "text";
   label: string;
   position: { x: number; y: number; width: number; height: number };
   children?: WireframeElement[];
@@ -99,7 +109,13 @@ interface ComponentSpec {
   id: string;
   componentName: string;
   description: string;
-  componentType: "layout" | "navigation" | "input" | "display" | "feedback" | "utility";
+  componentType:
+    | "layout"
+    | "navigation"
+    | "input"
+    | "display"
+    | "feedback"
+    | "utility";
   props: {
     name: string;
     type: string;
@@ -190,8 +206,12 @@ export default function UXRequirementsStage({
 
   // UI state
   const [selectedJourney, setSelectedJourney] = useState<string | null>(null);
-  const [selectedWireframe, setSelectedWireframe] = useState<string | null>(null);
-  const [deviceView, setDeviceView] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [selectedWireframe, setSelectedWireframe] = useState<string | null>(
+    null,
+  );
+  const [deviceView, setDeviceView] = useState<"desktop" | "tablet" | "mobile">(
+    "desktop",
+  );
   const [showDocumentPreview, setShowDocumentPreview] = useState(false);
 
   // Memoized calculations
@@ -202,7 +222,10 @@ export default function UXRequirementsStage({
     if (uxData.userJourneys.length > 0) completed++;
     if (uxData.wireframes.length > 0) completed++;
     if (uxData.componentSpecs.length > 0) completed++;
-    if (uxData.accessibilityChecklist.filter(item => item.validated).length > 0) completed++;
+    if (
+      uxData.accessibilityChecklist.filter((item) => item.validated).length > 0
+    )
+      completed++;
     if (uxData.uxDocument) completed++;
 
     return (completed / total) * 100;
@@ -215,7 +238,9 @@ export default function UXRequirementsStage({
 
   const accessibilityCompletionRate = useMemo(() => {
     if (uxData.accessibilityChecklist.length === 0) return 0;
-    const validated = uxData.accessibilityChecklist.filter(item => item.validated).length;
+    const validated = uxData.accessibilityChecklist.filter(
+      (item) => item.validated,
+    ).length;
     return (validated / uxData.accessibilityChecklist.length) * 100;
   }, [uxData.accessibilityChecklist]);
 
@@ -266,7 +291,10 @@ export default function UXRequirementsStage({
           ? error.message
           : "Failed to generate user journeys",
       );
-      setValidationErrors((prev) => [...prev, "User journey generation failed"]);
+      setValidationErrors((prev) => [
+        ...prev,
+        "User journey generation failed",
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -365,7 +393,9 @@ export default function UXRequirementsStage({
         designSystem: result.designSystem || prev.designSystem,
       }));
 
-      toast.success(`Generated ${result.componentSpecs.length} component specifications`);
+      toast.success(
+        `Generated ${result.componentSpecs.length} component specifications`,
+      );
       setActiveTab("accessibility");
     } catch (error) {
       console.error("Error generating component specs:", error);
@@ -374,11 +404,20 @@ export default function UXRequirementsStage({
           ? error.message
           : "Failed to generate component specifications",
       );
-      setValidationErrors((prev) => [...prev, "Component spec generation failed"]);
+      setValidationErrors((prev) => [
+        ...prev,
+        "Component spec generation failed",
+      ]);
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, uxData.wireframes, uxData.designSystem, selectedLLM, trackCost]);
+  }, [
+    projectId,
+    uxData.wireframes,
+    uxData.designSystem,
+    selectedLLM,
+    trackCost,
+  ]);
 
   const validateAccessibility = useCallback(async () => {
     if (uxData.componentSpecs.length === 0) {
@@ -437,11 +476,21 @@ export default function UXRequirementsStage({
           ? error.message
           : "Failed to validate accessibility",
       );
-      setValidationErrors((prev) => [...prev, "Accessibility validation failed"]);
+      setValidationErrors((prev) => [
+        ...prev,
+        "Accessibility validation failed",
+      ]);
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, uxData.componentSpecs, uxData.wireframes, selectedLLM, trackCost, onQualityUpdate]);
+  }, [
+    projectId,
+    uxData.componentSpecs,
+    uxData.wireframes,
+    selectedLLM,
+    trackCost,
+    onQualityUpdate,
+  ]);
 
   const generateUXDocument = useCallback(async () => {
     if (accessibilityCompletionRate < 80) {
@@ -502,7 +551,14 @@ export default function UXRequirementsStage({
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, uxData, accessibilityCompletionRate, selectedLLM, trackCost, onQualityUpdate]);
+  }, [
+    projectId,
+    uxData,
+    accessibilityCompletionRate,
+    selectedLLM,
+    trackCost,
+    onQualityUpdate,
+  ]);
 
   const completeStage = useCallback(
     async (forceComplete: boolean = false) => {
@@ -548,13 +604,13 @@ export default function UXRequirementsStage({
   // Check quality and update can proceed status
   useEffect(() => {
     const meetsThreshold = overallQualityScore >= UX_QUALITY_THRESHOLD;
-    const hasRequiredComponents = 
+    const hasRequiredComponents =
       uxData.userJourneys.length > 0 &&
       uxData.wireframes.length > 0 &&
       uxData.componentSpecs.length > 0 &&
       accessibilityCompletionRate >= 80 &&
       uxData.uxDocument !== null;
-    
+
     setCanProceed(meetsThreshold && hasRequiredComponents);
   }, [overallQualityScore, uxData, accessibilityCompletionRate]);
 
@@ -614,7 +670,8 @@ export default function UXRequirementsStage({
         <div>
           <h2 className="text-2xl font-bold">UX Requirements</h2>
           <p className="text-muted-foreground">
-            Define comprehensive user experience specifications and accessibility standards
+            Define comprehensive user experience specifications and
+            accessibility standards
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -660,12 +717,16 @@ export default function UXRequirementsStage({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span>WCAG 2.1 AA</span>
-                <span className="font-semibold">{accessibilityCompletionRate.toFixed(0)}%</span>
+                <span className="font-semibold">
+                  {accessibilityCompletionRate.toFixed(0)}%
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all ${
-                    accessibilityCompletionRate >= 80 ? "bg-green-600" : "bg-yellow-600"
+                    accessibilityCompletionRate >= 80
+                      ? "bg-green-600"
+                      : "bg-yellow-600"
                   }`}
                   style={{ width: `${accessibilityCompletionRate}%` }}
                 />
@@ -722,7 +783,10 @@ export default function UXRequirementsStage({
               <CheckCircle className="h-3 w-3 text-green-600" />
             )}
           </TabsTrigger>
-          <TabsTrigger value="accessibility" className="flex items-center gap-2">
+          <TabsTrigger
+            value="accessibility"
+            className="flex items-center gap-2"
+          >
             <Accessibility className="h-4 w-4" />
             A11y
             {accessibilityCompletionRate >= 80 && (
@@ -767,7 +831,8 @@ export default function UXRequirementsStage({
               {uxData.userJourneys.length > 0 && (
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground">
-                    Generated {uxData.userJourneys.length} user journey(s) based on PRD user stories
+                    Generated {uxData.userJourneys.length} user journey(s) based
+                    on PRD user stories
                   </div>
                   <div className="space-y-3">
                     {uxData.userJourneys.map((journey) => (
@@ -777,96 +842,123 @@ export default function UXRequirementsStage({
                           selectedJourney === journey.id ? "border-primary" : ""
                         }`}
                       >
-                        <div onClick={() =>
-                          setSelectedJourney(
-                            selectedJourney === journey.id ? null : journey.id
-                          )
-                        }>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h5 className="font-semibold">{journey.journeyName}</h5>
-                              {journey.criticalPath && (
-                                <Badge variant="destructive" className="text-xs">
-                                  Critical
-                                </Badge>
-                              )}
+                        <div
+                          onClick={() =>
+                            setSelectedJourney(
+                              selectedJourney === journey.id
+                                ? null
+                                : journey.id,
+                            )
+                          }
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h5 className="font-semibold">
+                                  {journey.journeyName}
+                                </h5>
+                                {journey.criticalPath && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-xs"
+                                  >
+                                    Critical
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Persona: {journey.userPersona} | Goal:{" "}
+                                {journey.goal}
+                              </p>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                {journey.scenario}
+                              </p>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span>{journey.steps.length} steps</span>
+                                <span>Est. {journey.estimatedDuration}</span>
+                              </div>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              Persona: {journey.userPersona} | Goal: {journey.goal}
-                            </p>
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {journey.scenario}
-                            </p>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>{journey.steps.length} steps</span>
-                              <span>Est. {journey.estimatedDuration}</span>
-                            </div>
+                            <ChevronRight
+                              className={`h-5 w-5 transition-transform ${
+                                selectedJourney === journey.id
+                                  ? "rotate-90"
+                                  : ""
+                              }`}
+                            />
                           </div>
-                          <ChevronRight
-                            className={`h-5 w-5 transition-transform ${
-                              selectedJourney === journey.id ? "rotate-90" : ""
-                            }`}
-                          />
-                        </div>
 
-                        {selectedJourney === journey.id && (
-                          <div className="mt-4 space-y-3 border-t pt-4">
-                            {journey.steps.map((step) => (
-                              <div key={step.id} className="pl-4 border-l-2 border-gray-300">
-                                <div className="flex items-start gap-2">
-                                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                                    {step.stepNumber}
-                                  </div>
-                                  <div className="flex-1">
-                                    <h6 className="font-medium text-sm mb-1">{step.name}</h6>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                      {step.description}
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      <div>
-                                        <strong>User Actions:</strong>
-                                        <ul className="list-disc list-inside">
-                                          {step.userActions.map((action, i) => (
-                                            <li key={i}>{action}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                      <div>
-                                        <strong>System Responses:</strong>
-                                        <ul className="list-disc list-inside">
-                                          {step.systemResponses.map((response, i) => (
-                                            <li key={i}>{response}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
+                          {selectedJourney === journey.id && (
+                            <div className="mt-4 space-y-3 border-t pt-4">
+                              {journey.steps.map((step) => (
+                                <div
+                                  key={step.id}
+                                  className="pl-4 border-l-2 border-gray-300"
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                                      {step.stepNumber}
                                     </div>
-                                    {step.painPoints.length > 0 && (
-                                      <div className="mt-2">
-                                        <strong className="text-xs text-red-600">Pain Points:</strong>
-                                        <ul className="list-disc list-inside text-xs text-red-600">
-                                          {step.painPoints.map((pain, i) => (
-                                            <li key={i}>{pain}</li>
-                                          ))}
-                                        </ul>
+                                    <div className="flex-1">
+                                      <h6 className="font-medium text-sm mb-1">
+                                        {step.name}
+                                      </h6>
+                                      <p className="text-xs text-muted-foreground mb-2">
+                                        {step.description}
+                                      </p>
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <strong>User Actions:</strong>
+                                          <ul className="list-disc list-inside">
+                                            {step.userActions.map(
+                                              (action, i) => (
+                                                <li key={i}>{action}</li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
+                                        <div>
+                                          <strong>System Responses:</strong>
+                                          <ul className="list-disc list-inside">
+                                            {step.systemResponses.map(
+                                              (response, i) => (
+                                                <li key={i}>{response}</li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
                                       </div>
-                                    )}
-                                    {step.opportunities.length > 0 && (
-                                      <div className="mt-2">
-                                        <strong className="text-xs text-green-600">Opportunities:</strong>
-                                        <ul className="list-disc list-inside text-xs text-green-600">
-                                          {step.opportunities.map((opp, i) => (
-                                            <li key={i}>{opp}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
+                                      {step.painPoints.length > 0 && (
+                                        <div className="mt-2">
+                                          <strong className="text-xs text-red-600">
+                                            Pain Points:
+                                          </strong>
+                                          <ul className="list-disc list-inside text-xs text-red-600">
+                                            {step.painPoints.map((pain, i) => (
+                                              <li key={i}>{pain}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      {step.opportunities.length > 0 && (
+                                        <div className="mt-2">
+                                          <strong className="text-xs text-green-600">
+                                            Opportunities:
+                                          </strong>
+                                          <ul className="list-disc list-inside text-xs text-green-600">
+                                            {step.opportunities.map(
+                                              (opp, i) => (
+                                                <li key={i}>{opp}</li>
+                                              ),
+                                            )}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </Card>
                     ))}
@@ -885,19 +977,23 @@ export default function UXRequirementsStage({
                 <CardTitle>Wireframes</CardTitle>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 mr-4">
-                    {(["desktop", "tablet", "mobile"] as const).map((device) => {
-                      const Icon = getDeviceIcon(device);
-                      return (
-                        <Button
-                          key={device}
-                          variant={deviceView === device ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setDeviceView(device)}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </Button>
-                      );
-                    })}
+                    {(["desktop", "tablet", "mobile"] as const).map(
+                      (device) => {
+                        const Icon = getDeviceIcon(device);
+                        return (
+                          <Button
+                            key={device}
+                            variant={
+                              deviceView === device ? "default" : "outline"
+                            }
+                            size="sm"
+                            onClick={() => setDeviceView(device)}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </Button>
+                        );
+                      },
+                    )}
                   </div>
                   <Button
                     onClick={generateWireframes}
@@ -923,39 +1019,53 @@ export default function UXRequirementsStage({
               {uxData.wireframes.length > 0 && (
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground">
-                    Generated {uxData.wireframes.filter(w => w.screenType === deviceView).length} wireframe(s) for {deviceView}
+                    Generated{" "}
+                    {
+                      uxData.wireframes.filter(
+                        (w) => w.screenType === deviceView,
+                      ).length
+                    }{" "}
+                    wireframe(s) for {deviceView}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {uxData.wireframes
-                      .filter((wireframe) => wireframe.screenType === deviceView)
+                      .filter(
+                        (wireframe) => wireframe.screenType === deviceView,
+                      )
                       .map((wireframe) => (
                         <Card
                           key={wireframe.id}
                           className={`p-4 cursor-pointer transition-colors ${
-                            selectedWireframe === wireframe.id ? "border-primary" : ""
+                            selectedWireframe === wireframe.id
+                              ? "border-primary"
+                              : ""
                           }`}
                         >
-                          <div 
+                          <div
                             onClick={() =>
                               setSelectedWireframe(
-                                selectedWireframe === wireframe.id ? null : wireframe.id
+                                selectedWireframe === wireframe.id
+                                  ? null
+                                  : wireframe.id,
                               )
                             }
                           >
-                          <div className="aspect-video bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center mb-3">
-                            <Layout className="h-12 w-12 text-gray-400" />
-                          </div>
-                          <h5 className="font-semibold text-sm mb-1">
-                            {wireframe.screenName}
-                          </h5>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {wireframe.description}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{wireframe.elements.length} elements</span>
-                            <span>•</span>
-                            <span>{wireframe.interactions.length} interactions</span>
-                          </div>
+                            <div className="aspect-video bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center mb-3">
+                              <Layout className="h-12 w-12 text-gray-400" />
+                            </div>
+                            <h5 className="font-semibold text-sm mb-1">
+                              {wireframe.screenName}
+                            </h5>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {wireframe.description}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{wireframe.elements.length} elements</span>
+                              <span>•</span>
+                              <span>
+                                {wireframe.interactions.length} interactions
+                              </span>
+                            </div>
                           </div>
                         </Card>
                       ))}
@@ -995,7 +1105,8 @@ export default function UXRequirementsStage({
               {uxData.componentSpecs.length > 0 && (
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground">
-                    Generated {uxData.componentSpecs.length} component specification(s)
+                    Generated {uxData.componentSpecs.length} component
+                    specification(s)
                   </div>
                   <div className="space-y-3">
                     {uxData.componentSpecs.map((spec) => (
@@ -1003,7 +1114,9 @@ export default function UXRequirementsStage({
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <h5 className="font-semibold">{spec.componentName}</h5>
+                              <h5 className="font-semibold">
+                                {spec.componentName}
+                              </h5>
                               <Badge variant="outline" className="text-xs">
                                 {spec.componentType}
                               </Badge>
@@ -1020,8 +1133,11 @@ export default function UXRequirementsStage({
                             <ul className="list-disc list-inside text-xs mt-1">
                               {spec.props.slice(0, 3).map((prop, i) => (
                                 <li key={i}>
-                                  <code className="text-xs">{prop.name}</code>: {prop.type}
-                                  {prop.required && <span className="text-red-600">*</span>}
+                                  <code className="text-xs">{prop.name}</code>:{" "}
+                                  {prop.type}
+                                  {prop.required && (
+                                    <span className="text-red-600">*</span>
+                                  )}
                                 </li>
                               ))}
                               {spec.props.length > 3 && (
@@ -1037,9 +1153,11 @@ export default function UXRequirementsStage({
                               {spec.accessibility.role && (
                                 <li>Role: {spec.accessibility.role}</li>
                               )}
-                              {spec.accessibility.keyboardNavigation.slice(0, 2).map((key, i) => (
-                                <li key={i}>{key}</li>
-                              ))}
+                              {spec.accessibility.keyboardNavigation
+                                .slice(0, 2)
+                                .map((key, i) => (
+                                  <li key={i}>{key}</li>
+                                ))}
                             </ul>
                           </div>
                         </div>
@@ -1080,69 +1198,87 @@ export default function UXRequirementsStage({
             <CardContent className="space-y-4">
               {uxData.accessibilityChecklist.length > 0 && (
                 <div className="space-y-4">
-                  {(["perceivable", "operable", "understandable", "robust"] as const).map(
-                    (category) => {
-                      const categoryItems = uxData.accessibilityChecklist.filter(
-                        (item) => item.category === category
-                      );
-                      if (categoryItems.length === 0) return null;
+                  {(
+                    [
+                      "perceivable",
+                      "operable",
+                      "understandable",
+                      "robust",
+                    ] as const
+                  ).map((category) => {
+                    const categoryItems = uxData.accessibilityChecklist.filter(
+                      (item) => item.category === category,
+                    );
+                    if (categoryItems.length === 0) return null;
 
-                      const Icon = getAccessibilityCategoryIcon(category);
-                      const validatedCount = categoryItems.filter((item) => item.validated).length;
+                    const Icon = getAccessibilityCategoryIcon(category);
+                    const validatedCount = categoryItems.filter(
+                      (item) => item.validated,
+                    ).length;
 
-                      return (
-                        <div key={category} className="border rounded p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-5 w-5" />
-                              <h5 className="font-semibold capitalize">{category}</h5>
-                            </div>
-                            <Badge variant={validatedCount === categoryItems.length ? "default" : "secondary"}>
-                              {validatedCount}/{categoryItems.length}
-                            </Badge>
+                    return (
+                      <div key={category} className="border rounded p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-5 w-5" />
+                            <h5 className="font-semibold capitalize">
+                              {category}
+                            </h5>
                           </div>
-
-                          <div className="space-y-2">
-                            {categoryItems.map((item) => (
-                              <div
-                                key={item.id}
-                                className={`flex items-start gap-3 p-2 rounded ${
-                                  item.validated ? "bg-green-50" : "bg-gray-50"
-                                }`}
-                              >
-                                <div className="flex-shrink-0 mt-1">
-                                  {item.validated ? (
-                                    <CheckCircle className="h-4 w-4 text-green-600" />
-                                  ) : (
-                                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium text-sm">{item.criterion}</span>
-                                    <Badge variant="outline" className="text-xs">
-                                      {item.level}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground mb-1">
-                                    {item.description}
-                                  </p>
-                                  <p className="text-xs">
-                                    <strong>Implementation:</strong> {item.implementation}
-                                  </p>
-                                  {item.notes && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      <strong>Notes:</strong> {item.notes}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                          <Badge
+                            variant={
+                              validatedCount === categoryItems.length
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {validatedCount}/{categoryItems.length}
+                          </Badge>
                         </div>
-                      );
-                    }
-                  )}
+
+                        <div className="space-y-2">
+                          {categoryItems.map((item) => (
+                            <div
+                              key={item.id}
+                              className={`flex items-start gap-3 p-2 rounded ${
+                                item.validated ? "bg-green-50" : "bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex-shrink-0 mt-1">
+                                {item.validated ? (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm">
+                                    {item.criterion}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {item.level}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mb-1">
+                                  {item.description}
+                                </p>
+                                <p className="text-xs">
+                                  <strong>Implementation:</strong>{" "}
+                                  {item.implementation}
+                                </p>
+                                {item.notes && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    <strong>Notes:</strong> {item.notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

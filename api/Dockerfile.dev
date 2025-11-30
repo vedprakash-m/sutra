@@ -27,3 +27,6 @@ EXPOSE 7071
 # Health check for container orchestration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:7071/api/health || exit 1
+
+# Start the Azure Functions host
+CMD ["/azure-functions-host/Microsoft.Azure.WebJobs.Script.WebHost"]

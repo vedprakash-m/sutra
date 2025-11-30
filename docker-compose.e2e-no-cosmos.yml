@@ -58,7 +58,7 @@ services:
       - AzureWebJobsScriptRoot=/home/site/wwwroot
       - AzureFunctionsJobHost__Logging__Console__IsEnabled=true
     ports:
-      - "7071:80"
+      - "7071:7071"
     volumes:
       - ./api:/home/site/wwwroot
     depends_on:
@@ -72,7 +72,7 @@ services:
           "CMD",
           "sh",
           "-c",
-          "curl -f http://localhost:80/api/health --max-time 5 || exit 1",
+          "curl -f http://localhost:7071/api/health --max-time 5 || exit 1",
         ]
       interval: 10s
       timeout: 5s

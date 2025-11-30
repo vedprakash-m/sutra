@@ -49,7 +49,14 @@
           },
           "type": {
             "type": "string",
-            "enum": ["prompt", "llm_call", "transform", "condition", "loop", "human_input"],
+            "enum": [
+              "prompt",
+              "llm_call",
+              "transform",
+              "condition",
+              "loop",
+              "human_input"
+            ],
             "description": "Type of step"
           },
           "order": {
@@ -129,7 +136,14 @@
     },
     "category": {
       "type": "string",
-      "enum": ["automation", "analysis", "content", "customer_service", "development", "other"],
+      "enum": [
+        "automation",
+        "analysis",
+        "content",
+        "customer_service",
+        "development",
+        "other"
+      ],
       "description": "Playbook category"
     },
     "isPublic": {

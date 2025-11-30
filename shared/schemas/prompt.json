@@ -47,7 +47,14 @@
     },
     "category": {
       "type": "string",
-      "enum": ["writing", "coding", "analysis", "creative", "business", "other"],
+      "enum": [
+        "writing",
+        "coding",
+        "analysis",
+        "creative",
+        "business",
+        "other"
+      ],
       "description": "Prompt category"
     },
     "variables": {

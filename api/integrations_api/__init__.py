@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from shared.database import get_database_manager
 from shared.error_handling import SutraAPIError, handle_api_error
+from shared.keyvault_manager import get_keyvault_manager
 from shared.models import User, ValidationError
 from shared.real_time_cost import get_cost_manager
 
@@ -320,7 +321,17 @@ async def create_llm_integration(user_id: str, req: func.HttpRequest) -> func.Ht
         else:
             updated_user = container.create_item(user_data)
 
-        # TODO: Store actual API key in Azure Key Vault using key_ref
+        # Store actual API key in Azure Key Vault for secure storage
+        try:
+            keyvault_manager = get_keyvault_manager()
+            if keyvault_manager.key_vault_available():
+                await keyvault_manager.store_api_key(user_id, provider, api_key)
+                logger.info(f"Stored API key in Key Vault for user {user_id}, provider {provider}")
+            else:
+                logger.warning(f"Key Vault not available, API key stored in reference only for user {user_id}")
+        except Exception as kv_error:
+            logger.warning(f"Failed to store API key in Key Vault: {kv_error}")
+            # Continue with local reference - Key Vault is optional
 
         logger.info(f"Added LLM integration {provider} for user {user_id}")
 
@@ -474,7 +485,15 @@ async def delete_llm_integration(user_id: str, provider: str) -> func.HttpRespon
         # Save to database
         updated_user = container.replace_item(item=user_data["id"], body=user_data)
 
-        # TODO: Remove API key from Azure Key Vault
+        # Remove API key from Azure Key Vault
+        try:
+            keyvault_manager = get_keyvault_manager()
+            if keyvault_manager.key_vault_available():
+                await keyvault_manager.delete_api_key(user_id, provider)
+                logger.info(f"Deleted API key from Key Vault for user {user_id}, provider {provider}")
+        except Exception as kv_error:
+            logger.warning(f"Failed to delete API key from Key Vault: {kv_error}")
+            # Continue - database record is already deleted
 
         logger.info(f"Removed LLM integration {provider} for user {user_id}")
 

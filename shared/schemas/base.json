@@ -19,7 +19,7 @@
       "description": "Unique identifier for objects"
     },
     "userId": {
-      "allOf": [{"$ref": "#/definitions/objectId"}],
+      "allOf": [{ "$ref": "#/definitions/objectId" }],
       "description": "User identifier"
     },
     "userRole": {

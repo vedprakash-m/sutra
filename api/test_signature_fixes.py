@@ -6,6 +6,7 @@ without the authentication layer getting in the way.
 import asyncio
 from unittest.mock import Mock, patch
 
+import pytest
 from azure.functions import HttpRequest
 from shared.models import User, UserRole
 
@@ -32,6 +33,7 @@ def create_mock_user(user_id="test-user", role=UserRole.USER):
     return user
 
 
+@pytest.mark.asyncio
 async def test_function_signatures():
     """Test that all the functions accept **kwargs and don't fail on signature mismatch"""
 
@@ -86,6 +88,7 @@ async def test_function_signatures():
     return True
 
 
+@pytest.mark.asyncio
 async def test_direct_function_calls():
     """Test calling functions directly without authentication decorators"""
     print("\nTesting direct function calls...")

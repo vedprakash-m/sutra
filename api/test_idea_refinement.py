@@ -117,6 +117,7 @@ class TestQualityEngine:
 class TestIdeaRefinementEndpoints:
     """Test API endpoints for idea refinement stage"""
 
+    @pytest.mark.asyncio
     @patch("api.forge_api.idea_refinement_endpoints.extract_user_info")
     @patch("api.forge_api.idea_refinement_endpoints.quality_engine")
     async def test_analyze_idea_success(
@@ -165,6 +166,7 @@ class TestIdeaRefinementEndpoints:
         assert response_data["qualityAssessment"]["qualityGateStatus"] == "PROCEED_EXCELLENT"
         assert "nextSteps" in response_data
 
+    @pytest.mark.asyncio
     @patch("api.forge_api.idea_refinement_endpoints.extract_user_info")
     async def test_analyze_idea_authentication_required(self, mock_extract_user):
         """Test that analysis requires authentication"""
@@ -177,11 +179,12 @@ class TestIdeaRefinementEndpoints:
         response_data = json.loads(response.get_body())
         assert "Authentication required" in response_data["error"]
 
+    @pytest.mark.asyncio
     @patch("api.forge_api.idea_refinement_endpoints.extract_user_info")
-    @patch("api.forge_api.idea_refinement_endpoints.LLMClient")
+    @patch("api.forge_api.idea_refinement_endpoints.LLMManager")
     @patch("api.forge_api.idea_refinement_endpoints.CostTracker")
     async def test_refine_idea_with_llm_success(
-        self, mock_cost_tracker, mock_llm_client, mock_extract_user, mock_user_info, sample_idea_data
+        self, mock_cost_tracker, mock_llm_manager, mock_extract_user, mock_user_info, sample_idea_data
     ):
         """Test successful LLM-powered idea refinement"""
         # Setup mocks
@@ -206,7 +209,7 @@ class TestIdeaRefinementEndpoints:
             "cost": 0.003,
         }
         mock_llm_instance.execute_prompt.return_value = mock_llm_response
-        mock_llm_client.return_value = mock_llm_instance
+        mock_llm_manager.return_value = mock_llm_instance
 
         mock_cost_tracker_instance = AsyncMock()
         mock_cost_tracker.return_value = mock_cost_tracker_instance

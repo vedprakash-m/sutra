@@ -356,9 +356,9 @@ generate_report() {
 test_static_validation_only() {
     log_info "Running static validation checks (dry-run mode)"
 
-    # Check if infrastructure files exist
+    # Check if infrastructure files exist (using unified.bicep - the consolidated template)
     run_test "Infrastructure files exist" \
-        "test -f infrastructure/persistent.bicep && test -f infrastructure/compute.bicep" \
+        "test -f infrastructure/unified.bicep || test -f infrastructure/idempotent.bicep" \
         "pass"
 
     # Check deployment scripts syntax
@@ -371,9 +371,9 @@ test_static_validation_only() {
         "! grep -r 'rg-[a-zA-Z0-9]' infrastructure/" \
         "pass"
 
-    # Check naming consistency
+    # Check naming consistency (using unified.bicep - the consolidated template)
     run_test "Consistent naming patterns" \
-        "grep -q 'param' infrastructure/persistent.bicep || grep -q 'param' infrastructure/compute.bicep" \
+        "grep -q 'param' infrastructure/unified.bicep || grep -q 'param' infrastructure/idempotent.bicep" \
         "pass"
 
     # Generate dry-run report

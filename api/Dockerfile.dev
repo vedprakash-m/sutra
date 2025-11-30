@@ -11,15 +11,13 @@ ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     HOST_VERSION=4.0 \
     ASPNETCORE_URLS=http://+:7071
 
-# Install system dependencies including curl for health checks and Azure Functions Core Tools
+# Install system dependencies including curl for health checks
+# Install Node.js and Azure Functions Core Tools via npm (avoids apt keyring conflicts)
 RUN apt-get update && apt-get install -y \
     curl \
-    gnupg \
-    lsb-release \
-    && curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-archive-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] https://packages.microsoft.com/debian/$(lsb_release -rs | cut -d'.' -f1)/prod $(lsb_release -cs) main" > /etc/apt/sources.list.d/microsoft.list \
-    && apt-get update \
-    && apt-get install -y azure-functions-core-tools-4 \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g azure-functions-core-tools@4 --unsafe-perm true \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies to system site-packages

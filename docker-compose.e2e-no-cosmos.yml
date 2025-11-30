@@ -60,8 +60,8 @@ services:
       - AzureFunctionsJobHost__Logging__Console__IsEnabled=true
     ports:
       - "7071:7071"
-    volumes:
-      - ./api:/home/site/wwwroot
+    # Note: No volume mount for E2E - use the code built into the image
+    # Volume mounts are for local dev hot-reload, not CI/E2E testing
     depends_on:
       azurite:
         condition: service_started

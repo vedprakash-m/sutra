@@ -27,7 +27,7 @@ class TestDatabaseManager:
         ):
             db_manager = DatabaseManager()
             assert db_manager._connection_string is not None
-            assert db_manager._database_name == "sutra"
+            assert db_manager._database_name == "SutraDB"
             assert db_manager._development_mode is False
 
     def test_init_without_connection_string_production(self):
@@ -99,7 +99,7 @@ class TestDatabaseManager:
             database = db_manager.database
 
             assert database == mock_database
-            mock_client.get_database_client.assert_called_once_with("sutra")
+            mock_client.get_database_client.assert_called_once_with("SutraDB")
 
     def test_database_property_no_client(self):
         """Test database property when client is None."""

@@ -219,14 +219,14 @@ class TestCORSValidation:
     def test_validate_cors_origin_localhost_dev(self):
         """Test CORS validation with localhost development origin."""
         req = Mock(spec=func.HttpRequest)
-        req.headers = {"Origin": "https://localhost:5173"}
+        req.headers = {"Origin": "http://localhost:5173"}
 
         assert validate_cors_origin(req) is True
 
     def test_validate_cors_origin_localhost_3000(self):
         """Test CORS validation with localhost:3000."""
         req = Mock(spec=func.HttpRequest)
-        req.headers = {"Origin": "https://localhost:3000"}
+        req.headers = {"Origin": "http://localhost:3000"}
 
         assert validate_cors_origin(req) is True
 

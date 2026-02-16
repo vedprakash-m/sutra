@@ -41,7 +41,11 @@ class TestDatabaseManager:
 
     def test_init_development_mode(self):
         """Test DatabaseManager initialization in development mode."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
             assert db_manager._development_mode is True
             assert db_manager._connection_string is None
@@ -67,7 +71,11 @@ class TestDatabaseManager:
 
     def test_client_property_development_mode_no_connection(self):
         """Test client property in development mode without connection string."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
             client = db_manager.client
             assert client is None
@@ -103,7 +111,11 @@ class TestDatabaseManager:
 
     def test_database_property_no_client(self):
         """Test database property when client is None."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
             database = db_manager.database
             assert database is None
@@ -145,7 +157,11 @@ class TestDatabaseManager:
 
     def test_get_container_no_database(self):
         """Test get_container when database is None."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
             container = db_manager.get_container("test_container")
             assert container is None
@@ -153,7 +169,11 @@ class TestDatabaseManager:
     @pytest.mark.asyncio
     async def test_create_item_development_mode(self):
         """Test create_item in development mode."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
             item = {"id": "test_id", "name": "test_item"}
 
@@ -166,7 +186,11 @@ class TestDatabaseManager:
     @pytest.mark.asyncio
     async def test_create_item_development_mode_no_id(self):
         """Test create_item in development mode without id."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
             item = {"name": "test_item"}
 
@@ -179,7 +203,11 @@ class TestDatabaseManager:
     @pytest.mark.asyncio
     async def test_read_item_development_mode(self):
         """Test read_item in development mode."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
 
             result = await db_manager.read_item("test_container", "test_id", "test_partition")
@@ -191,7 +219,11 @@ class TestDatabaseManager:
     @pytest.mark.asyncio
     async def test_update_item_development_mode(self):
         """Test update_item in development mode."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
             item = {"id": "test_id", "name": "updated_item"}
 
@@ -204,7 +236,11 @@ class TestDatabaseManager:
     @pytest.mark.asyncio
     async def test_delete_item_development_mode(self):
         """Test delete_item in development mode."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
 
             result = await db_manager.delete_item("test_container", "test_id", "test_partition")
@@ -214,7 +250,11 @@ class TestDatabaseManager:
     @pytest.mark.asyncio
     async def test_query_items_development_mode(self):
         """Test query_items in development mode."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
 
             result = await db_manager.query_items("test_container", "SELECT * FROM c")
@@ -227,7 +267,11 @@ class TestDatabaseManager:
     @pytest.mark.asyncio
     async def test_list_items_development_mode(self):
         """Test list_items in development mode."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager = DatabaseManager()
 
             result = await db_manager.list_items("test_container")
@@ -382,7 +426,11 @@ class TestGlobalFunctions:
 
     def test_get_database_manager_singleton(self):
         """Test that get_database_manager returns singleton instance."""
-        with patch.dict(os.environ, {"ENVIRONMENT": "development"}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"ENVIRONMENT": "development", "SUTRA_ALLOW_RUNTIME_MOCKS": "true"},
+            clear=True,
+        ):
             db_manager1 = get_database_manager()
             db_manager2 = get_database_manager()
 

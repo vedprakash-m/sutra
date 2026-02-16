@@ -2,12 +2,12 @@
   "scriptFile": "__init__.py",
   "bindings": [
     {
-      "authLevel": "function",
+      "authLevel": "anonymous",
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["get", "post"],
-      "route": "forge/idea-refinement/{action:alpha?}/{project_id:alpha?}"
+      "methods": ["get", "post", "put", "delete"],
+      "route": "forge/{action}/{sub_action?}/{project_id?}"
     },
     {
       "type": "http",

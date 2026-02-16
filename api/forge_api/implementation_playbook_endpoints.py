@@ -12,43 +12,34 @@ Task 2.7: Implementation Playbook Generation Stage
 
 import json
 import logging
-import os
-
-# Import shared modules
-import sys
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import azure.functions as func
-from azure.cosmos import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared"))
-
+from shared.async_database import AsyncCosmosHelper
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
-from shared.llm_client import LLMClient, LLMManager
-from shared.multi_llm_consensus import CodingAgentOptimizer, QualityEngine
+from shared.llm_client import LLMManager
+from shared.coding_agent_optimizer import CodingAgentOptimizer
+from shared.quality_engine import QualityAssessmentEngine
 from shared.quality_validators import CrossStageQualityValidator
 
 logger = logging.getLogger(__name__)
 
-# Database configuration
-DATABASE_NAME = "SutraDB"
-FORGE_CONTAINER = "ForgeProjects"
-
 # Initialize services
-quality_engine = QualityEngine()
+quality_engine = QualityAssessmentEngine()
 quality_validator = CrossStageQualityValidator()
 coding_optimizer = CodingAgentOptimizer()
 cost_tracker = CostTracker()
 
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """Main entry point for implementation playbook API"""
     try:
         method = req.method
-        route = req.route_params.get("route", "")
+        route = req.route_params.get("sub_action", "") or req.route_params.get("route", "")
 
         if method == "POST" and route == "generate-coding-prompts":
             return generate_coding_prompts_endpoint(req)
@@ -59,9 +50,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         elif method == "POST" and route == "create-deployment-guide":
             return create_deployment_guide_endpoint(req)
         elif method == "POST" and route == "compile-playbook":
-            return compile_playbook_endpoint(req)
+            return await compile_playbook_endpoint(req)
         elif method == "POST" and route == "validate-context-integration":
-            return validate_context_integration_endpoint(req)
+            return await validate_context_integration_endpoint(req)
         elif method == "POST" and route == "optimize-for-agents":
             return optimize_for_agents_endpoint(req)
         elif method == "GET" and route == "export-playbook":
@@ -99,7 +90,7 @@ def generate_coding_prompts_endpoint(req: func.HttpRequest) -> func.HttpResponse
             )
 
         # Initialize LLM client
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         # Generate context-aware coding prompts
         coding_prompts = coding_optimizer.generate_context_optimized_prompts(
@@ -266,7 +257,7 @@ def create_deployment_guide_endpoint(req: func.HttpRequest) -> func.HttpResponse
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def compile_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def compile_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """Compile comprehensive implementation playbook with quality validation and full context integration"""
     try:
         user_info = extract_user_info(req)
@@ -279,7 +270,7 @@ def compile_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         project_id = request_data.get("project_id")
 
         # Get complete project context from all Forge stages
-        project_context = get_complete_project_context(project_id)
+        project_context = await get_complete_project_context(project_id)
 
         # Validate that all required stages are complete
         stage_completeness = validate_stage_completeness(project_context)
@@ -382,7 +373,7 @@ def compile_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         playbook_quality = calculate_playbook_quality(implementation_playbook, context_validation)
 
         # Save compiled playbook to database
-        save_result = save_implementation_playbook(project_id, implementation_playbook, user_info, playbook_quality)
+        save_result = await save_implementation_playbook(project_id, implementation_playbook, user_info, playbook_quality)
 
         return func.HttpResponse(
             json.dumps(
@@ -653,29 +644,24 @@ def generate_deployment_checklist(deployment_guide: Dict) -> List[str]:
     ]
 
 
-def get_complete_project_context(project_id: str) -> Dict:
+async def get_complete_project_context(project_id: str) -> Dict:
     """Get complete project context from all Forge stages"""
     try:
-        # Connect to Cosmos DB and retrieve all stage data
-        cosmos_client = CosmosClient.from_connection_string(os.getenv("COSMOS_CONNECTION_STRING"))
-        database = cosmos_client.get_database_client(DATABASE_NAME)
-        container = database.get_container_client(FORGE_CONTAINER)
+        async with AsyncCosmosHelper() as db:
+            try:
+                project_doc = await db.read_item(project_id, partition_key=project_id)
 
-        # Retrieve project document
-        try:
-            project_doc = container.read_item(item=project_id, partition_key=project_id)
-
-            # Extract all stage data
-            return {
-                "idea_refinement": project_doc.get("ideaRefinement", {}),
-                "prd_generation": project_doc.get("prdGeneration", {}),
-                "ux_requirements": project_doc.get("uxRequirements", {}),
-                "technical_analysis": project_doc.get("technicalAnalysis", {}),
-                "implementation_data": project_doc.get("implementationData", {}),
-            }
-        except CosmosResourceNotFoundError:
-            logger.warning(f"Project {project_id} not found in database")
-            return {}
+                # Extract all stage data
+                return {
+                    "idea_refinement": project_doc.get("ideaRefinement", {}),
+                    "prd_generation": project_doc.get("prdGeneration", {}),
+                    "ux_requirements": project_doc.get("uxRequirements", {}),
+                    "technical_analysis": project_doc.get("technicalAnalysis", {}),
+                    "implementation_data": project_doc.get("implementationData", {}),
+                }
+            except CosmosResourceNotFoundError:
+                logger.warning(f"Project {project_id} not found in database")
+                return {}
 
     except Exception as e:
         logger.error(f"Error getting project context: {str(e)}")
@@ -701,23 +687,8 @@ def generate_success_metrics(context: Dict) -> Dict:
     }
 
 
-def save_implementation_playbook(project_id: str, playbook: Dict, user_info: Dict) -> None:
-    """Save implementation playbook to database"""
-    try:
-        # This would save to Cosmos DB
-        logger.info(f"Saved implementation playbook for project {project_id}")
-    except Exception as e:
-        logger.error(f"Error saving playbook: {str(e)}")
-
-
-def get_implementation_playbook(project_id: str) -> Dict:
-    """Get implementation playbook from database"""
-    try:
-        # This would retrieve from Cosmos DB
-        return {"playbook": "data"}
-    except Exception as e:
-        logger.error(f"Error getting playbook: {str(e)}")
-        return {}
+# Note: save_implementation_playbook is defined below (line ~1726) with full Cosmos DB implementation.
+# The stub that was previously here has been removed to eliminate the duplicate definition.
 
 
 def export_to_markdown(playbook: Dict) -> str:
@@ -1357,7 +1328,7 @@ Generated by Sutra Multi-LLM Prompt Studio - Forge Implementation Playbook Syste
     return buffer.getvalue()
 
 
-def validate_context_integration_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def validate_context_integration_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """Validate context integration across all stages"""
     try:
         user_info = extract_user_info(req)
@@ -1370,7 +1341,7 @@ def validate_context_integration_endpoint(req: func.HttpRequest) -> func.HttpRes
         project_id = request_data.get("project_id")
 
         # Get complete project context
-        project_context = get_complete_project_context(project_id)
+        project_context = await get_complete_project_context(project_id)
 
         # Validate context integration
         validation_result = quality_validator.validate_cross_stage_consistency(project_context=project_context)
@@ -1728,33 +1699,29 @@ def calculate_playbook_quality(playbook: Dict, validation_result: Dict) -> Dict[
     }
 
 
-def save_implementation_playbook(project_id: str, playbook: Dict, user_info: Dict, quality: Dict) -> Dict[str, Any]:
+async def save_implementation_playbook(project_id: str, playbook: Dict, user_info: Dict, quality: Dict) -> Dict[str, Any]:
     """Save implementation playbook to database with quality metadata"""
     try:
-        cosmos_client = CosmosClient.from_connection_string(os.getenv("COSMOS_CONNECTION_STRING", ""))
-        database = cosmos_client.get_database_client(DATABASE_NAME)
-        container = database.get_container_client(FORGE_CONTAINER)
+        async with AsyncCosmosHelper() as db:
+            try:
+                project_doc = await db.read_item(project_id, partition_key=project_id)
+                project_doc["implementationData"] = {
+                    "playbook": playbook,
+                    "quality": quality,
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "generated_by": user_info.get("user_id"),
+                    "version": "1.0.0",
+                }
+                project_doc["lastModified"] = datetime.now(timezone.utc).isoformat()
 
-        # Update project document with implementation playbook
-        try:
-            project_doc = container.read_item(item=project_id, partition_key=project_id)
-            project_doc["implementationData"] = {
-                "playbook": playbook,
-                "quality": quality,
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "generated_by": user_info.get("user_id"),
-                "version": "1.0.0",
-            }
-            project_doc["lastModified"] = datetime.now(timezone.utc).isoformat()
+                await db.upsert_item(project_doc)
 
-            container.replace_item(item=project_id, body=project_doc)
+                logger.info(f"Successfully saved implementation playbook for project {project_id}")
+                return {"success": True, "message": "Playbook saved successfully"}
 
-            logger.info(f"Successfully saved implementation playbook for project {project_id}")
-            return {"success": True, "message": "Playbook saved successfully"}
-
-        except CosmosResourceNotFoundError:
-            logger.error(f"Project {project_id} not found")
-            return {"success": False, "error": "Project not found"}
+            except CosmosResourceNotFoundError:
+                logger.error(f"Project {project_id} not found")
+                return {"success": False, "error": "Project not found"}
 
     except Exception as e:
         logger.error(f"Error saving playbook: {str(e)}")

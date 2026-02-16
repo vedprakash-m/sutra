@@ -30,6 +30,60 @@ export type QualityGateStatus =
   | "PROCEED_EXCELLENT";
 
 // ============================================================================
+// LLM Provider Types
+// ============================================================================
+
+export type LLMProviderName = "openai" | "anthropic" | "google";
+
+export interface LLMModelOption {
+  id: string;
+  displayName: string;
+  provider: LLMProviderName;
+  costTier: "low" | "medium" | "high";
+}
+
+export interface LLMProviderInfo {
+  name: LLMProviderName;
+  displayName: string;
+  models: LLMModelOption[];
+  isAvailable: boolean;
+}
+
+/** Available LLM models grouped by provider */
+export const LLM_PROVIDERS: LLMProviderInfo[] = [
+  {
+    name: "openai",
+    displayName: "OpenAI",
+    isAvailable: true,
+    models: [
+      { id: "gpt-4o", displayName: "GPT-4o", provider: "openai", costTier: "high" },
+      { id: "gpt-4-turbo", displayName: "GPT-4 Turbo", provider: "openai", costTier: "high" },
+      { id: "gpt-3.5-turbo", displayName: "GPT-3.5 Turbo", provider: "openai", costTier: "low" },
+    ],
+  },
+  {
+    name: "anthropic",
+    displayName: "Anthropic",
+    isAvailable: true,
+    models: [
+      { id: "claude-3.5-sonnet", displayName: "Claude 3.5 Sonnet", provider: "anthropic", costTier: "high" },
+      { id: "claude-3-haiku", displayName: "Claude 3 Haiku", provider: "anthropic", costTier: "low" },
+      { id: "claude-3-opus", displayName: "Claude 3 Opus", provider: "anthropic", costTier: "high" },
+    ],
+  },
+  {
+    name: "google",
+    displayName: "Google",
+    isAvailable: true,
+    models: [
+      { id: "gemini-1.5-pro", displayName: "Gemini 1.5 Pro", provider: "google", costTier: "medium" },
+      { id: "gemini-1.5-flash", displayName: "Gemini 1.5 Flash", provider: "google", costTier: "low" },
+      { id: "gemini-pro", displayName: "Gemini Pro", provider: "google", costTier: "medium" },
+    ],
+  },
+];
+
+// ============================================================================
 // Stage 1: Idea Refinement Types
 // ============================================================================
 

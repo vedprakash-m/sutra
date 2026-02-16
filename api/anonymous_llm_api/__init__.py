@@ -8,6 +8,8 @@ import azure.functions as func
 # Add the root directory to Python path for proper imports
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
+from shared.middleware import enhanced_security_middleware
+
 logger = logging.getLogger(__name__)
 
 # Simple rate limiting based on IP
@@ -43,6 +45,7 @@ async def get_admin_configured_limits():
     return {"llm_calls_per_day": 5}
 
 
+@enhanced_security_middleware
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Anonymous LLM API - No login required, IP-based rate limiting

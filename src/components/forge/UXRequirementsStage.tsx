@@ -31,6 +31,7 @@ import { toast } from "@/hooks/use-toast";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useLLMCost } from "@/hooks/useLLMCost";
+import { forgeApi } from "@/services/api";
 import LLMSelector from "@/components/LLMSelector";
 import { QualityGate } from "@/components/forge/QualityGate";
 import { ProgressIndicator } from "@/components/forge/ProgressIndicator";
@@ -253,33 +254,19 @@ export default function UXRequirementsStage({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/ux/generate-user-journeys`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prdContext: prdData,
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate user journeys");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.generateUserJourneys(projectId, {
+        prdContext: prdData,
+        selectedLLM,
+      } as any);
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setUXData((prev) => ({
         ...prev,
-        userJourneys: result.userJourneys,
+        userJourneys: result.userJourneys as any,
       }));
 
       toast.success(`Generated ${result.userJourneys.length} user journeys`);
@@ -308,35 +295,21 @@ export default function UXRequirementsStage({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/ux/generate-wireframes`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userJourneys: uxData.userJourneys,
-            prdContext: prdData,
-            deviceTypes: ["desktop", "tablet", "mobile"],
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate wireframes");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.generateWireframes(projectId, {
+        userJourneys: uxData.userJourneys,
+        prdContext: prdData,
+        deviceTypes: ["desktop", "tablet", "mobile"],
+        selectedLLM,
+      } as any);
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setUXData((prev) => ({
         ...prev,
-        wireframes: result.wireframes,
+        wireframes: result.wireframes as any,
       }));
 
       toast.success(`Generated ${result.wireframes.length} wireframes`);
@@ -362,35 +335,21 @@ export default function UXRequirementsStage({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/ux/generate-component-specs`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            wireframes: uxData.wireframes,
-            designSystem: uxData.designSystem,
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate component specs");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.generateComponentSpecs(projectId, {
+        wireframes: uxData.wireframes,
+        designSystem: uxData.designSystem,
+        selectedLLM,
+      } as any);
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setUXData((prev) => ({
         ...prev,
-        componentSpecs: result.componentSpecs,
-        designSystem: result.designSystem || prev.designSystem,
+        componentSpecs: result.componentSpecs as any,
+        designSystem: (result as any).designSystem || prev.designSystem,
       }));
 
       toast.success(
@@ -427,43 +386,29 @@ export default function UXRequirementsStage({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/ux/validate-accessibility`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            componentSpecs: uxData.componentSpecs,
-            wireframes: uxData.wireframes,
-            wcagLevel: "AA",
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to validate accessibility");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.validateAccessibility(projectId, {
+        componentSpecs: uxData.componentSpecs,
+        wireframes: uxData.wireframes,
+        wcagLevel: "AA",
+        selectedLLM,
+      } as any);
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setUXData((prev) => ({
         ...prev,
-        accessibilityChecklist: result.accessibilityChecklist,
+        accessibilityChecklist: (result as any).accessibilityChecklist || result.issues as any,
       }));
 
       // Update quality
-      if (result.qualityAssessment) {
-        setCurrentQuality(result.qualityAssessment);
+      if ((result as any).qualityAssessment) {
+        setCurrentQuality((result as any).qualityAssessment);
         onQualityUpdate({
           stage: "ux_requirements",
-          quality: result.qualityAssessment,
+          quality: (result as any).qualityAssessment,
         });
       }
 
@@ -500,42 +445,25 @@ export default function UXRequirementsStage({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/ux/generate-document`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            uxData,
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate UX document");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.generateUXDocument(projectId);
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setUXData((prev) => ({
         ...prev,
-        uxDocument: result.uxDocument,
-        qualityAssessment: result.qualityAssessment,
+        uxDocument: result,
+        qualityAssessment: (result as any).qualityAssessment || { overallScore: result.qualityScore },
       }));
 
       // Update quality tracking
-      if (result.qualityAssessment) {
-        setCurrentQuality(result.qualityAssessment);
+      if ((result as any).qualityAssessment) {
+        setCurrentQuality((result as any).qualityAssessment);
         onQualityUpdate({
           stage: "ux_requirements",
-          quality: result.qualityAssessment,
+          quality: (result as any).qualityAssessment,
         });
       }
 
@@ -569,24 +497,13 @@ export default function UXRequirementsStage({
 
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/forge/${projectId}/ux/complete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            uxData,
-            forceComplete,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to complete UX stage");
-        }
-
-        const result = await response.json();
+        const result = await forgeApi.completeUXRequirements(projectId, {
+          ...uxData,
+          forceComplete,
+        } as any);
 
         toast.success("UX Requirements stage completed successfully");
-        onStageComplete(result.stageData);
+        onStageComplete(result);
       } catch (error) {
         console.error("Error completing UX stage:", error);
         toast.error(

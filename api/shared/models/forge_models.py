@@ -1,7 +1,7 @@
 """
 Forge module database models and schemas.
 Comprehensive data models for the Forge workflow system covering all 5 stages:
-Conception → Validation → Planning → Implementation → Deployment
+Idea Refinement → PRD Generation → UX Requirements → Technical Analysis → Implementation Playbook
 """
 
 import json
@@ -16,11 +16,11 @@ from typing import Any, Dict, List, Optional, Union
 class ForgeStage(Enum):
     """Forge workflow stages."""
 
-    CONCEPTION = "conception"
-    VALIDATION = "validation"
-    PLANNING = "planning"
-    IMPLEMENTATION = "implementation"
-    DEPLOYMENT = "deployment"
+    IDEA_REFINEMENT = "idea_refinement"
+    PRD_GENERATION = "prd_generation"
+    UX_REQUIREMENTS = "ux_requirements"
+    TECHNICAL_ANALYSIS = "technical_analysis"
+    IMPLEMENTATION_PLAYBOOK = "implementation_playbook"
 
 
 class ProjectStatus(Enum):
@@ -110,8 +110,8 @@ class ForgeArtifact:
 
 
 @dataclass
-class ConceptionData:
-    """Data specific to the Conception stage."""
+class IdeaRefinementData:
+    """Data specific to the Idea Refinement stage."""
 
     initial_idea: str = ""
     problem_statement: str = ""
@@ -143,8 +143,8 @@ class ValidationCriteria:
 
 
 @dataclass
-class ValidationData:
-    """Data specific to the Validation stage."""
+class PRDGenerationData:
+    """Data specific to the PRD Generation stage."""
 
     validation_criteria: List[ValidationCriteria] = field(default_factory=list)
     market_research: str = ""
@@ -193,8 +193,8 @@ class ProjectMilestone:
 
 
 @dataclass
-class PlanningData:
-    """Data specific to the Planning stage."""
+class UXRequirementsData:
+    """Data specific to the UX Requirements stage."""
 
     project_scope: str = ""
     technical_specifications: str = ""
@@ -234,8 +234,8 @@ class ImplementationTask:
 
 
 @dataclass
-class ImplementationData:
-    """Data specific to the Implementation stage."""
+class TechnicalAnalysisData:
+    """Data specific to the Technical Analysis stage."""
 
     implementation_approach: str = ""
     development_methodology: str = ""
@@ -268,8 +268,8 @@ class DeploymentEnvironment:
 
 
 @dataclass
-class DeploymentData:
-    """Data specific to the Deployment stage."""
+class ImplementationPlaybookData:
+    """Data specific to the Implementation Playbook stage."""
 
     deployment_strategy: str = ""
     infrastructure_requirements: str = ""
@@ -294,16 +294,16 @@ class ForgeProject:
     description: str
     owner_id: str
     organization_id: Optional[str] = None
-    current_stage: ForgeStage = ForgeStage.CONCEPTION
+    current_stage: ForgeStage = ForgeStage.IDEA_REFINEMENT
     status: ProjectStatus = ProjectStatus.DRAFT
     priority: ProjectPriority = ProjectPriority.MEDIUM
 
     # Stage-specific data
-    conception_data: ConceptionData = field(default_factory=ConceptionData)
-    validation_data: ValidationData = field(default_factory=ValidationData)
-    planning_data: PlanningData = field(default_factory=PlanningData)
-    implementation_data: ImplementationData = field(default_factory=ImplementationData)
-    deployment_data: DeploymentData = field(default_factory=DeploymentData)
+    idea_refinement_data: IdeaRefinementData = field(default_factory=IdeaRefinementData)
+    prd_generation_data: PRDGenerationData = field(default_factory=PRDGenerationData)
+    ux_requirements_data: UXRequirementsData = field(default_factory=UXRequirementsData)
+    technical_analysis_data: TechnicalAnalysisData = field(default_factory=TechnicalAnalysisData)
+    implementation_playbook_data: ImplementationPlaybookData = field(default_factory=ImplementationPlaybookData)
 
     # Artifacts by stage
     artifacts: Dict[str, List[ForgeArtifact]] = field(default_factory=dict)
@@ -338,14 +338,14 @@ class ForgeProject:
 
     def get_current_stage_data(
         self,
-    ) -> Union[ConceptionData, ValidationData, PlanningData, ImplementationData, DeploymentData]:
+    ) -> Union[IdeaRefinementData, PRDGenerationData, UXRequirementsData, TechnicalAnalysisData, ImplementationPlaybookData]:
         """Get data for the current stage."""
         stage_data_map = {
-            ForgeStage.CONCEPTION: self.conception_data,
-            ForgeStage.VALIDATION: self.validation_data,
-            ForgeStage.PLANNING: self.planning_data,
-            ForgeStage.IMPLEMENTATION: self.implementation_data,
-            ForgeStage.DEPLOYMENT: self.deployment_data,
+            ForgeStage.IDEA_REFINEMENT: self.idea_refinement_data,
+            ForgeStage.PRD_GENERATION: self.prd_generation_data,
+            ForgeStage.UX_REQUIREMENTS: self.ux_requirements_data,
+            ForgeStage.TECHNICAL_ANALYSIS: self.technical_analysis_data,
+            ForgeStage.IMPLEMENTATION_PLAYBOOK: self.implementation_playbook_data,
         }
         return stage_data_map[self.current_stage]
 
@@ -394,21 +394,21 @@ class ForgeProject:
         """Convert to dictionary for database storage."""
         data = asdict(self)
 
-        # Convert datetime objects to ISO strings
-        for field_name, field_value in data.items():
-            if isinstance(field_value, datetime):
-                data[field_name] = field_value.isoformat()
-            elif isinstance(field_value, dict):
-                for key, value in field_value.items():
-                    if isinstance(value, datetime):
-                        data[field_name][key] = value.isoformat()
+        def _serialize(obj):
+            """Recursively convert enums, datetimes, and Decimals for JSON safety."""
+            if isinstance(obj, Enum):
+                return obj.value
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            if isinstance(obj, Decimal):
+                return float(obj)
+            if isinstance(obj, dict):
+                return {k: _serialize(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_serialize(v) for v in obj]
+            return obj
 
-        # Convert enums to values
-        data["current_stage"] = self.current_stage.value
-        data["status"] = self.status.value
-        data["priority"] = self.priority.value
-
-        return data
+        return _serialize(data)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ForgeProject":
@@ -430,11 +430,11 @@ class ForgeProject:
             data["priority"] = ProjectPriority(data["priority"])
 
         # Handle nested dataclass objects
-        if "conception_data" in data and isinstance(data["conception_data"], dict):
-            data["conception_data"] = ConceptionData(**data["conception_data"])
-        if "validation_data" in data and isinstance(data["validation_data"], dict):
+        if "idea_refinement_data" in data and isinstance(data["idea_refinement_data"], dict):
+            data["idea_refinement_data"] = IdeaRefinementData(**data["idea_refinement_data"])
+        if "prd_generation_data" in data and isinstance(data["prd_generation_data"], dict):
             # Handle nested ValidationCriteria objects
-            validation_dict = data["validation_data"].copy()
+            validation_dict = data["prd_generation_data"].copy()
             if "validation_criteria" in validation_dict:
                 criteria_list = []
                 for criteria_dict in validation_dict["validation_criteria"]:
@@ -451,10 +451,10 @@ class ForgeProject:
             if "validation_status" in validation_dict:
                 validation_dict["validation_status"] = ValidationStatus(validation_dict["validation_status"])
 
-            data["validation_data"] = ValidationData(**validation_dict)
+            data["prd_generation_data"] = PRDGenerationData(**validation_dict)
 
-        if "planning_data" in data and isinstance(data["planning_data"], dict):
-            planning_dict = data["planning_data"].copy()
+        if "ux_requirements_data" in data and isinstance(data["ux_requirements_data"], dict):
+            planning_dict = data["ux_requirements_data"].copy()
             # Handle nested objects
             if "resource_requirements" in planning_dict:
                 resources = []
@@ -488,10 +488,10 @@ class ForgeProject:
                         milestones.append(milestone_dict)
                 planning_dict["milestones"] = milestones
 
-            data["planning_data"] = PlanningData(**planning_dict)
+            data["ux_requirements_data"] = UXRequirementsData(**planning_dict)
 
-        if "implementation_data" in data and isinstance(data["implementation_data"], dict):
-            impl_dict = data["implementation_data"].copy()
+        if "technical_analysis_data" in data and isinstance(data["technical_analysis_data"], dict):
+            impl_dict = data["technical_analysis_data"].copy()
             # Handle nested task objects
             if "tasks" in impl_dict:
                 tasks = []
@@ -511,10 +511,10 @@ class ForgeProject:
                         tasks.append(task_dict)
                 impl_dict["tasks"] = tasks
 
-            data["implementation_data"] = ImplementationData(**impl_dict)
+            data["technical_analysis_data"] = TechnicalAnalysisData(**impl_dict)
 
-        if "deployment_data" in data and isinstance(data["deployment_data"], dict):
-            deploy_dict = data["deployment_data"].copy()
+        if "implementation_playbook_data" in data and isinstance(data["implementation_playbook_data"], dict):
+            deploy_dict = data["implementation_playbook_data"].copy()
             # Handle nested environment objects
             if "environments" in deploy_dict:
                 environments = []
@@ -531,7 +531,7 @@ class ForgeProject:
                         environments.append(env_dict)
                 deploy_dict["environments"] = environments
 
-            data["deployment_data"] = DeploymentData(**deploy_dict)
+            data["implementation_playbook_data"] = ImplementationPlaybookData(**deploy_dict)
 
         # Handle artifacts dictionary
         if "artifacts" in data and isinstance(data["artifacts"], dict):
@@ -615,11 +615,11 @@ def calculate_stage_completion_percentage(project: ForgeProject, stage: ForgeSta
     """Calculate completion percentage for a specific stage."""
     # This is a simplified calculation - can be enhanced with more sophisticated logic
     stage_data = {
-        ForgeStage.CONCEPTION: project.conception_data,
-        ForgeStage.VALIDATION: project.validation_data,
-        ForgeStage.PLANNING: project.planning_data,
-        ForgeStage.IMPLEMENTATION: project.implementation_data,
-        ForgeStage.DEPLOYMENT: project.deployment_data,
+        ForgeStage.IDEA_REFINEMENT: project.idea_refinement_data,
+        ForgeStage.PRD_GENERATION: project.prd_generation_data,
+        ForgeStage.UX_REQUIREMENTS: project.ux_requirements_data,
+        ForgeStage.TECHNICAL_ANALYSIS: project.technical_analysis_data,
+        ForgeStage.IMPLEMENTATION_PLAYBOOK: project.implementation_playbook_data,
     }[stage]
 
     # Count non-empty fields as indicators of completion

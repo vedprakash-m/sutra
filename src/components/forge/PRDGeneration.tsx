@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useLLMCost } from "@/hooks/useLLMCost";
+import { forgeApi } from "@/services/api";
 import LLMSelector from "@/components/LLMSelector";
 import { QualityGate } from "@/components/forge/QualityGate";
 import { ProgressIndicator } from "@/components/forge/ProgressIndicator";
@@ -181,43 +182,32 @@ export default function PRDGeneration({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/prd/extract-requirements`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ideaContext: ideaRefinementData,
-            requirementFocus,
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to extract requirements");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.extractRequirements(projectId, {
+        ideaContext: ideaRefinementData,
+        requirementFocus,
+        selectedLLM,
+      });
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setPRDData((prev) => ({
         ...prev,
-        requirements: result.extractedRequirements,
-        qualityAssessment: result.qualityAssessment,
+        requirements: {
+          ...prev.requirements,
+          functionalRequirements: result.requirements as any,
+        },
+        qualityAssessment: (result as any).qualityAssessment,
       }));
 
       // Update quality tracking
-      if (result.qualityAssessment) {
-        setCurrentQuality(result.qualityAssessment);
+      if ((result as any).qualityAssessment) {
+        setCurrentQuality((result as any).qualityAssessment);
         onQualityUpdate({
           stage: "prd_generation",
-          quality: result.qualityAssessment,
+          quality: (result as any).qualityAssessment,
         });
       }
 
@@ -254,39 +244,28 @@ export default function PRDGeneration({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/prd/generate-user-stories`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            requirements: prdData.requirements,
-            ideaContext: ideaRefinementData,
-            storyFormat,
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate user stories");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.generateUserStories(projectId, {
+        requirements: prdData.requirements,
+        ideaContext: ideaRefinementData,
+        storyFormat,
+        selectedLLM,
+      } as any);
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setPRDData((prev) => ({
         ...prev,
-        userStories: result.userStories,
+        userStories: {
+          ...prev.userStories,
+          stories: result.userStories as any,
+        },
       }));
 
       toast.success(
-        `Generated ${result.userStories.stories?.length || 0} user stories`,
+        `Generated ${result.userStories?.length || 0} user stories`,
       );
       setActiveTab("prioritization");
     } catch (error) {
@@ -333,40 +312,26 @@ export default function PRDGeneration({
 
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `/api/forge/${projectId}/prd/prioritize-features`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            features,
-            userStories: prdData.userStories,
-            ideaContext: ideaRefinementData,
-            prioritizationMethod,
-            selectedLLM,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to prioritize features");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.prioritizeFeatures(projectId, {
+        features,
+        userStories: prdData.userStories,
+        ideaContext: ideaRefinementData,
+        prioritizationMethod,
+        selectedLLM,
+      });
 
       // Track costs
-      if (result.costTracking) {
+      if ((result as any).costTracking) {
         trackCost();
       }
 
       setPRDData((prev) => ({
         ...prev,
-        prioritizedFeatures: result.prioritizedFeatures,
+        prioritizedFeatures: result.prioritizedFeatures as any,
       }));
 
       toast.success(
-        `Prioritized ${result.prioritizedFeatures.features?.length || 0} features`,
+        `Prioritized ${(result.prioritizedFeatures as any)?.features?.length || Object.keys(result.prioritizedFeatures).length} features`,
       );
       setActiveTab("document");
     } catch (error) {
@@ -412,25 +377,7 @@ export default function PRDGeneration({
         assumptions: prdData.requirements.assumptions,
       };
 
-      const response = await fetch(
-        `/api/forge/${projectId}/prd/generate-document`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prdComponents,
-            exportFormat: "markdown",
-            templateStyle: "standard",
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate PRD document");
-      }
-
-      const result = await response.json();
+      const result = await forgeApi.generatePRDDocument(projectId);
 
       setPRDData((prev) => ({
         ...prev,
@@ -459,28 +406,25 @@ export default function PRDGeneration({
     if (!projectId) return;
 
     try {
-      const response = await fetch(`/api/forge/${projectId}/prd/assessment`);
-      if (!response.ok) return;
-
-      const assessment = await response.json();
-      setCurrentQuality(assessment.currentQuality);
+      const assessment = await forgeApi.getPRDQualityAssessment(projectId);
+      setCurrentQuality(assessment as any);
 
       // Check if quality threshold is met
       const qualityMet =
-        assessment.currentQuality.overallScore >= PRD_QUALITY_THRESHOLD;
-      const consistencyOk = assessment.crossStageValidation.isConsistent;
+        assessment.overallScore >= PRD_QUALITY_THRESHOLD;
+      const consistencyOk = (assessment as any).crossStageValidation?.isConsistent ?? true;
 
       setCanProceed(qualityMet && consistencyOk);
 
       if (!consistencyOk) {
         setValidationErrors(
-          assessment.crossStageValidation.validationErrors || [],
+          (assessment as any).crossStageValidation?.validationErrors || [],
         );
       }
 
       onQualityUpdate({
         stage: "prd_generation",
-        quality: assessment.currentQuality,
+        quality: assessment,
         canProceed: qualityMet && consistencyOk,
       });
     } catch (error) {
@@ -514,31 +458,20 @@ export default function PRDGeneration({
           completedAt: new Date().toISOString(),
         };
 
-        const response = await fetch(`/api/forge/${projectId}/prd/complete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            finalPRDData,
-            forceComplete,
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to complete PRD stage");
-        }
-
-        const result = await response.json();
+        const result = await forgeApi.completePRDGeneration(projectId, {
+          ...finalPRDData,
+          forceComplete,
+        } as any);
 
         toast.success(
-          `PRD stage completed with ${result.finalQualityScore}% quality`,
+          `PRD stage completed with ${result.qualityAssessment?.overallScore ?? 'N/A'}% quality`,
         );
 
         onStageComplete({
           stage: "prd_generation",
           data: finalPRDData,
-          quality: result.finalQualityScore,
-          completedAt: result.completionTimestamp,
+          quality: result.qualityAssessment?.overallScore,
+          completedAt: new Date().toISOString(),
           nextStage: result.nextStage,
         });
       } catch (error) {

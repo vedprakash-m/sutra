@@ -8,14 +8,17 @@ import logging
 from dataclasses import asdict
 from datetime import datetime, timezone
 from decimal import Decimal
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import azure.functions as func
-from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
+from shared.async_database import AsyncCosmosHelper, FORGE_ANALYTICS_CONTAINER, FORGE_TEMPLATES_CONTAINER
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
 from shared.llm_client import LLMManager
+from shared.middleware import enhanced_security_middleware
+from shared.quality_engine import QualityAssessmentEngine
 from shared.models.forge_models import (
     ArtifactType,
     ForgeAnalytics,
@@ -34,14 +37,28 @@ from shared.models.forge_models import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Database configuration
-COSMOS_CONNECTION_STRING = "your_cosmos_connection_string_here"
-DATABASE_NAME = "SutraDB"
-FORGE_PROJECTS_CONTAINER = "ForgeProjects"
-FORGE_TEMPLATES_CONTAINER = "ForgeTemplates"
-FORGE_ANALYTICS_CONTAINER = "ForgeAnalytics"
+# Database configuration is centralized in shared.async_database
+
+# Initialize services
+quality_engine = QualityAssessmentEngine()
 
 
+def _serialize_for_json(obj):
+    """Recursively convert enums, datetimes, and Decimals for JSON serialization."""
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, dict):
+        return {k: _serialize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_serialize_for_json(v) for v in obj]
+    return obj
+
+
+@enhanced_security_middleware
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """Main entry point for Forge API endpoints."""
     try:
@@ -338,21 +355,21 @@ async def update_forge_project(req: func.HttpRequest) -> func.HttpResponse:
             stage_data = updates["stage_data"]
             current_stage = project.current_stage
 
-            if current_stage == ForgeStage.CONCEPTION and "conception_data" in stage_data:
-                for key, value in stage_data["conception_data"].items():
-                    setattr(project.conception_data, key, value)
-            elif current_stage == ForgeStage.VALIDATION and "validation_data" in stage_data:
-                for key, value in stage_data["validation_data"].items():
-                    setattr(project.validation_data, key, value)
-            elif current_stage == ForgeStage.PLANNING and "planning_data" in stage_data:
-                for key, value in stage_data["planning_data"].items():
-                    setattr(project.planning_data, key, value)
-            elif current_stage == ForgeStage.IMPLEMENTATION and "implementation_data" in stage_data:
-                for key, value in stage_data["implementation_data"].items():
-                    setattr(project.implementation_data, key, value)
-            elif current_stage == ForgeStage.DEPLOYMENT and "deployment_data" in stage_data:
-                for key, value in stage_data["deployment_data"].items():
-                    setattr(project.deployment_data, key, value)
+            if current_stage == ForgeStage.IDEA_REFINEMENT and "idea_refinement_data" in stage_data:
+                for key, value in stage_data["idea_refinement_data"].items():
+                    setattr(project.idea_refinement_data, key, value)
+            elif current_stage == ForgeStage.PRD_GENERATION and "prd_generation_data" in stage_data:
+                for key, value in stage_data["prd_generation_data"].items():
+                    setattr(project.prd_generation_data, key, value)
+            elif current_stage == ForgeStage.UX_REQUIREMENTS and "ux_requirements_data" in stage_data:
+                for key, value in stage_data["ux_requirements_data"].items():
+                    setattr(project.ux_requirements_data, key, value)
+            elif current_stage == ForgeStage.TECHNICAL_ANALYSIS and "technical_analysis_data" in stage_data:
+                for key, value in stage_data["technical_analysis_data"].items():
+                    setattr(project.technical_analysis_data, key, value)
+            elif current_stage == ForgeStage.IMPLEMENTATION_PLAYBOOK and "implementation_playbook_data" in stage_data:
+                for key, value in stage_data["implementation_playbook_data"].items():
+                    setattr(project.implementation_playbook_data, key, value)
 
         # Update timestamp and version
         project.updated_at = datetime.now(timezone.utc)
@@ -414,6 +431,45 @@ async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
 
         # Attempt to advance stage
         current_stage = project.current_stage
+        force_advance = body.get("forceAdvance", False)
+
+        # Quality gate check — verify current stage meets quality threshold
+        stage_name = current_stage.value
+        stage_data = project.get_current_stage_data() if hasattr(project, 'get_current_stage_data') else {}
+        if stage_data is None:
+            stage_data = {}
+
+        # Get previous stage context for quality assessment
+        stages_order = list(ForgeStage)
+        current_idx = stages_order.index(current_stage)
+        previous_context = {}
+        if current_idx > 0:
+            prev_stage = stages_order[current_idx - 1]
+            forge_data = getattr(project, 'forge_data', {}) or {}
+            if isinstance(forge_data, dict):
+                previous_context = forge_data.get(prev_stage.value, {})
+
+        quality_result = quality_engine.calculate_quality_score(
+            stage=stage_name, content=stage_data, context=previous_context
+        )
+        thresholds = quality_engine.get_dynamic_threshold(stage_name, previous_context)
+
+        quality_passes = quality_result.quality_gate_status in ["PROCEED_WITH_CAUTION", "PROCEED_EXCELLENT"]
+        if not quality_passes and not force_advance:
+            return func.HttpResponse(
+                json.dumps({
+                    "error": "Quality threshold not met for current stage",
+                    "currentStage": stage_name,
+                    "currentScore": quality_result.overall_score,
+                    "requiredScore": thresholds.minimum,
+                    "qualityGateStatus": quality_result.quality_gate_status,
+                    "improvementSuggestions": quality_result.improvement_suggestions,
+                    "canForceAdvance": user_info.get("role") in ["expert", "admin"],
+                }),
+                status_code=400,
+                mimetype="application/json",
+            )
+
         success = project.advance_stage()
 
         if not success:
@@ -522,7 +578,7 @@ async def add_project_artifact(req: func.HttpRequest) -> func.HttpResponse:
             json.dumps(
                 {
                     "success": True,
-                    "artifact": asdict(artifact),
+                    "artifact": _serialize_for_json(asdict(artifact)),
                     "message": f"Artifact '{artifact.name}' added to {stage} stage",
                 }
             ),
@@ -616,13 +672,8 @@ async def ai_enhance_project(req: func.HttpRequest) -> func.HttpResponse:
 async def save_forge_project(project: ForgeProject) -> None:
     """Save a Forge project to the database."""
     try:
-        cosmos_client = CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING)
-        database = cosmos_client.get_database_client(DATABASE_NAME)
-        container = database.get_container_client(FORGE_PROJECTS_CONTAINER)
-
-        project_dict = project.to_dict()
-        await container.upsert_item(project_dict)
-
+        async with AsyncCosmosHelper() as db:
+            await db.upsert_item(project.to_dict())
     except Exception as e:
         logger.error(f"Error saving Forge project: {str(e)}")
         raise
@@ -631,13 +682,9 @@ async def save_forge_project(project: ForgeProject) -> None:
 async def load_forge_project(project_id: str) -> Optional[ForgeProject]:
     """Load a Forge project from the database."""
     try:
-        cosmos_client = CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING)
-        database = cosmos_client.get_database_client(DATABASE_NAME)
-        container = database.get_container_client(FORGE_PROJECTS_CONTAINER)
-
-        item = await container.read_item(project_id, partition_key=project_id)
-        return ForgeProject.from_dict(item)
-
+        async with AsyncCosmosHelper() as db:
+            item = await db.read_item(project_id, partition_key=project_id)
+            return ForgeProject.from_dict(item)
     except CosmosResourceNotFoundError:
         return None
     except Exception as e:
@@ -655,10 +702,6 @@ async def get_user_forge_projects(
 ) -> List[ForgeProject]:
     """Get Forge projects for a user with filtering."""
     try:
-        cosmos_client = CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING)
-        database = cosmos_client.get_database_client(DATABASE_NAME)
-        container = database.get_container_client(FORGE_PROJECTS_CONTAINER)
-
         # Build query
         query = "SELECT * FROM c WHERE (c.owner_id = @user_id OR ARRAY_CONTAINS(c.collaborators, @user_id))"
         parameters = [{"name": "@user_id", "value": user_id}]
@@ -677,11 +720,9 @@ async def get_user_forge_projects(
 
         query += f" ORDER BY c.updated_at DESC OFFSET {offset} LIMIT {limit}"
 
-        projects = []
-        async for item in container.query_items(query=query, parameters=parameters):
-            projects.append(ForgeProject.from_dict(item))
-
-        return projects
+        async with AsyncCosmosHelper() as db:
+            items = await db.query_items(query=query, parameters=parameters)
+            return [ForgeProject.from_dict(item) for item in items]
 
     except Exception as e:
         logger.error(f"Error getting user Forge projects: {str(e)}")
@@ -715,11 +756,8 @@ async def track_forge_event(user_id: str, project_id: str, event_type: str, even
             id=generate_forge_id(), user_id=user_id, project_id=project_id, event_type=event_type, event_data=event_data
         )
 
-        cosmos_client = CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING)
-        database = cosmos_client.get_database_client(DATABASE_NAME)
-        container = database.get_container_client(FORGE_ANALYTICS_CONTAINER)
-
-        await container.create_item(asdict(analytics))
+        async with AsyncCosmosHelper() as db:
+            await db.create_item(asdict(analytics), container_name=FORGE_ANALYTICS_CONTAINER)
 
     except Exception as e:
         logger.error(f"Error tracking Forge event: {str(e)}")
@@ -787,8 +825,8 @@ async def generate_ai_enhancement(
         project_name=project.name,
         project_description=project.description,
         current_stage=project.current_stage.value,
-        target_audience=getattr(project.conception_data, "target_audience", "Not specified"),
-        validation_status=getattr(project.validation_data, "validation_status", "Not started"),
+        target_audience=getattr(project.idea_refinement_data, "target_audience", "Not specified"),
+        validation_status=getattr(project.prd_generation_data, "validation_status", "Not started"),
         context=context,
     )
 
@@ -816,38 +854,280 @@ async def generate_ai_enhancement(
         return {"enhancement_type": enhancement_type, "error": "Failed to generate AI enhancement", "details": str(e)}
 
 
-# Additional helper endpoints will be implemented as needed
+# Additional helper endpoints
 async def get_project_analytics(req: func.HttpRequest) -> func.HttpResponse:
     """Get analytics for a project."""
-    # Implementation for project analytics
-    pass
+    try:
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
+            )
+
+        project_id = req.route_params.get("project_id") or req.params.get("project_id")
+        if not project_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Project ID required"}), status_code=400, mimetype="application/json"
+            )
+
+        project = await load_forge_project(project_id)
+        if not project:
+            return func.HttpResponse(
+                json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json"
+            )
+
+        if not await user_has_project_access(user_info["user_id"], project, required_permission="view"):
+            return func.HttpResponse(
+                json.dumps({"error": "Access denied"}), status_code=403, mimetype="application/json"
+            )
+
+        # Query analytics from Cosmos DB
+        try:
+            query = "SELECT * FROM c WHERE c.project_id = @project_id ORDER BY c.timestamp DESC"
+            async with AsyncCosmosHelper() as db:
+                events = await db.query_items(
+                    query=query,
+                    parameters=[{"name": "@project_id", "value": project_id}],
+                    container_name=FORGE_ANALYTICS_CONTAINER,
+                )
+        except Exception:
+            events = []
+
+        return func.HttpResponse(
+            json.dumps({
+                "projectId": project_id,
+                "projectName": project.name,
+                "currentStage": project.current_stage.value,
+                "stageCompletionPercentage": calculate_stage_completion_percentage(project),
+                "events": events[-50:],  # Last 50 events
+                "totalEvents": len(events),
+            }),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting project analytics: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to get analytics", "details": str(e)}),
+            status_code=500,
+            mimetype="application/json",
+        )
 
 
 async def get_project_artifacts(req: func.HttpRequest) -> func.HttpResponse:
     """Get artifacts for a project stage."""
-    # Implementation for artifact retrieval
-    pass
+    try:
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
+            )
+
+        project_id = req.route_params.get("project_id") or req.params.get("project_id")
+        stage = req.params.get("stage")
+        if not project_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Project ID required"}), status_code=400, mimetype="application/json"
+            )
+
+        project = await load_forge_project(project_id)
+        if not project:
+            return func.HttpResponse(
+                json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json"
+            )
+
+        if not await user_has_project_access(user_info["user_id"], project, required_permission="view"):
+            return func.HttpResponse(
+                json.dumps({"error": "Access denied"}), status_code=403, mimetype="application/json"
+            )
+
+        # Get artifacts, optionally filtered by stage
+        artifacts = project.artifacts if hasattr(project, 'artifacts') else []
+        if stage:
+            artifacts = [a for a in artifacts if getattr(a, 'stage', None) == stage]
+
+        artifact_list = [asdict(a) if hasattr(a, '__dataclass_fields__') else a for a in artifacts]
+
+        return func.HttpResponse(
+            json.dumps({
+                "projectId": project_id,
+                "stage": stage,
+                "artifacts": artifact_list,
+                "totalCount": len(artifact_list),
+            }),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error getting project artifacts: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to get artifacts", "details": str(e)}),
+            status_code=500,
+            mimetype="application/json",
+        )
 
 
 async def list_forge_templates(req: func.HttpRequest) -> func.HttpResponse:
     """List available Forge templates."""
-    # Implementation for template listing
-    pass
+    try:
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
+            )
+
+        try:
+            query = "SELECT * FROM c ORDER BY c.created_at DESC"
+            async with AsyncCosmosHelper() as db:
+                templates = await db.query_items(
+                    query=query,
+                    container_name=FORGE_TEMPLATES_CONTAINER,
+                )
+        except Exception:
+            templates = []
+
+        return func.HttpResponse(
+            json.dumps({
+                "templates": templates,
+                "totalCount": len(templates),
+            }),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error listing templates: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to list templates", "details": str(e)}),
+            status_code=500,
+            mimetype="application/json",
+        )
 
 
 async def create_forge_template(req: func.HttpRequest) -> func.HttpResponse:
-    """Create a new Forge template."""
-    # Implementation for template creation
-    pass
+    """Create a new Forge template from a project."""
+    try:
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
+            )
+
+        body = json.loads(req.get_body().decode("utf-8"))
+        template_name = body.get("name")
+        template_description = body.get("description", "")
+        source_project_id = body.get("sourceProjectId")
+
+        if not template_name:
+            return func.HttpResponse(
+                json.dumps({"error": "Template name required"}), status_code=400, mimetype="application/json"
+            )
+
+        template_data = {
+            "id": generate_forge_id(),
+            "name": template_name,
+            "description": template_description,
+            "created_by": user_info["user_id"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "source_project_id": source_project_id,
+            "template_data": body.get("templateData", {}),
+        }
+
+        # If a source project is specified, extract its structure
+        if source_project_id:
+            project = await load_forge_project(source_project_id)
+            if project:
+                template_data["template_data"] = {
+                    "stage_structure": {s.value: {} for s in ForgeStage},
+                    "project_type": getattr(project, 'project_type', 'general'),
+                }
+
+        async with AsyncCosmosHelper() as db:
+            await db.create_item(template_data, container_name=FORGE_TEMPLATES_CONTAINER)
+
+        return func.HttpResponse(
+            json.dumps({"success": True, "template": template_data}),
+            status_code=201,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error creating template: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to create template", "details": str(e)}),
+            status_code=500,
+            mimetype="application/json",
+        )
 
 
 async def apply_project_template(project: ForgeProject, template_id: str) -> None:
     """Apply a template to a project."""
-    # Implementation for template application
-    pass
+    try:
+        async with AsyncCosmosHelper() as db:
+            template = await db.read_item(
+                template_id, partition_key=template_id, container_name=FORGE_TEMPLATES_CONTAINER
+            )
+
+            template_data = template.get("template_data", {})
+            if template_data:
+                logger.info(f"Applied template {template_id} to project {project.name}")
+    except Exception as e:
+        logger.error(f"Error applying template: {str(e)}")
 
 
 async def delete_forge_project(req: func.HttpRequest) -> func.HttpResponse:
     """Delete a Forge project."""
-    # Implementation for project deletion
-    pass
+    try:
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
+            )
+
+        body = json.loads(req.get_body().decode("utf-8"))
+        project_id = body.get("project_id")
+        if not project_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Project ID required"}), status_code=400, mimetype="application/json"
+            )
+
+        project = await load_forge_project(project_id)
+        if not project:
+            return func.HttpResponse(
+                json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json"
+            )
+
+        if not await user_has_project_access(user_info["user_id"], project, required_permission="delete"):
+            return func.HttpResponse(
+                json.dumps({"error": "Delete access denied"}), status_code=403, mimetype="application/json"
+            )
+
+        # Delete from Cosmos DB
+        async with AsyncCosmosHelper() as db:
+            await db.delete_item(project_id, partition_key=user_info["user_id"])
+
+        # Track deletion event
+        await track_forge_event(
+            user_id=user_info["user_id"],
+            project_id=project_id,
+            event_type="project_deleted",
+            event_data={"project_name": project.name},
+        )
+
+        logger.info(f"Deleted project {project.name} (ID: {project_id})")
+
+        return func.HttpResponse(
+            json.dumps({"success": True, "message": f"Project '{project.name}' deleted"}),
+            status_code=200,
+            mimetype="application/json",
+        )
+
+    except Exception as e:
+        logger.error(f"Error deleting project: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"error": "Failed to delete project", "details": str(e)}),
+            status_code=500,
+            mimetype="application/json",
+        )

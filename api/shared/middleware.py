@@ -140,7 +140,7 @@ def security_headers() -> Dict[str, str]:
         "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
         "Referrer-Policy": "strict-origin-when-cross-origin",
         # Microsoft Entra ID specific headers
-        "Access-Control-Allow-Origin": "*",  # Will be restricted in production
+        # CORS origin is set dynamically based on allowed origins
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": (
             "Authorization, Content-Type, Accept, "
@@ -161,18 +161,58 @@ def security_headers() -> Dict[str, str]:
     }
 
 
+def get_allowed_origins() -> list:
+    """Get allowed CORS origins from environment and defaults."""
+    allowed = [
+        "https://sutra-web.azurestaticapps.net",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:4280",  # SWA CLI emulator
+    ]
+    custom_domain = os.getenv("SUTRA_CUSTOM_DOMAIN")
+    if custom_domain:
+        allowed.append(f"https://{custom_domain}")
+
+    # In development mode, allow all localhost origins
+    env = os.getenv("ENVIRONMENT", "").lower()
+    if env in ("development", "test"):
+        allowed.append("http://localhost:*")
+
+    return allowed
+
+
+def resolve_cors_origin(req: func.HttpRequest) -> str:
+    """Resolve the Access-Control-Allow-Origin header based on the request origin."""
+    origin = req.headers.get("Origin", "")
+    if not origin:
+        return ""
+
+    allowed = get_allowed_origins()
+    for allowed_origin in allowed:
+        if allowed_origin.endswith(":*"):
+            # Wildcard port matching for localhost
+            prefix = allowed_origin.replace(":*", "")
+            if origin.startswith(prefix):
+                return origin
+        elif origin == allowed_origin:
+            return origin
+
+    return ""
+
+
 def rate_limit_middleware(f):
     """
     Decorator to apply rate limiting to Azure Function endpoints.
+    Supports both sync and async handler functions.
 
     Usage:
         @rate_limit_middleware
-        def main(req: func.HttpRequest) -> func.HttpResponse:
+        async def main(req: func.HttpRequest) -> func.HttpResponse:
             # Your function logic here
     """
 
     @wraps(f)
-    def wrapper(req: func.HttpRequest) -> func.HttpResponse:
+    async def wrapper(req: func.HttpRequest) -> func.HttpResponse:
         try:
             # Get client IP
             client_ip = get_client_ip(req)
@@ -180,8 +220,13 @@ def rate_limit_middleware(f):
             # Check rate limit
             is_allowed, rate_info = rate_limiter.is_allowed(client_ip)
 
-            # Prepare response headers
+            # Prepare response headers with dynamic CORS origin
             headers = security_headers()
+            cors_origin = resolve_cors_origin(req)
+            if cors_origin:
+                headers["Access-Control-Allow-Origin"] = cors_origin
+                headers["Vary"] = "Origin"
+
             headers.update(
                 {
                     "X-RateLimit-Limit": str(rate_info["limit"]),
@@ -189,6 +234,13 @@ def rate_limit_middleware(f):
                     "X-RateLimit-Reset": str(rate_info["reset_time"]),
                 }
             )
+
+            # Handle CORS preflight
+            if req.method == "OPTIONS":
+                return func.HttpResponse(
+                    status_code=204,
+                    headers=headers,
+                )
 
             if not is_allowed:
                 # Rate limit exceeded
@@ -211,7 +263,11 @@ def rate_limit_middleware(f):
                 )
 
             # Rate limit check passed, execute the function
-            response = f(req)
+            import asyncio
+            if asyncio.iscoroutinefunction(f):
+                response = await f(req)
+            else:
+                response = f(req)
 
             # Add security and rate limit headers to successful responses
             if hasattr(response, "headers"):
@@ -226,6 +282,9 @@ def rate_limit_middleware(f):
         except Exception as e:
             logger.error(f"Rate limiting middleware error: {str(e)}")
             # In case of middleware error, allow the request but log the issue
+            import asyncio
+            if asyncio.iscoroutinefunction(f):
+                return await f(req)
             return f(req)
 
     return wrapper
@@ -243,55 +302,46 @@ def validate_cors_origin(req: func.HttpRequest) -> bool:
     """
     origin = req.headers.get("Origin", "")
 
-    # Allowed origins (should match Static Web App CORS configuration)
-    allowed_origins = [
-        "https://sutra-web.azurestaticapps.net",
-        "https://localhost:5173",  # Development
-        "https://localhost:3000",  # Development alternative
-    ]
-
-    # Add custom domain if configured
-    custom_domain = os.getenv("SUTRA_CUSTOM_DOMAIN")
-    if custom_domain:
-        allowed_origins.append(f"https://{custom_domain}")
-
-    # Allow requests without Origin header (e.g., direct API calls)
+    # Allow requests without Origin header (e.g., direct API calls, same-origin)
     if not origin:
         return True
 
-    return origin in allowed_origins
+    return bool(resolve_cors_origin(req))
 
 
 def enhanced_security_middleware(f):
     """
-    Enhanced security middleware that combines rate limiting with additional checks.
+    Enhanced security middleware that combines rate limiting with CORS validation.
+    Supports both sync and async handler functions.
 
     Usage:
         @enhanced_security_middleware
-        def main(req: func.HttpRequest) -> func.HttpResponse:
+        async def main(req: func.HttpRequest) -> func.HttpResponse:
             # Your function logic here
     """
 
     @wraps(f)
-    def wrapper(req: func.HttpRequest) -> func.HttpResponse:
+    async def wrapper(req: func.HttpRequest) -> func.HttpResponse:
         try:
             # CORS validation
             if not validate_cors_origin(req):
                 logger.warning(f"CORS violation from origin: {req.headers.get('Origin')}")
+                headers = security_headers()
                 return func.HttpResponse(
                     json.dumps({"error": "CORS policy violation"}),
                     status_code=403,
-                    headers=security_headers(),
+                    headers=headers,
                     mimetype="application/json",
                 )
 
-            # Apply rate limiting
-            return rate_limit_middleware(f)(req)
+            # Apply rate limiting (which also adds CORS headers for valid origins)
+            decorated = rate_limit_middleware(f)
+            return await decorated(req)
 
         except Exception as e:
             logger.error(f"Security middleware error: {str(e)}")
-            # In case of middleware error, apply basic rate limiting
-            return rate_limit_middleware(f)(req)
+            decorated = rate_limit_middleware(f)
+            return await decorated(req)
 
     return wrapper
 

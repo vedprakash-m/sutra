@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { forgeApi } from "@/services/api";
 
 // Import existing components
 import { QualityGate } from "@/components/forge/QualityGate";
@@ -172,28 +173,19 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
       updateSectionStatus("codingPrompts", "in-progress");
       setIsGenerating(true);
 
-      const response = await fetch("/api/forge/generate-coding-prompts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_id: projectId,
-          context_data: projectContext,
-          prompt_focus: "full-stack",
-          optimization_level: "production",
-          agent_type: agentType,
-        }),
+      const data = await forgeApi.generateCodingPrompts(projectId, {
+        context_data: projectContext,
+        prompt_focus: "full-stack",
+        optimization_level: "production",
+        agent_type: agentType,
       });
 
-      if (!response.ok) throw new Error("Failed to generate coding prompts");
-
-      const data = await response.json();
-
       // Track cost
-      if (data.cost_info) {
+      if ((data as any).costInfo) {
         trackCost();
       }
 
-      updateSectionData("codingPrompts", data.coding_prompts);
+      updateSectionData("codingPrompts", data.codingPrompts);
       updateSectionStatus("codingPrompts", "completed");
 
       toast({
@@ -219,23 +211,14 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
     try {
       updateSectionStatus("developmentWorkflow", "in-progress");
 
-      const response = await fetch("/api/forge/create-development-workflow", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_id: projectId,
-          technical_analysis: projectContext.technicalAnalysis,
-          ux_requirements: projectContext.uxRequirements,
-          prd_data: projectContext.prdGeneration,
-          workflow_type: workflowMethodology,
-        }),
+      const data = await forgeApi.createDevelopmentWorkflow(projectId, {
+        technical_analysis: projectContext.technicalAnalysis,
+        ux_requirements: projectContext.uxRequirements,
+        prd_data: projectContext.prdGeneration,
+        workflow_type: workflowMethodology,
       });
 
-      if (!response.ok)
-        throw new Error("Failed to create development workflow");
-
-      const data = await response.json();
-      updateSectionData("developmentWorkflow", data.development_workflow);
+      updateSectionData("developmentWorkflow", data);
       updateSectionStatus("developmentWorkflow", "completed");
 
       toast({
@@ -259,19 +242,12 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
     try {
       updateSectionStatus("testingStrategy", "in-progress");
 
-      const response = await fetch("/api/forge/generate-testing-strategy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_context: projectContext,
-          testing_scope: "comprehensive",
-        }),
+      const data = await forgeApi.generateTestingStrategy(projectId, {
+        project_context: projectContext,
+        testing_scope: "comprehensive",
       });
 
-      if (!response.ok) throw new Error("Failed to generate testing strategy");
-
-      const data = await response.json();
-      updateSectionData("testingStrategy", data.testing_strategy);
+      updateSectionData("testingStrategy", data);
       updateSectionStatus("testingStrategy", "completed");
 
       toast({
@@ -295,20 +271,13 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
     try {
       updateSectionStatus("deploymentGuide", "in-progress");
 
-      const response = await fetch("/api/forge/create-deployment-guide", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          technical_specs: projectContext.technicalAnalysis,
-          deployment_target: "cloud",
-          environment_requirements: {},
-        }),
+      const data = await forgeApi.createDeploymentGuide(projectId, {
+        technical_specs: projectContext.technicalAnalysis,
+        deployment_target: "cloud",
+        environment_requirements: {},
       });
 
-      if (!response.ok) throw new Error("Failed to create deployment guide");
-
-      const data = await response.json();
-      updateSectionData("deploymentGuide", data.deployment_guide);
+      updateSectionData("deploymentGuide", (data as any).deploymentGuide || data);
       updateSectionStatus("deploymentGuide", "completed");
 
       toast({
@@ -332,23 +301,10 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
     try {
       updateSectionStatus("finalPlaybook", "in-progress");
 
-      const response = await fetch("/api/forge/compile-playbook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_id: projectId,
-          coding_prompts: sections.codingPrompts.data,
-          development_workflow: sections.developmentWorkflow.data,
-          testing_strategy: sections.testingStrategy.data,
-          deployment_guide: sections.deploymentGuide.data,
-        }),
-      });
+      const data = await forgeApi.compilePlaybook(projectId);
 
-      if (!response.ok) throw new Error("Failed to compile playbook");
-
-      const data = await response.json();
-      updateSectionData("finalPlaybook", data.implementation_playbook);
-      setContextValidation(data.context_validation);
+      updateSectionData("finalPlaybook", data);
+      setContextValidation((data as any).contextIntegration);
       updateSectionStatus("finalPlaybook", "completed");
 
       // Calculate overall quality
@@ -359,8 +315,8 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
       // Check if stage is complete
       if (quality.score >= 85) {
         onStageComplete({
-          implementation_playbook: data.implementation_playbook,
-          context_validation: data.context_validation,
+          implementation_playbook: data,
+          context_validation: (data as any).contextIntegration,
           quality_assessment: quality,
         });
       }
@@ -383,18 +339,8 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
   // Validate context integration
   const validateContextIntegration = useCallback(async () => {
     try {
-      const response = await fetch("/api/forge/validate-context-integration", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_id: projectId,
-        }),
-      });
+      const data = await forgeApi.validateContextIntegration(projectId);
 
-      if (!response.ok)
-        throw new Error("Failed to validate context integration");
-
-      const data = await response.json();
       setContextValidation(data.validation_result);
 
       toast({
@@ -417,37 +363,19 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
     try {
       setIsGenerating(true);
 
-      const response = await fetch(
-        `/api/forge/export-playbook/${projectId}?format=${exportFormat}`,
-        {
-          method: "GET",
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to export playbook");
-      }
-
-      // Get the appropriate file extension
-      const fileExtensions: Record<string, string> = {
-        json: "json",
-        markdown: "md",
-        pdf: "pdf",
-        zip: "zip",
-      };
-      const extension = fileExtensions[exportFormat] || exportFormat;
+      const result = await forgeApi.exportPlaybook(projectId, exportFormat as any);
 
       // Handle the download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `implementation_playbook_${projectId.substring(0, 8)}.${extension}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (result.blob) {
+        const url = window.URL.createObjectURL(result.blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = result.filename || `implementation_playbook_${projectId.substring(0, 8)}.${exportFormat}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
 
       toast({
         title: "Playbook Exported Successfully",

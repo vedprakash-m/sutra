@@ -1,48 +1,14 @@
 /**
- * Main Forginterface ForgeProject {
-  id: string  prd_generatio  prd_generation: {
-    name: 'PRD Generation',
-    description: 'Generate comprehensive Product Requirements Document with user stories',
-    icon: '📋',
-    color: 'bg-blue-100 text-blue-800 border-blue-200'
-  },   name: 'PRD Generation',
-    description: 'Generate comprehensive Product Requirements Document with user stories',
-    icon: '📋',
-    color: 'bg-blue-100 text-blue-800 border-blue-200'
-  },
-  ux_requirements: {
-    name: 'UX Requirements',
-    description: 'Create user experience specifications and interface design',
-    icon: '🎨',
-    color: 'bg-purple-100 text-purple-800 border-purple-200'
-  },
-  technical_analysis: {
-    name: 'Technical Analysis',
-    description: 'Multi-LLM technical architecture evaluation and recommendations',
-    icon: '⚙️',
-    color: 'bg-orange-100 text-orange-800 border-orange-200'
-  },  description: string;
-  currentStage: 'idea_refinement' | 'prd_generation' | 'ux_requirements' | 'technical_analysis' | 'implementation_playbook';
-  status: 'draft' | 'active' | 'on_hold' | 'completed' | 'archived' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  progressPercentage: number;
-  createdAt: string;
-  updatedAt: string;
-  tags: string[];
-  collaboratorsCount: number;
-  artifactsCount: number;
-  ownerId: string;
-}ject overview and stage-based navigation
+ * ForgePage - Main Forge project overview and stage-based navigation
  * Implements the complete Forge workflow system for idea to deployment
  */
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { PlusIcon, FolderIcon } from "@heroicons/react/24/outline";
 import ForgeProjectCard from "./ForgeProjectCard";
-// import ForgeStageNavigation from './ForgeStageNavigation'; // TODO: Create this component
 import ForgeProjectCreator from "./ForgeProjectCreator";
 import ForgeProjectDetails from "./ForgeProjectDetails";
-// import { forgeApiService } from '@/services/forgeApi'; // TODO: Create this service
+import { forgeApi } from "@/services/api";
 
 interface ForgeProject {
   id: string;
@@ -152,69 +118,20 @@ export default function ForgePage() {
   const loadProjects = async () => {
     try {
       setIsLoading(true);
-      // TODO: Replace with actual API call
-      // const response = await forgeApiService.listProjects({
-      //   status: statusFilter !== 'all' ? statusFilter : undefined,
-      //   stage: stageFilter !== 'all' ? stageFilter : undefined,
-      //   limit: 50
-      // });
+      const response = await forgeApi.listProjects({
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        stage: stageFilter !== "all" ? stageFilter : undefined,
+        limit: 50,
+      });
 
-      // Mock data for development
-      const mockProjects: ForgeProject[] = [
-        {
-          id: "1",
-          name: "AI-Powered Task Manager",
-          description:
-            "A smart task management app that uses AI to prioritize and schedule tasks automatically.",
-          currentStage: "technical_analysis",
-          status: "active",
-          priority: "high",
-          progressPercentage: 75,
-          createdAt: "2024-01-15T00:00:00Z",
-          updatedAt: "2024-01-20T00:00:00Z",
-          tags: ["ai", "productivity", "mobile"],
-          collaboratorsCount: 3,
-          artifactsCount: 8,
-          ownerId: "user-1",
-        },
-        {
-          id: "2",
-          name: "Sustainable Fashion Marketplace",
-          description:
-            "An e-commerce platform connecting eco-conscious consumers with sustainable fashion brands.",
-          currentStage: "prd_generation",
-          status: "active",
-          priority: "medium",
-          progressPercentage: 40,
-          createdAt: "2024-01-10T00:00:00Z",
-          updatedAt: "2024-01-18T00:00:00Z",
-          tags: ["ecommerce", "sustainability", "fashion"],
-          collaboratorsCount: 2,
-          artifactsCount: 5,
-          ownerId: "user-1",
-        },
-        {
-          id: "3",
-          name: "AR Interior Design Tool",
-          description:
-            "Augmented reality app for visualizing furniture and decor in real spaces.",
-          currentStage: "idea_refinement",
-          status: "draft",
-          priority: "low",
-          progressPercentage: 15,
-          createdAt: "2024-01-12T00:00:00Z",
-          updatedAt: "2024-01-12T00:00:00Z",
-          tags: ["ar", "interior-design", "mobile"],
-          collaboratorsCount: 1,
-          artifactsCount: 2,
-          ownerId: "user-1",
-        },
-      ];
-
-      setProjects(mockProjects);
+      if (response?.projects) {
+        setProjects(response.projects as any[]);
+      } else {
+        setProjects([]);
+      }
     } catch (error) {
       console.error("Error loading projects:", error);
-      // TODO: Add error toast notification
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }
@@ -222,19 +139,21 @@ export default function ForgePage() {
 
   const loadProjectDetails = async (id: string) => {
     try {
-      // TODO: Replace with actual API call
-      // const project = await forgeApiService.getProject(id);
-
-      // Find project in mock data
-      const project = projects.find((p) => p.id === id);
-      if (project) {
-        setSelectedProject(project);
+      const response = await forgeApi.getProject(id);
+      if (response) {
+        setSelectedProject(response as any);
       } else {
-        navigate("/forge"); // Redirect back to list if project not found
+        // Fallback: try to find in already-loaded projects
+        const project = projects.find((p) => p.id === id);
+        if (project) {
+          setSelectedProject(project);
+        } else {
+          navigate("/forge");
+        }
       }
     } catch (error) {
       console.error("Error loading project details:", error);
-      navigate("/forge"); // Redirect back to list if project not found
+      navigate("/forge");
     }
   };
 

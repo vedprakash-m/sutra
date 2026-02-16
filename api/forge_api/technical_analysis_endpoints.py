@@ -7,48 +7,44 @@ with 85% quality threshold and detailed feasibility assessment.
 import json
 import logging
 import os
-
-# Import shared modules
-import sys
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import azure.functions as func
-from azure.cosmos import CosmosClient
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "shared"))
-
-from cost_tracking import CostTracker, calculate_operation_cost
-from llm_client import LLMClient
-from multi_llm_consensus import MultiLLMConsensusEngine, evaluate_technical_architecture
-from quality_engine import QualityEngine
-from quality_validators import CrossStageQualityValidator
+from shared.async_database import AsyncCosmosHelper
+from shared.auth_helpers import extract_user_info
+from shared.cost_tracker import CostTracker
+from shared.llm_client import LLMManager
+from shared.multi_llm_consensus import MultiLLMConsensusEngine, evaluate_technical_architecture
+from shared.quality_engine import QualityAssessmentEngine
+from shared.quality_validators import CrossStageQualityValidator
 
 logger = logging.getLogger(__name__)
 
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
+async def main(req: func.HttpRequest) -> func.HttpResponse:
     """Main entry point for technical analysis API"""
     try:
         method = req.method
-        route = req.route_params.get("route", "")
+        route = req.route_params.get("sub_action", "") or req.route_params.get("route", "")
 
         if method == "POST" and route == "evaluate-architecture":
-            return evaluate_architecture_endpoint(req)
+            return await evaluate_architecture_endpoint(req)
         elif method == "POST" and route == "generate-technical-specs":
-            return generate_technical_specs_endpoint(req)
+            return await generate_technical_specs_endpoint(req)
         elif method == "POST" and route == "assess-feasibility":
-            return assess_feasibility_endpoint(req)
+            return await assess_feasibility_endpoint(req)
         elif method == "POST" and route == "analyze-risks":
-            return analyze_risks_endpoint(req)
+            return await analyze_risks_endpoint(req)
         elif method == "GET" and route == "consensus-models":
             return get_consensus_models_endpoint(req)
         elif method == "POST" and route == "implementation-roadmap":
-            return generate_implementation_roadmap_endpoint(req)
+            return await generate_implementation_roadmap_endpoint(req)
         elif method == "POST" and route == "export-technical-analysis":
-            return export_technical_analysis_endpoint(req)
+            return await export_technical_analysis_endpoint(req)
         elif method == "GET" and route == "quality-check":
-            return quality_check_endpoint(req)
+            return await quality_check_endpoint(req)
         else:
             return func.HttpResponse(json.dumps({"error": "Route not found"}), status_code=404, mimetype="application/json")
 
@@ -57,7 +53,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """
     Endpoint: POST /api/forge/technical-analysis/evaluate-architecture
 
@@ -65,8 +61,17 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     Implements the core of Task 2.6 with 85% quality threshold.
     """
     try:
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         request_data = req.get_json()
-        user_id = request_data.get("user_id")
+        user_id = user_info["user_id"]
         session_id = request_data.get("session_id")
         project_context = request_data.get("project_context", {})
         selected_models = request_data.get("selected_models", ["gpt-4", "claude-3-5-sonnet", "gemini-1.5-pro"])
@@ -78,9 +83,9 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Initialize services
-        llm_client = LLMClient()
+        llm_client = LLMManager()
         cost_tracker = CostTracker()
-        quality_engine = QualityEngine()
+        quality_engine = QualityAssessmentEngine()
         cross_stage_validator = CrossStageQualityValidator()
         consensus_engine = MultiLLMConsensusEngine()
 
@@ -108,14 +113,9 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         )
 
         # Perform multi-LLM consensus evaluation
-        import asyncio
-
-        async def run_evaluation():
-            return await consensus_engine.evaluate_technical_architecture(
-                project_context=project_context, selected_models=selected_models, llm_client=llm_client
-            )
-
-        technical_evaluation = asyncio.run(run_evaluation())
+        technical_evaluation = await consensus_engine.evaluate_technical_architecture(
+            project_context=project_context, selected_models=selected_models, llm_client=llm_client
+        )
 
         # Calculate operation cost
         total_cost = technical_evaluation.consensus_metadata.total_cost
@@ -132,12 +132,10 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
             if len(selected_models) < 4:
                 additional_models = ["gpt-4o"] if "gpt-4o" not in selected_models else ["claude-3-haiku"]
 
-                enhanced_evaluation = asyncio.run(
-                    consensus_engine.evaluate_technical_architecture(
-                        project_context=project_context,
-                        selected_models=selected_models + additional_models[:1],
-                        llm_client=llm_client,
-                    )
+                enhanced_evaluation = await consensus_engine.evaluate_technical_architecture(
+                    project_context=project_context,
+                    selected_models=selected_models + additional_models[:1],
+                    llm_client=llm_client,
                 )
 
                 if enhanced_evaluation.quality_score > technical_evaluation.quality_score:
@@ -146,9 +144,9 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
                     cost_tracker.update_operation_cost(operation_id, total_cost)
 
         # Perform cross-stage quality validation
-        quality_assessment = quality_engine.assess_quality(
+        quality_assessment = quality_engine.calculate_quality_score(
+            stage="technical_analysis",
             content=technical_evaluation.architecture_recommendation,
-            quality_type="technical_analysis",
             context={
                 "consensus_level": technical_evaluation.consensus_metadata.consensus_level.value,
                 "agreement_score": technical_evaluation.consensus_metadata.agreement_score,
@@ -158,11 +156,8 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         )
 
         # Store results in Cosmos DB
-        cosmos_client = CosmosClient.from_connection_string(os.environ["COSMOS_CONNECTION_STRING"])
-        database = cosmos_client.get_database_client("SutraDB")
-        container = database.get_container_client("ForgeResults")
-
-        result_document = {
+        async with AsyncCosmosHelper() as db:
+            result_document = {
             "id": f"{session_id}_technical_analysis_{operation_id}",
             "user_id": user_id,
             "session_id": session_id,
@@ -198,7 +193,7 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
             },
         }
 
-        container.create_item(result_document)
+            await db.upsert_item(result_document)
 
         # Complete operation tracking
         cost_tracker.complete_operation(operation_id)
@@ -247,18 +242,29 @@ def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """
     Endpoint: POST /api/forge/technical-analysis/generate-technical-specs
 
     Generates comprehensive technical specifications from architecture evaluation
     """
     try:
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         request_data = req.get_json()
-        user_id = request_data.get("user_id")
+        user_id = user_info["user_id"]
         session_id = request_data.get("session_id")
         architecture_evaluation = request_data.get("architecture_evaluation", {})
         spec_requirements = request_data.get("spec_requirements", {})
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "gpt-4")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         if not user_id or not session_id or not architecture_evaluation:
             return func.HttpResponse(
@@ -266,7 +272,7 @@ def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpRespons
             )
 
         # Initialize services
-        llm_client = LLMClient()
+        llm_client = LLMManager()
         cost_tracker = CostTracker()
 
         # Track operation
@@ -277,7 +283,7 @@ def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpRespons
         # Generate detailed technical specifications
         specs_prompt = create_technical_specs_prompt(architecture_evaluation, spec_requirements)
 
-        response = llm_client.execute_prompt(prompt=specs_prompt, model="gpt-4", temperature=0.1, max_tokens=6000)
+        response = await llm_client.execute_prompt(provider_name=provider_name, prompt=specs_prompt, model=selected_llm, temperature=0.1, max_tokens=6000)
 
         # Parse and structure technical specifications
         import re
@@ -294,11 +300,8 @@ def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpRespons
         cost_tracker.complete_operation(operation_id)
 
         # Store in Cosmos DB
-        cosmos_client = CosmosClient.from_connection_string(os.environ["COSMOS_CONNECTION_STRING"])
-        database = cosmos_client.get_database_client("SutraDB")
-        container = database.get_container_client("ForgeResults")
-
-        spec_document = {
+        async with AsyncCosmosHelper() as db:
+            spec_document = {
             "id": f"{session_id}_technical_specs_{operation_id}",
             "user_id": user_id,
             "session_id": session_id,
@@ -313,7 +316,7 @@ def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpRespons
             },
         }
 
-        container.create_item(spec_document)
+            await db.upsert_item(spec_document)
 
         return func.HttpResponse(
             json.dumps(
@@ -334,17 +337,28 @@ def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpRespons
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def assess_feasibility_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def assess_feasibility_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """
     Endpoint: POST /api/forge/technical-analysis/assess-feasibility
 
     Performs detailed feasibility assessment with resource estimation
     """
     try:
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         request_data = req.get_json()
-        user_id = request_data.get("user_id")
+        user_id = user_info["user_id"]
         project_requirements = request_data.get("project_requirements", {})
         constraints = request_data.get("constraints", {})
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "gpt-4")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         if not user_id or not project_requirements:
             return func.HttpResponse(
@@ -352,7 +366,7 @@ def assess_feasibility_endpoint(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Initialize services
-        llm_client = LLMClient()
+        llm_client = LLMManager()
         cost_tracker = CostTracker()
 
         # Track operation
@@ -363,7 +377,7 @@ def assess_feasibility_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         # Generate feasibility assessment prompt
         feasibility_prompt = create_feasibility_assessment_prompt(project_requirements, constraints)
 
-        response = llm_client.execute_prompt(prompt=feasibility_prompt, model="gpt-4", temperature=0.2, max_tokens=4000)
+        response = await llm_client.execute_prompt(provider_name=provider_name, prompt=feasibility_prompt, model=selected_llm, temperature=0.2, max_tokens=4000)
 
         # Parse feasibility assessment
         import re
@@ -398,17 +412,28 @@ def assess_feasibility_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def analyze_risks_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def analyze_risks_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """
     Endpoint: POST /api/forge/technical-analysis/analyze-risks
 
     Performs comprehensive risk analysis with mitigation strategies
     """
     try:
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         request_data = req.get_json()
-        user_id = request_data.get("user_id")
+        user_id = user_info["user_id"]
         technical_context = request_data.get("technical_context", {})
         risk_categories = request_data.get("risk_categories", ["technical", "security", "scalability", "operational"])
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "claude-3-5-sonnet")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         if not user_id or not technical_context:
             return func.HttpResponse(
@@ -416,7 +441,7 @@ def analyze_risks_endpoint(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Initialize services
-        llm_client = LLMClient()
+        llm_client = LLMManager()
         cost_tracker = CostTracker()
 
         # Track operation
@@ -427,9 +452,10 @@ def analyze_risks_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         # Generate risk analysis prompt
         risk_prompt = create_risk_analysis_prompt(technical_context, risk_categories)
 
-        response = llm_client.execute_prompt(
+        response = await llm_client.execute_prompt(
+            provider_name=provider_name,
             prompt=risk_prompt,
-            model="claude-3-5-sonnet",  # Claude often excels at risk analysis
+            model=selected_llm,
             temperature=0.2,
             max_tokens=5000,
         )
@@ -469,6 +495,15 @@ def get_consensus_models_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     Returns available LLM models for consensus evaluation with their capabilities
     """
     try:
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         available_models = {
             "models": [
                 {
@@ -552,17 +587,28 @@ def get_consensus_models_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def generate_implementation_roadmap_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def generate_implementation_roadmap_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """
     Endpoint: POST /api/forge/technical-analysis/implementation-roadmap
 
     Generates detailed implementation roadmap based on technical analysis
     """
     try:
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         request_data = req.get_json()
-        user_id = request_data.get("user_id")
+        user_id = user_info["user_id"]
         technical_analysis = request_data.get("technical_analysis", {})
         project_constraints = request_data.get("project_constraints", {})
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "gpt-4")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         if not user_id or not technical_analysis:
             return func.HttpResponse(
@@ -570,7 +616,7 @@ def generate_implementation_roadmap_endpoint(req: func.HttpRequest) -> func.Http
             )
 
         # Initialize services
-        llm_client = LLMClient()
+        llm_client = LLMManager()
         cost_tracker = CostTracker()
 
         # Track operation
@@ -581,7 +627,7 @@ def generate_implementation_roadmap_endpoint(req: func.HttpRequest) -> func.Http
         # Generate roadmap
         roadmap_prompt = create_implementation_roadmap_prompt(technical_analysis, project_constraints)
 
-        response = llm_client.execute_prompt(prompt=roadmap_prompt, model="gpt-4", temperature=0.2, max_tokens=5000)
+        response = await llm_client.execute_prompt(provider_name=provider_name, prompt=roadmap_prompt, model=selected_llm, temperature=0.2, max_tokens=5000)
 
         # Parse implementation roadmap
         import re
@@ -611,15 +657,24 @@ def generate_implementation_roadmap_endpoint(req: func.HttpRequest) -> func.Http
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def export_technical_analysis_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def export_technical_analysis_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """
     Endpoint: POST /api/forge/technical-analysis/export-technical-analysis
 
     Exports complete technical analysis as structured document
     """
     try:
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
         request_data = req.get_json()
-        user_id = request_data.get("user_id")
+        user_id = user_info["user_id"]
         session_id = request_data.get("session_id")
         export_format = request_data.get("export_format", "markdown")
         include_sections = request_data.get(
@@ -632,16 +687,11 @@ def export_technical_analysis_endpoint(req: func.HttpRequest) -> func.HttpRespon
             )
 
         # Retrieve technical analysis data from Cosmos DB
-        cosmos_client = CosmosClient.from_connection_string(os.environ["COSMOS_CONNECTION_STRING"])
-        database = cosmos_client.get_database_client("SutraDB")
-        container = database.get_container_client("ForgeResults")
-
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id AND c.stage = 'technical_analysis'"
-        items = list(
-            container.query_items(
+        async with AsyncCosmosHelper() as db:
+            query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id AND c.stage = 'technical_analysis'"
+            items = await db.query_items(
                 query=query, parameters=[{"name": "@user_id", "value": user_id}, {"name": "@session_id", "value": session_id}]
             )
-        )
 
         if not items:
             return func.HttpResponse(
@@ -682,14 +732,23 @@ def export_technical_analysis_endpoint(req: func.HttpRequest) -> func.HttpRespon
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def quality_check_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def quality_check_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """
     Endpoint: GET /api/forge/technical-analysis/quality-check
 
     Performs quality check on technical analysis stage
     """
     try:
-        user_id = req.params.get("user_id")
+        # Authenticate user
+        user_info = extract_user_info(req)
+        if not user_info:
+            return func.HttpResponse(
+                json.dumps({"error": "Authentication required"}),
+                status_code=401,
+                mimetype="application/json",
+            )
+
+        user_id = user_info["user_id"]
         session_id = req.params.get("session_id")
 
         if not user_id or not session_id:
@@ -701,16 +760,11 @@ def quality_check_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         cross_stage_validator = CrossStageQualityValidator()
 
         # Retrieve session data
-        cosmos_client = CosmosClient.from_connection_string(os.environ["COSMOS_CONNECTION_STRING"])
-        database = cosmos_client.get_database_client("SutraDB")
-        container = database.get_container_client("ForgeResults")
-
-        query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id ORDER BY c.metadata.created_at DESC"
-        items = list(
-            container.query_items(
+        async with AsyncCosmosHelper() as db:
+            query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id ORDER BY c.metadata.created_at DESC"
+            items = await db.query_items(
                 query=query, parameters=[{"name": "@user_id", "value": user_id}, {"name": "@session_id", "value": session_id}]
             )
-        )
 
         if not items:
             return func.HttpResponse(

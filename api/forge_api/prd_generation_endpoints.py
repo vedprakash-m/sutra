@@ -6,24 +6,20 @@ and progressive quality gates building on idea refinement context.
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import azure.functions as func
-from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
+from shared.async_database import AsyncCosmosHelper
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
-from shared.llm_client import LLMClient
+from shared.llm_client import LLMManager
 from shared.quality_engine import QualityAssessmentEngine
 from shared.quality_validators import CrossStageQualityValidator
 
 logger = logging.getLogger(__name__)
-
-# Database configuration
-COSMOS_CONNECTION_STRING = "your_cosmos_connection_string_here"
-DATABASE_NAME = "SutraDB"
-PLAYBOOKS_CONTAINER = "Playbooks"  # Forge projects are stored as specialized playbooks
 
 quality_engine = QualityAssessmentEngine()
 quality_validator = CrossStageQualityValidator()
@@ -35,7 +31,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         # Extract method and route parameters
         method = req.method
         route_params = req.route_params
-        action = route_params.get("action", "")
+        action = route_params.get("sub_action", "") or route_params.get("action", "")
         project_id = route_params.get("project_id", "")
 
         logger.info(f"PRD Generation API - Method: {method}, Action: {action}, Project: {project_id}")
@@ -82,7 +78,8 @@ async def extract_requirements(req: func.HttpRequest, project_id: str) -> func.H
         request_data = json.loads(req.get_body().decode("utf-8"))
         idea_context = request_data.get("ideaContext", {})
         requirement_focus = request_data.get("requirementFocus", [])
-        selected_llm = request_data.get("selectedLLM", "gemini-flash")
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "gemini-flash")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         # Validate idea refinement context
         validation_result = quality_validator.validate_stage_readiness(
@@ -109,7 +106,7 @@ async def extract_requirements(req: func.HttpRequest, project_id: str) -> func.H
         extraction_prompt = _create_requirements_extraction_prompt(idea_context, requirement_focus)
 
         # Execute LLM call with cost tracking
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         await cost_tracker.track_llm_call_start(
             user_id=user_info.get("user_id"),
@@ -120,7 +117,7 @@ async def extract_requirements(req: func.HttpRequest, project_id: str) -> func.H
 
         try:
             response = await llm_client.execute_prompt(
-                prompt=extraction_prompt, model=selected_llm, temperature=0.5, max_tokens=3000
+                provider_name=provider_name, prompt=extraction_prompt, model=selected_llm, temperature=0.5, max_tokens=3000
             )
 
             await cost_tracker.track_llm_call_complete(
@@ -187,7 +184,8 @@ async def generate_user_stories(req: func.HttpRequest, project_id: str) -> func.
         requirements = request_data.get("requirements", {})
         idea_context = request_data.get("ideaContext", {})
         story_format = request_data.get("storyFormat", "standard")  # standard, gherkin, invest
-        selected_llm = request_data.get("selectedLLM", "claude-3-5-sonnet")
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "claude-3-5-sonnet")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         # Initialize cost tracking
         cost_tracker = CostTracker()
@@ -196,7 +194,7 @@ async def generate_user_stories(req: func.HttpRequest, project_id: str) -> func.
         story_prompt = _create_user_story_prompt(requirements, idea_context, story_format)
 
         # Execute LLM call with cost tracking
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         await cost_tracker.track_llm_call_start(
             user_id=user_info.get("user_id"), operation="forge_prd_user_stories", model=selected_llm, project_id=project_id
@@ -204,7 +202,7 @@ async def generate_user_stories(req: func.HttpRequest, project_id: str) -> func.
 
         try:
             response = await llm_client.execute_prompt(
-                prompt=story_prompt, model=selected_llm, temperature=0.4, max_tokens=4000
+                provider_name=provider_name, prompt=story_prompt, model=selected_llm, temperature=0.4, max_tokens=4000
             )
 
             await cost_tracker.track_llm_call_complete(
@@ -280,7 +278,8 @@ async def prioritize_features(req: func.HttpRequest, project_id: str) -> func.Ht
         user_stories = request_data.get("userStories", {})
         idea_context = request_data.get("ideaContext", {})
         prioritization_method = request_data.get("prioritizationMethod", "rice")  # rice, moscow, kano
-        selected_llm = request_data.get("selectedLLM", "gpt-4")
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "gpt-4")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         # Initialize cost tracking
         cost_tracker = CostTracker()
@@ -291,7 +290,7 @@ async def prioritize_features(req: func.HttpRequest, project_id: str) -> func.Ht
         )
 
         # Execute LLM call with cost tracking
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         await cost_tracker.track_llm_call_start(
             user_id=user_info.get("user_id"),
@@ -302,7 +301,7 @@ async def prioritize_features(req: func.HttpRequest, project_id: str) -> func.Ht
 
         try:
             response = await llm_client.execute_prompt(
-                prompt=prioritization_prompt, model=selected_llm, temperature=0.3, max_tokens=3000
+                provider_name=provider_name, prompt=prioritization_prompt, model=selected_llm, temperature=0.3, max_tokens=3000
             )
 
             await cost_tracker.track_llm_call_complete(
@@ -372,12 +371,9 @@ async def get_prd_quality_assessment(req: func.HttpRequest, project_id: str) -> 
             )
 
         # Get project from database
-        async with CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING) as client:
-            database = client.get_database_client(DATABASE_NAME)
-            container = database.get_container_client(PLAYBOOKS_CONTAINER)
-
+        async with AsyncCosmosHelper() as db:
             try:
-                project = await container.read_item(item=project_id, partition_key=user_info["user_id"])
+                project = await db.read_item(project_id, partition_key=user_info["user_id"])
             except CosmosResourceNotFoundError:
                 return func.HttpResponse(
                     json.dumps({"error": "Project not found"}), status_code=404, headers={"Content-Type": "application/json"}
@@ -511,99 +507,96 @@ async def complete_prd_stage(req: func.HttpRequest, project_id: str) -> func.Htt
         force_complete = request_data.get("forceComplete", False)
 
         # Get project from database
-        async with CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING) as client:
-            database = client.get_database_client(DATABASE_NAME)
-            container = database.get_container_client(PLAYBOOKS_CONTAINER)
-
+        async with AsyncCosmosHelper() as db:
             try:
-                project = await container.read_item(item=project_id, partition_key=user_info["user_id"])
+                project = await db.read_item(project_id, partition_key=user_info["user_id"])
             except CosmosResourceNotFoundError:
                 return func.HttpResponse(
                     json.dumps({"error": "Project not found"}), status_code=404, headers={"Content-Type": "application/json"}
                 )
 
-        # Perform final quality assessment
-        idea_context = project.get("forgeData", {}).get("idea_refinement", {})
-        quality_result = quality_engine.calculate_quality_score(
-            stage="prd_generation", content=final_prd_data, context=idea_context
-        )
-
-        # Get thresholds
-        thresholds = quality_engine.get_dynamic_threshold("prd_generation", idea_context)
-
-        # Cross-stage validation
-        project_data_with_prd = {**project, "forgeData": {**project.get("forgeData", {}), "prd_generation": final_prd_data}}
-
-        cross_stage_validation = quality_validator.validate_cross_stage_consistency(
-            "idea_refinement", "prd_generation", project_data_with_prd
-        )
-
-        # Check if stage can be completed
-        can_complete = (
-            quality_result.quality_gate_status in ["PROCEED_WITH_CAUTION", "PROCEED_EXCELLENT"]
-            and cross_stage_validation.is_consistent
-        ) or force_complete
-
-        if not can_complete:
-            return func.HttpResponse(
-                json.dumps(
-                    {
-                        "error": "Quality threshold not met",
-                        "currentScore": quality_result.overall_score,
-                        "requiredScore": thresholds.minimum,
-                        "consistencyIssues": cross_stage_validation.validation_errors,
-                        "improvementSuggestions": quality_result.improvement_suggestions,
-                        "canForceComplete": user_info.get("role") in ["expert", "admin"],
-                    }
-                ),
-                status_code=400,
-                headers={"Content-Type": "application/json"},
+            # Perform final quality assessment
+            idea_context = project.get("forgeData", {}).get("idea_refinement", {})
+            quality_result = quality_engine.calculate_quality_score(
+                stage="prd_generation", content=final_prd_data, context=idea_context
             )
 
-        # Prepare context handoff for UX stage
-        ux_context_handoff = quality_validator.prepare_context_handoff(
-            "prd_generation", "ux_requirements", project_data_with_prd
-        )
+            # Get thresholds
+            thresholds = quality_engine.get_dynamic_threshold("prd_generation", idea_context)
 
-        # Update project in database
-        project["forgeData"]["prd_generation"] = {
-            **final_prd_data,
-            "status": "completed",
-            "completedAt": datetime.now(timezone.utc).isoformat(),
-            "qualityMetrics": {
-                "overall": quality_result.overall_score,
-                "dimensions": quality_result.dimension_scores,
-                "gateStatus": quality_result.quality_gate_status,
+            # Cross-stage validation
+            project_data_with_prd = {**project, "forgeData": {**project.get("forgeData", {}), "prd_generation": final_prd_data}}
+
+            cross_stage_validation = quality_validator.validate_cross_stage_consistency(
+                "idea_refinement", "prd_generation", project_data_with_prd
+            )
+
+            # Check if stage can be completed
+            can_complete = (
+                quality_result.quality_gate_status in ["PROCEED_WITH_CAUTION", "PROCEED_EXCELLENT"]
+                and cross_stage_validation.is_consistent
+            ) or force_complete
+
+            if not can_complete:
+                return func.HttpResponse(
+                    json.dumps(
+                        {
+                            "error": "Quality threshold not met",
+                            "currentScore": quality_result.overall_score,
+                            "requiredScore": thresholds.minimum,
+                            "consistencyIssues": cross_stage_validation.validation_errors,
+                            "improvementSuggestions": quality_result.improvement_suggestions,
+                            "canForceComplete": user_info.get("role") in ["expert", "admin"],
+                        }
+                    ),
+                    status_code=400,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            # Prepare context handoff for UX stage
+            ux_context_handoff = quality_validator.prepare_context_handoff(
+                "prd_generation", "ux_requirements", project_data_with_prd
+            )
+
+            # Update project in database
+            project["forgeData"]["prd_generation"] = {
+                **final_prd_data,
+                "status": "completed",
+                "completedAt": datetime.now(timezone.utc).isoformat(),
+                "qualityMetrics": {
+                    "overall": quality_result.overall_score,
+                    "dimensions": quality_result.dimension_scores,
+                    "gateStatus": quality_result.quality_gate_status,
+                    "forceCompleted": force_complete,
+                },
+                "contextForNextStage": ux_context_handoff.context_data,
+            }
+
+            project["updatedAt"] = datetime.now(timezone.utc).isoformat()
+
+            # Save updated project
+            await db.upsert_item(project)
+
+            # Prepare completion result
+            completion_result = {
+                "projectId": project_id,
+                "stageCompleted": "prd_generation",
+                "completionTimestamp": datetime.now(timezone.utc).isoformat(),
+                "finalQualityScore": quality_result.overall_score,
+                "qualityGateStatus": quality_result.quality_gate_status,
+                "crossStageConsistency": cross_stage_validation.is_consistent,
                 "forceCompleted": force_complete,
-            },
-            "contextForNextStage": ux_context_handoff.context_data,
-        }
+                "readyForNextStage": True,
+                "nextStage": "ux_requirements",
+                "contextHandoff": {
+                    "contextPrepared": True,
+                    "consistencyScore": ux_context_handoff.consistency_score,
+                    "handoffKeys": list(ux_context_handoff.context_data.keys()),
+                },
+                "qualityImpactOnNextStage": _predict_ux_quality_impact(quality_result, cross_stage_validation),
+            }
 
-        project["updatedAt"] = datetime.now(timezone.utc).isoformat()
-
-        # Save updated project
-        await container.replace_item(item=project["id"], body=project)
-
-        # Prepare completion result
-        completion_result = {
-            "projectId": project_id,
-            "stageCompleted": "prd_generation",
-            "completionTimestamp": datetime.now(timezone.utc).isoformat(),
-            "finalQualityScore": quality_result.overall_score,
-            "qualityGateStatus": quality_result.quality_gate_status,
-            "crossStageConsistency": cross_stage_validation.is_consistent,
-            "forceCompleted": force_complete,
-            "readyForNextStage": True,
-            "nextStage": "ux_requirements",
-            "contextHandoff": {
-                "contextPrepared": True,
-                "consistencyScore": ux_context_handoff.consistency_score,
-                "handoffKeys": list(ux_context_handoff.context_data.keys()),
-            },
-            "qualityImpactOnNextStage": _predict_ux_quality_impact(quality_result, cross_stage_validation),
-        }
-
-        return func.HttpResponse(json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"})
+            return func.HttpResponse(json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"})
 
     except Exception as e:
         logger.error(f"Error completing PRD stage: {str(e)}")

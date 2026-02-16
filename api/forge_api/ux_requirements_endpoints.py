@@ -6,25 +6,21 @@ accessibility compliance checking, and 82% quality threshold enforcement.
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import azure.functions as func
-from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from shared.accessibility_validator import AccessibilityValidator
+from shared.async_database import AsyncCosmosHelper
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
-from shared.llm_client import LLMClient
+from shared.llm_client import LLMManager
 from shared.quality_engine import QualityAssessmentEngine
 from shared.quality_validators import CrossStageQualityValidator
 
 logger = logging.getLogger(__name__)
-
-# Database configuration
-COSMOS_CONNECTION_STRING = "your_cosmos_connection_string_here"
-DATABASE_NAME = "SutraDB"
-PLAYBOOKS_CONTAINER = "Playbooks"
 
 quality_engine = QualityAssessmentEngine()
 quality_validator = CrossStageQualityValidator()
@@ -37,7 +33,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         # Extract method and route parameters
         method = req.method
         route_params = req.route_params
-        action = route_params.get("action", "")
+        action = route_params.get("sub_action", "") or route_params.get("action", "")
         project_id = route_params.get("project_id", "")
 
         logger.info(f"UX Requirements API - Method: {method}, Action: {action}, Project: {project_id}")
@@ -86,7 +82,8 @@ async def map_user_journeys(req: func.HttpRequest, project_id: str) -> func.Http
         request_data = json.loads(req.get_body().decode("utf-8"))
         prd_context = request_data.get("prdContext", {})
         journey_focus = request_data.get("journeyFocus", [])
-        selected_llm = request_data.get("selectedLLM", "claude-3-5-sonnet")
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "claude-3-5-sonnet")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         # Validate PRD context
         validation_result = quality_validator.validate_stage_readiness(
@@ -113,7 +110,7 @@ async def map_user_journeys(req: func.HttpRequest, project_id: str) -> func.Http
         journey_prompt = _create_user_journey_prompt(prd_context, journey_focus)
 
         # Execute LLM call with cost tracking
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         await cost_tracker.track_llm_call_start(
             user_id=user_info.get("user_id"), operation="forge_ux_user_journeys", model=selected_llm, project_id=project_id
@@ -121,7 +118,7 @@ async def map_user_journeys(req: func.HttpRequest, project_id: str) -> func.Http
 
         try:
             response = await llm_client.execute_prompt(
-                prompt=journey_prompt, model=selected_llm, temperature=0.4, max_tokens=4000
+                provider_name=provider_name, prompt=journey_prompt, model=selected_llm, temperature=0.4, max_tokens=4000
             )
 
             await cost_tracker.track_llm_call_complete(
@@ -197,7 +194,8 @@ async def generate_wireframes(req: func.HttpRequest, project_id: str) -> func.Ht
         user_journeys = request_data.get("userJourneys", {})
         prd_context = request_data.get("prdContext", {})
         design_preferences = request_data.get("designPreferences", {})
-        selected_llm = request_data.get("selectedLLM", "gpt-4")
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "gpt-4")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         # Initialize cost tracking
         cost_tracker = CostTracker()
@@ -206,7 +204,7 @@ async def generate_wireframes(req: func.HttpRequest, project_id: str) -> func.Ht
         wireframe_prompt = _create_wireframe_prompt(user_journeys, prd_context, design_preferences)
 
         # Execute LLM call with cost tracking
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         await cost_tracker.track_llm_call_start(
             user_id=user_info.get("user_id"), operation="forge_ux_wireframes", model=selected_llm, project_id=project_id
@@ -214,7 +212,7 @@ async def generate_wireframes(req: func.HttpRequest, project_id: str) -> func.Ht
 
         try:
             response = await llm_client.execute_prompt(
-                prompt=wireframe_prompt, model=selected_llm, temperature=0.3, max_tokens=5000
+                provider_name=provider_name, prompt=wireframe_prompt, model=selected_llm, temperature=0.3, max_tokens=5000
             )
 
             await cost_tracker.track_llm_call_complete(
@@ -356,7 +354,8 @@ async def specify_interactions(req: func.HttpRequest, project_id: str) -> func.H
         wireframes = request_data.get("wireframes", {})
         user_journeys = request_data.get("userJourneys", {})
         interaction_focus = request_data.get("interactionFocus", "standard")  # standard, advanced, minimal
-        selected_llm = request_data.get("selectedLLM", "claude-3-5-sonnet")
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "claude-3-5-sonnet")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
 
         # Initialize cost tracking
         cost_tracker = CostTracker()
@@ -365,7 +364,7 @@ async def specify_interactions(req: func.HttpRequest, project_id: str) -> func.H
         interaction_prompt = _create_interaction_prompt(wireframes, user_journeys, interaction_focus)
 
         # Execute LLM call with cost tracking
-        llm_client = LLMClient()
+        llm_client = LLMManager()
 
         await cost_tracker.track_llm_call_start(
             user_id=user_info.get("user_id"), operation="forge_ux_interactions", model=selected_llm, project_id=project_id
@@ -373,7 +372,7 @@ async def specify_interactions(req: func.HttpRequest, project_id: str) -> func.H
 
         try:
             response = await llm_client.execute_prompt(
-                prompt=interaction_prompt, model=selected_llm, temperature=0.3, max_tokens=4000
+                provider_name=provider_name, prompt=interaction_prompt, model=selected_llm, temperature=0.3, max_tokens=4000
             )
 
             await cost_tracker.track_llm_call_complete(
@@ -445,12 +444,9 @@ async def get_ux_quality_assessment(req: func.HttpRequest, project_id: str) -> f
             )
 
         # Get project from database
-        async with CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING) as client:
-            database = client.get_database_client(DATABASE_NAME)
-            container = database.get_container_client(PLAYBOOKS_CONTAINER)
-
+        async with AsyncCosmosHelper() as db:
             try:
-                project = await container.read_item(item=project_id, partition_key=user_info["user_id"])
+                project = await db.read_item(project_id, partition_key=user_info["user_id"])
             except CosmosResourceNotFoundError:
                 return func.HttpResponse(
                     json.dumps({"error": "Project not found"}), status_code=404, headers={"Content-Type": "application/json"}
@@ -599,121 +595,118 @@ async def complete_ux_stage(req: func.HttpRequest, project_id: str) -> func.Http
         force_complete = request_data.get("forceComplete", False)
 
         # Get project from database
-        async with CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING) as client:
-            database = client.get_database_client(DATABASE_NAME)
-            container = database.get_container_client(PLAYBOOKS_CONTAINER)
-
+        async with AsyncCosmosHelper() as db:
             try:
-                project = await container.read_item(item=project_id, partition_key=user_info["user_id"])
+                project = await db.read_item(project_id, partition_key=user_info["user_id"])
             except CosmosResourceNotFoundError:
                 return func.HttpResponse(
                     json.dumps({"error": "Project not found"}), status_code=404, headers={"Content-Type": "application/json"}
                 )
 
-        # Perform final quality assessment
-        prd_context = project.get("forgeData", {}).get("prd_generation", {})
-        quality_result = quality_engine.calculate_quality_score(
-            stage="ux_requirements", content=final_ux_data, context=prd_context
-        )
-
-        # Get thresholds
-        thresholds = quality_engine.get_dynamic_threshold("ux_requirements", prd_context)
-
-        # Accessibility compliance check
-        accessibility_assessment = accessibility_validator.validate_ux_requirements(final_ux_data)
-        accessibility_meets_minimum = accessibility_assessment.overall_score >= 90.0
-
-        # Cross-stage validation
-        project_data_with_ux = {**project, "forgeData": {**project.get("forgeData", {}), "ux_requirements": final_ux_data}}
-
-        cross_stage_validation = quality_validator.validate_cross_stage_consistency(
-            "prd_generation", "ux_requirements", project_data_with_ux
-        )
-
-        # Check if stage can be completed
-        can_complete = (
-            quality_result.quality_gate_status in ["PROCEED_WITH_CAUTION", "PROCEED_EXCELLENT"]
-            and cross_stage_validation.is_consistent
-            and accessibility_meets_minimum
-        ) or force_complete
-
-        if not can_complete:
-            return func.HttpResponse(
-                json.dumps(
-                    {
-                        "error": "Quality thresholds not met",
-                        "currentScore": quality_result.overall_score,
-                        "requiredScore": thresholds.minimum,
-                        "accessibilityScore": accessibility_assessment.overall_score,
-                        "accessibilityRequired": 90.0,
-                        "consistencyIssues": cross_stage_validation.validation_errors,
-                        "improvementSuggestions": quality_result.improvement_suggestions,
-                        "accessibilityRecommendations": accessibility_assessment.recommendations,
-                        "canForceComplete": user_info.get("role") in ["expert", "admin"],
-                    }
-                ),
-                status_code=400,
-                headers={"Content-Type": "application/json"},
+            # Perform final quality assessment
+            prd_context = project.get("forgeData", {}).get("prd_generation", {})
+            quality_result = quality_engine.calculate_quality_score(
+                stage="ux_requirements", content=final_ux_data, context=prd_context
             )
 
-        # Prepare context handoff for technical analysis stage
-        tech_context_handoff = quality_validator.prepare_context_handoff(
-            "ux_requirements", "technical_analysis", project_data_with_ux
-        )
+            # Get thresholds
+            thresholds = quality_engine.get_dynamic_threshold("ux_requirements", prd_context)
 
-        # Update project in database
-        project["forgeData"]["ux_requirements"] = {
-            **final_ux_data,
-            "status": "completed",
-            "completedAt": datetime.now(timezone.utc).isoformat(),
-            "qualityMetrics": {
-                "overall": quality_result.overall_score,
-                "dimensions": quality_result.dimension_scores,
-                "gateStatus": quality_result.quality_gate_status,
+            # Accessibility compliance check
+            accessibility_assessment = accessibility_validator.validate_ux_requirements(final_ux_data)
+            accessibility_meets_minimum = accessibility_assessment.overall_score >= 90.0
+
+            # Cross-stage validation
+            project_data_with_ux = {**project, "forgeData": {**project.get("forgeData", {}), "ux_requirements": final_ux_data}}
+
+            cross_stage_validation = quality_validator.validate_cross_stage_consistency(
+                "prd_generation", "ux_requirements", project_data_with_ux
+            )
+
+            # Check if stage can be completed
+            can_complete = (
+                quality_result.quality_gate_status in ["PROCEED_WITH_CAUTION", "PROCEED_EXCELLENT"]
+                and cross_stage_validation.is_consistent
+                and accessibility_meets_minimum
+            ) or force_complete
+
+            if not can_complete:
+                return func.HttpResponse(
+                    json.dumps(
+                        {
+                            "error": "Quality thresholds not met",
+                            "currentScore": quality_result.overall_score,
+                            "requiredScore": thresholds.minimum,
+                            "accessibilityScore": accessibility_assessment.overall_score,
+                            "accessibilityRequired": 90.0,
+                            "consistencyIssues": cross_stage_validation.validation_errors,
+                            "improvementSuggestions": quality_result.improvement_suggestions,
+                            "accessibilityRecommendations": accessibility_assessment.recommendations,
+                            "canForceComplete": user_info.get("role") in ["expert", "admin"],
+                        }
+                    ),
+                    status_code=400,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            # Prepare context handoff for technical analysis stage
+            tech_context_handoff = quality_validator.prepare_context_handoff(
+                "ux_requirements", "technical_analysis", project_data_with_ux
+            )
+
+            # Update project in database
+            project["forgeData"]["ux_requirements"] = {
+                **final_ux_data,
+                "status": "completed",
+                "completedAt": datetime.now(timezone.utc).isoformat(),
+                "qualityMetrics": {
+                    "overall": quality_result.overall_score,
+                    "dimensions": quality_result.dimension_scores,
+                    "gateStatus": quality_result.quality_gate_status,
+                    "forceCompleted": force_complete,
+                },
+                "accessibilityCompliance": {
+                    "score": accessibility_assessment.overall_score,
+                    "complianceLevel": accessibility_assessment.compliance_level.value,
+                    "criticalIssueCount": len(
+                        [c for c in accessibility_assessment.checks if c.status.value == "fail" and c.priority <= 2]
+                    ),
+                },
+                "contextForNextStage": tech_context_handoff.context_data,
+            }
+
+            project["updatedAt"] = datetime.now(timezone.utc).isoformat()
+
+            # Save updated project
+            await db.upsert_item(project)
+
+            # Prepare completion result
+            completion_result = {
+                "projectId": project_id,
+                "stageCompleted": "ux_requirements",
+                "completionTimestamp": datetime.now(timezone.utc).isoformat(),
+                "finalQualityScore": quality_result.overall_score,
+                "qualityGateStatus": quality_result.quality_gate_status,
+                "accessibilityCompliance": {
+                    "score": accessibility_assessment.overall_score,
+                    "complianceLevel": accessibility_assessment.compliance_level.value,
+                    "meetsMinimum": accessibility_meets_minimum,
+                },
+                "crossStageConsistency": cross_stage_validation.is_consistent,
                 "forceCompleted": force_complete,
-            },
-            "accessibilityCompliance": {
-                "score": accessibility_assessment.overall_score,
-                "complianceLevel": accessibility_assessment.compliance_level.value,
-                "criticalIssueCount": len(
-                    [c for c in accessibility_assessment.checks if c.status.value == "fail" and c.priority <= 2]
+                "readyForNextStage": True,
+                "nextStage": "technical_analysis",
+                "contextHandoff": {
+                    "contextPrepared": True,
+                    "consistencyScore": tech_context_handoff.consistency_score,
+                    "handoffKeys": list(tech_context_handoff.context_data.keys()),
+                },
+                "qualityImpactOnNextStage": _predict_technical_quality_impact(
+                    quality_result, accessibility_assessment, cross_stage_validation
                 ),
-            },
-            "contextForNextStage": tech_context_handoff.context_data,
-        }
+            }
 
-        project["updatedAt"] = datetime.now(timezone.utc).isoformat()
-
-        # Save updated project
-        await container.replace_item(item=project["id"], body=project)
-
-        # Prepare completion result
-        completion_result = {
-            "projectId": project_id,
-            "stageCompleted": "ux_requirements",
-            "completionTimestamp": datetime.now(timezone.utc).isoformat(),
-            "finalQualityScore": quality_result.overall_score,
-            "qualityGateStatus": quality_result.quality_gate_status,
-            "accessibilityCompliance": {
-                "score": accessibility_assessment.overall_score,
-                "complianceLevel": accessibility_assessment.compliance_level.value,
-                "meetsMinimum": accessibility_meets_minimum,
-            },
-            "crossStageConsistency": cross_stage_validation.is_consistent,
-            "forceCompleted": force_complete,
-            "readyForNextStage": True,
-            "nextStage": "technical_analysis",
-            "contextHandoff": {
-                "contextPrepared": True,
-                "consistencyScore": tech_context_handoff.consistency_score,
-                "handoffKeys": list(tech_context_handoff.context_data.keys()),
-            },
-            "qualityImpactOnNextStage": _predict_technical_quality_impact(
-                quality_result, accessibility_assessment, cross_stage_validation
-            ),
-        }
-
-        return func.HttpResponse(json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"})
+            return func.HttpResponse(json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"})
 
     except Exception as e:
         logger.error(f"Error completing UX stage: {str(e)}")

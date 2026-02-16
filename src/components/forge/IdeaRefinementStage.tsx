@@ -4,6 +4,7 @@
  * into structured opportunities through systematic clarification and analysis.
  */
 import { useState, useEffect, useCallback } from "react";
+import { forgeApi } from "@/services/api";
 import {
   SparklesIcon,
   LightBulbIcon,
@@ -157,25 +158,7 @@ export default function IdeaRefinementStage({
   const analyzeIdeaQuality = useCallback(
     async (ideaData: IdeaRefinementData, context: any) => {
       try {
-        const response = await fetch(
-          `/api/forge/idea-refinement/analyze/${projectId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              ideaData,
-              projectContext: context,
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(`Analysis failed: ${response.statusText}`);
-        }
-
-        return await response.json();
+        return await forgeApi.analyzeIdea(projectId, ideaData, context);
       } catch (error) {
         console.error("Error analyzing idea quality:", error);
         throw error;
@@ -186,21 +169,7 @@ export default function IdeaRefinementStage({
 
   const getQualityAssessment = useCallback(async () => {
     try {
-      const response = await fetch(
-        `/api/forge/idea-refinement/assessment/${projectId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Assessment retrieval failed: ${response.statusText}`);
-      }
-
-      return await response.json();
+      return await forgeApi.getIdeaQualityAssessment(projectId);
     } catch (error) {
       console.error("Error getting quality assessment:", error);
       throw error;
@@ -217,13 +186,13 @@ export default function IdeaRefinementStage({
     const loadQualityAssessment = async () => {
       try {
         const assessment = await getQualityAssessment();
-        if (assessment.currentQuality) {
+        if (assessment) {
           setData((prev) => ({
             ...prev,
-            qualityAssessment: assessment.currentQuality,
-            improvementSuggestions: assessment.improvementOpportunities,
+            qualityAssessment: assessment as any,
+            improvementSuggestions: (assessment as any).improvementSuggestions,
           }));
-          setAnalysisResults(assessment);
+          setAnalysisResults(assessment as any);
         }
       } catch (error) {
         console.log("No existing quality assessment found");
@@ -245,8 +214,8 @@ export default function IdeaRefinementStage({
           setAnalysisResults(analysis);
           setData((prev) => ({
             ...prev,
-            qualityAssessment: analysis.qualityAssessment,
-            improvementSuggestions: analysis.improvementSuggestions,
+            qualityAssessment: analysis.qualityAssessment as any,
+            improvementSuggestions: analysis.qualityAssessment?.improvementSuggestions as any,
             qualityScore: analysis.qualityAssessment.overallScore,
           }));
         } catch (error) {

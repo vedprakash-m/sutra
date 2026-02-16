@@ -15,12 +15,14 @@ import azure.functions as func
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.database import get_database_manager
+from shared.middleware import enhanced_security_middleware
 from shared.models import UserRole
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
+@enhanced_security_middleware
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Azure Static Web Apps Role Assignment Endpoint

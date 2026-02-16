@@ -15,6 +15,7 @@ from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
 from shared.unified_auth import get_user_from_request, require_authentication
+from shared.middleware import enhanced_security_middleware
 from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 
 # Add the root directory to Python path for proper imports
@@ -24,6 +25,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 logger = logging.getLogger(__name__)
 
 
+@enhanced_security_middleware
 async def main(req: HttpRequest) -> HttpResponse:
     """
     Cost Management API endpoint.

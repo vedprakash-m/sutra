@@ -12,11 +12,20 @@ const Dashboard = React.lazy(() => import("@/components/dashboard/Dashboard"));
 const PromptBuilder = React.lazy(
   () => import("@/components/prompt/PromptBuilder"),
 );
+const PromptsListPage = React.lazy(
+  () => import("@/components/prompt/PromptsListPage"),
+);
 const CollectionsPage = React.lazy(
   () => import("@/components/collections/CollectionsPage"),
 );
+const CollectionDetailPage = React.lazy(
+  () => import("@/components/collections/CollectionDetailPage"),
+);
 const PlaybookBuilder = React.lazy(
   () => import("@/components/playbooks/PlaybookBuilder"),
+);
+const PlaybooksListPage = React.lazy(
+  () => import("@/components/playbooks/PlaybooksListPage"),
 );
 const PlaybookRunner = React.lazy(
   () => import("@/components/playbooks/PlaybookRunner"),
@@ -102,9 +111,13 @@ function AppContent() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/prompts" element={<PromptsListPage />} />
             <Route path="/prompts/new" element={<PromptBuilder />} />
             <Route path="/prompts/:id" element={<PromptBuilder />} />
             <Route path="/collections" element={<CollectionsPage />} />
+            <Route path="/collections/:id" element={<CollectionDetailPage />} />
+            <Route path="/playbooks" element={<PlaybooksListPage />} />
             <Route path="/playbooks/new" element={<PlaybookBuilder />} />
             <Route path="/playbooks/:id" element={<PlaybookBuilder />} />
             <Route path="/playbooks/:id/run" element={<PlaybookRunner />} />

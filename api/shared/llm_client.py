@@ -116,18 +116,50 @@ class LLMManager:
         available.sort(key=lambda x: self.providers[x].priority)
         return available
 
+    @staticmethod
+    def resolve_provider_from_model(model_name: str) -> str:
+        """Resolve LLM provider name from model identifier.
+
+        Maps model name prefixes to provider names:
+        - gpt-* → openai
+        - claude-* → anthropic
+        - gemini-* → google
+
+        Returns 'openai' as fallback for unknown models.
+        """
+        if not model_name:
+            return "openai"
+
+        model_lower = model_name.lower()
+        if model_lower.startswith("gpt-") or model_lower.startswith("o1") or model_lower.startswith("o3"):
+            return "openai"
+        elif model_lower.startswith("claude"):
+            return "anthropic"
+        elif model_lower.startswith("gemini"):
+            return "google"
+        else:
+            return "openai"
+
     async def execute_prompt(
         self,
-        provider_name: str,
-        prompt: str,
+        provider_name: str = None,
+        prompt: str = None,
         context: Dict[str, Any] = None,
         model: str = None,
         stream: bool = False,
         **kwargs,
     ) -> Union[LLMResponse, AsyncGenerator[str, None]]:
-        """Execute a prompt with the specified provider."""
+        """Execute a prompt with the specified provider.
+
+        If provider_name is omitted, it will be auto-resolved from the model name.
+        """
         if not await self.initialize():
             raise RuntimeError("LLM Manager not initialized")
+
+        # Auto-resolve provider from model name if not explicitly provided
+        if provider_name is None:
+            provider_name = self.resolve_provider_from_model(model)
+            self.logger.info(f"Auto-resolved provider '{provider_name}' from model '{model}'")
 
         if provider_name not in self.providers:
             raise ValueError(f"Unknown provider: {provider_name}")

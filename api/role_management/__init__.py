@@ -18,6 +18,7 @@ import azure.functions as func
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from shared.database import get_database_manager
+from shared.middleware import enhanced_security_middleware
 from shared.models import UserRole
 
 # Initialize logging
@@ -219,6 +220,7 @@ def get_role_manager() -> RoleManager:
     return _role_manager
 
 
+@enhanced_security_middleware
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Advanced Role Management API

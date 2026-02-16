@@ -543,6 +543,28 @@ import type {
   ExportResponse,
 } from "../types/forge";
 
+/**
+ * Get current LLM provider preferences from the forge store.
+ * Imported lazily to avoid circular dependencies.
+ */
+const getLLMPreferences = (): { provider: string; model: string } => {
+  try {
+    // Read from sessionStorage directly to avoid importing the store (circular dep)
+    const stored = sessionStorage.getItem("sutra-forge-store");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const state = parsed?.state || parsed;
+      return {
+        provider: state.selectedProvider || "openai",
+        model: state.selectedModel || "gpt-4o",
+      };
+    }
+  } catch {
+    // Fallback
+  }
+  return { provider: "openai", model: "gpt-4o" };
+};
+
 export const forgeApi = {
   // ============================================================================
   // Forge Project Management
@@ -590,6 +612,15 @@ export const forgeApi = {
   deleteProject: (projectId: string) =>
     apiService.delete(`/forge/delete?project_id=${projectId}`),
 
+  /**
+   * Advance project to next stage
+   */
+  advanceStage: (projectId: string, nextStageId: string) =>
+    apiService.post<ForgeProject>(
+      `/forge/advance-stage?project_id=${projectId}`,
+      { nextStageId },
+    ),
+
   // ============================================================================
   // Stage 1: Idea Refinement
   // ============================================================================
@@ -604,7 +635,7 @@ export const forgeApi = {
   ) =>
     apiService.post<AnalysisResult>(
       `/forge/idea-refinement/analyze?project_id=${projectId}`,
-      { ideaData, projectContext },
+      { ideaData, projectContext, ...getLLMPreferences() },
     ),
 
   /**
@@ -613,7 +644,7 @@ export const forgeApi = {
   refineIdeaWithLLM: (projectId: string, request: RefinementRequest) =>
     apiService.post<RefinedIdea>(
       `/forge/idea-refinement/refine?project_id=${projectId}`,
-      request,
+      { ...request, ...getLLMPreferences() },
     ),
 
   /**
@@ -643,7 +674,7 @@ export const forgeApi = {
   generateUserStories: (projectId: string, context?: Record<string, any>) =>
     apiService.post<{ userStories: UserStory[] }>(
       `/forge/prd-generation/generate-user-stories?project_id=${projectId}`,
-      { context },
+      { context, ...getLLMPreferences() },
     ),
 
   /**
@@ -671,12 +702,30 @@ export const forgeApi = {
     ),
 
   /**
+   * Extract requirements from refined idea
+   */
+  extractRequirements: (projectId: string, ideaData: Record<string, any>) =>
+    apiService.post<{ requirements: FunctionalRequirement[] }>(
+      `/forge/prd-generation/extract-requirements?project_id=${projectId}`,
+      { ideaData, ...getLLMPreferences() },
+    ),
+
+  /**
+   * Prioritize features from requirements
+   */
+  prioritizeFeatures: (projectId: string, features: Record<string, any>) =>
+    apiService.post<{ prioritizedFeatures: Record<string, any> }>(
+      `/forge/prd-generation/prioritize-features?project_id=${projectId}`,
+      { features },
+    ),
+
+  /**
    * Generate complete PRD document with all sections
    */
   generatePRDDocument: (projectId: string) =>
     apiService.post<PRDDocument>(
-      `/forge/prd-generation/generate-prd-document?project_id=${projectId}`,
-      {},
+      `/forge/prd-generation/generate-document?project_id=${projectId}`,
+      { ...getLLMPreferences() },
     ),
 
   /**
@@ -684,7 +733,7 @@ export const forgeApi = {
    */
   getPRDQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/prd-generation/quality-assessment?project_id=${projectId}`,
+      `/forge/prd-generation/assessment?project_id=${projectId}`,
     ),
 
   /**
@@ -705,8 +754,8 @@ export const forgeApi = {
    */
   generateUserJourneys: (projectId: string, userStories: UserStory[]) =>
     apiService.post<{ userJourneys: UserJourney[] }>(
-      `/forge/ux-requirements/generate-user-journeys?project_id=${projectId}`,
-      { userStories },
+      `/forge/ux-requirements/map-user-journeys?project_id=${projectId}`,
+      { userStories, ...getLLMPreferences() },
     ),
 
   /**
@@ -715,7 +764,7 @@ export const forgeApi = {
   generateWireframes: (projectId: string, userJourneys: UserJourney[]) =>
     apiService.post<{ wireframes: Wireframe[] }>(
       `/forge/ux-requirements/generate-wireframes?project_id=${projectId}`,
-      { userJourneys },
+      { userJourneys, ...getLLMPreferences() },
     ),
 
   /**
@@ -732,7 +781,7 @@ export const forgeApi = {
    */
   generateUXDocument: (projectId: string) =>
     apiService.post<UXDocument>(
-      `/forge/ux-requirements/generate-ux-document?project_id=${projectId}`,
+      `/forge/ux-requirements/generate-document?project_id=${projectId}`,
       {},
     ),
 
@@ -741,8 +790,17 @@ export const forgeApi = {
    */
   validateAccessibility: (projectId: string, uxData: Partial<UXDocument>) =>
     apiService.post<AccessibilityReport>(
-      `/forge/ux-requirements/accessibility-validation?project_id=${projectId}`,
+      `/forge/ux-requirements/check-accessibility?project_id=${projectId}`,
       { uxData },
+    ),
+
+  /**
+   * Specify interactions for UX components
+   */
+  specifyInteractions: (projectId: string, interactionData: Record<string, any>) =>
+    apiService.post<{ interactions: Record<string, any> }>(
+      `/forge/ux-requirements/specify-interactions?project_id=${projectId}`,
+      { interactionData },
     ),
 
   /**
@@ -750,7 +808,7 @@ export const forgeApi = {
    */
   getUXQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/ux-requirements/quality-assessment?project_id=${projectId}`,
+      `/forge/ux-requirements/assessment?project_id=${projectId}`,
     ),
 
   /**
@@ -769,10 +827,21 @@ export const forgeApi = {
   /**
    * Analyze architecture with multi-LLM evaluation
    */
-  analyzeArchitecture: (projectId: string, requirements: Record<string, any>) =>
+  /**
+   * Get available consensus models for multi-LLM evaluation
+   */
+  getConsensusModels: () =>
+    apiService.get<{ models: Record<string, any>[] }>(
+      `/forge/technical-analysis/consensus-models`,
+    ),
+
+  /**
+   * Analyze architecture with multi-LLM evaluation
+   */
+  analyzeArchitecture: (projectId: string, data: Record<string, any>) =>
     apiService.post<{ analyses: ArchitectureAnalysis[] }>(
-      `/forge/technical-analysis/analyze-architecture?project_id=${projectId}`,
-      { requirements },
+      `/forge/technical-analysis/evaluate-architecture?project_id=${projectId}`,
+      { ...data, ...getLLMPreferences() },
     ),
 
   /**
@@ -792,7 +861,7 @@ export const forgeApi = {
    */
   assessScalability: (projectId: string, architecture: ArchitectureAnalysis) =>
     apiService.post<ScalabilityAssessment>(
-      `/forge/technical-analysis/scalability-assessment?project_id=${projectId}`,
+      `/forge/technical-analysis/assess-feasibility?project_id=${projectId}`,
       { architecture },
     ),
 
@@ -801,7 +870,7 @@ export const forgeApi = {
    */
   generateTechSpec: (projectId: string) =>
     apiService.post<TechSpecDocument>(
-      `/forge/technical-analysis/generate-tech-spec?project_id=${projectId}`,
+      `/forge/technical-analysis/generate-technical-specs?project_id=${projectId}`,
       {},
     ),
 
@@ -815,11 +884,20 @@ export const forgeApi = {
     ),
 
   /**
+   * Export technical analysis in specified format
+   */
+  exportTechnicalAnalysis: (projectId: string, data: Record<string, any>) =>
+    apiService.post<Record<string, any>>(
+      `/forge/technical-analysis/export-technical-analysis?project_id=${projectId}`,
+      data,
+    ),
+
+  /**
    * Get quality assessment for technical analysis stage
    */
   getTechQualityAssessment: (projectId: string) =>
     apiService.get<QualityAssessment>(
-      `/forge/technical-analysis/quality-assessment?project_id=${projectId}`,
+      `/forge/technical-analysis/quality-check?project_id=${projectId}`,
     ),
 
   /**
@@ -838,19 +916,19 @@ export const forgeApi = {
   /**
    * Generate coding agent prompts
    */
-  generateCodingPrompts: (projectId: string, techSpec: TechSpecDocument) =>
+  generateCodingPrompts: (projectId: string, data: Record<string, any>) =>
     apiService.post<{ codingPrompts: CodingPrompt[] }>(
       `/forge/generate-coding-prompts?project_id=${projectId}`,
-      { techSpec },
+      { ...data, ...getLLMPreferences() },
     ),
 
   /**
    * Create development workflow
    */
-  createDevelopmentWorkflow: (projectId: string, prompts: CodingPrompt[]) =>
+  createDevelopmentWorkflow: (projectId: string, data: Record<string, any>) =>
     apiService.post<DevelopmentWorkflow>(
       `/forge/create-development-workflow?project_id=${projectId}`,
-      { prompts },
+      data,
     ),
 
   /**
@@ -858,11 +936,29 @@ export const forgeApi = {
    */
   generateTestingStrategy: (
     projectId: string,
-    requirements: Record<string, any>,
+    data: Record<string, any>,
   ) =>
     apiService.post<TestingStrategy>(
       `/forge/generate-testing-strategy?project_id=${projectId}`,
-      { requirements },
+      data,
+    ),
+
+  /**
+   * Create deployment guide
+   */
+  createDeploymentGuide: (projectId: string, data: Record<string, any>) =>
+    apiService.post<Record<string, any>>(
+      `/forge/create-deployment-guide?project_id=${projectId}`,
+      data,
+    ),
+
+  /**
+   * Validate context integration across all stages
+   */
+  validateContextIntegration: (projectId: string, data?: Record<string, any>) =>
+    apiService.post<Record<string, any>>(
+      `/forge/validate-context-integration?project_id=${projectId}`,
+      data || {},
     ),
 
   /**
@@ -949,7 +1045,6 @@ export const api = {
   integrations: integrationsApi,
   admin: adminApi,
   llm: llmApi,
-  guest: guestApi,
   forge: forgeApi,
 };
 

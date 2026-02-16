@@ -22,12 +22,14 @@ from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
 from shared.unified_auth import require_authentication
+from shared.middleware import enhanced_security_middleware
 from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
+@enhanced_security_middleware
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     LLM Execution API endpoint for Multi-LLM optimization and comparison.

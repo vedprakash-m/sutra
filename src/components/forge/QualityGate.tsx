@@ -7,6 +7,14 @@ interface QualityGateProps {
   threshold: number;
   title?: string;
   description?: string;
+  /** Called when quality gate passes (score >= threshold) */
+  onPass?: () => void;
+  /** Called when quality gate blocks (score < threshold) */
+  onBlock?: () => void;
+  /** Whether to show the override button for expert override */
+  allowOverride?: boolean;
+  /** Called when expert override is triggered */
+  onOverride?: () => void;
 }
 
 export const QualityGate: React.FC<QualityGateProps> = ({
@@ -16,10 +24,25 @@ export const QualityGate: React.FC<QualityGateProps> = ({
   threshold,
   title = "Quality Gate",
   description,
+  onPass,
+  onBlock,
+  allowOverride = false,
+  onOverride,
 }) => {
   const actualScore = score || currentScore || quality?.overallScore || 0;
   const isPass = actualScore >= threshold;
   const percentage = Math.round((actualScore / 100) * 100);
+
+  // Notify parent of gate status
+  React.useEffect(() => {
+    if (actualScore > 0) {
+      if (isPass) {
+        onPass?.();
+      } else {
+        onBlock?.();
+      }
+    }
+  }, [isPass, actualScore, onPass, onBlock]);
 
   return (
     <div
@@ -58,6 +81,14 @@ export const QualityGate: React.FC<QualityGateProps> = ({
           {isPass ? "✓ Pass" : "⚠ Below Threshold"}
         </span>
       </div>
+      {!isPass && allowOverride && (
+        <button
+          onClick={onOverride}
+          className="mt-3 w-full text-xs font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 rounded px-3 py-1.5 transition-colors"
+        >
+          Expert Override — Proceed Despite Low Quality
+        </button>
+      )}
     </div>
   );
 };

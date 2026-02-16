@@ -28,7 +28,15 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides systematic tools 
 - **📁 Collections**: Hierarchical organization and team sharing of prompts and templates
 - **🔄 Playbooks**: Multi-step AI workflow orchestration and automation
 - **📊 Analytics**: Usage insights, performance metrics, and cost optimization
-- **� Forge**: Systematic idea-to-implementation development workflows (advanced feature)
+- **🔨 Forge**: Systematic idea-to-implementation development workflows (advanced feature)
+
+### ✅ Implementation Status (February 2026)
+
+- Forge end-to-end stage pipeline is wired through typed frontend service APIs.
+- Security hardening completed: guest/debug/test-only endpoints removed from runtime surface.
+- Backend Forge data access consolidated via async Cosmos helper paths.
+- Forge UI/store test hardening completed with scoped coverage workflow.
+- Progressive quality gates and LLM provider selection/export UX are fully integrated.
 
 **Built for Professional Teams:**
 
@@ -45,7 +53,7 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides systematic tools 
 
 ### 🎯 **Multi-LLM Prompt Engineering**
 
-- **� LLM Provider Support**: OpenAI GPT-4, Anthropic Claude, Google Gemini
+- **🤖 LLM Provider Support**: OpenAI GPT-4, Anthropic Claude, Google Gemini
 - **🔄 Side-by-Side Comparison**: Test prompts across multiple models simultaneously
 - **🎛️ Dynamic Variables**: Use `{{placeholders}}` for flexible, reusable templates
 - **📝 Prompt Optimization**: AI-powered suggestions for prompt improvement
@@ -128,6 +136,7 @@ npm run dev
 # Frontend testing
 npm run test              # Run Jest test suite
 npm run test:coverage     # Generate coverage report
+npm run test:coverage:forge # Strict Forge-scoped coverage profile
 npm run lint             # Code quality checks
 
 # Backend testing
@@ -197,10 +206,10 @@ npm run test:e2e         # Playwright e2e tests with Docker
 
 ### **Development Documentation**
 
-- **[Product Requirements (PRD)](docs/PRD_Sutra.md)**: Complete feature specifications and requirements
-- **[Technical Specification](docs/Tech_Spec_Sutra.md)**: Architecture, API design, and implementation details
-- **[User Experience Design](docs/User_Experience_Sutra.md)**: UI/UX specifications and design patterns
-- **[Development Metadata](docs/metadata.md)**: Project status, implementation tracking, and deployment information
+- **[Product Requirements (PRD)](specs/PRD_Sutra.md)**: Complete feature specifications and requirements
+- **[Technical Specification](specs/Tech_Spec_Sutra.md)**: Architecture, API design, and implementation details
+- **[User Experience Design](specs/UX_Spec_Sutra.md)**: UI/UX specifications and design patterns
+- **[Implementation Plan](specs/Tasks.md)**: Tracked execution status and completed remediation work
 
 ### **Implementation Resources**
 
@@ -312,14 +321,13 @@ npm run e2e:validate # Validate E2E environment
 
 ## 📊 **Testing & Quality**
 
-### **🎯 Comprehensive Test Suite**
+### **🎯 Test Workflows**
 
-| **Component**        | **Coverage** | **Tests**           | **Status**              |
-| -------------------- | ------------ | ------------------- | ----------------------- |
-| **Frontend (Jest)**  | Full Suite   | 488 tests           | ✅ 474 passing, 14 failing |
-| **Backend (Pytest)** | 98.7%        | 372 tests           | ✅ Production ready     |
-| **E2E (Playwright)** | Enhanced     | Critical paths      | ✅ CI/CD parity         |
-| **Total Full-Stack** | **98.7%**    | **860+ tests total** | **🔄 Active development** |
+- `npm run test` — full frontend Jest suite
+- `npm run test:coverage` — full frontend coverage (global thresholds)
+- `npm run test:coverage:forge` — strict Forge-scoped coverage workflow
+- `cd api && python -m pytest` — backend pytest suite
+- `npm run test:e2e` — Playwright E2E with Docker-managed setup
 
 ### **🔧 Enhanced E2E Infrastructure**
 

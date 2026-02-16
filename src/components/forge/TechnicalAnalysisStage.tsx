@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import { forgeApi } from "@/services/api";
 
 // Types for Technical Analysis
 interface LLMModel {
@@ -212,13 +213,10 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
 
   const loadAvailableModels = async () => {
     try {
-      const response = await fetch(
-        "/api/forge/technical-analysis/consensus-models",
-      );
-      const data = await response.json();
+      const data = await forgeApi.getConsensusModels();
 
       if (data.models) {
-        setAvailableModels(data.models);
+        setAvailableModels(data.models as LLMModel[]);
       }
     } catch (error) {
       console.error("Error loading available models:", error);
@@ -281,42 +279,30 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
     setCurrentStep("evaluation");
 
     try {
-      const response = await fetch(
-        "/api/forge/technical-analysis/evaluate-architecture",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            session_id: sessionId,
-            project_context: projectContext,
-            selected_models: selectedModels,
-            evaluation_params: evaluationParams,
-          }),
-        },
-      );
+      const result = await forgeApi.analyzeArchitecture(sessionId, {
+        project_context: projectContext,
+        selected_models: selectedModels,
+        evaluation_params: evaluationParams,
+      });
 
-      const result = await response.json();
-
-      if (result.success) {
-        setTechnicalEvaluation(result.architecture_evaluation);
-        setConsensusResult(result.consensus_analysis);
-        setQualityMetrics(result.quality_metrics);
-        setOperationId(result.operation_id);
+      const response = result as any;
+      if (response.success !== false) {
+        setTechnicalEvaluation(response.architectureEvaluation);
+        setConsensusResult(response.consensusAnalysis);
+        setQualityMetrics(response.qualityMetrics);
+        setOperationId(response.operationId);
 
         setCurrentStep("review");
 
         toast({
           title: "Technical Analysis Complete",
-          description: `Evaluation completed with ${result.quality_metrics.overall_score.toFixed(1)}% quality score`,
-          variant: result.quality_metrics.meets_threshold
+          description: `Evaluation completed with ${response.qualityMetrics?.overallScore?.toFixed(1) ?? 'N/A'}% quality score`,
+          variant: response.qualityMetrics?.meetsThreshold
             ? "default"
             : "destructive",
         });
       } else {
-        throw new Error(result.error || "Evaluation failed");
+        throw new Error(response.error || "Evaluation failed");
       }
     } catch (error) {
       console.error("Error in technical evaluation:", error);
@@ -359,23 +345,10 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        "/api/forge/technical-analysis/export-technical-analysis",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            session_id: sessionId,
-            export_format: exportFormat,
-            include_sections: exportSections,
-          }),
-        },
-      );
-
-      const result = await response.json();
+      const result = await forgeApi.exportTechnicalAnalysis(sessionId, {
+        export_format: exportFormat,
+        include_sections: exportSections,
+      });
 
       if (result.success) {
         // Create and download file

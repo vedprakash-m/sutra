@@ -23,12 +23,14 @@ from shared.real_time_cost import get_cost_manager
 from shared.unified_auth import get_user_from_request, require_authentication
 from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 from shared.utils.schemaValidator import validate_entity
+from shared.middleware import enhanced_security_middleware
 from shared.validation import validate_playbook_data
 
 # Initialize logging
 logger = logging.getLogger(__name__)
 
 
+@enhanced_security_middleware
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """
     Playbooks API endpoint for managing AI workflow playbooks.

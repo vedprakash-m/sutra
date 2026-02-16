@@ -28,7 +28,7 @@ class DatabaseManager:
         if not self._connection_string and not self._development_mode:
             raise ValueError("COSMOS_DB_CONNECTION_STRING environment variable is required")
 
-        self._database_name = "sutra"
+        self._database_name = "SutraDB"
 
     @property
     def client(self) -> CosmosClient:

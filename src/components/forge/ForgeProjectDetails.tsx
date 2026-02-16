@@ -1,7 +1,7 @@
 /**
  * ForgeProjectDetails - Detailed view of a Forge project with stage navigation
  */
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   ArrowLeftIcon,
   PencilIcon,
@@ -14,11 +14,15 @@ import {
   PlayCircleIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
+import { forgeApi } from "@/services/api";
 import IdeaRefinementStage from "./IdeaRefinementStage";
 import PRDGeneration from "./PRDGeneration";
 import UXRequirementsStage from "./UXRequirementsStage";
 import TechnicalAnalysisStage from "./TechnicalAnalysisStage";
 import ImplementationPlaybookStage from "./ImplementationPlaybookStage";
+import { LLMProviderSelector } from "./LLMProviderSelector";
+import { ForgeExportButton } from "./ForgeExportButton";
+import { useForgeStore } from "@/stores/forgeStore";
 
 interface ForgeProject {
   id: string;
@@ -128,17 +132,22 @@ export default function ForgeProjectDetails({
   );
   const currentStage = STAGES[currentStageIndex];
 
-  const handleAdvanceStage = () => {
+  const handleAdvanceStage = useCallback(async () => {
     if (currentStageIndex < STAGES.length - 1) {
       const nextStage = STAGES[currentStageIndex + 1];
-      const updatedProject = {
-        ...project,
-        currentStage: nextStage.id as ForgeProject["currentStage"],
-        updatedAt: new Date().toISOString(),
-      };
-      onProjectUpdate?.(updatedProject);
+      try {
+        await forgeApi.advanceStage(project.id, nextStage.id);
+        const updatedProject = {
+          ...project,
+          currentStage: nextStage.id as ForgeProject["currentStage"],
+          updatedAt: new Date().toISOString(),
+        };
+        onProjectUpdate?.(updatedProject);
+      } catch (error) {
+        console.error("Error advancing stage:", error);
+      }
     }
-  };
+  }, [currentStageIndex, project, onProjectUpdate]);
 
   const getStageProgress = (stageIndex: number) => {
     if (stageIndex < currentStageIndex) return 100;
@@ -200,6 +209,7 @@ export default function ForgeProjectDetails({
             >
               <PencilIcon className="h-5 w-5" />
             </button>
+            <ForgeExportButton projectId={project.id} />
           </div>
         </div>
 
@@ -436,11 +446,16 @@ export default function ForgeProjectDetails({
 
         {activeTab === "work" && (
           <div>
+            {/* LLM Provider Selection */}
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">AI Model:</span>
+              <LLMProviderSelector />
+            </div>
             {project.currentStage === "idea_refinement" && (
               <IdeaRefinementStage
                 projectId={project.id}
                 initialData={stageData.idea_refinement}
-                selectedLLM="gpt-4" // TODO: Get from user preferences
+                selectedLLM={useForgeStore.getState().selectedModel}
                 onDataUpdate={(data) => {
                   setStageData((prev) => ({ ...prev, idea_refinement: data }));
                 }}

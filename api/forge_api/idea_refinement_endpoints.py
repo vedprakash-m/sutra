@@ -5,23 +5,19 @@ Implements systematic idea clarification and multi-dimensional analysis with qua
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import azure.functions as func
-from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
+from shared.async_database import AsyncCosmosHelper
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
 from shared.llm_client import LLMManager
 from shared.quality_engine import ContextualQualityValidator, QualityAssessmentEngine
 
 logger = logging.getLogger(__name__)
-
-# Database configuration
-COSMOS_CONNECTION_STRING = "your_cosmos_connection_string_here"
-DATABASE_NAME = "SutraDB"
-PLAYBOOKS_CONTAINER = "Playbooks"  # Forge projects are stored as specialized playbooks
 
 quality_engine = QualityAssessmentEngine()
 context_validator = ContextualQualityValidator()
@@ -33,7 +29,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         # Extract method and route parameters
         method = req.method
         route_params = req.route_params
-        action = route_params.get("action", "")
+        action = route_params.get("sub_action", "") or route_params.get("action", "")
         project_id = route_params.get("project_id", "")
 
         logger.info(f"Idea Refinement API - Method: {method}, Action: {action}, Project: {project_id}")
@@ -138,7 +134,8 @@ async def refine_idea_with_llm(req: func.HttpRequest, project_id: str) -> func.H
         request_data = json.loads(req.get_body().decode("utf-8"))
         current_idea = request_data.get("currentIdea", {})
         improvement_focus = request_data.get("improvementFocus", [])
-        selected_llm = request_data.get("selectedLLM", "gemini-flash")
+        selected_llm = request_data.get("model") or request_data.get("selectedLLM", "gemini-flash")
+        provider_name = request_data.get("provider") or LLMManager.resolve_provider_from_model(selected_llm)
         project_context = request_data.get("projectContext", {})
 
         # Initialize cost tracking
@@ -157,7 +154,7 @@ async def refine_idea_with_llm(req: func.HttpRequest, project_id: str) -> func.H
 
         try:
             response = await llm_client.execute_prompt(
-                prompt=refinement_prompt, model=selected_llm, temperature=0.7, max_tokens=2000
+                provider_name=provider_name, prompt=refinement_prompt, model=selected_llm, temperature=0.7, max_tokens=2000
             )
 
             # Track successful completion
@@ -223,12 +220,9 @@ async def get_quality_assessment(req: func.HttpRequest, project_id: str) -> func
             )
 
         # Get project from database
-        async with CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING) as client:
-            database = client.get_database_client(DATABASE_NAME)
-            container = database.get_container_client(PLAYBOOKS_CONTAINER)
-
+        async with AsyncCosmosHelper() as db:
             try:
-                project = await container.read_item(item=project_id, partition_key=user_info["user_id"])
+                project = await db.read_item(project_id, partition_key=user_info["user_id"])
             except CosmosResourceNotFoundError:
                 return func.HttpResponse(
                     json.dumps({"error": "Project not found"}), status_code=404, headers={"Content-Type": "application/json"}
@@ -328,12 +322,9 @@ async def complete_stage(req: func.HttpRequest, project_id: str) -> func.HttpRes
             )
 
         # Update project in database
-        async with CosmosClient.from_connection_string(COSMOS_CONNECTION_STRING) as client:
-            database = client.get_database_client(DATABASE_NAME)
-            container = database.get_container_client(PLAYBOOKS_CONTAINER)
-
+        async with AsyncCosmosHelper() as db:
             try:
-                project = await container.read_item(item=project_id, partition_key=user_info["user_id"])
+                project = await db.read_item(project_id, partition_key=user_info["user_id"])
             except CosmosResourceNotFoundError:
                 return func.HttpResponse(
                     json.dumps({"error": "Project not found"}), status_code=404, headers={"Content-Type": "application/json"}
@@ -360,7 +351,7 @@ async def complete_stage(req: func.HttpRequest, project_id: str) -> func.HttpRes
             project["updatedAt"] = datetime.now(timezone.utc).isoformat()
 
             # Save updated project
-            await container.replace_item(item=project["id"], body=project)
+            await db.upsert_item(project)
 
         # Prepare completion result
         completion_result = {

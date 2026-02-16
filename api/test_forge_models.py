@@ -13,8 +13,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from shared.models.forge_models import (
     ArtifactType,
-    ConceptionData,
-    DeploymentData,
     DeploymentEnvironment,
     DeploymentStatus,
     ForgeAnalytics,
@@ -22,16 +20,18 @@ from shared.models.forge_models import (
     ForgeProject,
     ForgeStage,
     ForgeTemplate,
-    ImplementationData,
+    IdeaRefinementData,
+    ImplementationPlaybookData,
     ImplementationTask,
-    PlanningData,
+    PRDGenerationData,
     ProjectMilestone,
     ProjectPriority,
     ProjectResource,
     ProjectStatus,
     TaskStatus,
+    TechnicalAnalysisData,
+    UXRequirementsData,
     ValidationCriteria,
-    ValidationData,
     ValidationStatus,
     calculate_stage_completion_percentage,
     generate_forge_id,
@@ -90,7 +90,7 @@ class ForgeModelsTest:
         # Validate basic properties
         assert project.id.startswith("forge_"), "Project ID should have forge_ prefix"
         assert project.name == "Test AI Assistant Project", "Project name not set correctly"
-        assert project.current_stage == ForgeStage.CONCEPTION, "Should start in conception stage"
+        assert project.current_stage == ForgeStage.IDEA_REFINEMENT, "Should start in idea_refinement stage"
         assert project.status == ProjectStatus.DRAFT, "Should start as draft"
         assert len(project.artifacts) == 5, "Should have artifacts dict for all 5 stages"
         assert project.calculate_overall_progress() == 10.0, "Initial progress should be 10%"
@@ -125,11 +125,11 @@ class ForgeModelsTest:
 
         # Test stage progression
         stages = [
-            ForgeStage.CONCEPTION,
-            ForgeStage.VALIDATION,
-            ForgeStage.PLANNING,
-            ForgeStage.IMPLEMENTATION,
-            ForgeStage.DEPLOYMENT,
+            ForgeStage.IDEA_REFINEMENT,
+            ForgeStage.PRD_GENERATION,
+            ForgeStage.UX_REQUIREMENTS,
+            ForgeStage.TECHNICAL_ANALYSIS,
+            ForgeStage.IMPLEMENTATION_PLAYBOOK,
         ]
 
         for i, expected_stage in enumerate(stages):
@@ -157,7 +157,7 @@ class ForgeModelsTest:
             else:
                 # Test that we can't advance beyond final stage
                 success = project.advance_stage()
-                assert not success, "Should not be able to advance beyond deployment stage"
+                assert not success, "Should not be able to advance beyond implementation_playbook stage"
 
         print(f"  ✅ Stage progression: {' → '.join([s.value for s in stages])}")
         print(f"  ✅ Stage validation logic working")
@@ -243,23 +243,23 @@ class ForgeModelsTest:
             owner_id=self.test_user_id,
         )
 
-        # Test Conception stage data
-        project.conception_data.initial_idea = "Create an AI-powered task management system"
-        project.conception_data.problem_statement = "Current task management tools lack intelligent prioritization"
-        project.conception_data.target_audience = "Knowledge workers and project managers"
-        project.conception_data.success_metrics = ["User adoption", "Task completion rate", "User satisfaction"]
-        project.conception_data.feasibility_score = 8.5
+        # Test Idea Refinement stage data
+        project.idea_refinement_data.initial_idea = "Create an AI-powered task management system"
+        project.idea_refinement_data.problem_statement = "Current task management tools lack intelligent prioritization"
+        project.idea_refinement_data.target_audience = "Knowledge workers and project managers"
+        project.idea_refinement_data.success_metrics = ["User adoption", "Task completion rate", "User satisfaction"]
+        project.idea_refinement_data.feasibility_score = 8.5
 
-        conception_data = project.get_current_stage_data()
-        assert isinstance(conception_data, ConceptionData), "Should return ConceptionData for conception stage"
-        assert conception_data.initial_idea == project.conception_data.initial_idea, "Conception data should match"
+        idea_refinement_data = project.get_current_stage_data()
+        assert isinstance(idea_refinement_data, IdeaRefinementData), "Should return IdeaRefinementData for idea_refinement stage"
+        assert idea_refinement_data.initial_idea == project.idea_refinement_data.initial_idea, "Idea refinement data should match"
 
-        print(f"  ✅ Conception: {project.conception_data.initial_idea}")
-        print(f"     Target: {project.conception_data.target_audience}")
-        print(f"     Feasibility: {project.conception_data.feasibility_score}/10")
+        print(f"  ✅ Idea Refinement: {project.idea_refinement_data.initial_idea}")
+        print(f"     Target: {project.idea_refinement_data.target_audience}")
+        print(f"     Feasibility: {project.idea_refinement_data.feasibility_score}/10")
 
-        # Test Validation stage data
-        project.advance_stage()  # Move to validation
+        # Test PRD Generation stage data
+        project.advance_stage()  # Move to prd_generation
 
         validation_criteria = [
             ValidationCriteria(
@@ -280,20 +280,20 @@ class ForgeModelsTest:
             ),
         ]
 
-        project.validation_data.validation_criteria = validation_criteria
-        project.validation_data.validation_score = 7.5
-        project.validation_data.validation_status = ValidationStatus.IN_PROGRESS
+        project.prd_generation_data.validation_criteria = validation_criteria
+        project.prd_generation_data.validation_score = 7.5
+        project.prd_generation_data.validation_status = ValidationStatus.IN_PROGRESS
 
-        validation_data = project.get_current_stage_data()
-        assert isinstance(validation_data, ValidationData), "Should return ValidationData for validation stage"
-        assert len(validation_data.validation_criteria) == 2, "Should have 2 validation criteria"
+        prd_generation_data = project.get_current_stage_data()
+        assert isinstance(prd_generation_data, PRDGenerationData), "Should return PRDGenerationData for prd_generation stage"
+        assert len(prd_generation_data.validation_criteria) == 2, "Should have 2 validation criteria"
 
-        print(f"  ✅ Validation: {len(project.validation_data.validation_criteria)} criteria")
-        print(f"     Score: {project.validation_data.validation_score}/10")
-        print(f"     Status: {project.validation_data.validation_status.value}")
+        print(f"  ✅ PRD Generation: {len(project.prd_generation_data.validation_criteria)} criteria")
+        print(f"     Score: {project.prd_generation_data.validation_score}/10")
+        print(f"     Status: {project.prd_generation_data.validation_status.value}")
 
-        # Test Planning stage data
-        project.advance_stage()  # Move to planning
+        # Test UX Requirements stage data
+        project.advance_stage()  # Move to ux_requirements
 
         resources = [
             ProjectResource(
@@ -327,24 +327,24 @@ class ForgeModelsTest:
             )
         ]
 
-        project.planning_data.resource_requirements = resources
-        project.planning_data.milestones = milestones
-        project.planning_data.budget_estimate = Decimal("50000.00")
-        project.planning_data.technology_stack = ["Python", "React", "PostgreSQL", "AWS"]
+        project.ux_requirements_data.resource_requirements = resources
+        project.ux_requirements_data.milestones = milestones
+        project.ux_requirements_data.budget_estimate = Decimal("50000.00")
+        project.ux_requirements_data.technology_stack = ["Python", "React", "PostgreSQL", "AWS"]
 
-        planning_data = project.get_current_stage_data()
-        assert isinstance(planning_data, PlanningData), "Should return PlanningData for planning stage"
-        assert len(planning_data.resource_requirements) == 2, "Should have 2 resources"
-        assert len(planning_data.milestones) == 1, "Should have 1 milestone"
+        ux_requirements_data = project.get_current_stage_data()
+        assert isinstance(ux_requirements_data, UXRequirementsData), "Should return UXRequirementsData for ux_requirements stage"
+        assert len(ux_requirements_data.resource_requirements) == 2, "Should have 2 resources"
+        assert len(ux_requirements_data.milestones) == 1, "Should have 1 milestone"
 
         print(
-            f"  ✅ Planning: {len(project.planning_data.resource_requirements)} resources, {len(project.planning_data.milestones)} milestones"
+            f"  ✅ UX Requirements: {len(project.ux_requirements_data.resource_requirements)} resources, {len(project.ux_requirements_data.milestones)} milestones"
         )
-        print(f"     Budget: ${project.planning_data.budget_estimate}")
-        print(f"     Tech stack: {len(project.planning_data.technology_stack)} technologies")
+        print(f"     Budget: ${project.ux_requirements_data.budget_estimate}")
+        print(f"     Tech stack: {len(project.ux_requirements_data.technology_stack)} technologies")
 
-        # Test Implementation stage data
-        project.advance_stage()  # Move to implementation
+        # Test Technical Analysis stage data
+        project.advance_stage()  # Move to technical_analysis
 
         tasks = [
             ImplementationTask(
@@ -369,18 +369,18 @@ class ForgeModelsTest:
             ),
         ]
 
-        project.implementation_data.tasks = tasks
-        project.implementation_data.team_velocity = 25.5  # Points per sprint
+        project.technical_analysis_data.tasks = tasks
+        project.technical_analysis_data.team_velocity = 25.5  # Points per sprint
 
-        implementation_data = project.get_current_stage_data()
-        assert isinstance(implementation_data, ImplementationData), "Should return ImplementationData for implementation stage"
-        assert len(implementation_data.tasks) == 2, "Should have 2 tasks"
+        technical_analysis_data = project.get_current_stage_data()
+        assert isinstance(technical_analysis_data, TechnicalAnalysisData), "Should return TechnicalAnalysisData for technical_analysis stage"
+        assert len(technical_analysis_data.tasks) == 2, "Should have 2 tasks"
 
-        print(f"  ✅ Implementation: {len(project.implementation_data.tasks)} tasks")
-        print(f"     Velocity: {project.implementation_data.team_velocity} points/sprint")
+        print(f"  ✅ Technical Analysis: {len(project.technical_analysis_data.tasks)} tasks")
+        print(f"     Velocity: {project.technical_analysis_data.team_velocity} points/sprint")
 
-        # Test Deployment stage data
-        project.advance_stage()  # Move to deployment
+        # Test Implementation Playbook stage data
+        project.advance_stage()  # Move to implementation_playbook
 
         environments = [
             DeploymentEnvironment(
@@ -401,20 +401,20 @@ class ForgeModelsTest:
             ),
         ]
 
-        project.deployment_data.environments = environments
-        project.deployment_data.go_live_checklist = [
+        project.implementation_playbook_data.environments = environments
+        project.implementation_playbook_data.go_live_checklist = [
             "Performance testing completed",
             "Security audit passed",
             "User documentation updated",
             "Support team trained",
         ]
 
-        deployment_data = project.get_current_stage_data()
-        assert isinstance(deployment_data, DeploymentData), "Should return DeploymentData for deployment stage"
-        assert len(deployment_data.environments) == 2, "Should have 2 environments"
+        implementation_playbook_data = project.get_current_stage_data()
+        assert isinstance(implementation_playbook_data, ImplementationPlaybookData), "Should return ImplementationPlaybookData for implementation_playbook stage"
+        assert len(implementation_playbook_data.environments) == 2, "Should have 2 environments"
 
-        print(f"  ✅ Deployment: {len(project.deployment_data.environments)} environments")
-        print(f"     Checklist: {len(project.deployment_data.go_live_checklist)} items")
+        print(f"  ✅ Implementation Playbook: {len(project.implementation_playbook_data.environments)} environments")
+        print(f"     Checklist: {len(project.implementation_playbook_data.go_live_checklist)} items")
 
         print("✅ Stage-specific data structures working!")
 
@@ -504,11 +504,11 @@ class ForgeModelsTest:
 
         # Test time tracking
         project.time_spent_per_stage = {
-            "conception": 8.5,
-            "validation": 12.0,
-            "planning": 16.5,
-            "implementation": 120.0,
-            "deployment": 24.0,
+            "idea_refinement": 8.5,
+            "prd_generation": 12.0,
+            "ux_requirements": 16.5,
+            "technical_analysis": 120.0,
+            "implementation_playbook": 24.0,
         }
 
         total_time = sum(project.time_spent_per_stage.values())
@@ -535,11 +535,11 @@ class ForgeModelsTest:
             description="Template for AI/ML projects",
             category="Artificial Intelligence",
             template_data={
-                "conception_data": {
+                "idea_refinement_data": {
                     "success_metrics": ["Model accuracy", "User adoption", "Performance"],
                     "constraints": ["Data privacy", "Computational resources", "Regulatory compliance"],
                 },
-                "planning_data": {
+                "ux_requirements_data": {
                     "technology_stack": ["Python", "TensorFlow", "Docker", "Kubernetes"],
                     "typical_milestones": ["Data collection", "Model training", "Validation", "Deployment"],
                 },
@@ -589,7 +589,7 @@ class ForgeModelsTest:
             description="Testing data serialization",
             owner_id=self.test_user_id,
             organization_id=self.test_org_id,
-            current_stage=ForgeStage.PLANNING,
+            current_stage=ForgeStage.UX_REQUIREMENTS,
             status=ProjectStatus.ACTIVE,
             priority=ProjectPriority.HIGH,
             tags=["test", "serialization"],
@@ -599,8 +599,8 @@ class ForgeModelsTest:
         )
 
         # Add some stage data
-        project.conception_data.initial_idea = "Test serialization of complex data"
-        project.planning_data.budget_estimate = Decimal("50000.00")
+        project.idea_refinement_data.initial_idea = "Test serialization of complex data"
+        project.ux_requirements_data.budget_estimate = Decimal("50000.00")
 
         # Add artifacts
         artifact = ForgeArtifact(
@@ -611,7 +611,7 @@ class ForgeModelsTest:
             description="Test artifact",
             created_by=self.test_user_id,
         )
-        project.add_artifact(ForgeStage.CONCEPTION, artifact)
+        project.add_artifact(ForgeStage.IDEA_REFINEMENT, artifact)
 
         # Test to_dict conversion
         project_dict = project.to_dict()

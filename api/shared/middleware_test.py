@@ -4,6 +4,7 @@ Tests for the middleware module.
 
 import json
 import os
+import asyncio
 import time
 from unittest.mock import MagicMock, Mock, patch
 
@@ -271,7 +272,7 @@ class TestRateLimitMiddleware:
         req.url = "https://test.com/api/test"
 
         with patch("api.shared.middleware.logger") as mock_logger:
-            response = test_function(req)
+            response = asyncio.run(test_function(req))
 
             assert response.status_code == 200
             assert response.get_body().decode() == "OK"
@@ -302,7 +303,7 @@ class TestRateLimitMiddleware:
             req.headers = {"X-Forwarded-For": "192.168.1.1"}
 
             with patch("api.shared.middleware.logger") as mock_logger:
-                response = test_function(req)
+                response = asyncio.run(test_function(req))
 
                 assert response.status_code == 429
                 assert "Rate limit exceeded" in response.get_body().decode()
@@ -325,7 +326,7 @@ class TestRateLimitMiddleware:
         with patch("api.shared.middleware.get_client_ip", side_effect=Exception("IP error")), patch(
             "api.shared.middleware.logger"
         ) as mock_logger:
-            response = test_function(req)
+            response = asyncio.run(test_function(req))
 
             # Should still execute the function despite middleware error
             assert response.status_code == 200
@@ -349,10 +350,16 @@ class TestEnhancedSecurityMiddleware:
         req.headers = {"Origin": "https://sutra-web.azurestaticapps.net"}
 
         with patch("api.shared.middleware.rate_limit_middleware") as mock_rate_middleware:
-            # Make rate_limit_middleware return the original function
-            mock_rate_middleware.side_effect = lambda f: f
+            # Make rate_limit_middleware return an async passthrough wrapper
+            def async_passthrough_decorator(func_to_wrap):
+                async def wrapped(request):
+                    return func_to_wrap(request)
 
-            response = test_function(req)
+                return wrapped
+
+            mock_rate_middleware.side_effect = async_passthrough_decorator
+
+            response = asyncio.run(test_function(req))
             assert response.status_code == 200
 
     def test_enhanced_security_middleware_cors_violation(self):
@@ -366,7 +373,7 @@ class TestEnhancedSecurityMiddleware:
         req.headers = {"Origin": "https://malicious.com"}
 
         with patch("api.shared.middleware.logger") as mock_logger:
-            response = test_function(req)
+            response = asyncio.run(test_function(req))
 
             assert response.status_code == 403
             response_data = json.loads(response.get_body().decode())
@@ -392,10 +399,16 @@ class TestEnhancedSecurityMiddleware:
         ), patch(
             "api.shared.middleware.rate_limit_middleware"
         ) as mock_rate_middleware, patch("api.shared.middleware.logger") as mock_logger:
-            # Make rate_limit_middleware return the original function
-            mock_rate_middleware.side_effect = lambda f: f
+            # Make rate_limit_middleware return an async passthrough wrapper
+            def async_passthrough_decorator(func_to_wrap):
+                async def wrapped(request):
+                    return func_to_wrap(request)
 
-            response = test_function(req)
+                return wrapped
+
+            mock_rate_middleware.side_effect = async_passthrough_decorator
+
+            response = asyncio.run(test_function(req))
 
             # Should fall back to basic rate limiting
             assert response.status_code == 200

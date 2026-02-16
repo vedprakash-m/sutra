@@ -406,7 +406,7 @@ async def update_forge_project(req: func.HttpRequest) -> func.HttpResponse:
 async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
     """Advance a project to the next stage."""
     try:
-        request_id = req.headers.get("x-request-id") or req.headers.get("x-correlation-id") or generate_forge_id()
+        request_id = str(req.headers.get("x-request-id") or req.headers.get("x-correlation-id") or generate_forge_id())
 
         # Extract user information
         user_info = extract_user_info(req)

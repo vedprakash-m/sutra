@@ -7,13 +7,6 @@ jest.mock("../AuthProvider", () => ({
   useAuth: jest.fn(),
 }));
 
-// Mock the AnonymousLLMTest component
-jest.mock("../AnonymousLLMTest", () => ({
-  AnonymousLLMTest: () => (
-    <div data-testid="anonymous-llm-test">Anonymous LLM Test Component</div>
-  ),
-}));
-
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
 describe("LoginPage", () => {
@@ -149,10 +142,10 @@ describe("LoginPage", () => {
     consoleSpy.mockRestore();
   });
 
-  it("renders anonymous LLM test component", () => {
+  it("does not render anonymous LLM test component", () => {
     render(<LoginPage />);
 
-    expect(screen.getByTestId("anonymous-llm-test")).toBeInTheDocument();
+    expect(screen.queryByTestId("anonymous-llm-test")).not.toBeInTheDocument();
   });
 
   it("updates selected role when radio button is changed", () => {

@@ -272,38 +272,38 @@ Also wired: `TechnicalAnalysisStage.tsx` (3 fetch→forgeApi) and `Implementatio
 ### Phase A — Contract & Security Baseline (Critical)
 
 1. **A1. Remove public anonymous trial from authenticated product surface**
-	- Remove anonymous LLM widget from login page.
-	- Add explicit backend kill-switch so anonymous endpoint is disabled by default.
+   - Remove anonymous LLM widget from login page.
+   - Add explicit backend kill-switch so anonymous endpoint is disabled by default.
 2. **A2. Enforce explicit dev-auth bypass policy**
-	- Replace implicit localhost auto-auth with opt-in environment flag.
+   - Replace implicit localhost auto-auth with opt-in environment flag.
 3. **A3. Normalize auth helper contract**
-	- Ensure `extract_user_info` returns canonical keys used by Forge handlers (`user_id`, `organization_id`).
+   - Ensure `extract_user_info` returns canonical keys used by Forge handlers (`user_id`, `organization_id`).
 
 ### Phase B — Forge API Contract Stabilization (Critical)
 
 4. **B1. Fix project identifier ingestion across handlers**
-	- Support `project_id` from query, body, or route where appropriate.
+   - Support `project_id` from query, body, or route where appropriate.
 5. **B2. Fix update/advance payload compatibility**
-	- Accept both wrapped (`updates`) and direct patch payloads.
-	- Accept both camelCase and snake_case stage transition keys.
+   - Accept both wrapped (`updates`) and direct patch payloads.
+   - Accept both camelCase and snake_case stage transition keys.
 6. **B3. Preserve response compatibility while reducing ambiguity**
-	- Keep existing fields, add normalized fields only where needed.
+   - Keep existing fields, add normalized fields only where needed.
 
 ### Phase C — Reliability Hardening (High)
 
 7. **C1. Remove runtime mock behavior from default paths**
-	- Keep mocks only behind explicit dev/test flags.
+   - Keep mocks only behind explicit dev/test flags.
 8. **C2. Align quality thresholds to single source of truth**
-	- Ensure FE store and backend quality engine use same stage thresholds.
+   - Ensure FE store and backend quality engine use same stage thresholds.
 9. **C3. Add/refresh targeted regression coverage for new contract behavior**
-	- Focus on auth extraction and Forge stage transition payload handling.
+   - Focus on auth extraction and Forge stage transition payload handling.
 
 ### Phase D — Operational Excellence (High)
 
 10. **D1. Structured observability for Forge transitions**
-	 - Include request/stage/user correlation metadata.
+    - Include request/stage/user correlation metadata.
 11. **D2. Deployment safety checklist update**
-	 - Add auth policy and anonymous endpoint verification gate.
+    - Add auth policy and anonymous endpoint verification gate.
 
 ### Execution Status Tracker
 
@@ -321,16 +321,16 @@ Also wired: `TechnicalAnalysisStage.tsx` (3 fetch→forgeApi) and `Implementatio
 
 ### Progress Log (2026-02)
 
-| Date       | Item | Status | Notes |
-| ---------- | ---- | ------ | ----- |
-| 2026-02-16 | Plan | ✅ Started | Added architecture-alignment execution plan and live tracker. |
-| 2026-02-16 | A1 | ✅ Complete | Removed `AnonymousLLMTest` from login surface and aligned messaging to authenticated-only flow. |
-| 2026-02-16 | A2 | ✅ Complete | Made frontend dev-auth bypass explicit opt-in via `VITE_ALLOW_DEV_AUTH_BYPASS=true`. |
-| 2026-02-16 | A3 | ✅ Complete | Updated `extract_user_info` to return canonical `user_id` and `organization_id` keys for backend consistency. |
-| 2026-02-16 | B1/B2/B3 | ✅ Complete | Normalized `project_id` extraction (query/body/route), added update payload compatibility, and transition key compatibility across Forge core and implementation endpoints. |
-| 2026-02-16 | C1 | ✅ Complete | Made runtime DB mocks explicit and default-off in development unless `SUTRA_ALLOW_RUNTIME_MOCKS=true` (tests remain supported). |
-| 2026-02-16 | C2 | ✅ Complete | Aligned Stage 3 quality threshold to 85 across frontend Forge store and backend quality engine. |
-| 2026-02-16 | C3 | ✅ Complete | Added regression coverage for auth helper canonical key contract in `api/shared/test_auth_helpers.py`. |
-| 2026-02-16 | D1 | ✅ Complete | Added request correlation metadata (`request_id`) to Forge stage transition analytics and API response payload. |
-| 2026-02-16 | D2 | ✅ Complete | Updated deployment readiness checklist with auth-policy and anonymous-endpoint enforcement gates. |
-| 2026-02-16 | Verification | ✅ Complete | Re-audited this plan: all execution tracker items are checked and all task statuses are marked complete; no remaining implementation steps recorded in this plan. |
+| Date       | Item         | Status      | Notes                                                                                                                                                                       |
+| ---------- | ------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-02-16 | Plan         | ✅ Started  | Added architecture-alignment execution plan and live tracker.                                                                                                               |
+| 2026-02-16 | A1           | ✅ Complete | Removed `AnonymousLLMTest` from login surface and aligned messaging to authenticated-only flow.                                                                             |
+| 2026-02-16 | A2           | ✅ Complete | Made frontend dev-auth bypass explicit opt-in via `VITE_ALLOW_DEV_AUTH_BYPASS=true`.                                                                                        |
+| 2026-02-16 | A3           | ✅ Complete | Updated `extract_user_info` to return canonical `user_id` and `organization_id` keys for backend consistency.                                                               |
+| 2026-02-16 | B1/B2/B3     | ✅ Complete | Normalized `project_id` extraction (query/body/route), added update payload compatibility, and transition key compatibility across Forge core and implementation endpoints. |
+| 2026-02-16 | C1           | ✅ Complete | Made runtime DB mocks explicit and default-off in development unless `SUTRA_ALLOW_RUNTIME_MOCKS=true` (tests remain supported).                                             |
+| 2026-02-16 | C2           | ✅ Complete | Aligned Stage 3 quality threshold to 85 across frontend Forge store and backend quality engine.                                                                             |
+| 2026-02-16 | C3           | ✅ Complete | Added regression coverage for auth helper canonical key contract in `api/shared/test_auth_helpers.py`.                                                                      |
+| 2026-02-16 | D1           | ✅ Complete | Added request correlation metadata (`request_id`) to Forge stage transition analytics and API response payload.                                                             |
+| 2026-02-16 | D2           | ✅ Complete | Updated deployment readiness checklist with auth-policy and anonymous-endpoint enforcement gates.                                                                           |
+| 2026-02-16 | Verification | ✅ Complete | Re-audited this plan: all execution tracker items are checked and all task statuses are marked complete; no remaining implementation steps recorded in this plan.           |

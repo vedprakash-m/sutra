@@ -336,11 +336,7 @@ async def update_forge_project(req: func.HttpRequest) -> func.HttpResponse:
         # Update project fields
         updates = body.get("updates", {})
         if not updates:
-            updates = {
-                key: value
-                for key, value in body.items()
-                if key not in ["project_id", "updates"]
-            }
+            updates = {key: value for key, value in body.items() if key not in ["project_id", "updates"]}
 
         # Update basic fields
         if "name" in updates:

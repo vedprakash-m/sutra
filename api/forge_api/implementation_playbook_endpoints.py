@@ -56,9 +56,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         method = req.method
         route = (
-            req.route_params.get("sub_action", "")
-            or req.route_params.get("route", "")
-            or req.route_params.get("action", "")
+            req.route_params.get("sub_action", "") or req.route_params.get("route", "") or req.route_params.get("action", "")
         )
 
         if method == "POST" and route == "generate-coding-prompts":

@@ -64,7 +64,7 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const allowDevAuthBypass =
-    import.meta.env.VITE_ALLOW_DEV_AUTH_BYPASS === "true";
+    process.env.VITE_ALLOW_DEV_AUTH_BYPASS === "true";
 
   const isAuthenticated = !!user;
   const isGuest = false; // No guest role in new system

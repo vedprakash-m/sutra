@@ -55,9 +55,9 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         elif method == "POST" and route == "optimize-for-agents":
             return optimize_for_agents_endpoint(req)
         elif method == "GET" and route == "export-playbook":
-            return export_playbook_endpoint(req)
+            return await export_playbook_endpoint(req)
         elif method == "GET" and route == "quality-validation":
-            return quality_validation_endpoint(req)
+            return await quality_validation_endpoint(req)
         else:
             return func.HttpResponse(json.dumps({"error": "Invalid route"}), status_code=404, mimetype="application/json")
 
@@ -400,7 +400,7 @@ async def compile_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def export_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def export_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """Export implementation playbook in multiple formats"""
     try:
         user_info = extract_user_info(req)
@@ -413,7 +413,7 @@ def export_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         export_format = req.params.get("format", "json")
 
         # Get playbook from database
-        playbook = get_implementation_playbook(project_id)
+        playbook = await get_implementation_playbook(project_id)
 
         if export_format == "markdown":
             exported_content = export_to_markdown(playbook)
@@ -664,6 +664,24 @@ async def get_complete_project_context(project_id: str) -> Dict:
 
     except Exception as e:
         logger.error(f"Error getting project context: {str(e)}")
+        return {}
+
+
+async def get_implementation_playbook(project_id: str) -> Dict[str, Any]:
+    """Get saved implementation playbook from the project document."""
+    if not project_id:
+        return {}
+
+    try:
+        async with AsyncCosmosHelper() as db:
+            try:
+                project_doc = await db.read_item(project_id, partition_key=project_id)
+                return project_doc.get("implementationData", {}).get("playbook", {})
+            except CosmosResourceNotFoundError:
+                logger.warning(f"Project {project_id} not found when fetching implementation playbook")
+                return {}
+    except Exception as e:
+        logger.error(f"Error getting implementation playbook: {str(e)}")
         return {}
 
 
@@ -1395,7 +1413,7 @@ def optimize_for_agents_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"error": str(e)}), status_code=500, mimetype="application/json")
 
 
-def quality_validation_endpoint(req: func.HttpRequest) -> func.HttpResponse:
+async def quality_validation_endpoint(req: func.HttpRequest) -> func.HttpResponse:
     """Final quality validation for implementation playbook"""
     try:
         user_info = extract_user_info(req)
@@ -1407,7 +1425,7 @@ def quality_validation_endpoint(req: func.HttpRequest) -> func.HttpResponse:
         project_id = req.route_params.get("project_id")
 
         # Get playbook and validate quality
-        playbook = get_implementation_playbook(project_id)
+        playbook = await get_implementation_playbook(project_id)
         quality_assessment = quality_engine.assess_implementation_playbook(playbook)
 
         return func.HttpResponse(

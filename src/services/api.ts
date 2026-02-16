@@ -797,7 +797,10 @@ export const forgeApi = {
   /**
    * Specify interactions for UX components
    */
-  specifyInteractions: (projectId: string, interactionData: Record<string, any>) =>
+  specifyInteractions: (
+    projectId: string,
+    interactionData: Record<string, any>,
+  ) =>
     apiService.post<{ interactions: Record<string, any> }>(
       `/forge/ux-requirements/specify-interactions?project_id=${projectId}`,
       { interactionData },
@@ -934,10 +937,7 @@ export const forgeApi = {
   /**
    * Generate testing strategy
    */
-  generateTestingStrategy: (
-    projectId: string,
-    data: Record<string, any>,
-  ) =>
+  generateTestingStrategy: (projectId: string, data: Record<string, any>) =>
     apiService.post<TestingStrategy>(
       `/forge/generate-testing-strategy?project_id=${projectId}`,
       data,

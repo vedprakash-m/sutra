@@ -52,7 +52,9 @@ describe("ForgeExportButton", () => {
 
   it("renders custom label", () => {
     render(<ForgeExportButton projectId="project-1" label="Download" />);
-    expect(screen.getByRole("button", { name: "Download" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Download" }),
+    ).toBeInTheDocument();
   });
 
   it("opens and shows export format options", () => {
@@ -60,9 +62,13 @@ describe("ForgeExportButton", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Export" }));
     expect(screen.getByRole("button", { name: /JSON/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Markdown/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Markdown/i }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /PDF/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ZIP Archive/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /ZIP Archive/i }),
+    ).toBeInTheDocument();
   });
 
   it("calls export API with selected format", async () => {
@@ -107,7 +113,10 @@ describe("ForgeExportButton", () => {
     fireEvent.click(screen.getByRole("button", { name: /PDF/i }));
 
     await waitFor(() => {
-      expect(openMock).toHaveBeenCalledWith("https://example.com/export.pdf", "_blank");
+      expect(openMock).toHaveBeenCalledWith(
+        "https://example.com/export.pdf",
+        "_blank",
+      );
     });
   });
 
@@ -119,7 +128,9 @@ describe("ForgeExportButton", () => {
     fireEvent.click(screen.getByRole("button", { name: /JSON/i }));
 
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /JSON/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /JSON/i }),
+      ).not.toBeInTheDocument();
     });
   });
 });

@@ -164,7 +164,9 @@ class TestProblemClarity:
 
     def test_vague_language_penalized(self, engine):
         content_vague = {"problemStatement": "Someone somehow probably generally usually has an issue with something"}
-        content_specific = {"problemStatement": "The customer faces a specific problem when exactly tracking user goals precisely"}
+        content_specific = {
+            "problemStatement": "The customer faces a specific problem when exactly tracking user goals precisely"
+        }
         score_vague = engine._assess_problem_clarity(content_vague)
         score_specific = engine._assess_problem_clarity(content_specific)
         assert score_specific > score_vague
@@ -198,12 +200,16 @@ class TestTargetAudience:
         assert engine._assess_target_audience({"targetAudience": "devs"}) == 15.0
 
     def test_demographic_indicators_boost_score(self, engine):
-        content = {"targetAudience": "Young adults, age 25-34, with higher education and urban location, high income occupation"}
+        content = {
+            "targetAudience": "Young adults, age 25-34, with higher education and urban location, high income occupation"
+        }
         score = engine._assess_target_audience(content)
         assert score >= 70.0
 
     def test_behavioral_indicators_boost_score(self, engine):
-        content = {"targetAudience": "Users who need better tools and want to improve their habit and behavior to reach their goal"}
+        content = {
+            "targetAudience": "Users who need better tools and want to improve their habit and behavior to reach their goal"
+        }
         score = engine._assess_target_audience(content)
         assert score >= 60.0
 
@@ -226,7 +232,9 @@ class TestValueProposition:
         assert score >= 65.0
 
     def test_differentiation_indicators(self, engine):
-        content = {"valueProposition": "Our unique and innovative approach is the first to provide an exclusive benefit to users"}
+        content = {
+            "valueProposition": "Our unique and innovative approach is the first to provide an exclusive benefit to users"
+        }
         score = engine._assess_value_proposition(content)
         assert score >= 65.0
 
@@ -237,7 +245,9 @@ class TestValueProposition:
 
     def test_customer_focus_over_feature_focus(self, engine):
         customer = {"valueProposition": "Your customers benefit from an advantage that helps the user achieve their goals"}
-        features = {"valueProposition": "This system has a feature and capability that the technology provides through its function"}
+        features = {
+            "valueProposition": "This system has a feature and capability that the technology provides through its function"
+        }
         assert engine._assess_value_proposition(customer) > engine._assess_value_proposition(features)
 
 
@@ -256,7 +266,11 @@ class TestMarketViability:
         assert score >= 55.0
 
     def test_competitive_advantage_present(self, engine):
-        content = {"marketAnalysis": {"competitiveAdvantage": "Our unique approach leverages AI to provide better results at lower cost"}}
+        content = {
+            "marketAnalysis": {
+                "competitiveAdvantage": "Our unique approach leverages AI to provide better results at lower cost"
+            }
+        }
         score = engine._assess_market_viability(content)
         assert score >= 45.0
 
@@ -307,8 +321,14 @@ class TestPRDDimensions:
     def test_user_story_quality_with_stories(self, engine):
         content = {
             "userStories": [
-                {"story": "As a user, I want to login so that I can access my dashboard", "acceptanceCriteria": ["Given credentials, when login, then access"]},
-                {"story": "As an admin, I want to manage users so that I can control access", "acceptanceCriteria": ["Given admin role, when viewing users, then CRUD"]},
+                {
+                    "story": "As a user, I want to login so that I can access my dashboard",
+                    "acceptanceCriteria": ["Given credentials, when login, then access"],
+                },
+                {
+                    "story": "As an admin, I want to manage users so that I can control access",
+                    "acceptanceCriteria": ["Given admin role, when viewing users, then CRUD"],
+                },
             ]
         }
         score = engine._assess_user_story_quality(content)
@@ -489,19 +509,25 @@ class TestDynamicThresholds:
 
     def test_threshold_minimum_capped_at_60(self, engine):
         # Prototype + simple + novice gives max negative adjustment
-        t = engine.get_dynamic_threshold("idea_refinement", {
-            "complexity": "simple",
-            "user_experience": "novice",
-            "project_type": "prototype",
-        })
+        t = engine.get_dynamic_threshold(
+            "idea_refinement",
+            {
+                "complexity": "simple",
+                "user_experience": "novice",
+                "project_type": "prototype",
+            },
+        )
         assert t.minimum >= 60
 
     def test_threshold_recommended_capped_at_98(self, engine):
-        t = engine.get_dynamic_threshold("implementation_playbook", {
-            "complexity": "enterprise",
-            "user_experience": "expert",
-            "project_type": "production",
-        })
+        t = engine.get_dynamic_threshold(
+            "implementation_playbook",
+            {
+                "complexity": "enterprise",
+                "user_experience": "expert",
+                "project_type": "production",
+            },
+        )
         assert t.recommended <= 98
 
     def test_adjustments_tracked(self, engine):
@@ -641,13 +667,16 @@ class TestContextConsistency:
 
 
 class TestDimensionRouting:
-    @pytest.mark.parametrize("stage", [
-        "idea_refinement",
-        "prd_generation",
-        "ux_requirements",
-        "technical_analysis",
-        "implementation_playbook",
-    ])
+    @pytest.mark.parametrize(
+        "stage",
+        [
+            "idea_refinement",
+            "prd_generation",
+            "ux_requirements",
+            "technical_analysis",
+            "implementation_playbook",
+        ],
+    )
     def test_known_stages_route_correctly(self, engine, stage):
         score = engine._assess_dimension(stage, "some_dim", {}, {})
         assert 0 <= score <= 100

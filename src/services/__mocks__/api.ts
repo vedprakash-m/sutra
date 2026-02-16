@@ -135,9 +135,43 @@ export const llmApi = {
 };
 
 export const forgeApi = {
-  createProject: jest.fn((data: any) => Promise.resolve({ id: "new-project-id", name: data.name, description: data.description, currentStage: "idea_refinement", status: "draft", priority: data.priority || "medium", progressPercentage: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), tags: data.tags || [], collaboratorsCount: 1, artifactsCount: 0, ownerId: "user-1" })),
-  listProjects: jest.fn((_params?: any) => Promise.resolve({ projects: [], total: 0 })),
-  getProject: jest.fn((id: string) => Promise.resolve({ id, name: "Test Project", description: "Test", currentStage: "idea_refinement", status: "active", priority: "medium", progressPercentage: 25, createdAt: "2024-01-01T00:00:00Z", updatedAt: "2024-01-15T00:00:00Z", tags: [], collaboratorsCount: 1, artifactsCount: 0, ownerId: "user-1" })),
+  createProject: jest.fn((data: any) =>
+    Promise.resolve({
+      id: "new-project-id",
+      name: data.name,
+      description: data.description,
+      currentStage: "idea_refinement",
+      status: "draft",
+      priority: data.priority || "medium",
+      progressPercentage: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: data.tags || [],
+      collaboratorsCount: 1,
+      artifactsCount: 0,
+      ownerId: "user-1",
+    }),
+  ),
+  listProjects: jest.fn((_params?: any) =>
+    Promise.resolve({ projects: [], total: 0 }),
+  ),
+  getProject: jest.fn((id: string) =>
+    Promise.resolve({
+      id,
+      name: "Test Project",
+      description: "Test",
+      currentStage: "idea_refinement",
+      status: "active",
+      priority: "medium",
+      progressPercentage: 25,
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-15T00:00:00Z",
+      tags: [],
+      collaboratorsCount: 1,
+      artifactsCount: 0,
+      ownerId: "user-1",
+    }),
+  ),
   updateProject: jest.fn((_id: string, data: any) => Promise.resolve(data)),
   deleteProject: jest.fn((_id: string) => Promise.resolve()),
   advanceStage: jest.fn((_id: string, _stage: string) => Promise.resolve({})),
@@ -146,16 +180,24 @@ export const forgeApi = {
   getIdeaQualityAssessment: jest.fn(() => Promise.resolve({})),
   completeIdeaRefinement: jest.fn(() => Promise.resolve({})),
   generateUserStories: jest.fn(() => Promise.resolve({ userStories: [] })),
-  generateFunctionalRequirements: jest.fn(() => Promise.resolve({ requirements: [] })),
-  generateAcceptanceCriteria: jest.fn(() => Promise.resolve({ acceptanceCriteria: [] })),
+  generateFunctionalRequirements: jest.fn(() =>
+    Promise.resolve({ requirements: [] }),
+  ),
+  generateAcceptanceCriteria: jest.fn(() =>
+    Promise.resolve({ acceptanceCriteria: [] }),
+  ),
   extractRequirements: jest.fn(() => Promise.resolve({ requirements: [] })),
-  prioritizeFeatures: jest.fn(() => Promise.resolve({ prioritizedFeatures: {} })),
+  prioritizeFeatures: jest.fn(() =>
+    Promise.resolve({ prioritizedFeatures: {} }),
+  ),
   generatePRDDocument: jest.fn(() => Promise.resolve({})),
   getPRDQualityAssessment: jest.fn(() => Promise.resolve({})),
   completePRDGeneration: jest.fn(() => Promise.resolve({})),
   generateUserJourneys: jest.fn(() => Promise.resolve({ userJourneys: [] })),
   generateWireframes: jest.fn(() => Promise.resolve({ wireframes: [] })),
-  generateComponentSpecs: jest.fn(() => Promise.resolve({ componentSpecs: [] })),
+  generateComponentSpecs: jest.fn(() =>
+    Promise.resolve({ componentSpecs: [] }),
+  ),
   generateUXDocument: jest.fn(() => Promise.resolve({})),
   validateAccessibility: jest.fn(() => Promise.resolve({})),
   specifyInteractions: jest.fn(() => Promise.resolve({ interactions: {} })),
@@ -163,7 +205,9 @@ export const forgeApi = {
   completeUXRequirements: jest.fn(() => Promise.resolve({})),
   getConsensusModels: jest.fn(() => Promise.resolve({ models: [] })),
   analyzeArchitecture: jest.fn(() => Promise.resolve({ analyses: [] })),
-  getStackRecommendations: jest.fn(() => Promise.resolve({ recommendations: [] })),
+  getStackRecommendations: jest.fn(() =>
+    Promise.resolve({ recommendations: [] }),
+  ),
   assessScalability: jest.fn(() => Promise.resolve({})),
   generateTechSpec: jest.fn(() => Promise.resolve({})),
   getConsensusAnalysis: jest.fn(() => Promise.resolve({})),
@@ -176,7 +220,13 @@ export const forgeApi = {
   createDeploymentGuide: jest.fn(() => Promise.resolve({})),
   validateContextIntegration: jest.fn(() => Promise.resolve({})),
   compilePlaybook: jest.fn(() => Promise.resolve({})),
-  exportPlaybook: jest.fn((_id: string, format: string) => Promise.resolve({ success: true, blob: new Blob(["test"]), filename: `export.${format}` })),
+  exportPlaybook: jest.fn((_id: string, format: string) =>
+    Promise.resolve({
+      success: true,
+      blob: new Blob(["test"]),
+      filename: `export.${format}`,
+    }),
+  ),
   getPlaybookQualityAssessment: jest.fn(() => Promise.resolve({})),
   completeImplementationPlaybook: jest.fn(() => Promise.resolve({})),
 };

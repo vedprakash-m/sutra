@@ -525,7 +525,10 @@ async def complete_prd_stage(req: func.HttpRequest, project_id: str) -> func.Htt
             thresholds = quality_engine.get_dynamic_threshold("prd_generation", idea_context)
 
             # Cross-stage validation
-            project_data_with_prd = {**project, "forgeData": {**project.get("forgeData", {}), "prd_generation": final_prd_data}}
+            project_data_with_prd = {
+                **project,
+                "forgeData": {**project.get("forgeData", {}), "prd_generation": final_prd_data},
+            }
 
             cross_stage_validation = quality_validator.validate_cross_stage_consistency(
                 "idea_refinement", "prd_generation", project_data_with_prd
@@ -596,7 +599,9 @@ async def complete_prd_stage(req: func.HttpRequest, project_id: str) -> func.Htt
                 "qualityImpactOnNextStage": _predict_ux_quality_impact(quality_result, cross_stage_validation),
             }
 
-            return func.HttpResponse(json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"})
+            return func.HttpResponse(
+                json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"}
+            )
 
     except Exception as e:
         logger.error(f"Error completing PRD stage: {str(e)}")

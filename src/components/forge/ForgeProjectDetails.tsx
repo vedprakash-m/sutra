@@ -448,7 +448,9 @@ export default function ForgeProjectDetails({
           <div>
             {/* LLM Provider Selection */}
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">AI Model:</span>
+              <span className="text-sm font-medium text-gray-700">
+                AI Model:
+              </span>
               <LLMProviderSelector />
             </div>
             {project.currentStage === "idea_refinement" && (

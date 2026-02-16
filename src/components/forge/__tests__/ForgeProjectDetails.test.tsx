@@ -92,7 +92,9 @@ describe("ForgeProjectDetails", () => {
     );
 
     expect(screen.getByText("Project Atlas")).toBeInTheDocument();
-    expect(screen.getByText("A systematic delivery project")).toBeInTheDocument();
+    expect(
+      screen.getByText("A systematic delivery project"),
+    ).toBeInTheDocument();
     expect(screen.getByText("HIGH")).toBeInTheDocument();
     expect(screen.getByText("ACTIVE")).toBeInTheDocument();
     expect(screen.getByText("ai")).toBeInTheDocument();
@@ -114,7 +116,9 @@ describe("ForgeProjectDetails", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Advance to PRD Generation/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Advance to PRD Generation/i }),
+    );
 
     await waitFor(() => {
       expect(advanceStageMock).toHaveBeenCalledWith("proj-1", "prd_generation");
@@ -141,7 +145,9 @@ describe("ForgeProjectDetails", () => {
     expect(screen.getByText("LLM Selector Mock")).toBeInTheDocument();
     expect(screen.getByText("Idea Stage Mock gpt-4o")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Complete Idea Stage" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Complete Idea Stage" }),
+    );
 
     await waitFor(() => {
       expect(advanceStageMock).toHaveBeenCalledWith("proj-1", "prd_generation");
@@ -177,7 +183,9 @@ describe("ForgeProjectDetails", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Start Working on Idea Refinement/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Start Working on Idea Refinement/i }),
+    );
     expect(screen.getByText("Idea Stage Mock gpt-4o")).toBeInTheDocument();
   });
 

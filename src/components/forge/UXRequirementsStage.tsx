@@ -400,7 +400,8 @@ export default function UXRequirementsStage({
 
       setUXData((prev) => ({
         ...prev,
-        accessibilityChecklist: (result as any).accessibilityChecklist || result.issues as any,
+        accessibilityChecklist:
+          (result as any).accessibilityChecklist || (result.issues as any),
       }));
 
       // Update quality
@@ -455,7 +456,9 @@ export default function UXRequirementsStage({
       setUXData((prev) => ({
         ...prev,
         uxDocument: result,
-        qualityAssessment: (result as any).qualityAssessment || { overallScore: result.qualityScore },
+        qualityAssessment: (result as any).qualityAssessment || {
+          overallScore: result.qualityScore,
+        },
       }));
 
       // Update quality tracking

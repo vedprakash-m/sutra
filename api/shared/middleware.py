@@ -264,6 +264,7 @@ def rate_limit_middleware(f):
 
             # Rate limit check passed, execute the function
             import asyncio
+
             if asyncio.iscoroutinefunction(f):
                 response = await f(req)
             else:
@@ -283,6 +284,7 @@ def rate_limit_middleware(f):
             logger.error(f"Rate limiting middleware error: {str(e)}")
             # In case of middleware error, allow the request but log the issue
             import asyncio
+
             if asyncio.iscoroutinefunction(f):
                 return await f(req)
             return f(req)

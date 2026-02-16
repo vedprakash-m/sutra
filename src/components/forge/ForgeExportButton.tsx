@@ -57,7 +57,7 @@ export const ForgeExportButton: React.FC<ForgeExportButtonProps> = ({
         setIsOpen(false);
       }
     },
-    [projectId]
+    [projectId],
   );
 
   return (
@@ -68,11 +68,7 @@ export const ForgeExportButton: React.FC<ForgeExportButtonProps> = ({
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 ${className}`}
       >
         {isExporting ? (
-          <svg
-            className="animate-spin h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
             <circle
               className="opacity-25"
               cx="12"

@@ -17,12 +17,12 @@ import httpx
 from shared.database import get_database_manager
 from shared.error_handling import SutraAPIError, handle_api_error
 from shared.llm_client import LLMManager, get_llm_client
+from shared.middleware import enhanced_security_middleware
 from shared.models import User
 from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
 from shared.unified_auth import require_authentication
-from shared.middleware import enhanced_security_middleware
 from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 
 # Initialize logging

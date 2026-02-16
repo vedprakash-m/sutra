@@ -296,7 +296,7 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
 
         toast({
           title: "Technical Analysis Complete",
-          description: `Evaluation completed with ${response.qualityMetrics?.overallScore?.toFixed(1) ?? 'N/A'}% quality score`,
+          description: `Evaluation completed with ${response.qualityMetrics?.overallScore?.toFixed(1) ?? "N/A"}% quality score`,
           variant: response.qualityMetrics?.meetsThreshold
             ? "default"
             : "destructive",

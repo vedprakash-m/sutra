@@ -13,12 +13,11 @@ from typing import Any, Dict, List, Optional
 
 import azure.functions as func
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
-from shared.async_database import AsyncCosmosHelper, FORGE_ANALYTICS_CONTAINER, FORGE_TEMPLATES_CONTAINER
+from shared.async_database import FORGE_ANALYTICS_CONTAINER, FORGE_TEMPLATES_CONTAINER, AsyncCosmosHelper
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
 from shared.llm_client import LLMManager
 from shared.middleware import enhanced_security_middleware
-from shared.quality_engine import QualityAssessmentEngine
 from shared.models.forge_models import (
     ArtifactType,
     ForgeAnalytics,
@@ -32,6 +31,7 @@ from shared.models.forge_models import (
     generate_forge_id,
     validate_stage_transition,
 )
+from shared.quality_engine import QualityAssessmentEngine
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -435,7 +435,7 @@ async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
 
         # Quality gate check — verify current stage meets quality threshold
         stage_name = current_stage.value
-        stage_data = project.get_current_stage_data() if hasattr(project, 'get_current_stage_data') else {}
+        stage_data = project.get_current_stage_data() if hasattr(project, "get_current_stage_data") else {}
         if stage_data is None:
             stage_data = {}
 
@@ -445,27 +445,27 @@ async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
         previous_context = {}
         if current_idx > 0:
             prev_stage = stages_order[current_idx - 1]
-            forge_data = getattr(project, 'forge_data', {}) or {}
+            forge_data = getattr(project, "forge_data", {}) or {}
             if isinstance(forge_data, dict):
                 previous_context = forge_data.get(prev_stage.value, {})
 
-        quality_result = quality_engine.calculate_quality_score(
-            stage=stage_name, content=stage_data, context=previous_context
-        )
+        quality_result = quality_engine.calculate_quality_score(stage=stage_name, content=stage_data, context=previous_context)
         thresholds = quality_engine.get_dynamic_threshold(stage_name, previous_context)
 
         quality_passes = quality_result.quality_gate_status in ["PROCEED_WITH_CAUTION", "PROCEED_EXCELLENT"]
         if not quality_passes and not force_advance:
             return func.HttpResponse(
-                json.dumps({
-                    "error": "Quality threshold not met for current stage",
-                    "currentStage": stage_name,
-                    "currentScore": quality_result.overall_score,
-                    "requiredScore": thresholds.minimum,
-                    "qualityGateStatus": quality_result.quality_gate_status,
-                    "improvementSuggestions": quality_result.improvement_suggestions,
-                    "canForceAdvance": user_info.get("role") in ["expert", "admin"],
-                }),
+                json.dumps(
+                    {
+                        "error": "Quality threshold not met for current stage",
+                        "currentStage": stage_name,
+                        "currentScore": quality_result.overall_score,
+                        "requiredScore": thresholds.minimum,
+                        "qualityGateStatus": quality_result.quality_gate_status,
+                        "improvementSuggestions": quality_result.improvement_suggestions,
+                        "canForceAdvance": user_info.get("role") in ["expert", "admin"],
+                    }
+                ),
                 status_code=400,
                 mimetype="application/json",
             )
@@ -872,14 +872,10 @@ async def get_project_analytics(req: func.HttpRequest) -> func.HttpResponse:
 
         project = await load_forge_project(project_id)
         if not project:
-            return func.HttpResponse(
-                json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json"
-            )
+            return func.HttpResponse(json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json")
 
         if not await user_has_project_access(user_info["user_id"], project, required_permission="view"):
-            return func.HttpResponse(
-                json.dumps({"error": "Access denied"}), status_code=403, mimetype="application/json"
-            )
+            return func.HttpResponse(json.dumps({"error": "Access denied"}), status_code=403, mimetype="application/json")
 
         # Query analytics from Cosmos DB
         try:
@@ -894,14 +890,16 @@ async def get_project_analytics(req: func.HttpRequest) -> func.HttpResponse:
             events = []
 
         return func.HttpResponse(
-            json.dumps({
-                "projectId": project_id,
-                "projectName": project.name,
-                "currentStage": project.current_stage.value,
-                "stageCompletionPercentage": calculate_stage_completion_percentage(project),
-                "events": events[-50:],  # Last 50 events
-                "totalEvents": len(events),
-            }),
+            json.dumps(
+                {
+                    "projectId": project_id,
+                    "projectName": project.name,
+                    "currentStage": project.current_stage.value,
+                    "stageCompletionPercentage": calculate_stage_completion_percentage(project),
+                    "events": events[-50:],  # Last 50 events
+                    "totalEvents": len(events),
+                }
+            ),
             status_code=200,
             mimetype="application/json",
         )
@@ -933,29 +931,27 @@ async def get_project_artifacts(req: func.HttpRequest) -> func.HttpResponse:
 
         project = await load_forge_project(project_id)
         if not project:
-            return func.HttpResponse(
-                json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json"
-            )
+            return func.HttpResponse(json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json")
 
         if not await user_has_project_access(user_info["user_id"], project, required_permission="view"):
-            return func.HttpResponse(
-                json.dumps({"error": "Access denied"}), status_code=403, mimetype="application/json"
-            )
+            return func.HttpResponse(json.dumps({"error": "Access denied"}), status_code=403, mimetype="application/json")
 
         # Get artifacts, optionally filtered by stage
-        artifacts = project.artifacts if hasattr(project, 'artifacts') else []
+        artifacts = project.artifacts if hasattr(project, "artifacts") else []
         if stage:
-            artifacts = [a for a in artifacts if getattr(a, 'stage', None) == stage]
+            artifacts = [a for a in artifacts if getattr(a, "stage", None) == stage]
 
-        artifact_list = [asdict(a) if hasattr(a, '__dataclass_fields__') else a for a in artifacts]
+        artifact_list = [asdict(a) if hasattr(a, "__dataclass_fields__") else a for a in artifacts]
 
         return func.HttpResponse(
-            json.dumps({
-                "projectId": project_id,
-                "stage": stage,
-                "artifacts": artifact_list,
-                "totalCount": len(artifact_list),
-            }),
+            json.dumps(
+                {
+                    "projectId": project_id,
+                    "stage": stage,
+                    "artifacts": artifact_list,
+                    "totalCount": len(artifact_list),
+                }
+            ),
             status_code=200,
             mimetype="application/json",
         )
@@ -989,10 +985,12 @@ async def list_forge_templates(req: func.HttpRequest) -> func.HttpResponse:
             templates = []
 
         return func.HttpResponse(
-            json.dumps({
-                "templates": templates,
-                "totalCount": len(templates),
-            }),
+            json.dumps(
+                {
+                    "templates": templates,
+                    "totalCount": len(templates),
+                }
+            ),
             status_code=200,
             mimetype="application/json",
         )
@@ -1041,7 +1039,7 @@ async def create_forge_template(req: func.HttpRequest) -> func.HttpResponse:
             if project:
                 template_data["template_data"] = {
                     "stage_structure": {s.value: {} for s in ForgeStage},
-                    "project_type": getattr(project, 'project_type', 'general'),
+                    "project_type": getattr(project, "project_type", "general"),
                 }
 
         async with AsyncCosmosHelper() as db:
@@ -1066,9 +1064,7 @@ async def apply_project_template(project: ForgeProject, template_id: str) -> Non
     """Apply a template to a project."""
     try:
         async with AsyncCosmosHelper() as db:
-            template = await db.read_item(
-                template_id, partition_key=template_id, container_name=FORGE_TEMPLATES_CONTAINER
-            )
+            template = await db.read_item(template_id, partition_key=template_id, container_name=FORGE_TEMPLATES_CONTAINER)
 
             template_data = template.get("template_data", {})
             if template_data:
@@ -1095,9 +1091,7 @@ async def delete_forge_project(req: func.HttpRequest) -> func.HttpResponse:
 
         project = await load_forge_project(project_id)
         if not project:
-            return func.HttpResponse(
-                json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json"
-            )
+            return func.HttpResponse(json.dumps({"error": "Project not found"}), status_code=404, mimetype="application/json")
 
         if not await user_has_project_access(user_info["user_id"], project, required_permission="delete"):
             return func.HttpResponse(

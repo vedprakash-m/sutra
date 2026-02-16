@@ -24,7 +24,9 @@ describe("LLMProviderSelector", () => {
     render(<LLMProviderSelector />);
 
     expect(screen.getByRole("button", { name: "OpenAI" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Anthropic" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Anthropic" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Google" })).toBeInTheDocument();
   });
 
@@ -34,7 +36,9 @@ describe("LLMProviderSelector", () => {
     const select = screen.getByRole("combobox");
     expect(select).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "GPT-4o" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "GPT-4 Turbo" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "GPT-4 Turbo" }),
+    ).toBeInTheDocument();
   });
 
   it("calls setLLMProvider when provider is changed", () => {

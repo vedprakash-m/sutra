@@ -36,7 +36,10 @@ describe("forgeStore", () => {
   });
 
   it("fetchProjects loads projects into state", async () => {
-    listProjectsMock.mockResolvedValueOnce({ projects: [SAMPLE_PROJECT], total: 1 });
+    listProjectsMock.mockResolvedValueOnce({
+      projects: [SAMPLE_PROJECT],
+      total: 1,
+    });
 
     await useForgeStore.getState().fetchProjects();
 
@@ -78,7 +81,9 @@ describe("forgeStore", () => {
       .getState()
       .updateStageData("project-1", "idea_refinement", { value: 123 });
 
-    expect(useForgeStore.getState().stageData["project-1"]?.idea_refinement).toEqual({ value: 123 });
+    expect(
+      useForgeStore.getState().stageData["project-1"]?.idea_refinement,
+    ).toEqual({ value: 123 });
   });
 
   it("updateQuality stores quality by project and stage", () => {
@@ -89,11 +94,16 @@ describe("forgeStore", () => {
       confidenceLevel: 0.9,
     });
 
-    expect(useForgeStore.getState().qualityScores["project-1"]?.idea_refinement?.overallScore).toBe(80);
+    expect(
+      useForgeStore.getState().qualityScores["project-1"]?.idea_refinement
+        ?.overallScore,
+    ).toBe(80);
   });
 
   it("canAdvanceStage returns false when no quality exists", () => {
-    expect(useForgeStore.getState().canAdvanceStage("project-1", "idea_refinement")).toBe(false);
+    expect(
+      useForgeStore.getState().canAdvanceStage("project-1", "idea_refinement"),
+    ).toBe(false);
   });
 
   it("canAdvanceStage validates stage threshold", () => {
@@ -103,7 +113,9 @@ describe("forgeStore", () => {
       qualityGateStatus: "BLOCK",
       confidenceLevel: 0.6,
     });
-    expect(useForgeStore.getState().canAdvanceStage("project-1", "idea_refinement")).toBe(false);
+    expect(
+      useForgeStore.getState().canAdvanceStage("project-1", "idea_refinement"),
+    ).toBe(false);
 
     useForgeStore.getState().updateQuality("project-1", "idea_refinement", {
       overallScore: 75,
@@ -111,7 +123,9 @@ describe("forgeStore", () => {
       qualityGateStatus: "PROCEED_WITH_CAUTION",
       confidenceLevel: 0.7,
     });
-    expect(useForgeStore.getState().canAdvanceStage("project-1", "idea_refinement")).toBe(true);
+    expect(
+      useForgeStore.getState().canAdvanceStage("project-1", "idea_refinement"),
+    ).toBe(true);
   });
 
   it("advanceStage blocks when threshold is not met", async () => {
@@ -134,7 +148,9 @@ describe("forgeStore", () => {
     await useForgeStore.getState().advanceStage("project-1");
 
     expect(advanceStageMock).not.toHaveBeenCalled();
-    expect(useForgeStore.getState().error).toContain("Quality threshold not met");
+    expect(useForgeStore.getState().error).toContain(
+      "Quality threshold not met",
+    );
   });
 
   it("advanceStage advances when threshold is met", async () => {
@@ -158,8 +174,13 @@ describe("forgeStore", () => {
 
     await useForgeStore.getState().advanceStage("project-1");
 
-    expect(advanceStageMock).toHaveBeenCalledWith("project-1", "prd_generation");
-    expect(useForgeStore.getState().currentProject?.currentStage).toBe("prd_generation");
+    expect(advanceStageMock).toHaveBeenCalledWith(
+      "project-1",
+      "prd_generation",
+    );
+    expect(useForgeStore.getState().currentProject?.currentStage).toBe(
+      "prd_generation",
+    );
   });
 
   it("createProject prepends project to projects list", async () => {

@@ -21,8 +21,8 @@ from shared.models.forge_models import (
     generate_forge_id,
 )
 
-
 # ---- Helpers ----
+
 
 def _make_request(method="GET", body=None, params=None, route_params=None):
     """Create a mock Azure Functions HttpRequest."""
@@ -50,6 +50,7 @@ def _sample_project(owner_id="user-1", name="Test Project", project_id=None):
 
 
 # ---- Fixtures ----
+
 
 @pytest.fixture
 def auth_patch():
@@ -86,6 +87,7 @@ def mock_db():
 # ---- Import module under test ----
 # Must do a lazy import because forge_api may need env vars and packages at import time.
 
+
 @pytest.fixture(autouse=True)
 def _set_env(monkeypatch):
     """Set required env vars before importing the module."""
@@ -94,6 +96,7 @@ def _set_env(monkeypatch):
 
 
 # ---- Tests: Authentication enforcement ----
+
 
 class TestAuthEnforcement:
     """All endpoints must return 401 when auth fails."""
@@ -141,6 +144,7 @@ class TestAuthEnforcement:
 
 # ---- Tests: create_forge_project ----
 
+
 class TestCreateForgeProject:
     @pytest.mark.asyncio
     async def test_creates_project_successfully(self, auth_patch, mock_db):
@@ -158,10 +162,12 @@ class TestCreateForgeProject:
     async def test_creates_with_template(self, auth_patch, mock_db):
         from forge_api import create_forge_project
 
-        mock_db.read_item = AsyncMock(return_value={
-            "id": "tmpl-1",
-            "template_data": {"stage_structure": {}},
-        })
+        mock_db.read_item = AsyncMock(
+            return_value={
+                "id": "tmpl-1",
+                "template_data": {"stage_structure": {}},
+            }
+        )
         req = _make_request("POST", body={"name": "TP", "template_id": "tmpl-1"})
         resp = await create_forge_project(req)
         assert resp.status_code == 201
@@ -177,6 +183,7 @@ class TestCreateForgeProject:
 
 
 # ---- Tests: list_forge_projects ----
+
 
 class TestListForgeProjects:
     @pytest.mark.asyncio
@@ -217,6 +224,7 @@ class TestListForgeProjects:
 
 # ---- Tests: get_forge_project ----
 
+
 class TestGetForgeProject:
     @pytest.mark.asyncio
     async def test_returns_project_details(self, auth_patch, mock_db):
@@ -242,12 +250,10 @@ class TestGetForgeProject:
 
     @pytest.mark.asyncio
     async def test_returns_404_for_missing_project(self, auth_patch, mock_db):
-        from forge_api import get_forge_project
         from azure.cosmos.exceptions import CosmosResourceNotFoundError
+        from forge_api import get_forge_project
 
-        mock_db.read_item = AsyncMock(side_effect=CosmosResourceNotFoundError(
-            status_code=404, message="Not found"
-        ))
+        mock_db.read_item = AsyncMock(side_effect=CosmosResourceNotFoundError(status_code=404, message="Not found"))
         req = _make_request("GET", params={"project_id": "nonexistent"})
         resp = await get_forge_project(req)
         assert resp.status_code == 404
@@ -265,6 +271,7 @@ class TestGetForgeProject:
 
 # ---- Tests: update_forge_project ----
 
+
 class TestUpdateForgeProject:
     @pytest.mark.asyncio
     async def test_updates_project_name(self, auth_patch, mock_db):
@@ -272,10 +279,13 @@ class TestUpdateForgeProject:
 
         project = _sample_project()
         mock_db.read_item = AsyncMock(return_value=project.to_dict())
-        req = _make_request("PUT", body={
-            "project_id": project.id,
-            "updates": {"name": "Updated Name"},
-        })
+        req = _make_request(
+            "PUT",
+            body={
+                "project_id": project.id,
+                "updates": {"name": "Updated Name"},
+            },
+        )
         resp = await update_forge_project(req)
         assert resp.status_code == 200
         data = json.loads(resp.get_body())
@@ -292,12 +302,10 @@ class TestUpdateForgeProject:
 
     @pytest.mark.asyncio
     async def test_returns_404_for_missing_project(self, auth_patch, mock_db):
-        from forge_api import update_forge_project
         from azure.cosmos.exceptions import CosmosResourceNotFoundError
+        from forge_api import update_forge_project
 
-        mock_db.read_item = AsyncMock(side_effect=CosmosResourceNotFoundError(
-            status_code=404, message="Not found"
-        ))
+        mock_db.read_item = AsyncMock(side_effect=CosmosResourceNotFoundError(status_code=404, message="Not found"))
         req = _make_request("PUT", body={"project_id": "p1", "updates": {}})
         resp = await update_forge_project(req)
         assert resp.status_code == 404
@@ -308,15 +316,19 @@ class TestUpdateForgeProject:
 
         project = _sample_project(owner_id="other-user")
         mock_db.read_item = AsyncMock(return_value=project.to_dict())
-        req = _make_request("PUT", body={
-            "project_id": project.id,
-            "updates": {"name": "Hacked"},
-        })
+        req = _make_request(
+            "PUT",
+            body={
+                "project_id": project.id,
+                "updates": {"name": "Hacked"},
+            },
+        )
         resp = await update_forge_project(req)
         assert resp.status_code == 403
 
 
 # ---- Tests: delete_forge_project ----
+
 
 class TestDeleteForgeProject:
     @pytest.mark.asyncio
@@ -353,6 +365,7 @@ class TestDeleteForgeProject:
 
 # ---- Tests: advance_project_stage ----
 
+
 class TestAdvanceProjectStage:
     @pytest.mark.asyncio
     async def test_advance_with_force(self, auth_patch, mock_db):
@@ -360,10 +373,13 @@ class TestAdvanceProjectStage:
 
         project = _sample_project()
         mock_db.read_item = AsyncMock(return_value=project.to_dict())
-        req = _make_request("POST", body={
-            "project_id": project.id,
-            "forceAdvance": True,
-        })
+        req = _make_request(
+            "POST",
+            body={
+                "project_id": project.id,
+                "forceAdvance": True,
+            },
+        )
         resp = await advance_project_stage(req)
         assert resp.status_code == 200
         data = json.loads(resp.get_body())
@@ -377,10 +393,13 @@ class TestAdvanceProjectStage:
 
         project = _sample_project()
         mock_db.read_item = AsyncMock(return_value=project.to_dict())
-        req = _make_request("POST", body={
-            "project_id": project.id,
-            "forceAdvance": False,
-        })
+        req = _make_request(
+            "POST",
+            body={
+                "project_id": project.id,
+                "forceAdvance": False,
+            },
+        )
         resp = await advance_project_stage(req)
         # With empty stage data, quality gate will likely BLOCK
         data = json.loads(resp.get_body())
@@ -399,6 +418,7 @@ class TestAdvanceProjectStage:
 
 # ---- Tests: add_project_artifact ----
 
+
 class TestAddProjectArtifact:
     @pytest.mark.asyncio
     async def test_adds_artifact(self, auth_patch, mock_db):
@@ -406,13 +426,16 @@ class TestAddProjectArtifact:
 
         project = _sample_project()
         mock_db.read_item = AsyncMock(return_value=project.to_dict())
-        req = _make_request("POST", body={
-            "project_id": project.id,
-            "stage": "idea_refinement",
-            "name": "Design Doc",
-            "type": "document",
-            "content": "Some content",
-        })
+        req = _make_request(
+            "POST",
+            body={
+                "project_id": project.id,
+                "stage": "idea_refinement",
+                "name": "Design Doc",
+                "type": "document",
+                "content": "Some content",
+            },
+        )
         resp = await add_project_artifact(req)
         assert resp.status_code == 201
         data = json.loads(resp.get_body())
@@ -430,15 +453,18 @@ class TestAddProjectArtifact:
 
 # ---- Tests: list_forge_templates ----
 
+
 class TestListForgeTemplates:
     @pytest.mark.asyncio
     async def test_lists_templates(self, auth_patch, mock_db):
         from forge_api import list_forge_templates
 
-        mock_db.query_items = AsyncMock(return_value=[
-            {"id": "t1", "name": "Template 1"},
-            {"id": "t2", "name": "Template 2"},
-        ])
+        mock_db.query_items = AsyncMock(
+            return_value=[
+                {"id": "t1", "name": "Template 1"},
+                {"id": "t2", "name": "Template 2"},
+            ]
+        )
         req = _make_request("GET")
         resp = await list_forge_templates(req)
         assert resp.status_code == 200
@@ -459,15 +485,19 @@ class TestListForgeTemplates:
 
 # ---- Tests: create_forge_template ----
 
+
 class TestCreateForgeTemplate:
     @pytest.mark.asyncio
     async def test_creates_template(self, auth_patch, mock_db):
         from forge_api import create_forge_template
 
-        req = _make_request("POST", body={
-            "name": "New Template",
-            "description": "A template",
-        })
+        req = _make_request(
+            "POST",
+            body={
+                "name": "New Template",
+                "description": "A template",
+            },
+        )
         resp = await create_forge_template(req)
         assert resp.status_code == 201
         data = json.loads(resp.get_body())
@@ -485,6 +515,7 @@ class TestCreateForgeTemplate:
 
 
 # ---- Tests: Database helpers ----
+
 
 class TestDatabaseHelpers:
     @pytest.mark.asyncio
@@ -507,12 +538,10 @@ class TestDatabaseHelpers:
 
     @pytest.mark.asyncio
     async def test_load_forge_project_not_found(self, mock_db):
-        from forge_api import load_forge_project
         from azure.cosmos.exceptions import CosmosResourceNotFoundError
+        from forge_api import load_forge_project
 
-        mock_db.read_item = AsyncMock(side_effect=CosmosResourceNotFoundError(
-            status_code=404, message="Not found"
-        ))
+        mock_db.read_item = AsyncMock(side_effect=CosmosResourceNotFoundError(status_code=404, message="Not found"))
         result = await load_forge_project("nonexistent")
         assert result is None
 
@@ -551,6 +580,7 @@ class TestDatabaseHelpers:
 
 
 # ---- Tests: Access control ----
+
 
 class TestUserAccessControl:
     @pytest.mark.asyncio
@@ -608,6 +638,7 @@ class TestUserAccessControl:
 
 
 # ---- Tests: Main router ----
+
 
 class TestMainRouter:
     @pytest.mark.asyncio

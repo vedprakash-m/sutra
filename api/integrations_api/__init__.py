@@ -19,6 +19,7 @@ import httpx
 from shared.database import get_database_manager
 from shared.error_handling import SutraAPIError, handle_api_error
 from shared.keyvault_manager import get_keyvault_manager
+from shared.middleware import enhanced_security_middleware
 from shared.models import User, ValidationError
 from shared.real_time_cost import get_cost_manager
 
@@ -26,7 +27,6 @@ from shared.real_time_cost import get_cost_manager
 from shared.unified_auth import require_authentication
 from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 from shared.utils.schemaValidator import validate_entity
-from shared.middleware import enhanced_security_middleware
 from shared.validation import validate_llm_integration_data
 
 # Initialize logging

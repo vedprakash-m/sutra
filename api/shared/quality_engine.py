@@ -415,9 +415,12 @@ class QualityAssessmentEngine:
             has_role = bool(story.get("role") or story.get("asA"))
             has_action = bool(story.get("action") or story.get("iWant"))
             has_benefit = bool(story.get("benefit") or story.get("soThat"))
-            if has_role: story_score += 15
-            if has_action: story_score += 15
-            if has_benefit: story_score += 15
+            if has_role:
+                story_score += 15
+            if has_action:
+                story_score += 15
+            if has_benefit:
+                story_score += 15
             # Check acceptance criteria
             criteria = story.get("acceptanceCriteria", [])
             if criteria:
@@ -529,9 +532,13 @@ class QualityAssessmentEngine:
             if steps:
                 j_score += min(30, len(steps) * 5)
                 # Check step detail
-                detailed = sum(1 for s in steps if isinstance(s, dict) and
-                               (s.get("userActions") or s.get("action")) and
-                               (s.get("systemResponses") or s.get("systemResponse")))
+                detailed = sum(
+                    1
+                    for s in steps
+                    if isinstance(s, dict)
+                    and (s.get("userActions") or s.get("action"))
+                    and (s.get("systemResponses") or s.get("systemResponse"))
+                )
                 if steps:
                     j_score += (detailed / len(steps)) * 20
             if journey.get("painPoints") or journey.get("opportunities"):
@@ -620,8 +627,7 @@ class QualityAssessmentEngine:
         if specs:
             score += min(15, len(specs) * 2)
             with_deps = sum(1 for s in specs if isinstance(s, dict) and s.get("dependencies"))
-            with_responsive = sum(1 for s in specs if isinstance(s, dict) and
-                                  (s.get("responsive") or s.get("responsiveness")))
+            with_responsive = sum(1 for s in specs if isinstance(s, dict) and (s.get("responsive") or s.get("responsiveness")))
             if specs:
                 score += (with_deps / len(specs)) * 15
                 score += (with_responsive / len(specs)) * 15
@@ -828,7 +834,7 @@ class QualityAssessmentEngine:
         if isinstance(strategy, dict):
             test_types = ["unitTests", "integrationTests", "e2eTests", "performanceTests", "securityTests"]
             for test_type in test_types:
-                snake_type = re.sub(r'([A-Z])', r'_\1', test_type).lower().lstrip('_')
+                snake_type = re.sub(r"([A-Z])", r"_\1", test_type).lower().lstrip("_")
                 tests = strategy.get(test_type, strategy.get(snake_type, []))
                 if tests:
                     score += 10

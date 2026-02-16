@@ -15,8 +15,8 @@ from typing import Any, Dict, List, Optional
 
 from shared.database import get_database_manager
 from shared.error_handling import SutraAPIError, handle_api_error
-from shared.models import UserRole, ValidationError
 from shared.middleware import enhanced_security_middleware
+from shared.models import UserRole, ValidationError
 from shared.unified_auth import require_authentication
 
 # Initialize logging

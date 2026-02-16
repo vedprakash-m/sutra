@@ -58,12 +58,7 @@ describe("QualityGate", () => {
   });
 
   it("falls back to `quality.overallScore` when others absent", () => {
-    render(
-      <QualityGate
-        {...defaultProps}
-        quality={{ overallScore: 90 }}
-      />,
-    );
+    render(<QualityGate {...defaultProps} quality={{ overallScore: 90 }} />);
     expect(screen.getByText("90%")).toBeInTheDocument();
     expect(screen.getByText("✓ Pass")).toBeInTheDocument();
   });
@@ -79,18 +74,14 @@ describe("QualityGate", () => {
   // ────────────────────────────────────────────────────────────────
 
   it("shows green styling when score >= threshold", () => {
-    const { container } = render(
-      <QualityGate {...defaultProps} score={80} />,
-    );
+    const { container } = render(<QualityGate {...defaultProps} score={80} />);
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).toContain("border-green-200");
     expect(wrapper.className).toContain("bg-green-50");
   });
 
   it("shows yellow styling when score < threshold", () => {
-    const { container } = render(
-      <QualityGate {...defaultProps} score={50} />,
-    );
+    const { container } = render(<QualityGate {...defaultProps} score={50} />);
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).toContain("border-yellow-200");
     expect(wrapper.className).toContain("bg-yellow-50");
@@ -101,16 +92,14 @@ describe("QualityGate", () => {
   // ────────────────────────────────────────────────────────────────
 
   it("renders progress bar with correct width", () => {
-    const { container } = render(
-      <QualityGate {...defaultProps} score={45} />,
-    );
-    const progressBar = container.querySelector(
-      ".bg-yellow-500, .bg-green-500",
-    ) || container.querySelector("[style]");
+    const { container } = render(<QualityGate {...defaultProps} score={45} />);
+    const progressBar =
+      container.querySelector(".bg-yellow-500, .bg-green-500") ||
+      container.querySelector("[style]");
     // The component sets width as percentage of the score
     const bars = container.querySelectorAll("[style]");
-    const barWithWidth = Array.from(bars).find((el) =>
-      (el as HTMLElement).style.width,
+    const barWithWidth = Array.from(bars).find(
+      (el) => (el as HTMLElement).style.width,
     );
     expect(barWithWidth).toBeTruthy();
     expect((barWithWidth as HTMLElement).style.width).toBe("45%");
@@ -179,9 +168,7 @@ describe("QualityGate", () => {
         onOverride={jest.fn()}
       />,
     );
-    expect(
-      screen.getByText(/Expert Override/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Expert Override/)).toBeInTheDocument();
   });
 
   it("does not show override button when passing", () => {
@@ -197,9 +184,7 @@ describe("QualityGate", () => {
   });
 
   it("does not show override button when allowOverride is false", () => {
-    render(
-      <QualityGate {...defaultProps} score={50} allowOverride={false} />,
-    );
+    render(<QualityGate {...defaultProps} score={50} allowOverride={false} />);
     expect(screen.queryByText(/Expert Override/)).not.toBeInTheDocument();
   });
 

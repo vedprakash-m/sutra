@@ -17,12 +17,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import azure.functions as func
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
-
 from shared.async_database import AsyncCosmosHelper
 from shared.auth_helpers import extract_user_info
+from shared.coding_agent_optimizer import CodingAgentOptimizer
 from shared.cost_tracker import CostTracker
 from shared.llm_client import LLMManager
-from shared.coding_agent_optimizer import CodingAgentOptimizer
 from shared.quality_engine import QualityAssessmentEngine
 from shared.quality_validators import CrossStageQualityValidator
 

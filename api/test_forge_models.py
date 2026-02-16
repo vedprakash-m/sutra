@@ -251,8 +251,12 @@ class ForgeModelsTest:
         project.idea_refinement_data.feasibility_score = 8.5
 
         idea_refinement_data = project.get_current_stage_data()
-        assert isinstance(idea_refinement_data, IdeaRefinementData), "Should return IdeaRefinementData for idea_refinement stage"
-        assert idea_refinement_data.initial_idea == project.idea_refinement_data.initial_idea, "Idea refinement data should match"
+        assert isinstance(
+            idea_refinement_data, IdeaRefinementData
+        ), "Should return IdeaRefinementData for idea_refinement stage"
+        assert (
+            idea_refinement_data.initial_idea == project.idea_refinement_data.initial_idea
+        ), "Idea refinement data should match"
 
         print(f"  ✅ Idea Refinement: {project.idea_refinement_data.initial_idea}")
         print(f"     Target: {project.idea_refinement_data.target_audience}")
@@ -333,7 +337,9 @@ class ForgeModelsTest:
         project.ux_requirements_data.technology_stack = ["Python", "React", "PostgreSQL", "AWS"]
 
         ux_requirements_data = project.get_current_stage_data()
-        assert isinstance(ux_requirements_data, UXRequirementsData), "Should return UXRequirementsData for ux_requirements stage"
+        assert isinstance(
+            ux_requirements_data, UXRequirementsData
+        ), "Should return UXRequirementsData for ux_requirements stage"
         assert len(ux_requirements_data.resource_requirements) == 2, "Should have 2 resources"
         assert len(ux_requirements_data.milestones) == 1, "Should have 1 milestone"
 
@@ -373,7 +379,9 @@ class ForgeModelsTest:
         project.technical_analysis_data.team_velocity = 25.5  # Points per sprint
 
         technical_analysis_data = project.get_current_stage_data()
-        assert isinstance(technical_analysis_data, TechnicalAnalysisData), "Should return TechnicalAnalysisData for technical_analysis stage"
+        assert isinstance(
+            technical_analysis_data, TechnicalAnalysisData
+        ), "Should return TechnicalAnalysisData for technical_analysis stage"
         assert len(technical_analysis_data.tasks) == 2, "Should have 2 tasks"
 
         print(f"  ✅ Technical Analysis: {len(project.technical_analysis_data.tasks)} tasks")
@@ -410,7 +418,9 @@ class ForgeModelsTest:
         ]
 
         implementation_playbook_data = project.get_current_stage_data()
-        assert isinstance(implementation_playbook_data, ImplementationPlaybookData), "Should return ImplementationPlaybookData for implementation_playbook stage"
+        assert isinstance(
+            implementation_playbook_data, ImplementationPlaybookData
+        ), "Should return ImplementationPlaybookData for implementation_playbook stage"
         assert len(implementation_playbook_data.environments) == 2, "Should have 2 environments"
 
         print(f"  ✅ Implementation Playbook: {len(project.implementation_playbook_data.environments)} environments")

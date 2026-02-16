@@ -2,9 +2,9 @@
 Tests for the middleware module.
 """
 
+import asyncio
 import json
 import os
-import asyncio
 import time
 from unittest.mock import MagicMock, Mock, patch
 

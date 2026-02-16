@@ -24,23 +24,33 @@ jest.mock("react-router-dom", () => {
 
 jest.mock("../ForgeProjectCreator", () => ({
   __esModule: true,
-  default: ({ onProjectCreated, onCancel }: { onProjectCreated: (project: any) => void; onCancel: () => void }) => (
+  default: ({
+    onProjectCreated,
+    onCancel,
+  }: {
+    onProjectCreated: (project: any) => void;
+    onCancel: () => void;
+  }) => (
     <div>
-      <button onClick={() => onProjectCreated({
-        id: "created-project",
-        name: "Created",
-        description: "Created project",
-        currentStage: "idea_refinement",
-        status: "draft",
-        priority: "medium",
-        progressPercentage: 0,
-        createdAt: "2026-01-01T00:00:00Z",
-        updatedAt: "2026-01-01T00:00:00Z",
-        tags: [],
-        collaboratorsCount: 1,
-        artifactsCount: 0,
-        ownerId: "user-1",
-      })}>
+      <button
+        onClick={() =>
+          onProjectCreated({
+            id: "created-project",
+            name: "Created",
+            description: "Created project",
+            currentStage: "idea_refinement",
+            status: "draft",
+            priority: "medium",
+            progressPercentage: 0,
+            createdAt: "2026-01-01T00:00:00Z",
+            updatedAt: "2026-01-01T00:00:00Z",
+            tags: [],
+            collaboratorsCount: 1,
+            artifactsCount: 0,
+            ownerId: "user-1",
+          })
+        }
+      >
         Create Mock Project
       </button>
       <button onClick={onCancel}>Cancel Create</button>
@@ -50,14 +60,26 @@ jest.mock("../ForgeProjectCreator", () => ({
 
 jest.mock("../ForgeProjectCard", () => ({
   __esModule: true,
-  default: ({ project, onSelect }: { project: any; onSelect: (project: any) => void }) => (
+  default: ({
+    project,
+    onSelect,
+  }: {
+    project: any;
+    onSelect: (project: any) => void;
+  }) => (
     <button onClick={() => onSelect(project)}>Select {project.name}</button>
   ),
 }));
 
 jest.mock("../ForgeProjectDetails", () => ({
   __esModule: true,
-  default: ({ project, onBackToList }: { project: any; onBackToList: () => void }) => (
+  default: ({
+    project,
+    onBackToList,
+  }: {
+    project: any;
+    onBackToList: () => void;
+  }) => (
     <div>
       <div>Details: {project.name}</div>
       <button onClick={onBackToList}>Back To List</button>
@@ -122,8 +144,12 @@ describe("ForgePage", () => {
       expect(listProjectsMock).toHaveBeenCalled();
     });
 
-    expect(screen.getByRole("button", { name: /Select Alpha/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Select Beta/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Select Alpha/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Select Beta/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Project Overview")).toBeInTheDocument();
   });
 
@@ -142,19 +168,25 @@ describe("ForgePage", () => {
     render(<ForgePage />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "New Project" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "New Project" }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: "New Project" }));
     expect(navigateMock).toHaveBeenCalledWith("/forge?view=create");
-    expect(screen.getByRole("button", { name: "Create Mock Project" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create Mock Project" }),
+    ).toBeInTheDocument();
   });
 
   it("opens details when project card is selected", async () => {
     render(<ForgePage />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Select Alpha/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Select Alpha/i }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /Select Alpha/i }));
@@ -174,11 +206,16 @@ describe("ForgePage", () => {
   });
 
   it("opens create view when search param view=create is set", async () => {
-    useSearchParamsMock.mockReturnValue([new URLSearchParams("view=create"), jest.fn()]);
+    useSearchParamsMock.mockReturnValue([
+      new URLSearchParams("view=create"),
+      jest.fn(),
+    ]);
     render(<ForgePage />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Create Mock Project" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Create Mock Project" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -186,15 +223,21 @@ describe("ForgePage", () => {
     render(<ForgePage />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Select Alpha/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Select Alpha/i }),
+      ).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByPlaceholderText("Search projects..."), {
       target: { value: "beta" },
     });
 
-    expect(screen.queryByRole("button", { name: /Select Alpha/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Select Beta/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Select Alpha/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Select Beta/i }),
+    ).toBeInTheDocument();
   });
 
   it("handles project list API error gracefully", async () => {

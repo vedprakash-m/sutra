@@ -53,7 +53,9 @@ describe("ForgeProjectCard", () => {
     );
 
     expect(screen.getByText("Sutra Forge")).toBeInTheDocument();
-    expect(screen.getByText("Build a robust forge workflow")).toBeInTheDocument();
+    expect(
+      screen.getByText("Build a robust forge workflow"),
+    ).toBeInTheDocument();
   });
 
   it("renders stage, status and priority badges", () => {

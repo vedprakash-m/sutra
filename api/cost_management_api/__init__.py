@@ -10,12 +10,12 @@ import azure.functions as func
 from azure.functions import HttpRequest, HttpResponse
 from shared.budget import BudgetConfig, get_enhanced_budget_manager
 from shared.error_handling import SutraAPIError, handle_api_error
+from shared.middleware import enhanced_security_middleware
 from shared.models import User, UserRole
 from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
 from shared.unified_auth import get_user_from_request, require_authentication
-from shared.middleware import enhanced_security_middleware
 from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
 
 # Add the root directory to Python path for proper imports

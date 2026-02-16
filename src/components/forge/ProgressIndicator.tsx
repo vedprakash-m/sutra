@@ -54,7 +54,9 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
             className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${displaySteps.length > 1 ? (currentIndex / (displaySteps.length - 1)) * 100 : 0}%` }}
+            style={{
+              width: `${displaySteps.length > 1 ? (currentIndex / (displaySteps.length - 1)) * 100 : 0}%`,
+            }}
           />
         </div>
       </div>
@@ -64,7 +66,8 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
           Step {currentIndex + 1} of {displaySteps.length}
         </span>
         <span>
-          {Math.round(((currentIndex + 1) / displaySteps.length) * 100)}% Complete
+          {Math.round(((currentIndex + 1) / displaySteps.length) * 100)}%
+          Complete
         </span>
       </div>
     </div>

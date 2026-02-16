@@ -706,7 +706,9 @@ async def complete_ux_stage(req: func.HttpRequest, project_id: str) -> func.Http
                 ),
             }
 
-            return func.HttpResponse(json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"})
+            return func.HttpResponse(
+                json.dumps(completion_result), status_code=200, headers={"Content-Type": "application/json"}
+            )
 
     except Exception as e:
         logger.error(f"Error completing UX stage: {str(e)}")

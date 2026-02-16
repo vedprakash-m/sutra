@@ -277,7 +277,10 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
         environment_requirements: {},
       });
 
-      updateSectionData("deploymentGuide", (data as any).deploymentGuide || data);
+      updateSectionData(
+        "deploymentGuide",
+        (data as any).deploymentGuide || data,
+      );
       updateSectionStatus("deploymentGuide", "completed");
 
       toast({
@@ -363,14 +366,19 @@ const ImplementationPlaybookStage: React.FC<ImplementationPlaybookProps> = ({
     try {
       setIsGenerating(true);
 
-      const result = await forgeApi.exportPlaybook(projectId, exportFormat as any);
+      const result = await forgeApi.exportPlaybook(
+        projectId,
+        exportFormat as any,
+      );
 
       // Handle the download
       if (result.blob) {
         const url = window.URL.createObjectURL(result.blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = result.filename || `implementation_playbook_${projectId.substring(0, 8)}.${exportFormat}`;
+        a.download =
+          result.filename ||
+          `implementation_playbook_${projectId.substring(0, 8)}.${exportFormat}`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

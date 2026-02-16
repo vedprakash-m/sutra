@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import azure.functions as func
-
 from shared.async_database import AsyncCosmosHelper
 from shared.auth_helpers import extract_user_info
 from shared.cost_tracker import CostTracker
@@ -158,40 +157,40 @@ async def evaluate_architecture_endpoint(req: func.HttpRequest) -> func.HttpResp
         # Store results in Cosmos DB
         async with AsyncCosmosHelper() as db:
             result_document = {
-            "id": f"{session_id}_technical_analysis_{operation_id}",
-            "user_id": user_id,
-            "session_id": session_id,
-            "stage": "technical_analysis",
-            "operation_id": operation_id,
-            "architecture_recommendation": technical_evaluation.architecture_recommendation,
-            "technology_stack": technical_evaluation.technology_stack,
-            "feasibility_assessment": technical_evaluation.feasibility_assessment,
-            "risk_analysis": technical_evaluation.risk_analysis,
-            "implementation_roadmap": technical_evaluation.implementation_roadmap,
-            "consensus_metadata": {
-                "consensus_level": technical_evaluation.consensus_metadata.consensus_level.value,
-                "agreement_score": technical_evaluation.consensus_metadata.agreement_score,
-                "confidence_level": technical_evaluation.consensus_metadata.confidence_level,
-                "total_cost": technical_evaluation.consensus_metadata.total_cost,
-                "models_used": selected_models,
-                "conflict_areas": technical_evaluation.consensus_metadata.conflict_areas,
-            },
-            "quality_assessment": {
-                "overall_score": technical_evaluation.quality_score,
-                "quality_engine_score": quality_assessment.overall_score,
-                "meets_threshold": technical_evaluation.quality_score >= quality_threshold,
-                "threshold": quality_threshold,
-                "individual_metrics": quality_assessment.individual_scores,
-            },
-            "metadata": {
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "processing_time": sum(
-                    r.processing_time for r in technical_evaluation.consensus_metadata.individual_responses
-                ),
-                "total_tokens": sum(r.tokens_used for r in technical_evaluation.consensus_metadata.individual_responses),
-                "context_validation": context_validation,
-            },
-        }
+                "id": f"{session_id}_technical_analysis_{operation_id}",
+                "user_id": user_id,
+                "session_id": session_id,
+                "stage": "technical_analysis",
+                "operation_id": operation_id,
+                "architecture_recommendation": technical_evaluation.architecture_recommendation,
+                "technology_stack": technical_evaluation.technology_stack,
+                "feasibility_assessment": technical_evaluation.feasibility_assessment,
+                "risk_analysis": technical_evaluation.risk_analysis,
+                "implementation_roadmap": technical_evaluation.implementation_roadmap,
+                "consensus_metadata": {
+                    "consensus_level": technical_evaluation.consensus_metadata.consensus_level.value,
+                    "agreement_score": technical_evaluation.consensus_metadata.agreement_score,
+                    "confidence_level": technical_evaluation.consensus_metadata.confidence_level,
+                    "total_cost": technical_evaluation.consensus_metadata.total_cost,
+                    "models_used": selected_models,
+                    "conflict_areas": technical_evaluation.consensus_metadata.conflict_areas,
+                },
+                "quality_assessment": {
+                    "overall_score": technical_evaluation.quality_score,
+                    "quality_engine_score": quality_assessment.overall_score,
+                    "meets_threshold": technical_evaluation.quality_score >= quality_threshold,
+                    "threshold": quality_threshold,
+                    "individual_metrics": quality_assessment.individual_scores,
+                },
+                "metadata": {
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "processing_time": sum(
+                        r.processing_time for r in technical_evaluation.consensus_metadata.individual_responses
+                    ),
+                    "total_tokens": sum(r.tokens_used for r in technical_evaluation.consensus_metadata.individual_responses),
+                    "context_validation": context_validation,
+                },
+            }
 
             await db.upsert_item(result_document)
 
@@ -283,7 +282,9 @@ async def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpR
         # Generate detailed technical specifications
         specs_prompt = create_technical_specs_prompt(architecture_evaluation, spec_requirements)
 
-        response = await llm_client.execute_prompt(provider_name=provider_name, prompt=specs_prompt, model=selected_llm, temperature=0.1, max_tokens=6000)
+        response = await llm_client.execute_prompt(
+            provider_name=provider_name, prompt=specs_prompt, model=selected_llm, temperature=0.1, max_tokens=6000
+        )
 
         # Parse and structure technical specifications
         import re
@@ -302,19 +303,19 @@ async def generate_technical_specs_endpoint(req: func.HttpRequest) -> func.HttpR
         # Store in Cosmos DB
         async with AsyncCosmosHelper() as db:
             spec_document = {
-            "id": f"{session_id}_technical_specs_{operation_id}",
-            "user_id": user_id,
-            "session_id": session_id,
-            "stage": "technical_specifications",
-            "operation_id": operation_id,
-            "technical_specifications": technical_specs,
-            "architecture_evaluation_reference": architecture_evaluation,
-            "metadata": {
-                "created_at": datetime.now(timezone.utc).isoformat(),
-                "cost": total_cost,
-                "tokens_used": response.get("usage", {}).get("total_tokens", 0),
-            },
-        }
+                "id": f"{session_id}_technical_specs_{operation_id}",
+                "user_id": user_id,
+                "session_id": session_id,
+                "stage": "technical_specifications",
+                "operation_id": operation_id,
+                "technical_specifications": technical_specs,
+                "architecture_evaluation_reference": architecture_evaluation,
+                "metadata": {
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "cost": total_cost,
+                    "tokens_used": response.get("usage", {}).get("total_tokens", 0),
+                },
+            }
 
             await db.upsert_item(spec_document)
 
@@ -377,7 +378,9 @@ async def assess_feasibility_endpoint(req: func.HttpRequest) -> func.HttpRespons
         # Generate feasibility assessment prompt
         feasibility_prompt = create_feasibility_assessment_prompt(project_requirements, constraints)
 
-        response = await llm_client.execute_prompt(provider_name=provider_name, prompt=feasibility_prompt, model=selected_llm, temperature=0.2, max_tokens=4000)
+        response = await llm_client.execute_prompt(
+            provider_name=provider_name, prompt=feasibility_prompt, model=selected_llm, temperature=0.2, max_tokens=4000
+        )
 
         # Parse feasibility assessment
         import re
@@ -627,7 +630,9 @@ async def generate_implementation_roadmap_endpoint(req: func.HttpRequest) -> fun
         # Generate roadmap
         roadmap_prompt = create_implementation_roadmap_prompt(technical_analysis, project_constraints)
 
-        response = await llm_client.execute_prompt(provider_name=provider_name, prompt=roadmap_prompt, model=selected_llm, temperature=0.2, max_tokens=5000)
+        response = await llm_client.execute_prompt(
+            provider_name=provider_name, prompt=roadmap_prompt, model=selected_llm, temperature=0.2, max_tokens=5000
+        )
 
         # Parse implementation roadmap
         import re
@@ -688,7 +693,9 @@ async def export_technical_analysis_endpoint(req: func.HttpRequest) -> func.Http
 
         # Retrieve technical analysis data from Cosmos DB
         async with AsyncCosmosHelper() as db:
-            query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id AND c.stage = 'technical_analysis'"
+            query = (
+                "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id AND c.stage = 'technical_analysis'"
+            )
             items = await db.query_items(
                 query=query, parameters=[{"name": "@user_id", "value": user_id}, {"name": "@session_id", "value": session_id}]
             )
@@ -761,7 +768,9 @@ async def quality_check_endpoint(req: func.HttpRequest) -> func.HttpResponse:
 
         # Retrieve session data
         async with AsyncCosmosHelper() as db:
-            query = "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id ORDER BY c.metadata.created_at DESC"
+            query = (
+                "SELECT * FROM c WHERE c.user_id = @user_id AND c.session_id = @session_id ORDER BY c.metadata.created_at DESC"
+            )
             items = await db.query_items(
                 query=query, parameters=[{"name": "@user_id", "value": user_id}, {"name": "@session_id", "value": session_id}]
             )

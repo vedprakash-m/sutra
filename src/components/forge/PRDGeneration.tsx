@@ -410,9 +410,9 @@ export default function PRDGeneration({
       setCurrentQuality(assessment as any);
 
       // Check if quality threshold is met
-      const qualityMet =
-        assessment.overallScore >= PRD_QUALITY_THRESHOLD;
-      const consistencyOk = (assessment as any).crossStageValidation?.isConsistent ?? true;
+      const qualityMet = assessment.overallScore >= PRD_QUALITY_THRESHOLD;
+      const consistencyOk =
+        (assessment as any).crossStageValidation?.isConsistent ?? true;
 
       setCanProceed(qualityMet && consistencyOk);
 
@@ -464,7 +464,7 @@ export default function PRDGeneration({
         } as any);
 
         toast.success(
-          `PRD stage completed with ${result.qualityAssessment?.overallScore ?? 'N/A'}% quality`,
+          `PRD stage completed with ${result.qualityAssessment?.overallScore ?? "N/A"}% quality`,
         );
 
         onStageComplete({

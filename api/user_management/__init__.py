@@ -17,13 +17,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import traceback
 
 from shared.database import get_database_manager
+from shared.middleware import enhanced_security_middleware
 from shared.models import User
 from shared.real_time_cost import get_cost_manager
 
 # NEW: Use unified authentication and validation systems
 from shared.unified_auth import require_authentication
 from shared.utils.fieldConverter import convert_camel_to_snake, convert_snake_to_camel
-from shared.middleware import enhanced_security_middleware
 from shared.utils.schemaValidator import validate_entity
 
 # Initialize logging

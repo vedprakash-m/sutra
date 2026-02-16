@@ -42,9 +42,7 @@ export default function PromptsListPage() {
       });
       setPrompts((response as any)?.items || []);
       setTotalPages(
-        Math.ceil(
-          ((response as any)?.pagination?.totalCount || 0) / 20,
-        ) || 1,
+        Math.ceil(((response as any)?.pagination?.totalCount || 0) / 20) || 1,
       );
     } catch (error) {
       console.error("Error loading prompts:", error);

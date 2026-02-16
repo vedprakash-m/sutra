@@ -56,9 +56,24 @@ export const LLM_PROVIDERS: LLMProviderInfo[] = [
     displayName: "OpenAI",
     isAvailable: true,
     models: [
-      { id: "gpt-4o", displayName: "GPT-4o", provider: "openai", costTier: "high" },
-      { id: "gpt-4-turbo", displayName: "GPT-4 Turbo", provider: "openai", costTier: "high" },
-      { id: "gpt-3.5-turbo", displayName: "GPT-3.5 Turbo", provider: "openai", costTier: "low" },
+      {
+        id: "gpt-4o",
+        displayName: "GPT-4o",
+        provider: "openai",
+        costTier: "high",
+      },
+      {
+        id: "gpt-4-turbo",
+        displayName: "GPT-4 Turbo",
+        provider: "openai",
+        costTier: "high",
+      },
+      {
+        id: "gpt-3.5-turbo",
+        displayName: "GPT-3.5 Turbo",
+        provider: "openai",
+        costTier: "low",
+      },
     ],
   },
   {
@@ -66,9 +81,24 @@ export const LLM_PROVIDERS: LLMProviderInfo[] = [
     displayName: "Anthropic",
     isAvailable: true,
     models: [
-      { id: "claude-3.5-sonnet", displayName: "Claude 3.5 Sonnet", provider: "anthropic", costTier: "high" },
-      { id: "claude-3-haiku", displayName: "Claude 3 Haiku", provider: "anthropic", costTier: "low" },
-      { id: "claude-3-opus", displayName: "Claude 3 Opus", provider: "anthropic", costTier: "high" },
+      {
+        id: "claude-3.5-sonnet",
+        displayName: "Claude 3.5 Sonnet",
+        provider: "anthropic",
+        costTier: "high",
+      },
+      {
+        id: "claude-3-haiku",
+        displayName: "Claude 3 Haiku",
+        provider: "anthropic",
+        costTier: "low",
+      },
+      {
+        id: "claude-3-opus",
+        displayName: "Claude 3 Opus",
+        provider: "anthropic",
+        costTier: "high",
+      },
     ],
   },
   {
@@ -76,9 +106,24 @@ export const LLM_PROVIDERS: LLMProviderInfo[] = [
     displayName: "Google",
     isAvailable: true,
     models: [
-      { id: "gemini-1.5-pro", displayName: "Gemini 1.5 Pro", provider: "google", costTier: "medium" },
-      { id: "gemini-1.5-flash", displayName: "Gemini 1.5 Flash", provider: "google", costTier: "low" },
-      { id: "gemini-pro", displayName: "Gemini Pro", provider: "google", costTier: "medium" },
+      {
+        id: "gemini-1.5-pro",
+        displayName: "Gemini 1.5 Pro",
+        provider: "google",
+        costTier: "medium",
+      },
+      {
+        id: "gemini-1.5-flash",
+        displayName: "Gemini 1.5 Flash",
+        provider: "google",
+        costTier: "low",
+      },
+      {
+        id: "gemini-pro",
+        displayName: "Gemini Pro",
+        provider: "google",
+        costTier: "medium",
+      },
     ],
   },
 ];

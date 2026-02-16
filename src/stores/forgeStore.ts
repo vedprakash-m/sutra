@@ -78,7 +78,10 @@ interface ForgeState {
   stageData: Record<string, Partial<Record<ForgeStageId, any>>>;
 
   // Quality assessments (keyed by projectId, then stageId)
-  qualityScores: Record<string, Partial<Record<ForgeStageId, QualityAssessment | null>>>;
+  qualityScores: Record<
+    string,
+    Partial<Record<ForgeStageId, QualityAssessment | null>>
+  >;
 
   // Loading/error state
   isLoading: boolean;

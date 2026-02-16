@@ -27,10 +27,9 @@ export const LLMProviderSelector: React.FC = () => {
   const { selectedProvider, selectedModel, setLLMProvider } = useForgeStore();
 
   const currentProviderInfo = LLM_PROVIDERS.find(
-    (p) => p.name === selectedProvider
+    (p) => p.name === selectedProvider,
   );
-  const availableModels: LLMModelOption[] =
-    currentProviderInfo?.models || [];
+  const availableModels: LLMModelOption[] = currentProviderInfo?.models || [];
 
   const handleProviderChange = (provider: LLMProviderName) => {
     setLLMProvider(provider);

@@ -111,7 +111,10 @@ export default function CollectionDetailPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <p className="text-gray-500">Collection not found.</p>
-        <Link to="/collections" className="text-indigo-600 hover:text-indigo-700">
+        <Link
+          to="/collections"
+          className="text-indigo-600 hover:text-indigo-700"
+        >
           Back to collections
         </Link>
       </div>

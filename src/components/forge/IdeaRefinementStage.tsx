@@ -215,7 +215,8 @@ export default function IdeaRefinementStage({
           setData((prev) => ({
             ...prev,
             qualityAssessment: analysis.qualityAssessment as any,
-            improvementSuggestions: analysis.qualityAssessment?.improvementSuggestions as any,
+            improvementSuggestions: analysis.qualityAssessment
+              ?.improvementSuggestions as any,
             qualityScore: analysis.qualityAssessment.overallScore,
           }));
         } catch (error) {

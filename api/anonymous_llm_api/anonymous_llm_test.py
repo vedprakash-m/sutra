@@ -10,6 +10,11 @@ from ..conftest import create_auth_request
 from . import main as anonymous_llm_main
 
 
+@pytest.fixture(autouse=True)
+def enable_anonymous_endpoint(monkeypatch):
+    monkeypatch.setenv("SUTRA_ENABLE_ANONYMOUS_LLM", "true")
+
+
 class TestAnonymousLLMAPI:
     """Test suite for Anonymous LLM API endpoints."""
 

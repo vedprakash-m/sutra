@@ -63,8 +63,7 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
   const [user, setUser] = useState<SutraUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
-  const allowDevAuthBypass =
-    process.env.VITE_ALLOW_DEV_AUTH_BYPASS === "true";
+  const allowDevAuthBypass = process.env.VITE_ALLOW_DEV_AUTH_BYPASS === "true";
 
   const isAuthenticated = !!user;
   const isGuest = false; // No guest role in new system

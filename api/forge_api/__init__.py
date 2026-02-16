@@ -317,7 +317,7 @@ async def update_forge_project(req: func.HttpRequest) -> func.HttpResponse:
 
         # Parse request body
         body = json.loads(req.get_body().decode("utf-8"))
-        project_id = body.get("project_id")
+        project_id = body.get("project_id") or req.params.get("project_id") or req.route_params.get("project_id")
 
         if not project_id:
             return func.HttpResponse(
@@ -335,6 +335,12 @@ async def update_forge_project(req: func.HttpRequest) -> func.HttpResponse:
 
         # Update project fields
         updates = body.get("updates", {})
+        if not updates:
+            updates = {
+                key: value
+                for key, value in body.items()
+                if key not in ["project_id", "updates"]
+            }
 
         # Update basic fields
         if "name" in updates:
@@ -404,6 +410,8 @@ async def update_forge_project(req: func.HttpRequest) -> func.HttpResponse:
 async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
     """Advance a project to the next stage."""
     try:
+        request_id = req.headers.get("x-request-id") or req.headers.get("x-correlation-id") or generate_forge_id()
+
         # Extract user information
         user_info = extract_user_info(req)
         if not user_info:
@@ -413,7 +421,13 @@ async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
 
         # Parse request body
         body = json.loads(req.get_body().decode("utf-8"))
-        project_id = body.get("project_id")
+        project_id = body.get("project_id") or req.params.get("project_id") or req.route_params.get("project_id")
+        requested_next_stage = (
+            body.get("next_stage_id")
+            or body.get("nextStageId")
+            or req.params.get("next_stage_id")
+            or req.params.get("nextStageId")
+        )
 
         if not project_id:
             return func.HttpResponse(
@@ -470,6 +484,26 @@ async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json",
             )
 
+        # Validate requested transition if explicitly provided
+        if requested_next_stage:
+            stages_order = list(ForgeStage)
+            current_index = stages_order.index(current_stage)
+            if current_index < len(stages_order) - 1:
+                expected_next_stage = stages_order[current_index + 1].value
+                if requested_next_stage != expected_next_stage:
+                    return func.HttpResponse(
+                        json.dumps(
+                            {
+                                "error": "Invalid next stage requested",
+                                "currentStage": current_stage.value,
+                                "requestedNextStage": requested_next_stage,
+                                "expectedNextStage": expected_next_stage,
+                            }
+                        ),
+                        status_code=400,
+                        mimetype="application/json",
+                    )
+
         success = project.advance_stage()
 
         if not success:
@@ -487,7 +521,12 @@ async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
             user_id=user_info["user_id"],
             project_id=project.id,
             event_type="stage_advance",
-            event_data={"from_stage": current_stage.value, "to_stage": project.current_stage.value},
+            event_data={
+                "from_stage": current_stage.value,
+                "to_stage": project.current_stage.value,
+                "requested_next_stage": requested_next_stage,
+                "request_id": request_id,
+            },
         )
 
         logger.info(f"Advanced project {project.name} from {current_stage.value} to {project.current_stage.value}")
@@ -500,6 +539,7 @@ async def advance_project_stage(req: func.HttpRequest) -> func.HttpResponse:
                     "message": f"Project advanced to {project.current_stage.value} stage",
                     "previous_stage": current_stage.value,
                     "current_stage": project.current_stage.value,
+                    "request_id": request_id,
                 }
             ),
             status_code=200,

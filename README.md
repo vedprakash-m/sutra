@@ -38,6 +38,14 @@ Sutra is a comprehensive Multi-LLM Prompt Studio that provides systematic tools 
 - Forge UI/store test hardening completed with scoped coverage workflow.
 - Progressive quality gates and LLM provider selection/export UX are fully integrated.
 
+### ✅ Architecture Alignment Update (February 2026)
+
+- Spec-first reliability execution plan is fully completed and tracked in [specs/Tasks.md](specs/Tasks.md).
+- Authentication policy is enforced with authenticated-only login UX and explicit dev bypass opt-in (`VITE_ALLOW_DEV_AUTH_BYPASS=true`).
+- Anonymous LLM endpoint is default-disabled and must be explicitly enabled (`SUTRA_ENABLE_ANONYMOUS_LLM=true`).
+- Forge API contracts now accept compatible `project_id` and stage transition payload variants across route/query/body paths.
+- Forge transition observability now includes request correlation metadata (`request_id`) in response and analytics events.
+
 **Built for Professional Teams:**
 
 | **Role**               | **Primary Use Case**            | **Key Benefits**                    |

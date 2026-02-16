@@ -32,7 +32,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
         method = req.method
         route_params = req.route_params
         action = route_params.get("sub_action", "") or route_params.get("action", "")
-        project_id = route_params.get("project_id", "")
+        project_id = route_params.get("project_id", "") or req.params.get("project_id", "")
 
         logger.info(f"PRD Generation API - Method: {method}, Action: {action}, Project: {project_id}")
 

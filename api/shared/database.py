@@ -19,7 +19,8 @@ class DatabaseManager:
 
         # Check if we're in development mode or testing
         env = os.getenv("ENVIRONMENT", "").lower()
-        self._development_mode = env in ("development", "test")
+        allow_runtime_mocks = os.getenv("SUTRA_ALLOW_RUNTIME_MOCKS", "false").lower() == "true"
+        self._development_mode = env == "test" or (env == "development" and allow_runtime_mocks)
 
         # Get connection string from environment
         self._connection_string = os.getenv("COSMOS_DB_CONNECTION_STRING")

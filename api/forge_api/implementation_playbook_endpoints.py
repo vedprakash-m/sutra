@@ -34,11 +34,32 @@ coding_optimizer = CodingAgentOptimizer()
 cost_tracker = CostTracker()
 
 
+def _parse_request_data(req: func.HttpRequest) -> Dict[str, Any]:
+    """Safely parse JSON request body."""
+    try:
+        raw = req.get_body()
+        if not raw:
+            return {}
+        return json.loads(raw)
+    except Exception:
+        return {}
+
+
+def _get_project_id(req: func.HttpRequest, request_data: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    """Get project_id from body, query params, or route params."""
+    body = request_data or {}
+    return body.get("project_id") or req.params.get("project_id") or req.route_params.get("project_id")
+
+
 async def main(req: func.HttpRequest) -> func.HttpResponse:
     """Main entry point for implementation playbook API"""
     try:
         method = req.method
-        route = req.route_params.get("sub_action", "") or req.route_params.get("route", "")
+        route = (
+            req.route_params.get("sub_action", "")
+            or req.route_params.get("route", "")
+            or req.route_params.get("action", "")
+        )
 
         if method == "POST" and route == "generate-coding-prompts":
             return generate_coding_prompts_endpoint(req)
@@ -54,7 +75,7 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
             return await validate_context_integration_endpoint(req)
         elif method == "POST" and route == "optimize-for-agents":
             return optimize_for_agents_endpoint(req)
-        elif method == "GET" and route == "export-playbook":
+        elif method in ["GET", "POST"] and route == "export-playbook":
             return await export_playbook_endpoint(req)
         elif method == "GET" and route == "quality-validation":
             return await quality_validation_endpoint(req)
@@ -77,8 +98,8 @@ def generate_coding_prompts_endpoint(req: func.HttpRequest) -> func.HttpResponse
             )
 
         # Parse request
-        request_data = json.loads(req.get_body())
-        project_id = request_data.get("project_id")
+        request_data = _parse_request_data(req)
+        project_id = _get_project_id(req, request_data)
         context_data = request_data.get("context_data", {})
         prompt_focus = request_data.get("prompt_focus", "full-stack")
         optimization_level = request_data.get("optimization_level", "production")
@@ -131,8 +152,8 @@ def create_development_workflow_endpoint(req: func.HttpRequest) -> func.HttpResp
                 json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
             )
 
-        request_data = json.loads(req.get_body())
-        project_id = request_data.get("project_id")
+        request_data = _parse_request_data(req)
+        project_id = _get_project_id(req, request_data)
         technical_analysis = request_data.get("technical_analysis", {})
         ux_requirements = request_data.get("ux_requirements", {})
         prd_data = request_data.get("prd_data", {})
@@ -265,8 +286,13 @@ async def compile_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
                 json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
             )
 
-        request_data = json.loads(req.get_body())
-        project_id = request_data.get("project_id")
+        request_data = _parse_request_data(req)
+        project_id = _get_project_id(req, request_data)
+
+        if not project_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Project ID required"}), status_code=400, mimetype="application/json"
+            )
 
         # Get complete project context from all Forge stages
         project_context = await get_complete_project_context(project_id)
@@ -409,8 +435,14 @@ async def export_playbook_endpoint(req: func.HttpRequest) -> func.HttpResponse:
                 json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
             )
 
-        project_id = req.route_params.get("project_id")
-        export_format = req.params.get("format", "json")
+        request_data = _parse_request_data(req)
+        project_id = _get_project_id(req, request_data)
+        export_format = request_data.get("format") or req.params.get("format", "json")
+
+        if not project_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Project ID required"}), status_code=400, mimetype="application/json"
+            )
 
         # Get playbook from database
         playbook = await get_implementation_playbook(project_id)
@@ -1354,8 +1386,13 @@ async def validate_context_integration_endpoint(req: func.HttpRequest) -> func.H
                 json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
             )
 
-        request_data = json.loads(req.get_body())
-        project_id = request_data.get("project_id")
+        request_data = _parse_request_data(req)
+        project_id = _get_project_id(req, request_data)
+
+        if not project_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Project ID required"}), status_code=400, mimetype="application/json"
+            )
 
         # Get complete project context
         project_context = await get_complete_project_context(project_id)
@@ -1422,7 +1459,12 @@ async def quality_validation_endpoint(req: func.HttpRequest) -> func.HttpRespons
                 json.dumps({"error": "Authentication required"}), status_code=401, mimetype="application/json"
             )
 
-        project_id = req.route_params.get("project_id")
+        project_id = req.params.get("project_id") or req.route_params.get("project_id")
+
+        if not project_id:
+            return func.HttpResponse(
+                json.dumps({"error": "Project ID required"}), status_code=400, mimetype="application/json"
+            )
 
         # Get playbook and validate quality
         playbook = await get_implementation_playbook(project_id)

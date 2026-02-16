@@ -56,7 +56,7 @@ export interface QualityAssessment {
 export const QUALITY_THRESHOLDS: Record<ForgeStageId, number> = {
   idea_refinement: 75,
   prd_generation: 80,
-  ux_requirements: 82,
+  ux_requirements: 85,
   technical_analysis: 85,
   implementation_playbook: 88,
 };

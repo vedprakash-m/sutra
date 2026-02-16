@@ -84,7 +84,7 @@ class QualityAssessmentEngine:
         self.base_thresholds = {
             "idea_refinement": {"minimum": 75, "recommended": 85},
             "prd_generation": {"minimum": 80, "recommended": 90},
-            "ux_requirements": {"minimum": 82, "recommended": 90},
+            "ux_requirements": {"minimum": 85, "recommended": 90},
             "technical_analysis": {"minimum": 85, "recommended": 92},
             "implementation_playbook": {"minimum": 88, "recommended": 95},
         }

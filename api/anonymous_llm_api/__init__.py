@@ -56,6 +56,18 @@ async def main(req: func.HttpRequest) -> func.HttpResponse:
     - GET /api/anonymous/llm/usage - Check remaining usage for IP
     """
     try:
+        if os.getenv("SUTRA_ENABLE_ANONYMOUS_LLM", "false").lower() != "true":
+            return func.HttpResponse(
+                json.dumps(
+                    {
+                        "error": "endpoint_disabled",
+                        "message": "Anonymous LLM endpoint is disabled.",
+                    }
+                ),
+                status_code=404,
+                mimetype="application/json",
+            )
+
         method = req.method
         route_params = req.route_params
         action = route_params.get("action", "execute")

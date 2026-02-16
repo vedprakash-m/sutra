@@ -38,11 +38,13 @@ def extract_user_info(req: func.HttpRequest) -> Optional[Dict[str, str]]:
         # Return user information as dictionary
         return {
             "id": user.id,
+            "user_id": user.id,
             "email": user.email,
             "name": user.name,
             "role": user.role.value if hasattr(user.role, "value") else str(user.role),
             "given_name": getattr(user, "given_name", ""),
             "family_name": getattr(user, "family_name", ""),
+            "organization_id": getattr(user, "organization_id", None),
         }
 
     except Exception as e:

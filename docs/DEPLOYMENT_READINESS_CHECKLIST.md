@@ -258,6 +258,26 @@ This checklist validates that the Forge module is ready for manual testing and s
 
 ---
 
+## 6. Security Policy Enforcement Gate (2026-02)
+
+### 6.1 Authentication Policy Gate
+
+- [x] Login surface does not expose anonymous trial entry points
+- [x] Development auth bypass requires explicit opt-in (`VITE_ALLOW_DEV_AUTH_BYPASS=true`)
+- [x] Backend auth helper returns canonical identifiers (`user_id`, `organization_id`) used by Forge APIs
+
+### 6.2 Anonymous Endpoint Control Gate
+
+- [x] Anonymous LLM endpoint is default-disabled unless `SUTRA_ENABLE_ANONYMOUS_LLM=true`
+- [ ] Pre-deploy validation confirms `SUTRA_ENABLE_ANONYMOUS_LLM` is not enabled in production
+
+### 6.3 Forge Transition Observability Gate
+
+- [x] Stage transition response includes request correlation field (`request_id`)
+- [x] Stage transition analytics event stores request correlation metadata
+
+---
+
 ## 6. Infrastructure & Deployment Checklist
 
 ### 6.1 Azure Infrastructure ✅ READY

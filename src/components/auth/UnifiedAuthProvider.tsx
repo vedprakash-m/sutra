@@ -63,6 +63,8 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
   const [user, setUser] = useState<SutraUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const allowDevAuthBypass =
+    import.meta.env.VITE_ALLOW_DEV_AUTH_BYPASS === "true";
 
   const isAuthenticated = !!user;
   const isGuest = false; // No guest role in new system
@@ -191,8 +193,12 @@ function AuthProviderInternal({ children }: AuthProviderProps) {
         } else {
           console.log("ℹ️ No accounts found");
 
-          // For local development, create a mock authenticated user
-          if (window.location.hostname === "localhost") {
+          // For local development, mock authentication is explicit opt-in only
+          if (
+            allowDevAuthBypass &&
+            (window.location.hostname === "localhost" ||
+              window.location.hostname === "127.0.0.1")
+          ) {
             console.log(
               "🔧 Local development: creating mock authenticated user",
             );

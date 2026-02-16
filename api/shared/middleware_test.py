@@ -190,7 +190,6 @@ class TestUtilityFunctions:
             "X-XSS-Protection": "1; mode=block",
             "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
             "Referrer-Policy": "strict-origin-when-cross-origin",
-            "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, x-ms-client-principal, x-ms-client-principal-id, x-ms-client-principal-name, x-ms-client-principal-idp, X-Requested-With, X-API-Version",
             "Access-Control-Expose-Headers": "X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset",

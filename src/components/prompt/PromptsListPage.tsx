@@ -10,7 +10,6 @@ import {
   MagnifyingGlassIcon,
   PencilSquareIcon,
   TrashIcon,
-  PlayIcon,
 } from "@heroicons/react/24/outline";
 
 interface Prompt {

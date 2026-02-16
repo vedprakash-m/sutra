@@ -93,9 +93,6 @@ describe("QualityGate", () => {
 
   it("renders progress bar with correct width", () => {
     const { container } = render(<QualityGate {...defaultProps} score={45} />);
-    const progressBar =
-      container.querySelector(".bg-yellow-500, .bg-green-500") ||
-      container.querySelector("[style]");
     // The component sets width as percentage of the score
     const bars = container.querySelectorAll("[style]");
     const barWithWidth = Array.from(bars).find(

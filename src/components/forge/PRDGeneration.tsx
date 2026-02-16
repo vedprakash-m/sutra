@@ -363,20 +363,6 @@ export default function PRDGeneration({
 
     setIsLoading(true);
     try {
-      const prdComponents = {
-        title: `PRD: ${ideaRefinementData?.problemStatement || "Product Requirements"}`,
-        executiveSummary: ideaRefinementData?.valueProposition || "",
-        problemStatement: ideaRefinementData?.problemStatement || "",
-        userPersonas: prdData.userStories.userPersonas,
-        functionalRequirements: prdData.requirements.functionalRequirements,
-        userStories: prdData.userStories.stories,
-        featurePrioritization: prdData.prioritizedFeatures,
-        nonFunctionalRequirements:
-          prdData.requirements.nonFunctionalRequirements,
-        businessRules: prdData.requirements.businessRules,
-        assumptions: prdData.requirements.assumptions,
-      };
-
       const result = await forgeApi.generatePRDDocument(projectId);
 
       setPRDData((prev) => ({

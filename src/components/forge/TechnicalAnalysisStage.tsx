@@ -166,6 +166,8 @@ const TechnicalAnalysisStage: React.FC<TechnicalAnalysisStageProps> = ({
   onComplete,
   onBack,
 }) => {
+  void userId;
+
   // State management
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<

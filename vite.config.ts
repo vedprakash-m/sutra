@@ -115,9 +115,8 @@ export default defineConfig(async () => {
           // Code splitting for better caching
           manualChunks: {
             vendor: ["react", "react-dom"],
-            ui: ["@mui/material", "@emotion/react", "@emotion/styled"],
             routing: ["react-router-dom"],
-            utils: ["axios", "date-fns"],
+            state: ["zustand", "react-query"],
           },
         },
       },
